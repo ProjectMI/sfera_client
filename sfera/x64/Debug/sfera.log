@@ -1,0 +1,4 @@
+﻿  sfera_link_stubs_phase2.c
+  sphereclient_4.exe.c
+C:\Users\Max\source\repos\sfera\sfera\sphereclient_4.exe.c(25,1): error C1189: #error:  This decompiled Sfera source must be built as Win32/x86, not x64. Pointer truncation will crash the memory manager.
+  Создание кода...

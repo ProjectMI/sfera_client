@@ -1,0 +1,4 @@
+LIBRARY "D3DImm.dll"
+EXPORTS
+    GetD3DInterface @1
+    GetD3DVersion @2

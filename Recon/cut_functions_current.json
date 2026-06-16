@@ -1,0 +1,176 @@
+[
+  {
+    "ea": "0x004BD210",
+    "name": "_WinMain@16",
+    "reason": "WinMain / process bootstrap",
+    "cpp_home": "SferaClientApp::Run, SferaClientApp::Initialize, WinMain"
+  },
+  {
+    "ea": "0x004A2390",
+    "name": "sub_4A2390",
+    "reason": "init_main_window_class / RegisterClassExA",
+    "cpp_home": "SferaWindow::Register"
+  },
+  {
+    "ea": "0x00499B60",
+    "name": "sub_499B60",
+    "reason": "init_main_window / CreateWindowExA",
+    "cpp_home": "SferaWindow::Create"
+  },
+  {
+    "ea": "0x004A2100",
+    "name": "sub_4A2100",
+    "reason": "main WndProc",
+    "cpp_home": "SferaWindow::StaticWndProc, SferaWindow::WndProc"
+  },
+  {
+    "ea": "0x00499830",
+    "name": "sub_499830",
+    "reason": "fatal diagnostics / MessageBoxA+ExitProcess path",
+    "cpp_home": "SferaDiagnostics::Fatal"
+  },
+  {
+    "ea": "0x00441990",
+    "name": "",
+    "reason": "config.cpp config parser bootstrap",
+    "cpp_home": "SferaConfig/SferaTextConfig"
+  },
+  {
+    "ea": "0x00441AC0",
+    "name": "",
+    "reason": "config.cpp config helper",
+    "cpp_home": "SferaTextConfig"
+  },
+  {
+    "ea": "0x0045E000",
+    "name": "",
+    "reason": "CheckFiles.cpp file check shell",
+    "cpp_home": "SferaResourceManager"
+  },
+  {
+    "ea": "0x0045E3A0",
+    "name": "",
+    "reason": "CheckFiles.cpp filelist.dat read/index",
+    "cpp_home": "SferaResourceManager"
+  },
+  {
+    "ea": "0x0045E4F0",
+    "name": "",
+    "reason": "CheckFiles.cpp filelist.dat validate/index",
+    "cpp_home": "SferaResourceManager"
+  },
+  {
+    "ea": "0x004760E0",
+    "name": "",
+    "reason": "Inter.cpp filelist.dat load path",
+    "cpp_home": "SferaResourceManager"
+  },
+  {
+    "ea": "0x00476310",
+    "name": "",
+    "reason": "Inter.cpp filelist/list.dat/xupdate scan",
+    "cpp_home": "SferaResourceManager"
+  },
+  {
+    "ea": "0x00488EA0",
+    "name": "",
+    "reason": "Inter.cpp mbc directory/connectn.cfg/_main bootstrap",
+    "cpp_home": "SferaScriptRuntime/SferaResourceManager"
+  },
+  {
+    "ea": "0x004A2790",
+    "name": "",
+    "reason": "main.cpp resource folder bootstrap",
+    "cpp_home": "SferaTextureManager/SferaResourceManager"
+  },
+  {
+    "ea": "0x004A48A0",
+    "name": "",
+    "reason": "main.cpp init_first2 config/log/bootstrap",
+    "cpp_home": "SferaConfig/SferaResourceManager"
+  },
+  {
+    "ea": "0x00499CC0",
+    "name": "",
+    "reason": "main.cpp fonts/font*.txt loader boundary",
+    "cpp_home": "SferaInterfaceResourceManager"
+  },
+  {
+    "ea": "0x004D6970",
+    "name": "",
+    "reason": "SoundEffect.cpp Sounds/*.def scanner",
+    "cpp_home": "SferaSoundSystem"
+  },
+  {
+    "ea": "0x004D8B30",
+    "name": "",
+    "reason": "SoundTrack.cpp soundtrack definition parser boundary",
+    "cpp_home": "SferaSoundSystem"
+  },
+  {
+    "ea": "0x004D9300",
+    "name": "",
+    "reason": "texturesset.cpp recursive texture path scan",
+    "cpp_home": "SferaTextureManager"
+  },
+  {
+    "ea": "0x004D9530",
+    "name": "",
+    "reason": "texturesset.cpp texture set helper",
+    "cpp_home": "SferaTextureManager"
+  },
+  {
+    "ea": "0x004D9570",
+    "name": "",
+    "reason": "texturesset.cpp add_texture_folder",
+    "cpp_home": "SferaTextureManager"
+  },
+  {
+    "ea": "0x004D99A0",
+    "name": "",
+    "reason": "texturesset.cpp default texture lookup",
+    "cpp_home": "SferaTextureManager"
+  },
+  {
+    "ea": "0x004D9B00",
+    "name": "",
+    "reason": "texturesset.cpp preload texture from file",
+    "cpp_home": "SferaTextureManager"
+  },
+  {
+    "ea": "0x004E4260",
+    "name": "",
+    "reason": "Interface/Font.cpp font file/texture loader boundary",
+    "cpp_home": "SferaInterfaceResourceManager"
+  },
+  {
+    "ea": "0x004F9E60",
+    "name": "",
+    "reason": "Interface.cpp Effects/*.ui/loadscreen/sprites scan",
+    "cpp_home": "SferaInterfaceResourceManager"
+  },
+  {
+    "ea": "0x004FC5C0",
+    "name": "",
+    "reason": "Interface.cpp Language/strings.ui loader boundary",
+    "cpp_home": "SferaInterfaceResourceManager"
+  },
+  {
+    "ea": "0x004FC870",
+    "name": "",
+    "reason": "Interface.cpp control.cfg/bootstrap UI sounds/loadscreen/sprites",
+    "cpp_home": "SferaInterfaceResourceManager/SferaConfig"
+  },
+  {
+    "ea": "0x00516500",
+    "name": "",
+    "reason": "CursorImageManager.cpp textures/cursors bmp cursor creation",
+    "cpp_home": "SferaCursorManager"
+  },
+  {
+    "ea": "0x00517670",
+    "name": "",
+    "reason": "CursorManager.cpp active cursor manager shell",
+    "cpp_home": "SferaCursorManager"
+  }
+]

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{A50F3F10-0E87-4B98-9B2C-7A6F1B5D1001}</ProjectGuid>
+    <RootNamespace>SferaClientSnapshot</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_WIN64;_WINDOWS;_CRT_SECURE_NO_WARNINGS;SFERA_CLIENT_64BIT=1;SFERA_NO_LEGACY_SOUND_DLL=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source\SferaClient\Public\Core;$(ProjectDir)Source\SferaClient\Public\Platform;$(ProjectDir)Source\SferaClient\Public\Resources;$(ProjectDir)Source\SferaClient\Public\Rendering;$(ProjectDir)Source\SferaClient\Public\UI;$(ProjectDir)Source\SferaClient\Public\Scripting;$(ProjectDir)Source\SferaClient\Public\Audio;$(ProjectDir)Source\SferaClient\Public\Network;$(ProjectDir)Source\SferaClient\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>user32.lib;gdi32.lib;shell32.lib;ws2_32.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_WIN64;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;SFERA_CLIENT_64BIT=1;SFERA_NO_LEGACY_SOUND_DLL=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source\SferaClient\Public\Core;$(ProjectDir)Source\SferaClient\Public\Platform;$(ProjectDir)Source\SferaClient\Public\Resources;$(ProjectDir)Source\SferaClient\Public\Rendering;$(ProjectDir)Source\SferaClient\Public\UI;$(ProjectDir)Source\SferaClient\Public\Scripting;$(ProjectDir)Source\SferaClient\Public\Audio;$(ProjectDir)Source\SferaClient\Public\Network;$(ProjectDir)Source\SferaClient\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>user32.lib;gdi32.lib;shell32.lib;ws2_32.lib;d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\SferaClient\Public\Audio\SferaSoundSystem.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaAppContext.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaBase.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaBinaryReader.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaClientApp.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaCommandLine.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaConfig.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaDiagnostics.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaEngineLoop.h" />
+    <ClInclude Include="Source\SferaClient\Public\Core\SferaStringUtil.h" />
+    <ClInclude Include="Source\SferaClient\Public\Network\SferaNetworkClient.h" />
+    <ClInclude Include="Source\SferaClient\Public\Platform\SferaInputSystem.h" />
+    <ClInclude Include="Source\SferaClient\Public\Platform\SferaWindow.h" />
+    <ClInclude Include="Source\SferaClient\Public\Rendering\SferaD3D11Renderer.h" />
+    <ClInclude Include="Source\SferaClient\Public\Rendering\SferaRenderer.h" />
+    <ClInclude Include="Source\SferaClient\Public\Rendering\SferaTextureManager.h" />
+    <ClInclude Include="Source\SferaClient\Public\Resources\SferaResourceManager.h" />
+    <ClInclude Include="Source\SferaClient\Public\Resources\SferaResourceTypes.h" />
+    <ClInclude Include="Source\SferaClient\Public\Resources\SferaTextConfig.h" />
+    <ClInclude Include="Source\SferaClient\Public\Scripting\SferaScriptRuntime.h" />
+    <ClInclude Include="Source\SferaClient\Public\UI\SferaCursorManager.h" />
+    <ClInclude Include="Source\SferaClient\Public\UI\SferaInterfaceResourceManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\SferaClient\Private\Audio\SferaSoundSystem.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaAppContext.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaBinaryReader.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaClientApp.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaCommandLine.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaConfig.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaDiagnostics.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaEngineLoop.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Core\SferaStringUtil.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Network\SferaNetworkClient.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Platform\SferaInputSystem.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Platform\SferaWindow.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Platform\WinMain.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Rendering\SferaD3D11Renderer.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Rendering\SferaRenderer.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Rendering\SferaTextureManager.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Resources\SferaResourceManager.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Resources\SferaResourceTypes.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Resources\SferaTextConfig.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\Scripting\SferaScriptRuntime.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\UI\SferaCursorManager.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\UI\SferaInterfaceResourceManager.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

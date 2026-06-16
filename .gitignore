@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+Debug/
+SferaCli.A50F3F10/
+x64/
+.vs/

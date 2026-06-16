@@ -23,7 +23,7 @@ enum class ESferaResourceKind
     ExecutableIgnored
 };
 
-const char* SferaResourceKindToString(ESferaResourceKind Kind);
+std::string_view SferaResourceKindToString(ESferaResourceKind Kind);
 
 struct SferaResourceRecord
 {

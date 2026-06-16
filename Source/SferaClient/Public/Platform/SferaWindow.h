@@ -11,8 +11,8 @@ public:
     HWND GetHandle() const { return WindowHandle; }
     bool IsValid() const { return WindowHandle != nullptr; }
 
-    static const char* GetClassName();
-    static const char* GetDefaultTitle();
+    static std::string_view GetClassName();
+    static std::string_view GetDefaultTitle();
 
 private:
     static LRESULT CALLBACK StaticWndProc(HWND Hwnd, UINT Message, WPARAM WParam, LPARAM LParam);

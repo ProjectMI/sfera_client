@@ -4,9 +4,9 @@
 #include <fstream>
 #include <sstream>
 
-bool SferaResourceManager::Initialize(const char* RootDirectory)
+bool SferaResourceManager::Initialize(const std::string& RootDirectory)
 {
-    Root = RootDirectory && RootDirectory[0] ? RootDirectory : ".";
+    Root = RootDirectory.empty() ? "." : RootDirectory;
     ResetCatalog();
     return true;
 }
@@ -272,7 +272,7 @@ bool SferaResourceManager::LoadTextFile(const std::string& LogicalPath, std::str
     return true;
 }
 
-bool SferaResourceManager::ReadBinaryFile(const std::string& LogicalPath, std::vector<SferaUInt8>& OutBytes) const
+bool SferaResourceManager::ReadBinaryFile(const std::string& LogicalPath, SferaByteBuffer& OutBytes) const
 {
     std::string DiskPath;
     if (!ResolvePath(LogicalPath, DiskPath))
@@ -297,7 +297,12 @@ bool SferaResourceManager::ReadBinaryFile(const std::string& LogicalPath, std::v
     OutBytes.resize(static_cast<size_t>(Size));
     if (!OutBytes.empty())
     {
-        Stream.read(reinterpret_cast<char*>(OutBytes.data()), Size);
+        std::vector<std::string::value_type> RawBytes(OutBytes.size());
+        Stream.read(RawBytes.data(), Size);
+        std::transform(RawBytes.begin(), RawBytes.end(), OutBytes.begin(), [](std::string::value_type Byte)
+        {
+            return static_cast<SferaByte>(static_cast<unsigned char>(Byte));
+        });
     }
     return true;
 }

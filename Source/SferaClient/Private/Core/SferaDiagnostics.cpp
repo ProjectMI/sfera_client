@@ -1,19 +1,20 @@
 #include "SferaDiagnostics.h"
 #include <cstdio>
+#include <string>
 
 void SferaDiagnostics::SetMainWindow(HWND WindowHandle)
 {
     MainWindow = WindowHandle;
 }
 
-void SferaDiagnostics::Info(const char* Message)
+void SferaDiagnostics::Info(std::string_view Message)
 {
-    OutputDebugStringA(Message ? Message : "");
+    OutputDebugStringA(std::string(Message).c_str());
     OutputDebugStringA("\n");
 }
 
-void SferaDiagnostics::Fatal(const char* Message)
+void SferaDiagnostics::Fatal(std::string_view Message)
 {
     // Original analogue: sub_499830 / MessageBoxA + ExitProcess path.
-    MessageBoxA(MainWindow, Message ? Message : "Unknown fatal error", "Error", MB_ICONERROR | MB_OK);
+    MessageBoxA(MainWindow, Message.empty() ? "Unknown fatal error" : std::string(Message).c_str(), "Error", MB_ICONERROR | MB_OK);
 }

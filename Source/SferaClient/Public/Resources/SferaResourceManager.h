@@ -5,7 +5,7 @@
 class SferaResourceManager
 {
 public:
-    bool Initialize(const char* RootDirectory);
+    bool Initialize(const std::string& RootDirectory);
     void Shutdown();
 
     bool ScanBootstrapResources();
@@ -23,7 +23,7 @@ public:
     std::vector<const SferaResourceRecord*> FindByWildcard(const std::string& Wildcard) const;
 
     bool LoadTextFile(const std::string& LogicalPath, std::string& OutText) const;
-    bool ReadBinaryFile(const std::string& LogicalPath, std::vector<SferaUInt8>& OutBytes) const;
+    bool ReadBinaryFile(const std::string& LogicalPath, SferaByteBuffer& OutBytes) const;
 
     static ESferaResourceKind ClassifyLogicalPath(const std::string& LogicalPath);
 

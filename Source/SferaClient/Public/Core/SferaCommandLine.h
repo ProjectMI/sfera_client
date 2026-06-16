@@ -4,7 +4,7 @@
 class SferaCommandLine
 {
 public:
-    void Parse(const char* CommandLine);
+    void Parse(const std::string& CommandLine);
 
     bool HasLoginFlag() const { return bLogin; }
     bool HasGameXpSid() const { return bGameXpSid; }

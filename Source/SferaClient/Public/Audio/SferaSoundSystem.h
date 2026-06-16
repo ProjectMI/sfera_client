@@ -11,7 +11,7 @@ public:
     void Shutdown();
 
     bool IsNoOp() const { return true; }
-    int LoadSound(const char* LogicalPath);
+    int LoadSound(const std::string& LogicalPath);
     void PlaySound(int SoundId);
     void StopSound(int SoundId);
     void SetVolume(float Volume);

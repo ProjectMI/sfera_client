@@ -18,20 +18,17 @@ void SferaSoundSystem::Shutdown()
     MasterVolume = 1.0f;
 }
 
-int SferaSoundSystem::LoadSound(const char* LogicalPath)
+int SferaSoundSystem::LoadSound(const std::string&)
 {
-    (void)LogicalPath;
     return 0;
 }
 
-void SferaSoundSystem::PlaySound(int SoundId)
+void SferaSoundSystem::PlaySound(int)
 {
-    (void)SoundId;
 }
 
-void SferaSoundSystem::StopSound(int SoundId)
+void SferaSoundSystem::StopSound(int)
 {
-    (void)SoundId;
 }
 
 void SferaSoundSystem::SetVolume(float Volume)

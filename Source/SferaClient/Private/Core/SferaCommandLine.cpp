@@ -8,9 +8,9 @@ static std::string ToLowerAscii(std::string Value)
     return Value;
 }
 
-void SferaCommandLine::Parse(const char* CommandLine)
+void SferaCommandLine::Parse(const std::string& CommandLine)
 {
-    Raw = CommandLine ? CommandLine : "";
+    Raw = CommandLine;
     const std::string Lower = ToLowerAscii(Raw);
 
     // Original WinMain references: /login, /gamexp_sid, connect.cfg, CONNECT_TYPE.

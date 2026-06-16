@@ -1,16 +1,24 @@
 #include "SferaBinaryReader.h"
 #include <cstring>
 
+namespace
+{
+    SferaUInt8 ToUInt8(SferaByte Value)
+    {
+        return static_cast<SferaUInt8>(Value);
+    }
+}
+
 SferaBinaryReader::SferaBinaryReader()
 {
 }
 
-SferaBinaryReader::SferaBinaryReader(const std::vector<SferaUInt8>& InBytes)
+SferaBinaryReader::SferaBinaryReader(const SferaByteBuffer& InBytes)
 {
     Reset(InBytes);
 }
 
-void SferaBinaryReader::Reset(const std::vector<SferaUInt8>& InBytes)
+void SferaBinaryReader::Reset(const SferaByteBuffer& InBytes)
 {
     Bytes = &InBytes;
     Offset = 0;
@@ -50,7 +58,7 @@ bool SferaBinaryReader::ReadUInt8(SferaUInt8& OutValue)
     {
         return false;
     }
-    OutValue = (*Bytes)[Offset++];
+    OutValue = ToUInt8((*Bytes)[Offset++]);
     return true;
 }
 
@@ -60,8 +68,8 @@ bool SferaBinaryReader::ReadUInt16LE(SferaUInt16& OutValue)
     {
         return false;
     }
-    OutValue = static_cast<SferaUInt16>((*Bytes)[Offset]) |
-        static_cast<SferaUInt16>((*Bytes)[Offset + 1] << 8);
+    OutValue = static_cast<SferaUInt16>(ToUInt8((*Bytes)[Offset])) |
+        static_cast<SferaUInt16>(ToUInt8((*Bytes)[Offset + 1]) << 8);
     Offset += 2;
     return true;
 }
@@ -72,10 +80,10 @@ bool SferaBinaryReader::ReadUInt32LE(SferaUInt32& OutValue)
     {
         return false;
     }
-    OutValue = static_cast<SferaUInt32>((*Bytes)[Offset]) |
-        (static_cast<SferaUInt32>((*Bytes)[Offset + 1]) << 8) |
-        (static_cast<SferaUInt32>((*Bytes)[Offset + 2]) << 16) |
-        (static_cast<SferaUInt32>((*Bytes)[Offset + 3]) << 24);
+    OutValue = static_cast<SferaUInt32>(ToUInt8((*Bytes)[Offset])) |
+        (static_cast<SferaUInt32>(ToUInt8((*Bytes)[Offset + 1])) << 8) |
+        (static_cast<SferaUInt32>(ToUInt8((*Bytes)[Offset + 2])) << 16) |
+        (static_cast<SferaUInt32>(ToUInt8((*Bytes)[Offset + 3])) << 24);
     Offset += 4;
     return true;
 }
@@ -103,7 +111,7 @@ bool SferaBinaryReader::ReadFloat32LE(float& OutValue)
     return true;
 }
 
-bool SferaBinaryReader::ReadBytes(size_t Count, std::vector<SferaUInt8>& OutBytes)
+bool SferaBinaryReader::ReadBytes(size_t Count, SferaByteBuffer& OutBytes)
 {
     if (!IsValidOffset(Offset, Count))
     {
@@ -125,13 +133,13 @@ bool SferaBinaryReader::ReadCString(size_t MaxBytes, std::string& OutString)
     size_t Count = 0;
     while (Offset < Bytes->size() && Count < MaxBytes)
     {
-        const char Ch = static_cast<char>((*Bytes)[Offset++]);
+        const SferaUInt8 Byte = ToUInt8((*Bytes)[Offset++]);
         ++Count;
-        if (Ch == '\0')
+        if (Byte == 0)
         {
             return true;
         }
-        OutString.push_back(Ch);
+        OutString.push_back(static_cast<std::string::value_type>(Byte));
     }
 
     return false;

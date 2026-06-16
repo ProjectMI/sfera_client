@@ -1,4 +1,5 @@
 #include "SferaD3D11Renderer.h"
+#include <wrl/client.h>
 
 template <typename T>
 static void SferaSafeRelease(T*& Object)
@@ -117,15 +118,14 @@ bool SferaD3D11Renderer::CreateBackBuffer()
         return false;
     }
 
-    ID3D11Texture2D* BackBuffer = nullptr;
-    HRESULT Hr = SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&BackBuffer));
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBuffer;
+    HRESULT Hr = SwapChain->GetBuffer(0, IID_PPV_ARGS(&BackBuffer));
     if (FAILED(Hr) || !BackBuffer)
     {
         return false;
     }
 
-    Hr = Device->CreateRenderTargetView(BackBuffer, nullptr, &BackBufferView);
-    BackBuffer->Release();
+    Hr = Device->CreateRenderTargetView(BackBuffer.Get(), nullptr, &BackBufferView);
     return SUCCEEDED(Hr) && BackBufferView != nullptr;
 }
 

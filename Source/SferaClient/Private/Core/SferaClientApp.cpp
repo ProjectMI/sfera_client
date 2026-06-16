@@ -1,6 +1,6 @@
 #include "SferaClientApp.h"
 
-bool SferaClientApp::Initialize(HINSTANCE Instance, LPSTR CommandLine, int ShowCommand)
+bool SferaClientApp::Initialize(HINSTANCE Instance, const std::string& CommandLine, int ShowCommand)
 {
     Context.Instance = Instance;
     Context.ShowCommand = ShowCommand;
@@ -31,10 +31,8 @@ bool SferaClientApp::Initialize(HINSTANCE Instance, LPSTR CommandLine, int ShowC
     return true;
 }
 
-int SferaClientApp::Run(HINSTANCE Instance, HINSTANCE PreviousInstance, LPSTR CommandLine, int ShowCommand)
+int SferaClientApp::Run(HINSTANCE Instance, HINSTANCE, const std::string& CommandLine, int ShowCommand)
 {
-    (void)PreviousInstance;
-
     if (!Initialize(Instance, CommandLine, ShowCommand))
     {
         Shutdown();

@@ -6,10 +6,10 @@
 class SferaClientApp
 {
 public:
-    int Run(HINSTANCE Instance, HINSTANCE PreviousInstance, LPSTR CommandLine, int ShowCommand);
+    int Run(HINSTANCE Instance, HINSTANCE PreviousInstance, const std::string& CommandLine, int ShowCommand);
 
 private:
-    bool Initialize(HINSTANCE Instance, LPSTR CommandLine, int ShowCommand);
+    bool Initialize(HINSTANCE Instance, const std::string& CommandLine, int ShowCommand);
     void Shutdown();
 
 private:

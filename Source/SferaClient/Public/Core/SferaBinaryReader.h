@@ -5,9 +5,9 @@ class SferaBinaryReader
 {
 public:
     SferaBinaryReader();
-    explicit SferaBinaryReader(const std::vector<SferaUInt8>& InBytes);
+    explicit SferaBinaryReader(const SferaByteBuffer& InBytes);
 
-    void Reset(const std::vector<SferaUInt8>& InBytes);
+    void Reset(const SferaByteBuffer& InBytes);
     bool IsValidOffset(size_t Offset, size_t Size) const;
     bool Seek(size_t NewOffset);
     size_t Tell() const { return Offset; }
@@ -19,10 +19,10 @@ public:
     bool ReadUInt32LE(SferaUInt32& OutValue);
     bool ReadInt32LE(SferaInt32& OutValue);
     bool ReadFloat32LE(float& OutValue);
-    bool ReadBytes(size_t Count, std::vector<SferaUInt8>& OutBytes);
+    bool ReadBytes(size_t Count, SferaByteBuffer& OutBytes);
     bool ReadCString(size_t MaxBytes, std::string& OutString);
 
 private:
-    const std::vector<SferaUInt8>* Bytes = nullptr;
+    const SferaByteBuffer* Bytes = nullptr;
     size_t Offset = 0;
 };

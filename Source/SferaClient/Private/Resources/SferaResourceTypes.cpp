@@ -1,6 +1,6 @@
 #include "SferaResourceTypes.h"
 
-const char* SferaResourceKindToString(ESferaResourceKind Kind)
+std::string_view SferaResourceKindToString(ESferaResourceKind Kind)
 {
     switch (Kind)
     {

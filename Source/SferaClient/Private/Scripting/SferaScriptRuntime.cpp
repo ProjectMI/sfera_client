@@ -31,7 +31,7 @@ const SferaResourceRecord* SferaScriptRuntime::FindMainProgramCandidate() const
         return nullptr;
     }
 
-    const char* Candidates[] =
+    const std::string Candidates[] =
     {
         "_main.mbc",
         "_main.mbl",
@@ -40,7 +40,7 @@ const SferaResourceRecord* SferaScriptRuntime::FindMainProgramCandidate() const
         "__debug.mbc"
     };
 
-    for (const char* Candidate : Candidates)
+    for (const std::string& Candidate : Candidates)
     {
         if (const SferaResourceRecord* Record = ResourceManager->FindResource(Candidate))
         {
@@ -73,7 +73,7 @@ void SferaScriptRuntime::BuildScriptSummaries()
         Summary.LogicalPath = Record->LogicalPath;
         Summary.SizeBytes = Record->SizeBytes;
 
-        std::vector<SferaUInt8> Bytes;
+        SferaByteBuffer Bytes;
         if (ResourceManager->ReadBinaryFile(Record->LogicalPath, Bytes) && Bytes.size() >= 4)
         {
             SferaBinaryReader Reader(Bytes);

@@ -45,7 +45,7 @@ HCURSOR SferaCursorManager::LoadCursorFromResources(const SferaResourceManager& 
         if (Image)
         {
             ActiveCursorName = Record->LogicalPath;
-            return reinterpret_cast<HCURSOR>(Image);
+            return static_cast<HCURSOR>(Image);
         }
     }
 

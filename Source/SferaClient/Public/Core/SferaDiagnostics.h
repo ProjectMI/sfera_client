@@ -5,8 +5,8 @@ class SferaDiagnostics
 {
 public:
     void SetMainWindow(HWND WindowHandle);
-    void Info(const char* Message);
-    void Fatal(const char* Message);
+    void Info(std::string_view Message);
+    void Fatal(std::string_view Message);
 
 private:
     HWND MainWindow = nullptr;

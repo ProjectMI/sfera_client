@@ -50,7 +50,7 @@ void SferaRenderer::DrawGdiOverlayOnly()
         GetClientRect(WindowHandle, &Rect);
         if (!bHardwareRendererActive)
         {
-            HBRUSH Brush = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+            HBRUSH Brush = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
             FillRect(Dc, &Rect, Brush);
         }
         DrawBootstrapOverlay(Dc, Rect);

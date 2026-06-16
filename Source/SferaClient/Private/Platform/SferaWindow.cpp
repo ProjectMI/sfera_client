@@ -1,13 +1,13 @@
 #include "SferaWindow.h"
 #include <algorithm>
 
-const char* SferaWindow::GetClassName()
+std::string_view SferaWindow::GetClassName()
 {
     // Original string: 0x005601B4 'SphereWclName'.
     return "SphereWclName";
 }
 
-const char* SferaWindow::GetDefaultTitle()
+std::string_view SferaWindow::GetDefaultTitle()
 {
     // Original string: 0x00541EF8 'Sphere'.
     return "Sphere";
@@ -29,9 +29,9 @@ bool SferaWindow::Register(HINSTANCE Instance)
         WindowClass.hIcon = LoadIconA(nullptr, IDI_APPLICATION);
     }
     WindowClass.hCursor = LoadCursorA(nullptr, IDC_ARROW);
-    WindowClass.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+    WindowClass.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     WindowClass.lpszMenuName = nullptr;
-    WindowClass.lpszClassName = GetClassName();
+    WindowClass.lpszClassName = GetClassName().data();
     WindowClass.hIconSm = WindowClass.hIcon;
 
     ATOM Result = RegisterClassExA(&WindowClass);
@@ -67,8 +67,8 @@ bool SferaWindow::Create(HINSTANCE Instance, const SferaSize2D& DesiredClientSiz
 
     WindowHandle = CreateWindowExA(
         0,
-        GetClassName(),
-        GetDefaultTitle(),
+        GetClassName().data(),
+        GetDefaultTitle().data(),
         Style,
         X,
         Y,

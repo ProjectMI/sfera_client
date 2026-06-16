@@ -1,14 +1,6 @@
 #include "SferaBinaryReader.h"
 #include <cstring>
 
-namespace
-{
-    SferaUInt8 ToUInt8(SferaByte Value)
-    {
-        return static_cast<SferaUInt8>(Value);
-    }
-}
-
 SferaBinaryReader::SferaBinaryReader()
 {
 }

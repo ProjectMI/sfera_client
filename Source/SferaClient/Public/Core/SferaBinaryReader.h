@@ -12,6 +12,7 @@ public:
     bool Seek(size_t NewOffset);
     size_t Tell() const { return Offset; }
     size_t Size() const { return Bytes ? Bytes->size() : 0; }
+    SferaUInt8 ToUInt8(SferaByte Value) { return static_cast<SferaUInt8>(Value); }
     size_t Remaining() const;
 
     bool ReadUInt8(SferaUInt8& OutValue);

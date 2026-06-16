@@ -1,0 +1,22 @@
+{
+  "input_file": "sphereclient_4.exe",
+  "input_path": "E:\\work projekts\\Sfera\\sphereclient_4.exe",
+  "ida_version": "9.3",
+  "is_64bit": false,
+  "ptr_size": 4,
+  "output_dir": "E:\\work projekts\\Sfera\\sphereclient_4_ida_export",
+  "export_time_unix": 1781639229,
+  "status": "ok",
+  "segments_count": 4,
+  "imports_count": 412,
+  "strings_count": 2836,
+  "names_count": 4405,
+  "functions_count": 3678,
+  "calls_count": 21505,
+  "xrefs_count": 368389,
+  "globals_count": 6312,
+  "vtables_count": 50,
+  "comments_count": 14340,
+  "clusters_count": 7,
+  "elapsed_sec": 159.1
+}

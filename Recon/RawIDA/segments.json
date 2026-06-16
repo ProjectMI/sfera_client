@@ -1,0 +1,42 @@
+[
+  {
+    "name": ".text",
+    "class": "CODE",
+    "start_ea": "0x00441000",
+    "end_ea": "0x0053C000",
+    "size": 1028096,
+    "perm": "R-X",
+    "bitness": 1,
+    "align": 3
+  },
+  {
+    "name": ".idata",
+    "class": "DATA",
+    "start_ea": "0x0053C000",
+    "end_ea": "0x0053C6B4",
+    "size": 1716,
+    "perm": "R--",
+    "bitness": 1,
+    "align": 3
+  },
+  {
+    "name": ".rdata",
+    "class": "DATA",
+    "start_ea": "0x0053C6B4",
+    "end_ea": "0x0055F000",
+    "size": 141644,
+    "perm": "R--",
+    "bitness": 1,
+    "align": 3
+  },
+  {
+    "name": ".data",
+    "class": "DATA",
+    "start_ea": "0x0055F000",
+    "end_ea": "0x04BFF000",
+    "size": 74055680,
+    "perm": "RW-",
+    "bitness": 1,
+    "align": 3
+  }
+]

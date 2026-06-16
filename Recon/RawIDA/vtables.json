@@ -1,0 +1,7128 @@
+[
+  {
+    "ea": "0x0053C6B8",
+    "segment": ".rdata",
+    "name": "",
+    "entry_count": 340,
+    "entries": [
+      {
+        "slot_ea": "0x0053C6B8",
+        "target": "0x0052EAF1",
+        "target_func": "0x0052EAF1",
+        "target_name": "_pre_cpp_init"
+      },
+      {
+        "slot_ea": "0x0053C6BC",
+        "target": "0x00539D11",
+        "target_func": "0x00539D11",
+        "target_name": "sub_539D11"
+      },
+      {
+        "slot_ea": "0x0053C6C0",
+        "target": "0x00534770",
+        "target_func": "0x00534770",
+        "target_name": "sub_534770"
+      },
+      {
+        "slot_ea": "0x0053C6C4",
+        "target": "0x005347A0",
+        "target_func": "0x005347A0",
+        "target_name": "sub_5347A0"
+      },
+      {
+        "slot_ea": "0x0053C6C8",
+        "target": "0x005347E0",
+        "target_func": "0x005347E0",
+        "target_name": "sub_5347E0"
+      },
+      {
+        "slot_ea": "0x0053C6CC",
+        "target": "0x00534810",
+        "target_func": "0x00534810",
+        "target_name": "sub_534810"
+      },
+      {
+        "slot_ea": "0x0053C6D0",
+        "target": "0x00534850",
+        "target_func": "0x00534850",
+        "target_name": "sub_534850"
+      },
+      {
+        "slot_ea": "0x0053C6D4",
+        "target": "0x00534880",
+        "target_func": "0x00534880",
+        "target_name": "sub_534880"
+      },
+      {
+        "slot_ea": "0x0053C6D8",
+        "target": "0x005348C0",
+        "target_func": "0x005348C0",
+        "target_name": "sub_5348C0"
+      },
+      {
+        "slot_ea": "0x0053C6DC",
+        "target": "0x005348F0",
+        "target_func": "0x005348F0",
+        "target_name": "sub_5348F0"
+      },
+      {
+        "slot_ea": "0x0053C6E0",
+        "target": "0x00534930",
+        "target_func": "0x00534930",
+        "target_name": "sub_534930"
+      },
+      {
+        "slot_ea": "0x0053C6E4",
+        "target": "0x00534960",
+        "target_func": "0x00534960",
+        "target_name": "sub_534960"
+      },
+      {
+        "slot_ea": "0x0053C6E8",
+        "target": "0x005349A0",
+        "target_func": "0x005349A0",
+        "target_name": "sub_5349A0"
+      },
+      {
+        "slot_ea": "0x0053C6EC",
+        "target": "0x005349D0",
+        "target_func": "0x005349D0",
+        "target_name": "sub_5349D0"
+      },
+      {
+        "slot_ea": "0x0053C6F0",
+        "target": "0x00534A10",
+        "target_func": "0x00534A10",
+        "target_name": "sub_534A10"
+      },
+      {
+        "slot_ea": "0x0053C6F4",
+        "target": "0x00534A40",
+        "target_func": "0x00534A40",
+        "target_name": "sub_534A40"
+      },
+      {
+        "slot_ea": "0x0053C6F8",
+        "target": "0x00534A80",
+        "target_func": "0x00534A80",
+        "target_name": "sub_534A80"
+      },
+      {
+        "slot_ea": "0x0053C6FC",
+        "target": "0x00534AB0",
+        "target_func": "0x00534AB0",
+        "target_name": "sub_534AB0"
+      },
+      {
+        "slot_ea": "0x0053C700",
+        "target": "0x00534AF0",
+        "target_func": "0x00534AF0",
+        "target_name": "sub_534AF0"
+      },
+      {
+        "slot_ea": "0x0053C704",
+        "target": "0x00534B30",
+        "target_func": "0x00534B30",
+        "target_name": "sub_534B30"
+      },
+      {
+        "slot_ea": "0x0053C708",
+        "target": "0x00534B60",
+        "target_func": "0x00534B60",
+        "target_name": "sub_534B60"
+      },
+      {
+        "slot_ea": "0x0053C70C",
+        "target": "0x00534BA0",
+        "target_func": "0x00534BA0",
+        "target_name": "sub_534BA0"
+      },
+      {
+        "slot_ea": "0x0053C710",
+        "target": "0x00534BD0",
+        "target_func": "0x00534BD0",
+        "target_name": "sub_534BD0"
+      },
+      {
+        "slot_ea": "0x0053C714",
+        "target": "0x00534C10",
+        "target_func": "0x00534C10",
+        "target_name": "sub_534C10"
+      },
+      {
+        "slot_ea": "0x0053C718",
+        "target": "0x00534C40",
+        "target_func": "0x00534C40",
+        "target_name": "sub_534C40"
+      },
+      {
+        "slot_ea": "0x0053C71C",
+        "target": "0x00534C80",
+        "target_func": "0x00534C80",
+        "target_name": "sub_534C80"
+      },
+      {
+        "slot_ea": "0x0053C720",
+        "target": "0x00534D00",
+        "target_func": "0x00534D00",
+        "target_name": "sub_534D00"
+      },
+      {
+        "slot_ea": "0x0053C724",
+        "target": "0x00534D70",
+        "target_func": "0x00534D70",
+        "target_name": "sub_534D70"
+      },
+      {
+        "slot_ea": "0x0053C728",
+        "target": "0x00534D80",
+        "target_func": "0x00534D80",
+        "target_name": "sub_534D80"
+      },
+      {
+        "slot_ea": "0x0053C72C",
+        "target": "0x00534DB0",
+        "target_func": "0x00534DB0",
+        "target_name": "sub_534DB0"
+      },
+      {
+        "slot_ea": "0x0053C730",
+        "target": "0x00534DF0",
+        "target_func": "0x00534DF0",
+        "target_name": "sub_534DF0"
+      },
+      {
+        "slot_ea": "0x0053C734",
+        "target": "0x00534E20",
+        "target_func": "0x00534E20",
+        "target_name": "sub_534E20"
+      },
+      {
+        "slot_ea": "0x0053C738",
+        "target": "0x00534E60",
+        "target_func": "0x00534E60",
+        "target_name": "sub_534E60"
+      },
+      {
+        "slot_ea": "0x0053C73C",
+        "target": "0x00534E80",
+        "target_func": "0x00534E80",
+        "target_name": "sub_534E80"
+      },
+      {
+        "slot_ea": "0x0053C740",
+        "target": "0x00534F00",
+        "target_func": "0x00534F00",
+        "target_name": "sub_534F00"
+      },
+      {
+        "slot_ea": "0x0053C744",
+        "target": "0x00534FC0",
+        "target_func": "0x00534FC0",
+        "target_name": "sub_534FC0"
+      },
+      {
+        "slot_ea": "0x0053C748",
+        "target": "0x00534FF0",
+        "target_func": "0x00534FF0",
+        "target_name": "sub_534FF0"
+      },
+      {
+        "slot_ea": "0x0053C74C",
+        "target": "0x00535030",
+        "target_func": "0x00535030",
+        "target_name": "sub_535030"
+      },
+      {
+        "slot_ea": "0x0053C750",
+        "target": "0x00535060",
+        "target_func": "0x00535060",
+        "target_name": "sub_535060"
+      },
+      {
+        "slot_ea": "0x0053C754",
+        "target": "0x005350A0",
+        "target_func": "0x005350A0",
+        "target_name": "sub_5350A0"
+      },
+      {
+        "slot_ea": "0x0053C758",
+        "target": "0x005350C0",
+        "target_func": "0x005350C0",
+        "target_name": "sub_5350C0"
+      },
+      {
+        "slot_ea": "0x0053C75C",
+        "target": "0x005350E0",
+        "target_func": "0x005350E0",
+        "target_name": "sub_5350E0"
+      },
+      {
+        "slot_ea": "0x0053C760",
+        "target": "0x00535110",
+        "target_func": "0x00535110",
+        "target_name": "sub_535110"
+      },
+      {
+        "slot_ea": "0x0053C764",
+        "target": "0x00535150",
+        "target_func": "0x00535150",
+        "target_name": "sub_535150"
+      },
+      {
+        "slot_ea": "0x0053C768",
+        "target": "0x00535180",
+        "target_func": "0x00535180",
+        "target_name": "sub_535180"
+      },
+      {
+        "slot_ea": "0x0053C76C",
+        "target": "0x005351C0",
+        "target_func": "0x005351C0",
+        "target_name": "sub_5351C0"
+      },
+      {
+        "slot_ea": "0x0053C770",
+        "target": "0x005351E0",
+        "target_func": "0x005351E0",
+        "target_name": "sub_5351E0"
+      },
+      {
+        "slot_ea": "0x0053C774",
+        "target": "0x00535200",
+        "target_func": "0x00535200",
+        "target_name": "sub_535200"
+      },
+      {
+        "slot_ea": "0x0053C778",
+        "target": "0x00535210",
+        "target_func": "0x00535210",
+        "target_name": "sub_535210"
+      },
+      {
+        "slot_ea": "0x0053C77C",
+        "target": "0x00535220",
+        "target_func": "0x00535220",
+        "target_name": "sub_535220"
+      },
+      {
+        "slot_ea": "0x0053C780",
+        "target": "0x00535240",
+        "target_func": "0x00535240",
+        "target_name": "sub_535240"
+      },
+      {
+        "slot_ea": "0x0053C784",
+        "target": "0x00535270",
+        "target_func": "0x00535270",
+        "target_name": "sub_535270"
+      },
+      {
+        "slot_ea": "0x0053C788",
+        "target": "0x005352B0",
+        "target_func": "0x005352B0",
+        "target_name": "sub_5352B0"
+      },
+      {
+        "slot_ea": "0x0053C78C",
+        "target": "0x00535320",
+        "target_func": "0x00535320",
+        "target_name": "sub_535320"
+      },
+      {
+        "slot_ea": "0x0053C790",
+        "target": "0x00535390",
+        "target_func": "0x00535390",
+        "target_name": "sub_535390"
+      },
+      {
+        "slot_ea": "0x0053C794",
+        "target": "0x00535400",
+        "target_func": "0x00535400",
+        "target_name": "sub_535400"
+      },
+      {
+        "slot_ea": "0x0053C798",
+        "target": "0x00535430",
+        "target_func": "0x00535430",
+        "target_name": "sub_535430"
+      },
+      {
+        "slot_ea": "0x0053C79C",
+        "target": "0x00535470",
+        "target_func": "0x00535470",
+        "target_name": "sub_535470"
+      },
+      {
+        "slot_ea": "0x0053C7A0",
+        "target": "0x005354A0",
+        "target_func": "0x005354A0",
+        "target_name": "sub_5354A0"
+      },
+      {
+        "slot_ea": "0x0053C7A4",
+        "target": "0x005354E0",
+        "target_func": "0x005354E0",
+        "target_name": "sub_5354E0"
+      },
+      {
+        "slot_ea": "0x0053C7A8",
+        "target": "0x00535500",
+        "target_func": "0x00535500",
+        "target_name": "sub_535500"
+      },
+      {
+        "slot_ea": "0x0053C7AC",
+        "target": "0x00535520",
+        "target_func": "0x00535520",
+        "target_name": "sub_535520"
+      },
+      {
+        "slot_ea": "0x0053C7B0",
+        "target": "0x005355B0",
+        "target_func": "0x005355B0",
+        "target_name": "sub_5355B0"
+      },
+      {
+        "slot_ea": "0x0053C7B4",
+        "target": "0x00535640",
+        "target_func": "0x00535640",
+        "target_name": "sub_535640"
+      },
+      {
+        "slot_ea": "0x0053C7B8",
+        "target": "0x005356D0",
+        "target_func": "0x005356D0",
+        "target_name": "sub_5356D0"
+      },
+      {
+        "slot_ea": "0x0053C7BC",
+        "target": "0x00535760",
+        "target_func": "0x00535760",
+        "target_name": "sub_535760"
+      },
+      {
+        "slot_ea": "0x0053C7C0",
+        "target": "0x005357F0",
+        "target_func": "0x005357F0",
+        "target_name": "sub_5357F0"
+      },
+      {
+        "slot_ea": "0x0053C7C4",
+        "target": "0x00535880",
+        "target_func": "0x00535880",
+        "target_name": "sub_535880"
+      },
+      {
+        "slot_ea": "0x0053C7C8",
+        "target": "0x00535910",
+        "target_func": "0x00535910",
+        "target_name": "sub_535910"
+      },
+      {
+        "slot_ea": "0x0053C7CC",
+        "target": "0x00535920",
+        "target_func": "0x00535920",
+        "target_name": "sub_535920"
+      },
+      {
+        "slot_ea": "0x0053C7D0",
+        "target": "0x005359B0",
+        "target_func": "0x005359B0",
+        "target_name": "sub_5359B0"
+      },
+      {
+        "slot_ea": "0x0053C7D4",
+        "target": "0x00535A40",
+        "target_func": "0x00535A40",
+        "target_name": "sub_535A40"
+      },
+      {
+        "slot_ea": "0x0053C7D8",
+        "target": "0x00535A60",
+        "target_func": "0x00535A60",
+        "target_name": "sub_535A60"
+      },
+      {
+        "slot_ea": "0x0053C7DC",
+        "target": "0x00535A70",
+        "target_func": "0x00535A70",
+        "target_name": "sub_535A70"
+      },
+      {
+        "slot_ea": "0x0053C7E0",
+        "target": "0x00535AE0",
+        "target_func": "0x00535AE0",
+        "target_name": "sub_535AE0"
+      },
+      {
+        "slot_ea": "0x0053C7E4",
+        "target": "0x00535B50",
+        "target_func": "0x00535B50",
+        "target_name": "sub_535B50"
+      },
+      {
+        "slot_ea": "0x0053C7E8",
+        "target": "0x00535BC0",
+        "target_func": "0x00535BC0",
+        "target_name": "sub_535BC0"
+      },
+      {
+        "slot_ea": "0x0053C7EC",
+        "target": "0x00535C30",
+        "target_func": "0x00535C30",
+        "target_name": "sub_535C30"
+      },
+      {
+        "slot_ea": "0x0053C7F0",
+        "target": "0x00535CA0",
+        "target_func": "0x00535CA0",
+        "target_name": "sub_535CA0"
+      },
+      {
+        "slot_ea": "0x0053C7F4",
+        "target": "0x00535D10",
+        "target_func": "0x00535D10",
+        "target_name": "sub_535D10"
+      },
+      {
+        "slot_ea": "0x0053C7F8",
+        "target": "0x00535D80",
+        "target_func": "0x00535D80",
+        "target_name": "sub_535D80"
+      },
+      {
+        "slot_ea": "0x0053C7FC",
+        "target": "0x00535DF0",
+        "target_func": "0x00535DF0",
+        "target_name": "sub_535DF0"
+      },
+      {
+        "slot_ea": "0x0053C800",
+        "target": "0x00535E60",
+        "target_func": "0x00535E60",
+        "target_name": "sub_535E60"
+      },
+      {
+        "slot_ea": "0x0053C804",
+        "target": "0x00535ED0",
+        "target_func": "0x00535ED0",
+        "target_name": "sub_535ED0"
+      },
+      {
+        "slot_ea": "0x0053C808",
+        "target": "0x00535F40",
+        "target_func": "0x00535F40",
+        "target_name": "sub_535F40"
+      },
+      {
+        "slot_ea": "0x0053C80C",
+        "target": "0x00535FE0",
+        "target_func": "0x00535FE0",
+        "target_name": "sub_535FE0"
+      },
+      {
+        "slot_ea": "0x0053C810",
+        "target": "0x00536050",
+        "target_func": "0x00536050",
+        "target_name": "sub_536050"
+      },
+      {
+        "slot_ea": "0x0053C814",
+        "target": "0x005360C0",
+        "target_func": "0x005360C0",
+        "target_name": "sub_5360C0"
+      },
+      {
+        "slot_ea": "0x0053C818",
+        "target": "0x00536130",
+        "target_func": "0x00536130",
+        "target_name": "sub_536130"
+      },
+      {
+        "slot_ea": "0x0053C81C",
+        "target": "0x005361D0",
+        "target_func": "0x005361D0",
+        "target_name": "sub_5361D0"
+      },
+      {
+        "slot_ea": "0x0053C820",
+        "target": "0x00536240",
+        "target_func": "0x00536240",
+        "target_name": "sub_536240"
+      },
+      {
+        "slot_ea": "0x0053C824",
+        "target": "0x00536310",
+        "target_func": "0x00536310",
+        "target_name": "sub_536310"
+      },
+      {
+        "slot_ea": "0x0053C828",
+        "target": "0x005363E0",
+        "target_func": "0x005363E0",
+        "target_name": "sub_5363E0"
+      },
+      {
+        "slot_ea": "0x0053C82C",
+        "target": "0x005364B0",
+        "target_func": "0x005364B0",
+        "target_name": "sub_5364B0"
+      },
+      {
+        "slot_ea": "0x0053C830",
+        "target": "0x00536580",
+        "target_func": "0x00536580",
+        "target_name": "sub_536580"
+      },
+      {
+        "slot_ea": "0x0053C834",
+        "target": "0x00536610",
+        "target_func": "0x00536610",
+        "target_name": "sub_536610"
+      },
+      {
+        "slot_ea": "0x0053C838",
+        "target": "0x00536680",
+        "target_func": "0x00536680",
+        "target_name": "sub_536680"
+      },
+      {
+        "slot_ea": "0x0053C83C",
+        "target": "0x005366F0",
+        "target_func": "0x005366F0",
+        "target_name": "sub_5366F0"
+      },
+      {
+        "slot_ea": "0x0053C840",
+        "target": "0x00536760",
+        "target_func": "0x00536760",
+        "target_name": "sub_536760"
+      },
+      {
+        "slot_ea": "0x0053C844",
+        "target": "0x005367D0",
+        "target_func": "0x005367D0",
+        "target_name": "sub_5367D0"
+      },
+      {
+        "slot_ea": "0x0053C848",
+        "target": "0x00536840",
+        "target_func": "0x00536840",
+        "target_name": "sub_536840"
+      },
+      {
+        "slot_ea": "0x0053C84C",
+        "target": "0x005368D0",
+        "target_func": "0x005368D0",
+        "target_name": "sub_5368D0"
+      },
+      {
+        "slot_ea": "0x0053C850",
+        "target": "0x00536940",
+        "target_func": "0x00536940",
+        "target_name": "sub_536940"
+      },
+      {
+        "slot_ea": "0x0053C854",
+        "target": "0x005369B0",
+        "target_func": "0x005369B0",
+        "target_name": "sub_5369B0"
+      },
+      {
+        "slot_ea": "0x0053C858",
+        "target": "0x00536A20",
+        "target_func": "0x00536A20",
+        "target_name": "sub_536A20"
+      },
+      {
+        "slot_ea": "0x0053C85C",
+        "target": "0x00536A90",
+        "target_func": "0x00536A90",
+        "target_name": "sub_536A90"
+      },
+      {
+        "slot_ea": "0x0053C860",
+        "target": "0x00536B00",
+        "target_func": "0x00536B00",
+        "target_name": "sub_536B00"
+      },
+      {
+        "slot_ea": "0x0053C864",
+        "target": "0x00536B70",
+        "target_func": "0x00536B70",
+        "target_name": "sub_536B70"
+      },
+      {
+        "slot_ea": "0x0053C868",
+        "target": "0x00536BE0",
+        "target_func": "0x00536BE0",
+        "target_name": "sub_536BE0"
+      },
+      {
+        "slot_ea": "0x0053C86C",
+        "target": "0x00536C60",
+        "target_func": "0x00536C60",
+        "target_name": "sub_536C60"
+      },
+      {
+        "slot_ea": "0x0053C870",
+        "target": "0x00536CD0",
+        "target_func": "0x00536CD0",
+        "target_name": "sub_536CD0"
+      },
+      {
+        "slot_ea": "0x0053C874",
+        "target": "0x00536D40",
+        "target_func": "0x00536D40",
+        "target_name": "sub_536D40"
+      },
+      {
+        "slot_ea": "0x0053C878",
+        "target": "0x00536DB0",
+        "target_func": "0x00536DB0",
+        "target_name": "sub_536DB0"
+      },
+      {
+        "slot_ea": "0x0053C87C",
+        "target": "0x00536E20",
+        "target_func": "0x00536E20",
+        "target_name": "sub_536E20"
+      },
+      {
+        "slot_ea": "0x0053C880",
+        "target": "0x00536E90",
+        "target_func": "0x00536E90",
+        "target_name": "sub_536E90"
+      },
+      {
+        "slot_ea": "0x0053C884",
+        "target": "0x00536F00",
+        "target_func": "0x00536F00",
+        "target_name": "sub_536F00"
+      },
+      {
+        "slot_ea": "0x0053C888",
+        "target": "0x00536F70",
+        "target_func": "0x00536F70",
+        "target_name": "sub_536F70"
+      },
+      {
+        "slot_ea": "0x0053C88C",
+        "target": "0x00536FE0",
+        "target_func": "0x00536FE0",
+        "target_name": "sub_536FE0"
+      },
+      {
+        "slot_ea": "0x0053C890",
+        "target": "0x00537050",
+        "target_func": "0x00537050",
+        "target_name": "sub_537050"
+      },
+      {
+        "slot_ea": "0x0053C894",
+        "target": "0x005370C0",
+        "target_func": "0x005370C0",
+        "target_name": "sub_5370C0"
+      },
+      {
+        "slot_ea": "0x0053C898",
+        "target": "0x00537130",
+        "target_func": "0x00537130",
+        "target_name": "sub_537130"
+      },
+      {
+        "slot_ea": "0x0053C89C",
+        "target": "0x005371A0",
+        "target_func": "0x005371A0",
+        "target_name": "sub_5371A0"
+      },
+      {
+        "slot_ea": "0x0053C8A0",
+        "target": "0x00537210",
+        "target_func": "0x00537210",
+        "target_name": "sub_537210"
+      },
+      {
+        "slot_ea": "0x0053C8A4",
+        "target": "0x00537280",
+        "target_func": "0x00537280",
+        "target_name": "sub_537280"
+      },
+      {
+        "slot_ea": "0x0053C8A8",
+        "target": "0x005372F0",
+        "target_func": "0x005372F0",
+        "target_name": "sub_5372F0"
+      },
+      {
+        "slot_ea": "0x0053C8AC",
+        "target": "0x00537360",
+        "target_func": "0x00537360",
+        "target_name": "sub_537360"
+      },
+      {
+        "slot_ea": "0x0053C8B0",
+        "target": "0x005373D0",
+        "target_func": "0x005373D0",
+        "target_name": "sub_5373D0"
+      },
+      {
+        "slot_ea": "0x0053C8B4",
+        "target": "0x00537440",
+        "target_func": "0x00537440",
+        "target_name": "sub_537440"
+      },
+      {
+        "slot_ea": "0x0053C8B8",
+        "target": "0x00537470",
+        "target_func": "0x00537470",
+        "target_name": "sub_537470"
+      },
+      {
+        "slot_ea": "0x0053C8BC",
+        "target": "0x005374B0",
+        "target_func": "0x005374B0",
+        "target_name": "sub_5374B0"
+      },
+      {
+        "slot_ea": "0x0053C8C0",
+        "target": "0x005374E0",
+        "target_func": "0x005374E0",
+        "target_name": "sub_5374E0"
+      },
+      {
+        "slot_ea": "0x0053C8C4",
+        "target": "0x00537520",
+        "target_func": "0x00537520",
+        "target_name": "sub_537520"
+      },
+      {
+        "slot_ea": "0x0053C8C8",
+        "target": "0x00537550",
+        "target_func": "0x00537550",
+        "target_name": "sub_537550"
+      },
+      {
+        "slot_ea": "0x0053C8CC",
+        "target": "0x00537590",
+        "target_func": "0x00537590",
+        "target_name": "sub_537590"
+      },
+      {
+        "slot_ea": "0x0053C8D0",
+        "target": "0x005375C0",
+        "target_func": "0x005375C0",
+        "target_name": "sub_5375C0"
+      },
+      {
+        "slot_ea": "0x0053C8D4",
+        "target": "0x00537600",
+        "target_func": "0x00537600",
+        "target_name": "sub_537600"
+      },
+      {
+        "slot_ea": "0x0053C8D8",
+        "target": "0x00537630",
+        "target_func": "0x00537630",
+        "target_name": "sub_537630"
+      },
+      {
+        "slot_ea": "0x0053C8DC",
+        "target": "0x00537670",
+        "target_func": "0x00537670",
+        "target_name": "sub_537670"
+      },
+      {
+        "slot_ea": "0x0053C8E0",
+        "target": "0x005376A0",
+        "target_func": "0x005376A0",
+        "target_name": "sub_5376A0"
+      },
+      {
+        "slot_ea": "0x0053C8E4",
+        "target": "0x005376E0",
+        "target_func": "0x005376E0",
+        "target_name": "sub_5376E0"
+      },
+      {
+        "slot_ea": "0x0053C8E8",
+        "target": "0x00537710",
+        "target_func": "0x00537710",
+        "target_name": "sub_537710"
+      },
+      {
+        "slot_ea": "0x0053C8EC",
+        "target": "0x00537750",
+        "target_func": "0x00537750",
+        "target_name": "sub_537750"
+      },
+      {
+        "slot_ea": "0x0053C8F0",
+        "target": "0x00537780",
+        "target_func": "0x00537780",
+        "target_name": "sub_537780"
+      },
+      {
+        "slot_ea": "0x0053C8F4",
+        "target": "0x005377C0",
+        "target_func": "0x005377C0",
+        "target_name": "sub_5377C0"
+      },
+      {
+        "slot_ea": "0x0053C8F8",
+        "target": "0x005377F0",
+        "target_func": "0x005377F0",
+        "target_name": "sub_5377F0"
+      },
+      {
+        "slot_ea": "0x0053C8FC",
+        "target": "0x00537830",
+        "target_func": "0x00537830",
+        "target_name": "sub_537830"
+      },
+      {
+        "slot_ea": "0x0053C900",
+        "target": "0x00537860",
+        "target_func": "0x00537860",
+        "target_name": "sub_537860"
+      },
+      {
+        "slot_ea": "0x0053C904",
+        "target": "0x005378A0",
+        "target_func": "0x005378A0",
+        "target_name": "sub_5378A0"
+      },
+      {
+        "slot_ea": "0x0053C908",
+        "target": "0x005378B0",
+        "target_func": "0x005378B0",
+        "target_name": "sub_5378B0"
+      },
+      {
+        "slot_ea": "0x0053C90C",
+        "target": "0x005378E0",
+        "target_func": "0x005378E0",
+        "target_name": "sub_5378E0"
+      },
+      {
+        "slot_ea": "0x0053C910",
+        "target": "0x00537920",
+        "target_func": "0x00537920",
+        "target_name": "sub_537920"
+      },
+      {
+        "slot_ea": "0x0053C914",
+        "target": "0x00537940",
+        "target_func": "0x00537940",
+        "target_name": "sub_537940"
+      },
+      {
+        "slot_ea": "0x0053C918",
+        "target": "0x00537960",
+        "target_func": "0x00537960",
+        "target_name": "sub_537960"
+      },
+      {
+        "slot_ea": "0x0053C91C",
+        "target": "0x00537990",
+        "target_func": "0x00537990",
+        "target_name": "sub_537990"
+      },
+      {
+        "slot_ea": "0x0053C920",
+        "target": "0x005379D0",
+        "target_func": "0x005379D0",
+        "target_name": "sub_5379D0"
+      },
+      {
+        "slot_ea": "0x0053C924",
+        "target": "0x00537A00",
+        "target_func": "0x00537A00",
+        "target_name": "sub_537A00"
+      },
+      {
+        "slot_ea": "0x0053C928",
+        "target": "0x00537A40",
+        "target_func": "0x00537A40",
+        "target_name": "sub_537A40"
+      },
+      {
+        "slot_ea": "0x0053C92C",
+        "target": "0x00537A70",
+        "target_func": "0x00537A70",
+        "target_name": "sub_537A70"
+      },
+      {
+        "slot_ea": "0x0053C930",
+        "target": "0x00537AB0",
+        "target_func": "0x00537AB0",
+        "target_name": "sub_537AB0"
+      },
+      {
+        "slot_ea": "0x0053C934",
+        "target": "0x00537AC0",
+        "target_func": "0x00537AC0",
+        "target_name": "sub_537AC0"
+      },
+      {
+        "slot_ea": "0x0053C938",
+        "target": "0x00537AF0",
+        "target_func": "0x00537AF0",
+        "target_name": "sub_537AF0"
+      },
+      {
+        "slot_ea": "0x0053C93C",
+        "target": "0x00537B30",
+        "target_func": "0x00537B30",
+        "target_name": "sub_537B30"
+      },
+      {
+        "slot_ea": "0x0053C940",
+        "target": "0x00537B60",
+        "target_func": "0x00537B60",
+        "target_name": "sub_537B60"
+      },
+      {
+        "slot_ea": "0x0053C944",
+        "target": "0x00537BA0",
+        "target_func": "0x00537BA0",
+        "target_name": "sub_537BA0"
+      },
+      {
+        "slot_ea": "0x0053C948",
+        "target": "0x00537BB0",
+        "target_func": "0x00537BB0",
+        "target_name": "sub_537BB0"
+      },
+      {
+        "slot_ea": "0x0053C94C",
+        "target": "0x00537BE0",
+        "target_func": "0x00537BE0",
+        "target_name": "sub_537BE0"
+      },
+      {
+        "slot_ea": "0x0053C950",
+        "target": "0x00537C20",
+        "target_func": "0x00537C20",
+        "target_name": "sub_537C20"
+      },
+      {
+        "slot_ea": "0x0053C954",
+        "target": "0x00537C50",
+        "target_func": "0x00537C50",
+        "target_name": "sub_537C50"
+      },
+      {
+        "slot_ea": "0x0053C958",
+        "target": "0x00537C90",
+        "target_func": "0x00537C90",
+        "target_name": "sub_537C90"
+      },
+      {
+        "slot_ea": "0x0053C95C",
+        "target": "0x00537CC0",
+        "target_func": "0x00537CC0",
+        "target_name": "sub_537CC0"
+      },
+      {
+        "slot_ea": "0x0053C960",
+        "target": "0x00537D00",
+        "target_func": "0x00537D00",
+        "target_name": "sub_537D00"
+      },
+      {
+        "slot_ea": "0x0053C964",
+        "target": "0x00537D30",
+        "target_func": "0x00537D30",
+        "target_name": "sub_537D30"
+      },
+      {
+        "slot_ea": "0x0053C968",
+        "target": "0x00537D70",
+        "target_func": "0x00537D70",
+        "target_name": "sub_537D70"
+      },
+      {
+        "slot_ea": "0x0053C96C",
+        "target": "0x00537DE0",
+        "target_func": "0x00537DE0",
+        "target_name": "sub_537DE0"
+      },
+      {
+        "slot_ea": "0x0053C970",
+        "target": "0x00537E10",
+        "target_func": "0x00537E10",
+        "target_name": "sub_537E10"
+      },
+      {
+        "slot_ea": "0x0053C974",
+        "target": "0x00537E50",
+        "target_func": "0x00537E50",
+        "target_name": "sub_537E50"
+      },
+      {
+        "slot_ea": "0x0053C978",
+        "target": "0x00537E80",
+        "target_func": "0x00537E80",
+        "target_name": "sub_537E80"
+      },
+      {
+        "slot_ea": "0x0053C97C",
+        "target": "0x00537EC0",
+        "target_func": "0x00537EC0",
+        "target_name": "sub_537EC0"
+      },
+      {
+        "slot_ea": "0x0053C980",
+        "target": "0x00537EE0",
+        "target_func": "0x00537EE0",
+        "target_name": "sub_537EE0"
+      },
+      {
+        "slot_ea": "0x0053C984",
+        "target": "0x00537F00",
+        "target_func": "0x00537F00",
+        "target_name": "sub_537F00"
+      },
+      {
+        "slot_ea": "0x0053C988",
+        "target": "0x00537F30",
+        "target_func": "0x00537F30",
+        "target_name": "sub_537F30"
+      },
+      {
+        "slot_ea": "0x0053C98C",
+        "target": "0x00537F70",
+        "target_func": "0x00537F70",
+        "target_name": "sub_537F70"
+      },
+      {
+        "slot_ea": "0x0053C990",
+        "target": "0x00537F90",
+        "target_func": "0x00537F90",
+        "target_name": "sub_537F90"
+      },
+      {
+        "slot_ea": "0x0053C994",
+        "target": "0x00537FB0",
+        "target_func": "0x00537FB0",
+        "target_name": "sub_537FB0"
+      },
+      {
+        "slot_ea": "0x0053C998",
+        "target": "0x00537FF0",
+        "target_func": "0x00537FF0",
+        "target_name": "sub_537FF0"
+      },
+      {
+        "slot_ea": "0x0053C99C",
+        "target": "0x00538030",
+        "target_func": "0x00538030",
+        "target_name": "sub_538030"
+      },
+      {
+        "slot_ea": "0x0053C9A0",
+        "target": "0x00538060",
+        "target_func": "0x00538060",
+        "target_name": "sub_538060"
+      },
+      {
+        "slot_ea": "0x0053C9A4",
+        "target": "0x005380A0",
+        "target_func": "0x005380A0",
+        "target_name": "sub_5380A0"
+      },
+      {
+        "slot_ea": "0x0053C9A8",
+        "target": "0x005380C0",
+        "target_func": "0x005380C0",
+        "target_name": "sub_5380C0"
+      },
+      {
+        "slot_ea": "0x0053C9AC",
+        "target": "0x005380E0",
+        "target_func": "0x005380E0",
+        "target_name": "sub_5380E0"
+      },
+      {
+        "slot_ea": "0x0053C9B0",
+        "target": "0x00538110",
+        "target_func": "0x00538110",
+        "target_name": "sub_538110"
+      },
+      {
+        "slot_ea": "0x0053C9B4",
+        "target": "0x00538150",
+        "target_func": "0x00538150",
+        "target_name": "sub_538150"
+      },
+      {
+        "slot_ea": "0x0053C9B8",
+        "target": "0x00538170",
+        "target_func": "0x00538170",
+        "target_name": "sub_538170"
+      },
+      {
+        "slot_ea": "0x0053C9BC",
+        "target": "0x00538190",
+        "target_func": "0x00538190",
+        "target_name": "sub_538190"
+      },
+      {
+        "slot_ea": "0x0053C9C0",
+        "target": "0x005381C0",
+        "target_func": "0x005381C0",
+        "target_name": "sub_5381C0"
+      },
+      {
+        "slot_ea": "0x0053C9C4",
+        "target": "0x00538200",
+        "target_func": "0x00538200",
+        "target_name": "sub_538200"
+      },
+      {
+        "slot_ea": "0x0053C9C8",
+        "target": "0x00538220",
+        "target_func": "0x00538220",
+        "target_name": "sub_538220"
+      },
+      {
+        "slot_ea": "0x0053C9CC",
+        "target": "0x00538240",
+        "target_func": "0x00538240",
+        "target_name": "sub_538240"
+      },
+      {
+        "slot_ea": "0x0053C9D0",
+        "target": "0x00538270",
+        "target_func": "0x00538270",
+        "target_name": "sub_538270"
+      },
+      {
+        "slot_ea": "0x0053C9D4",
+        "target": "0x005382B0",
+        "target_func": "0x005382B0",
+        "target_name": "sub_5382B0"
+      },
+      {
+        "slot_ea": "0x0053C9D8",
+        "target": "0x005382C0",
+        "target_func": "0x005382C0",
+        "target_name": "sub_5382C0"
+      },
+      {
+        "slot_ea": "0x0053C9DC",
+        "target": "0x005382F0",
+        "target_func": "0x005382F0",
+        "target_name": "sub_5382F0"
+      },
+      {
+        "slot_ea": "0x0053C9E0",
+        "target": "0x00538330",
+        "target_func": "0x00538330",
+        "target_name": "sub_538330"
+      },
+      {
+        "slot_ea": "0x0053C9E4",
+        "target": "0x00538350",
+        "target_func": "0x00538350",
+        "target_name": "sub_538350"
+      },
+      {
+        "slot_ea": "0x0053C9E8",
+        "target": "0x00538370",
+        "target_func": "0x00538370",
+        "target_name": "sub_538370"
+      },
+      {
+        "slot_ea": "0x0053C9EC",
+        "target": "0x005383A0",
+        "target_func": "0x005383A0",
+        "target_name": "sub_5383A0"
+      },
+      {
+        "slot_ea": "0x0053C9F0",
+        "target": "0x005383E0",
+        "target_func": "0x005383E0",
+        "target_name": "sub_5383E0"
+      },
+      {
+        "slot_ea": "0x0053C9F4",
+        "target": "0x00538410",
+        "target_func": "0x00538410",
+        "target_name": "sub_538410"
+      },
+      {
+        "slot_ea": "0x0053C9F8",
+        "target": "0x00538450",
+        "target_func": "0x00538450",
+        "target_name": "sub_538450"
+      },
+      {
+        "slot_ea": "0x0053C9FC",
+        "target": "0x00538470",
+        "target_func": "0x00538470",
+        "target_name": "sub_538470"
+      },
+      {
+        "slot_ea": "0x0053CA00",
+        "target": "0x00538490",
+        "target_func": "0x00538490",
+        "target_name": "sub_538490"
+      },
+      {
+        "slot_ea": "0x0053CA04",
+        "target": "0x005384C0",
+        "target_func": "0x005384C0",
+        "target_name": "sub_5384C0"
+      },
+      {
+        "slot_ea": "0x0053CA08",
+        "target": "0x00538500",
+        "target_func": "0x00538500",
+        "target_name": "sub_538500"
+      },
+      {
+        "slot_ea": "0x0053CA0C",
+        "target": "0x00538520",
+        "target_func": "0x00538520",
+        "target_name": "sub_538520"
+      },
+      {
+        "slot_ea": "0x0053CA10",
+        "target": "0x00538540",
+        "target_func": "0x00538540",
+        "target_name": "sub_538540"
+      },
+      {
+        "slot_ea": "0x0053CA14",
+        "target": "0x00538570",
+        "target_func": "0x00538570",
+        "target_name": "sub_538570"
+      },
+      {
+        "slot_ea": "0x0053CA18",
+        "target": "0x005385B0",
+        "target_func": "0x005385B0",
+        "target_name": "sub_5385B0"
+      },
+      {
+        "slot_ea": "0x0053CA1C",
+        "target": "0x005385D0",
+        "target_func": "0x005385D0",
+        "target_name": "sub_5385D0"
+      },
+      {
+        "slot_ea": "0x0053CA20",
+        "target": "0x005385F0",
+        "target_func": "0x005385F0",
+        "target_name": "sub_5385F0"
+      },
+      {
+        "slot_ea": "0x0053CA24",
+        "target": "0x00538620",
+        "target_func": "0x00538620",
+        "target_name": "sub_538620"
+      },
+      {
+        "slot_ea": "0x0053CA28",
+        "target": "0x00538660",
+        "target_func": "0x00538660",
+        "target_name": "sub_538660"
+      },
+      {
+        "slot_ea": "0x0053CA2C",
+        "target": "0x00538680",
+        "target_func": "0x00538680",
+        "target_name": "sub_538680"
+      },
+      {
+        "slot_ea": "0x0053CA30",
+        "target": "0x005386A0",
+        "target_func": "0x005386A0",
+        "target_name": "sub_5386A0"
+      },
+      {
+        "slot_ea": "0x0053CA34",
+        "target": "0x005386D0",
+        "target_func": "0x005386D0",
+        "target_name": "sub_5386D0"
+      },
+      {
+        "slot_ea": "0x0053CA38",
+        "target": "0x00538710",
+        "target_func": "0x00538710",
+        "target_name": "sub_538710"
+      },
+      {
+        "slot_ea": "0x0053CA3C",
+        "target": "0x00538730",
+        "target_func": "0x00538730",
+        "target_name": "sub_538730"
+      },
+      {
+        "slot_ea": "0x0053CA40",
+        "target": "0x00538750",
+        "target_func": "0x00538750",
+        "target_name": "sub_538750"
+      },
+      {
+        "slot_ea": "0x0053CA44",
+        "target": "0x00538780",
+        "target_func": "0x00538780",
+        "target_name": "sub_538780"
+      },
+      {
+        "slot_ea": "0x0053CA48",
+        "target": "0x005387C0",
+        "target_func": "0x005387C0",
+        "target_name": "sub_5387C0"
+      },
+      {
+        "slot_ea": "0x0053CA4C",
+        "target": "0x005387E0",
+        "target_func": "0x005387E0",
+        "target_name": "sub_5387E0"
+      },
+      {
+        "slot_ea": "0x0053CA50",
+        "target": "0x00538800",
+        "target_func": "0x00538800",
+        "target_name": "sub_538800"
+      },
+      {
+        "slot_ea": "0x0053CA54",
+        "target": "0x00538860",
+        "target_func": "0x00538860",
+        "target_name": "sub_538860"
+      },
+      {
+        "slot_ea": "0x0053CA58",
+        "target": "0x005388C0",
+        "target_func": "0x005388C0",
+        "target_name": "sub_5388C0"
+      },
+      {
+        "slot_ea": "0x0053CA5C",
+        "target": "0x00538920",
+        "target_func": "0x00538920",
+        "target_name": "sub_538920"
+      },
+      {
+        "slot_ea": "0x0053CA60",
+        "target": "0x00538930",
+        "target_func": "0x00538930",
+        "target_name": "sub_538930"
+      },
+      {
+        "slot_ea": "0x0053CA64",
+        "target": "0x005389F0",
+        "target_func": "0x005389F0",
+        "target_name": "sub_5389F0"
+      },
+      {
+        "slot_ea": "0x0053CA68",
+        "target": "0x00538A50",
+        "target_func": "0x00538A50",
+        "target_name": "sub_538A50"
+      },
+      {
+        "slot_ea": "0x0053CA6C",
+        "target": "0x00538A70",
+        "target_func": "0x00538A70",
+        "target_name": "sub_538A70"
+      },
+      {
+        "slot_ea": "0x0053CA70",
+        "target": "0x00538AA0",
+        "target_func": "0x00538AA0",
+        "target_name": "sub_538AA0"
+      },
+      {
+        "slot_ea": "0x0053CA74",
+        "target": "0x00538AE0",
+        "target_func": "0x00538AE0",
+        "target_name": "sub_538AE0"
+      },
+      {
+        "slot_ea": "0x0053CA78",
+        "target": "0x00538B00",
+        "target_func": "0x00538B00",
+        "target_name": "sub_538B00"
+      },
+      {
+        "slot_ea": "0x0053CA7C",
+        "target": "0x00538B20",
+        "target_func": "0x00538B20",
+        "target_name": "sub_538B20"
+      },
+      {
+        "slot_ea": "0x0053CA80",
+        "target": "0x00538B50",
+        "target_func": "0x00538B50",
+        "target_name": "sub_538B50"
+      },
+      {
+        "slot_ea": "0x0053CA84",
+        "target": "0x00538B90",
+        "target_func": "0x00538B90",
+        "target_name": "sub_538B90"
+      },
+      {
+        "slot_ea": "0x0053CA88",
+        "target": "0x00538BC0",
+        "target_func": "0x00538BC0",
+        "target_name": "sub_538BC0"
+      },
+      {
+        "slot_ea": "0x0053CA8C",
+        "target": "0x00538C00",
+        "target_func": "0x00538C00",
+        "target_name": "sub_538C00"
+      },
+      {
+        "slot_ea": "0x0053CA90",
+        "target": "0x00538C20",
+        "target_func": "0x00538C20",
+        "target_name": "sub_538C20"
+      },
+      {
+        "slot_ea": "0x0053CA94",
+        "target": "0x00538C40",
+        "target_func": "0x00538C40",
+        "target_name": "sub_538C40"
+      },
+      {
+        "slot_ea": "0x0053CA98",
+        "target": "0x00538C70",
+        "target_func": "0x00538C70",
+        "target_name": "sub_538C70"
+      },
+      {
+        "slot_ea": "0x0053CA9C",
+        "target": "0x00538CB0",
+        "target_func": "0x00538CB0",
+        "target_name": "sub_538CB0"
+      },
+      {
+        "slot_ea": "0x0053CAA0",
+        "target": "0x00538CD0",
+        "target_func": "0x00538CD0",
+        "target_name": "sub_538CD0"
+      },
+      {
+        "slot_ea": "0x0053CAA4",
+        "target": "0x00538CF0",
+        "target_func": "0x00538CF0",
+        "target_name": "sub_538CF0"
+      },
+      {
+        "slot_ea": "0x0053CAA8",
+        "target": "0x00538D10",
+        "target_func": "0x00538D10",
+        "target_name": "sub_538D10"
+      },
+      {
+        "slot_ea": "0x0053CAAC",
+        "target": "0x00538D30",
+        "target_func": "0x00538D30",
+        "target_name": "sub_538D30"
+      },
+      {
+        "slot_ea": "0x0053CAB0",
+        "target": "0x00538D50",
+        "target_func": "0x00538D50",
+        "target_name": "sub_538D50"
+      },
+      {
+        "slot_ea": "0x0053CAB4",
+        "target": "0x00538D80",
+        "target_func": "0x00538D80",
+        "target_name": "sub_538D80"
+      },
+      {
+        "slot_ea": "0x0053CAB8",
+        "target": "0x00538DC0",
+        "target_func": "0x00538DC0",
+        "target_name": "sub_538DC0"
+      },
+      {
+        "slot_ea": "0x0053CABC",
+        "target": "0x00538DE0",
+        "target_func": "0x00538DE0",
+        "target_name": "sub_538DE0"
+      },
+      {
+        "slot_ea": "0x0053CAC0",
+        "target": "0x00538E00",
+        "target_func": "0x00538E00",
+        "target_name": "sub_538E00"
+      },
+      {
+        "slot_ea": "0x0053CAC4",
+        "target": "0x00538E30",
+        "target_func": "0x00538E30",
+        "target_name": "sub_538E30"
+      },
+      {
+        "slot_ea": "0x0053CAC8",
+        "target": "0x00538E70",
+        "target_func": "0x00538E70",
+        "target_name": "sub_538E70"
+      },
+      {
+        "slot_ea": "0x0053CACC",
+        "target": "0x00538E90",
+        "target_func": "0x00538E90",
+        "target_name": "sub_538E90"
+      },
+      {
+        "slot_ea": "0x0053CAD0",
+        "target": "0x00538EB0",
+        "target_func": "0x00538EB0",
+        "target_name": "sub_538EB0"
+      },
+      {
+        "slot_ea": "0x0053CAD4",
+        "target": "0x00538EE0",
+        "target_func": "0x00538EE0",
+        "target_name": "sub_538EE0"
+      },
+      {
+        "slot_ea": "0x0053CAD8",
+        "target": "0x00538F20",
+        "target_func": "0x00538F20",
+        "target_name": "sub_538F20"
+      },
+      {
+        "slot_ea": "0x0053CADC",
+        "target": "0x00538F50",
+        "target_func": "0x00538F50",
+        "target_name": "sub_538F50"
+      },
+      {
+        "slot_ea": "0x0053CAE0",
+        "target": "0x00538F90",
+        "target_func": "0x00538F90",
+        "target_name": "sub_538F90"
+      },
+      {
+        "slot_ea": "0x0053CAE4",
+        "target": "0x00538FB0",
+        "target_func": "0x00538FB0",
+        "target_name": "sub_538FB0"
+      },
+      {
+        "slot_ea": "0x0053CAE8",
+        "target": "0x00538FD0",
+        "target_func": "0x00538FD0",
+        "target_name": "sub_538FD0"
+      },
+      {
+        "slot_ea": "0x0053CAEC",
+        "target": "0x00539000",
+        "target_func": "0x00539000",
+        "target_name": "sub_539000"
+      },
+      {
+        "slot_ea": "0x0053CAF0",
+        "target": "0x00539040",
+        "target_func": "0x00539040",
+        "target_name": "sub_539040"
+      },
+      {
+        "slot_ea": "0x0053CAF4",
+        "target": "0x00539060",
+        "target_func": "0x00539060",
+        "target_name": "sub_539060"
+      },
+      {
+        "slot_ea": "0x0053CAF8",
+        "target": "0x00539080",
+        "target_func": "0x00539080",
+        "target_name": "sub_539080"
+      },
+      {
+        "slot_ea": "0x0053CAFC",
+        "target": "0x005390B0",
+        "target_func": "0x005390B0",
+        "target_name": "sub_5390B0"
+      },
+      {
+        "slot_ea": "0x0053CB00",
+        "target": "0x005390F0",
+        "target_func": "0x005390F0",
+        "target_name": "sub_5390F0"
+      },
+      {
+        "slot_ea": "0x0053CB04",
+        "target": "0x00539110",
+        "target_func": "0x00539110",
+        "target_name": "sub_539110"
+      },
+      {
+        "slot_ea": "0x0053CB08",
+        "target": "0x00539130",
+        "target_func": "0x00539130",
+        "target_name": "sub_539130"
+      },
+      {
+        "slot_ea": "0x0053CB0C",
+        "target": "0x00539160",
+        "target_func": "0x00539160",
+        "target_name": "sub_539160"
+      },
+      {
+        "slot_ea": "0x0053CB10",
+        "target": "0x005391A0",
+        "target_func": "0x005391A0",
+        "target_name": "sub_5391A0"
+      },
+      {
+        "slot_ea": "0x0053CB14",
+        "target": "0x005391C0",
+        "target_func": "0x005391C0",
+        "target_name": "sub_5391C0"
+      },
+      {
+        "slot_ea": "0x0053CB18",
+        "target": "0x005391E0",
+        "target_func": "0x005391E0",
+        "target_name": "sub_5391E0"
+      },
+      {
+        "slot_ea": "0x0053CB1C",
+        "target": "0x00539210",
+        "target_func": "0x00539210",
+        "target_name": "sub_539210"
+      },
+      {
+        "slot_ea": "0x0053CB20",
+        "target": "0x00539250",
+        "target_func": "0x00539250",
+        "target_name": "sub_539250"
+      },
+      {
+        "slot_ea": "0x0053CB24",
+        "target": "0x00539270",
+        "target_func": "0x00539270",
+        "target_name": "sub_539270"
+      },
+      {
+        "slot_ea": "0x0053CB28",
+        "target": "0x00539290",
+        "target_func": "0x00539290",
+        "target_name": "sub_539290"
+      },
+      {
+        "slot_ea": "0x0053CB2C",
+        "target": "0x005392C0",
+        "target_func": "0x005392C0",
+        "target_name": "sub_5392C0"
+      },
+      {
+        "slot_ea": "0x0053CB30",
+        "target": "0x00539300",
+        "target_func": "0x00539300",
+        "target_name": "sub_539300"
+      },
+      {
+        "slot_ea": "0x0053CB34",
+        "target": "0x00539320",
+        "target_func": "0x00539320",
+        "target_name": "sub_539320"
+      },
+      {
+        "slot_ea": "0x0053CB38",
+        "target": "0x00539340",
+        "target_func": "0x00539340",
+        "target_name": "sub_539340"
+      },
+      {
+        "slot_ea": "0x0053CB3C",
+        "target": "0x00539370",
+        "target_func": "0x00539370",
+        "target_name": "sub_539370"
+      },
+      {
+        "slot_ea": "0x0053CB40",
+        "target": "0x005393B0",
+        "target_func": "0x005393B0",
+        "target_name": "sub_5393B0"
+      },
+      {
+        "slot_ea": "0x0053CB44",
+        "target": "0x005393D0",
+        "target_func": "0x005393D0",
+        "target_name": "sub_5393D0"
+      },
+      {
+        "slot_ea": "0x0053CB48",
+        "target": "0x005393F0",
+        "target_func": "0x005393F0",
+        "target_name": "sub_5393F0"
+      },
+      {
+        "slot_ea": "0x0053CB4C",
+        "target": "0x00539400",
+        "target_func": "0x00539400",
+        "target_name": "sub_539400"
+      },
+      {
+        "slot_ea": "0x0053CB50",
+        "target": "0x00539410",
+        "target_func": "0x00539410",
+        "target_name": "sub_539410"
+      },
+      {
+        "slot_ea": "0x0053CB54",
+        "target": "0x00539420",
+        "target_func": "0x00539420",
+        "target_name": "sub_539420"
+      },
+      {
+        "slot_ea": "0x0053CB58",
+        "target": "0x00539450",
+        "target_func": "0x00539450",
+        "target_name": "sub_539450"
+      },
+      {
+        "slot_ea": "0x0053CB5C",
+        "target": "0x00539490",
+        "target_func": "0x00539490",
+        "target_name": "sub_539490"
+      },
+      {
+        "slot_ea": "0x0053CB60",
+        "target": "0x005394B0",
+        "target_func": "0x005394B0",
+        "target_name": "sub_5394B0"
+      },
+      {
+        "slot_ea": "0x0053CB64",
+        "target": "0x005394D0",
+        "target_func": "0x005394D0",
+        "target_name": "sub_5394D0"
+      },
+      {
+        "slot_ea": "0x0053CB68",
+        "target": "0x00539500",
+        "target_func": "0x00539500",
+        "target_name": "sub_539500"
+      },
+      {
+        "slot_ea": "0x0053CB6C",
+        "target": "0x00539540",
+        "target_func": "0x00539540",
+        "target_name": "sub_539540"
+      },
+      {
+        "slot_ea": "0x0053CB70",
+        "target": "0x00539570",
+        "target_func": "0x00539570",
+        "target_name": "sub_539570"
+      },
+      {
+        "slot_ea": "0x0053CB74",
+        "target": "0x005395B0",
+        "target_func": "0x005395B0",
+        "target_name": "sub_5395B0"
+      },
+      {
+        "slot_ea": "0x0053CB78",
+        "target": "0x005395D0",
+        "target_func": "0x005395D0",
+        "target_name": "sub_5395D0"
+      },
+      {
+        "slot_ea": "0x0053CB7C",
+        "target": "0x005395F0",
+        "target_func": "0x005395F0",
+        "target_name": "sub_5395F0"
+      },
+      {
+        "slot_ea": "0x0053CB80",
+        "target": "0x00539620",
+        "target_func": "0x00539620",
+        "target_name": "sub_539620"
+      },
+      {
+        "slot_ea": "0x0053CB84",
+        "target": "0x00539660",
+        "target_func": "0x00539660",
+        "target_name": "sub_539660"
+      },
+      {
+        "slot_ea": "0x0053CB88",
+        "target": "0x00539680",
+        "target_func": "0x00539680",
+        "target_name": "sub_539680"
+      },
+      {
+        "slot_ea": "0x0053CB8C",
+        "target": "0x005396A0",
+        "target_func": "0x005396A0",
+        "target_name": "sub_5396A0"
+      },
+      {
+        "slot_ea": "0x0053CB90",
+        "target": "0x005396D0",
+        "target_func": "0x005396D0",
+        "target_name": "sub_5396D0"
+      },
+      {
+        "slot_ea": "0x0053CB94",
+        "target": "0x00539710",
+        "target_func": "0x00539710",
+        "target_name": "sub_539710"
+      },
+      {
+        "slot_ea": "0x0053CB98",
+        "target": "0x00539730",
+        "target_func": "0x00539730",
+        "target_name": "sub_539730"
+      },
+      {
+        "slot_ea": "0x0053CB9C",
+        "target": "0x00539750",
+        "target_func": "0x00539750",
+        "target_name": "sub_539750"
+      },
+      {
+        "slot_ea": "0x0053CBA0",
+        "target": "0x00539780",
+        "target_func": "0x00539780",
+        "target_name": "sub_539780"
+      },
+      {
+        "slot_ea": "0x0053CBA4",
+        "target": "0x005397C0",
+        "target_func": "0x005397C0",
+        "target_name": "sub_5397C0"
+      },
+      {
+        "slot_ea": "0x0053CBA8",
+        "target": "0x00539820",
+        "target_func": "0x00539820",
+        "target_name": "sub_539820"
+      },
+      {
+        "slot_ea": "0x0053CBAC",
+        "target": "0x00539850",
+        "target_func": "0x00539850",
+        "target_name": "sub_539850"
+      },
+      {
+        "slot_ea": "0x0053CBB0",
+        "target": "0x00539890",
+        "target_func": "0x00539890",
+        "target_name": "sub_539890"
+      },
+      {
+        "slot_ea": "0x0053CBB4",
+        "target": "0x005398B0",
+        "target_func": "0x005398B0",
+        "target_name": "sub_5398B0"
+      },
+      {
+        "slot_ea": "0x0053CBB8",
+        "target": "0x005398D0",
+        "target_func": "0x005398D0",
+        "target_name": "sub_5398D0"
+      },
+      {
+        "slot_ea": "0x0053CBBC",
+        "target": "0x005398F0",
+        "target_func": "0x005398F0",
+        "target_name": "sub_5398F0"
+      },
+      {
+        "slot_ea": "0x0053CBC0",
+        "target": "0x00539920",
+        "target_func": "0x00539920",
+        "target_name": "sub_539920"
+      },
+      {
+        "slot_ea": "0x0053CBC4",
+        "target": "0x00539960",
+        "target_func": "0x00539960",
+        "target_name": "sub_539960"
+      },
+      {
+        "slot_ea": "0x0053CBC8",
+        "target": "0x00539990",
+        "target_func": "0x00539990",
+        "target_name": "sub_539990"
+      },
+      {
+        "slot_ea": "0x0053CBCC",
+        "target": "0x005399D0",
+        "target_func": "0x005399D0",
+        "target_name": "sub_5399D0"
+      },
+      {
+        "slot_ea": "0x0053CBD0",
+        "target": "0x00539A00",
+        "target_func": "0x00539A00",
+        "target_name": "sub_539A00"
+      },
+      {
+        "slot_ea": "0x0053CBD4",
+        "target": "0x00539A40",
+        "target_func": "0x00539A40",
+        "target_name": "sub_539A40"
+      },
+      {
+        "slot_ea": "0x0053CBD8",
+        "target": "0x00539A70",
+        "target_func": "0x00539A70",
+        "target_name": "sub_539A70"
+      },
+      {
+        "slot_ea": "0x0053CBDC",
+        "target": "0x00539AB0",
+        "target_func": "0x00539AB0",
+        "target_name": "sub_539AB0"
+      },
+      {
+        "slot_ea": "0x0053CBE0",
+        "target": "0x00539AE0",
+        "target_func": "0x00539AE0",
+        "target_name": "sub_539AE0"
+      },
+      {
+        "slot_ea": "0x0053CBE4",
+        "target": "0x00539B20",
+        "target_func": "0x00539B20",
+        "target_name": "sub_539B20"
+      },
+      {
+        "slot_ea": "0x0053CBE8",
+        "target": "0x00539B50",
+        "target_func": "0x00539B50",
+        "target_name": "sub_539B50"
+      },
+      {
+        "slot_ea": "0x0053CBEC",
+        "target": "0x00539B90",
+        "target_func": "0x00539B90",
+        "target_name": "sub_539B90"
+      },
+      {
+        "slot_ea": "0x0053CBF0",
+        "target": "0x00539BC0",
+        "target_func": "0x00539BC0",
+        "target_name": "sub_539BC0"
+      },
+      {
+        "slot_ea": "0x0053CBF4",
+        "target": "0x00539C00",
+        "target_func": "0x00539C00",
+        "target_name": "sub_539C00"
+      },
+      {
+        "slot_ea": "0x0053CBF8",
+        "target": "0x00539C30",
+        "target_func": "0x00539C30",
+        "target_name": "sub_539C30"
+      },
+      {
+        "slot_ea": "0x0053CBFC",
+        "target": "0x00539C70",
+        "target_func": "0x00539C70",
+        "target_name": "sub_539C70"
+      },
+      {
+        "slot_ea": "0x0053CC00",
+        "target": "0x00539CA0",
+        "target_func": "0x00539CA0",
+        "target_name": "sub_539CA0"
+      },
+      {
+        "slot_ea": "0x0053CC04",
+        "target": "0x00539CE0",
+        "target_func": "0x00539CE0",
+        "target_name": "sub_539CE0"
+      }
+    ],
+    "xrefs_to": []
+  },
+  {
+    "ea": "0x0053CC10",
+    "segment": ".rdata",
+    "name": "",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x0053CC10",
+        "target": "0x0052ED15",
+        "target_func": "0x0052ED15",
+        "target_name": "_pre_c_init"
+      },
+      {
+        "slot_ea": "0x0053CC14",
+        "target": "0x0052EF59",
+        "target_func": "0x0052EF59",
+        "target_name": "sub_52EF59"
+      },
+      {
+        "slot_ea": "0x0053CC18",
+        "target": "0x0052EFB8",
+        "target_func": "0x0052EFB8",
+        "target_name": "sub_52EFB8"
+      }
+    ],
+    "xrefs_to": []
+  },
+  {
+    "ea": "0x0053D7C0",
+    "segment": ".rdata",
+    "name": "??_7BloodEffListener@@6B@",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x0053D7C0",
+        "target": "0x00459EE0",
+        "target_func": "0x00459EE0",
+        "target_name": "sub_459EE0"
+      },
+      {
+        "slot_ea": "0x0053D7C4",
+        "target": "0x00459EC0",
+        "target_func": "0x00459EC0",
+        "target_name": "sub_459EC0"
+      },
+      {
+        "slot_ea": "0x0053D7C8",
+        "target": "0x0045A840",
+        "target_func": "0x0045A840",
+        "target_name": "sub_45A840"
+      }
+    ],
+    "xrefs_to": [
+      "0x0045AB52"
+    ]
+  },
+  {
+    "ea": "0x0053E088",
+    "segment": ".rdata",
+    "name": "??_7IEffectManager@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E088",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E08C",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E090",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E094",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E098",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E09C",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E0A0",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E0A4",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0053E0A8",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E0AC",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E0B0",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E0B4",
+        "target": "0x004673E0",
+        "target_func": "0x004673E0",
+        "target_name": "sub_4673E0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00465C90",
+      "0x00465CC7",
+      "0x004673E7",
+      "0x00469153"
+    ]
+  },
+  {
+    "ea": "0x0053E0BC",
+    "segment": ".rdata",
+    "name": "??_7CScriptedEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E0BC",
+        "target": "0x004693F0",
+        "target_func": "0x004693F0",
+        "target_name": "sub_4693F0"
+      },
+      {
+        "slot_ea": "0x0053E0C0",
+        "target": "0x00466490",
+        "target_func": "0x00466490",
+        "target_name": "sub_466490"
+      },
+      {
+        "slot_ea": "0x0053E0C4",
+        "target": "0x00469190",
+        "target_func": "0x00469190",
+        "target_name": "sub_469190"
+      },
+      {
+        "slot_ea": "0x0053E0C8",
+        "target": "0x00466500",
+        "target_func": "0x00466500",
+        "target_name": "sub_466500"
+      },
+      {
+        "slot_ea": "0x0053E0CC",
+        "target": "0x004675A0",
+        "target_func": "0x004675A0",
+        "target_name": "sub_4675A0"
+      },
+      {
+        "slot_ea": "0x0053E0D0",
+        "target": "0x00466520",
+        "target_func": "0x00466520",
+        "target_name": "sub_466520"
+      },
+      {
+        "slot_ea": "0x0053E0D4",
+        "target": "0x00467790",
+        "target_func": "0x00467790",
+        "target_name": "sub_467790"
+      },
+      {
+        "slot_ea": "0x0053E0D8",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E0DC",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E0E0",
+        "target": "0x004674F0",
+        "target_func": "0x004674F0",
+        "target_name": "sub_4674F0"
+      },
+      {
+        "slot_ea": "0x0053E0E4",
+        "target": "0x00465FF0",
+        "target_func": "0x00465FF0",
+        "target_name": "?GetAnonymousScheduleGroup@SchedulerBase@details@Concurrency@@QAEPAVScheduleGroupBase@23@XZ"
+      },
+      {
+        "slot_ea": "0x0053E0E8",
+        "target": "0x004698A0",
+        "target_func": "0x004698A0",
+        "target_name": "sub_4698A0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00465E1E",
+      "0x00468F3A"
+    ]
+  },
+  {
+    "ea": "0x0053E594",
+    "segment": ".rdata",
+    "name": "??_7CSpiralEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E594",
+        "target": "0x0046B650",
+        "target_func": "0x0046B650",
+        "target_name": "sub_46B650"
+      },
+      {
+        "slot_ea": "0x0053E598",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E59C",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E5A0",
+        "target": "0x0046B560",
+        "target_func": "0x0046B560",
+        "target_name": "sub_46B560"
+      },
+      {
+        "slot_ea": "0x0053E5A4",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x0053E5A8",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E5AC",
+        "target": "0x0046AF00",
+        "target_func": "0x0046AF00",
+        "target_name": "sub_46AF00"
+      },
+      {
+        "slot_ea": "0x0053E5B0",
+        "target": "0x0046AF80",
+        "target_func": "0x0046AF80",
+        "target_name": "sub_46AF80"
+      },
+      {
+        "slot_ea": "0x0053E5B4",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E5B8",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E5BC",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E5C0",
+        "target": "0x0046B630",
+        "target_func": "0x0046B630",
+        "target_name": "sub_46B630"
+      }
+    ],
+    "xrefs_to": [
+      "0x0046AE4E"
+    ]
+  },
+  {
+    "ea": "0x0053E5FC",
+    "segment": ".rdata",
+    "name": "??_7CMolEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E5FC",
+        "target": "0x0046B920",
+        "target_func": "0x0046B920",
+        "target_name": "sub_46B920"
+      },
+      {
+        "slot_ea": "0x0053E600",
+        "target": "0x0046B050",
+        "target_func": "0x0046B050",
+        "target_name": "sub_46B050"
+      },
+      {
+        "slot_ea": "0x0053E604",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E608",
+        "target": "0x0046B560",
+        "target_func": "0x0046B560",
+        "target_name": "sub_46B560"
+      },
+      {
+        "slot_ea": "0x0053E60C",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x0053E610",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E614",
+        "target": "0x0046B0B0",
+        "target_func": "0x0046B0B0",
+        "target_name": "sub_46B0B0"
+      },
+      {
+        "slot_ea": "0x0053E618",
+        "target": "0x0046B150",
+        "target_func": "0x0046B150",
+        "target_name": "sub_46B150"
+      },
+      {
+        "slot_ea": "0x0053E61C",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E620",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E624",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E628",
+        "target": "0x0046B8A0",
+        "target_func": "0x0046B8A0",
+        "target_name": "sub_46B8A0"
+      }
+    ],
+    "xrefs_to": [
+      "0x0046AFDD",
+      "0x0046B8C8"
+    ]
+  },
+  {
+    "ea": "0x0053E67C",
+    "segment": ".rdata",
+    "name": "??_7CBladeEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E67C",
+        "target": "0x0046BEA0",
+        "target_func": "0x0046BEA0",
+        "target_name": "sub_46BEA0"
+      },
+      {
+        "slot_ea": "0x0053E680",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E684",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E688",
+        "target": "0x0046B560",
+        "target_func": "0x0046B560",
+        "target_name": "sub_46B560"
+      },
+      {
+        "slot_ea": "0x0053E68C",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x0053E690",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E694",
+        "target": "0x0046B230",
+        "target_func": "0x0046B230",
+        "target_name": "sub_46B230"
+      },
+      {
+        "slot_ea": "0x0053E698",
+        "target": "0x0046B2D0",
+        "target_func": "0x0046B2D0",
+        "target_name": "sub_46B2D0"
+      },
+      {
+        "slot_ea": "0x0053E69C",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E6A0",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E6A4",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E6A8",
+        "target": "0x0046BE70",
+        "target_func": "0x0046BE70",
+        "target_name": "sub_46BE70"
+      }
+    ],
+    "xrefs_to": [
+      "0x0046B1AE",
+      "0x0046BE73"
+    ]
+  },
+  {
+    "ea": "0x0053E6F0",
+    "segment": ".rdata",
+    "name": "??_7CGazerLakeEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E6F0",
+        "target": "0x0046B380",
+        "target_func": "0x0046B380",
+        "target_name": "sub_46B380"
+      },
+      {
+        "slot_ea": "0x0053E6F4",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E6F8",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E6FC",
+        "target": "0x0046B560",
+        "target_func": "0x0046B560",
+        "target_name": "sub_46B560"
+      },
+      {
+        "slot_ea": "0x0053E700",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x0053E704",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E708",
+        "target": "0x0046C500",
+        "target_func": "0x0046C500",
+        "target_name": "sub_46C500"
+      },
+      {
+        "slot_ea": "0x0053E70C",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E710",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E714",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E718",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E71C",
+        "target": "0x0046C4E0",
+        "target_func": "0x0046C4E0",
+        "target_name": "sub_46C4E0"
+      }
+    ],
+    "xrefs_to": [
+      "0x0046B31A",
+      "0x0046C409"
+    ]
+  },
+  {
+    "ea": "0x0053E734",
+    "segment": ".rdata",
+    "name": "??_7CRainEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x0053E734",
+        "target": "0x0046C650",
+        "target_func": "0x0046C650",
+        "target_name": "sub_46C650"
+      },
+      {
+        "slot_ea": "0x0053E738",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E73C",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E740",
+        "target": "0x0046B560",
+        "target_func": "0x0046B560",
+        "target_name": "sub_46B560"
+      },
+      {
+        "slot_ea": "0x0053E744",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x0053E748",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E74C",
+        "target": "0x0046CE10",
+        "target_func": "0x0046CE10",
+        "target_name": "sub_46CE10"
+      },
+      {
+        "slot_ea": "0x0053E750",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x0053E754",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0053E758",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x0053E75C",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x0053E760",
+        "target": "0x0046C5C0",
+        "target_func": "0x0046C5C0",
+        "target_name": "sub_46C5C0"
+      }
+    ],
+    "xrefs_to": [
+      "0x0046B5C5",
+      "0x0046C5E8"
+    ]
+  },
+  {
+    "ea": "0x00540144",
+    "segment": ".rdata",
+    "name": "??_7?$CBaseManager@V?$CItemList@VCCommonItem@@@@VCCommonItem@@@@6B@",
+    "entry_count": 5,
+    "entries": [
+      {
+        "slot_ea": "0x00540144",
+        "target": "0x00487AF0",
+        "target_func": "0x00487AF0",
+        "target_name": "sub_487AF0"
+      },
+      {
+        "slot_ea": "0x00540148",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0054014C",
+        "target": "0x0047AF20",
+        "target_func": "0x0047AF20",
+        "target_name": "sub_47AF20"
+      },
+      {
+        "slot_ea": "0x00540150",
+        "target": "0x0047AF20",
+        "target_func": "0x0047AF20",
+        "target_name": "sub_47AF20"
+      },
+      {
+        "slot_ea": "0x00540154",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      }
+    ],
+    "xrefs_to": [
+      "0x00483726"
+    ]
+  },
+  {
+    "ea": "0x00541748",
+    "segment": ".rdata",
+    "name": "??_7CLightEffect@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00541748",
+        "target": "0x0048AF60",
+        "target_func": "0x0048AF60",
+        "target_name": "sub_48AF60"
+      },
+      {
+        "slot_ea": "0x0054174C",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x00541750",
+        "target": "0x0046B220",
+        "target_func": "0x0046B220",
+        "target_name": "nullsub_3"
+      },
+      {
+        "slot_ea": "0x00541754",
+        "target": "0x0048B070",
+        "target_func": "0x0048B070",
+        "target_name": "sub_48B070"
+      },
+      {
+        "slot_ea": "0x00541758",
+        "target": "0x0048B0B0",
+        "target_func": "0x0048B0B0",
+        "target_name": "sub_48B0B0"
+      },
+      {
+        "slot_ea": "0x0054175C",
+        "target": "0x0048B0E0",
+        "target_func": "0x0048B0E0",
+        "target_name": "sub_48B0E0"
+      },
+      {
+        "slot_ea": "0x00541760",
+        "target": "0x0048B0F0",
+        "target_func": "0x0048B0F0",
+        "target_name": "sub_48B0F0"
+      },
+      {
+        "slot_ea": "0x00541764",
+        "target": "0x0048B170",
+        "target_func": "0x0048B170",
+        "target_name": "sub_48B170"
+      },
+      {
+        "slot_ea": "0x00541768",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0054176C",
+        "target": "0x00465DB0",
+        "target_func": "0x00465DB0",
+        "target_name": "sub_465DB0"
+      },
+      {
+        "slot_ea": "0x00541770",
+        "target": "0x00465DE0",
+        "target_func": "0x00465DE0",
+        "target_name": "sub_465DE0"
+      },
+      {
+        "slot_ea": "0x00541774",
+        "target": "0x0048B240",
+        "target_func": "0x0048B240",
+        "target_name": "sub_48B240"
+      }
+    ],
+    "xrefs_to": [
+      "0x0048AEDC",
+      "0x0048B268"
+    ]
+  },
+  {
+    "ea": "0x005439EC",
+    "segment": ".rdata",
+    "name": "??_7NatureRainListener@@6B@",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x005439EC",
+        "target": "0x004BF490",
+        "target_func": "0x004BF490",
+        "target_name": "sub_4BF490"
+      },
+      {
+        "slot_ea": "0x005439F0",
+        "target": "0x004BF1F0",
+        "target_func": "0x004BF1F0",
+        "target_name": "sub_4BF1F0"
+      },
+      {
+        "slot_ea": "0x005439F4",
+        "target": "0x00459ED0",
+        "target_func": "0x00459ED0",
+        "target_name": "sub_459ED0"
+      }
+    ],
+    "xrefs_to": [
+      "0x004BF2F0"
+    ]
+  },
+  {
+    "ea": "0x005439FC",
+    "segment": ".rdata",
+    "name": "??_7LightingListener@@6B@",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x005439FC",
+        "target": "0x004BF260",
+        "target_func": "0x004BF260",
+        "target_name": "sub_4BF260"
+      },
+      {
+        "slot_ea": "0x00543A00",
+        "target": "0x004BEFE0",
+        "target_func": "0x004BEFE0",
+        "target_name": "sub_4BEFE0"
+      },
+      {
+        "slot_ea": "0x00543A04",
+        "target": "0x004BF000",
+        "target_func": "0x004BF000",
+        "target_name": "sub_4BF000"
+      }
+    ],
+    "xrefs_to": [
+      "0x004BF2F9"
+    ]
+  },
+  {
+    "ea": "0x00544D30",
+    "segment": ".rdata",
+    "name": "??_7CSoundFX@@6B@",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x00544D30",
+        "target": "0x0052E482",
+        "target_func": "0x0052E482",
+        "target_name": "?Play@CSound@@UAEHH@Z"
+      },
+      {
+        "slot_ea": "0x00544D34",
+        "target": "0x0052E488",
+        "target_func": "0x0052E488",
+        "target_name": "?Stop@CSound@@UAEXXZ"
+      },
+      {
+        "slot_ea": "0x00544D38",
+        "target": "0x0052E48E",
+        "target_func": "0x0052E48E",
+        "target_name": "?Rewind@CSound@@UAEHXZ"
+      }
+    ],
+    "xrefs_to": [
+      "0x004D71F2"
+    ]
+  },
+  {
+    "ea": "0x005458CC",
+    "segment": ".rdata",
+    "name": "??_7ButtonCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005458CC",
+        "target": "0x004DE6B0",
+        "target_func": "0x004DE6B0",
+        "target_name": "sub_4DE6B0"
+      },
+      {
+        "slot_ea": "0x005458D0",
+        "target": "0x004E0470",
+        "target_func": "0x004E0470",
+        "target_name": "sub_4E0470"
+      },
+      {
+        "slot_ea": "0x005458D4",
+        "target": "0x004DEE10",
+        "target_func": "0x004DEE10",
+        "target_name": "sub_4DEE10"
+      },
+      {
+        "slot_ea": "0x005458D8",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005458DC",
+        "target": "0x004DEAA0",
+        "target_func": "0x004DEAA0",
+        "target_name": "sub_4DEAA0"
+      },
+      {
+        "slot_ea": "0x005458E0",
+        "target": "0x004DF010",
+        "target_func": "0x004DF010",
+        "target_name": "sub_4DF010"
+      },
+      {
+        "slot_ea": "0x005458E4",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005458E8",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005458EC",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005458F0",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005458F4",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005458F8",
+        "target": "0x004DEA70",
+        "target_func": "0x004DEA70",
+        "target_name": "sub_4DEA70"
+      }
+    ],
+    "xrefs_to": [
+      "0x004DE652",
+      "0x004DEA73"
+    ]
+  },
+  {
+    "ea": "0x00545A48",
+    "segment": ".rdata",
+    "name": "??_7CheckBox@SphereUI@@6B@",
+    "entry_count": 13,
+    "entries": [
+      {
+        "slot_ea": "0x00545A48",
+        "target": "0x004E0590",
+        "target_func": "0x004E0590",
+        "target_name": "sub_4E0590"
+      },
+      {
+        "slot_ea": "0x00545A4C",
+        "target": "0x004E0DE0",
+        "target_func": "0x004E0DE0",
+        "target_name": "sub_4E0DE0"
+      },
+      {
+        "slot_ea": "0x00545A50",
+        "target": "0x004E0980",
+        "target_func": "0x004E0980",
+        "target_name": "sub_4E0980"
+      },
+      {
+        "slot_ea": "0x00545A54",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00545A58",
+        "target": "0x004E0A80",
+        "target_func": "0x004E0A80",
+        "target_name": "sub_4E0A80"
+      },
+      {
+        "slot_ea": "0x00545A5C",
+        "target": "0x004E08C0",
+        "target_func": "0x004E08C0",
+        "target_name": "sub_4E08C0"
+      },
+      {
+        "slot_ea": "0x00545A60",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00545A64",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00545A68",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00545A6C",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00545A70",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00545A74",
+        "target": "0x005039F0",
+        "target_func": "0x005039F0",
+        "target_name": "sub_5039F0"
+      },
+      {
+        "slot_ea": "0x00545A78",
+        "target": "0x004E0A10",
+        "target_func": "0x004E0A10",
+        "target_name": "sub_4E0A10"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E0552"
+    ]
+  },
+  {
+    "ea": "0x00545C84",
+    "segment": ".rdata",
+    "name": "off_545C84",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00545C84",
+        "target": "0x00514430",
+        "target_func": "0x00514430",
+        "target_name": "sub_514430"
+      },
+      {
+        "slot_ea": "0x00545C88",
+        "target": "0x00515190",
+        "target_func": "0x00515190",
+        "target_name": "sub_515190"
+      },
+      {
+        "slot_ea": "0x00545C8C",
+        "target": "0x005129A0",
+        "target_func": "0x005129A0",
+        "target_name": "sub_5129A0"
+      },
+      {
+        "slot_ea": "0x00545C90",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00545C94",
+        "target": "0x004E1920",
+        "target_func": "0x004E1920",
+        "target_name": "sub_4E1920"
+      },
+      {
+        "slot_ea": "0x00545C98",
+        "target": "0x00512430",
+        "target_func": "0x00512430",
+        "target_name": "sub_512430"
+      },
+      {
+        "slot_ea": "0x00545C9C",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00545CA0",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00545CA4",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00545CA8",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00545CAC",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00545CB0",
+        "target": "0x004E1490",
+        "target_func": "0x004E1490",
+        "target_name": "sub_4E1490"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E1493",
+      "0x004E1747"
+    ]
+  },
+  {
+    "ea": "0x00545E34",
+    "segment": ".rdata",
+    "name": "??_7EditCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00545E34",
+        "target": "0x004E26B0",
+        "target_func": "0x004E26B0",
+        "target_name": "sub_4E26B0"
+      },
+      {
+        "slot_ea": "0x00545E38",
+        "target": "0x004E3300",
+        "target_func": "0x004E3300",
+        "target_name": "sub_4E3300"
+      },
+      {
+        "slot_ea": "0x00545E3C",
+        "target": "0x004E3040",
+        "target_func": "0x004E3040",
+        "target_name": "sub_4E3040"
+      },
+      {
+        "slot_ea": "0x00545E40",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00545E44",
+        "target": "0x004E1EB0",
+        "target_func": "0x004E1EB0",
+        "target_name": "sub_4E1EB0"
+      },
+      {
+        "slot_ea": "0x00545E48",
+        "target": "0x004E2AB0",
+        "target_func": "0x004E2AB0",
+        "target_name": "sub_4E2AB0"
+      },
+      {
+        "slot_ea": "0x00545E4C",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00545E50",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00545E54",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00545E58",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00545E5C",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00545E60",
+        "target": "0x004E2690",
+        "target_func": "0x004E2690",
+        "target_name": "sub_4E2690"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E23CD",
+      "0x004E24B7"
+    ]
+  },
+  {
+    "ea": "0x00545F7C",
+    "segment": ".rdata",
+    "name": "??_7FilterListCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00545F7C",
+        "target": "0x005007A0",
+        "target_func": "0x005007A0",
+        "target_name": "sub_5007A0"
+      },
+      {
+        "slot_ea": "0x00545F80",
+        "target": "0x004E4060",
+        "target_func": "0x004E4060",
+        "target_name": "sub_4E4060"
+      },
+      {
+        "slot_ea": "0x00545F84",
+        "target": "0x004E3F20",
+        "target_func": "0x004E3F20",
+        "target_name": "sub_4E3F20"
+      },
+      {
+        "slot_ea": "0x00545F88",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00545F8C",
+        "target": "0x004FEC30",
+        "target_func": "0x004FEC30",
+        "target_name": "sub_4FEC30"
+      },
+      {
+        "slot_ea": "0x00545F90",
+        "target": "0x004FE910",
+        "target_func": "0x004FE910",
+        "target_name": "sub_4FE910"
+      },
+      {
+        "slot_ea": "0x00545F94",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00545F98",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00545F9C",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00545FA0",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00545FA4",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00545FA8",
+        "target": "0x004E3B50",
+        "target_func": "0x004E3B50",
+        "target_name": "sub_4E3B50"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E383A",
+      "0x004E40B9"
+    ]
+  },
+  {
+    "ea": "0x005460A4",
+    "segment": ".rdata",
+    "name": "??_7FontPicker@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005460A4",
+        "target": "0x004E4E80",
+        "target_func": "0x004E4E80",
+        "target_name": "sub_4E4E80"
+      },
+      {
+        "slot_ea": "0x005460A8",
+        "target": "0x004E51F0",
+        "target_func": "0x004E51F0",
+        "target_name": "sub_4E51F0"
+      },
+      {
+        "slot_ea": "0x005460AC",
+        "target": "0x004E4E20",
+        "target_func": "0x004E4E20",
+        "target_name": "sub_4E4E20"
+      },
+      {
+        "slot_ea": "0x005460B0",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005460B4",
+        "target": "0x004E4D60",
+        "target_func": "0x004E4D60",
+        "target_name": "sub_4E4D60"
+      },
+      {
+        "slot_ea": "0x005460B8",
+        "target": "0x004E4C80",
+        "target_func": "0x004E4C80",
+        "target_name": "sub_4E4C80"
+      },
+      {
+        "slot_ea": "0x005460BC",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005460C0",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005460C4",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005460C8",
+        "target": "0x004E5010",
+        "target_func": "0x004E5010",
+        "target_name": "sub_4E5010"
+      },
+      {
+        "slot_ea": "0x005460CC",
+        "target": "0x004E5070",
+        "target_func": "0x004E5070",
+        "target_name": "sub_4E5070"
+      },
+      {
+        "slot_ea": "0x005460D0",
+        "target": "0x004E50D0",
+        "target_func": "0x004E50D0",
+        "target_name": "sub_4E50D0"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E4C69",
+      "0x004E4F78",
+      "0x004E512D"
+    ]
+  },
+  {
+    "ea": "0x00546348",
+    "segment": ".rdata",
+    "name": "??_7HyperTextChatListControl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00546348",
+        "target": "0x004E9450",
+        "target_func": "0x004E9450",
+        "target_name": "sub_4E9450"
+      },
+      {
+        "slot_ea": "0x0054634C",
+        "target": "0x004ED030",
+        "target_func": "0x004ED030",
+        "target_name": "sub_4ED030"
+      },
+      {
+        "slot_ea": "0x00546350",
+        "target": "0x004EC8B0",
+        "target_func": "0x004EC8B0",
+        "target_name": "sub_4EC8B0"
+      },
+      {
+        "slot_ea": "0x00546354",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00546358",
+        "target": "0x004EAED0",
+        "target_func": "0x004EAED0",
+        "target_name": "sub_4EAED0"
+      },
+      {
+        "slot_ea": "0x0054635C",
+        "target": "0x004EB260",
+        "target_func": "0x004EB260",
+        "target_name": "sub_4EB260"
+      },
+      {
+        "slot_ea": "0x00546360",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00546364",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00546368",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x0054636C",
+        "target": "0x004E9860",
+        "target_func": "0x004E9860",
+        "target_name": "sub_4E9860"
+      },
+      {
+        "slot_ea": "0x00546370",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00546374",
+        "target": "0x004EA5D0",
+        "target_func": "0x004EA5D0",
+        "target_name": "sub_4EA5D0"
+      }
+    ],
+    "xrefs_to": [
+      "0x004E9E49",
+      "0x004E9F9D",
+      "0x004ECEE9"
+    ]
+  },
+  {
+    "ea": "0x005464A8",
+    "segment": ".rdata",
+    "name": "??_7HyperTextCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005464A8",
+        "target": "0x004EE940",
+        "target_func": "0x004EE940",
+        "target_name": "sub_4EE940"
+      },
+      {
+        "slot_ea": "0x005464AC",
+        "target": "0x004F0E10",
+        "target_func": "0x004F0E10",
+        "target_name": "sub_4F0E10"
+      },
+      {
+        "slot_ea": "0x005464B0",
+        "target": "0x004F04B0",
+        "target_func": "0x004F04B0",
+        "target_name": "sub_4F04B0"
+      },
+      {
+        "slot_ea": "0x005464B4",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005464B8",
+        "target": "0x004EEAE0",
+        "target_func": "0x004EEAE0",
+        "target_name": "sub_4EEAE0"
+      },
+      {
+        "slot_ea": "0x005464BC",
+        "target": "0x004F0190",
+        "target_func": "0x004F0190",
+        "target_name": "sub_4F0190"
+      },
+      {
+        "slot_ea": "0x005464C0",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005464C4",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005464C8",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005464CC",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005464D0",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005464D4",
+        "target": "0x004EFE50",
+        "target_func": "0x004EFE50",
+        "target_name": "sub_4EFE50"
+      }
+    ],
+    "xrefs_to": [
+      "0x004EF979",
+      "0x004EFD3B"
+    ]
+  },
+  {
+    "ea": "0x00546554",
+    "segment": ".rdata",
+    "name": "??_7?$basic_filebuf@DU?$char_traits@D@std@@@std@@6B@",
+    "entry_count": 15,
+    "entries": [
+      {
+        "slot_ea": "0x00546554",
+        "target": "0x004F3670",
+        "target_func": "0x004F3670",
+        "target_name": "sub_4F3670"
+      },
+      {
+        "slot_ea": "0x00546558",
+        "target": "0x004F1200",
+        "target_func": "0x004F1200",
+        "target_name": "sub_4F1200"
+      },
+      {
+        "slot_ea": "0x0054655C",
+        "target": "0x004F1210",
+        "target_func": "0x004F1210",
+        "target_name": "sub_4F1210"
+      },
+      {
+        "slot_ea": "0x00546560",
+        "target": "0x004F2230",
+        "target_func": "0x004F2230",
+        "target_name": "sub_4F2230"
+      },
+      {
+        "slot_ea": "0x00546564",
+        "target": "0x004F12F0",
+        "target_func": "0x004F12F0",
+        "target_name": "sub_4F12F0"
+      },
+      {
+        "slot_ea": "0x00546568",
+        "target": "0x0052F2E6",
+        "target_func": "0x0052F2E6",
+        "target_name": "?showmanyc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JXZ"
+      },
+      {
+        "slot_ea": "0x0054656C",
+        "target": "0x004F1220",
+        "target_func": "0x004F1220",
+        "target_name": "sub_4F1220"
+      },
+      {
+        "slot_ea": "0x00546570",
+        "target": "0x004F2450",
+        "target_func": "0x004F2450",
+        "target_name": "sub_4F2450"
+      },
+      {
+        "slot_ea": "0x00546574",
+        "target": "0x0052F2EC",
+        "target_func": "0x0052F2EC",
+        "target_name": "?xsgetn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JPAD_J@Z"
+      },
+      {
+        "slot_ea": "0x00546578",
+        "target": "0x0052F2F2",
+        "target_func": "0x0052F2F2",
+        "target_name": "?xsputn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JPBD_J@Z"
+      },
+      {
+        "slot_ea": "0x0054657C",
+        "target": "0x004F29E0",
+        "target_func": "0x004F29E0",
+        "target_name": "sub_4F29E0"
+      },
+      {
+        "slot_ea": "0x00546580",
+        "target": "0x004F2AE0",
+        "target_func": "0x004F2AE0",
+        "target_name": "sub_4F2AE0"
+      },
+      {
+        "slot_ea": "0x00546584",
+        "target": "0x004F1380",
+        "target_func": "0x004F1380",
+        "target_name": "sub_4F1380"
+      },
+      {
+        "slot_ea": "0x00546588",
+        "target": "0x004F1270",
+        "target_func": "0x004F1270",
+        "target_name": "sub_4F1270"
+      },
+      {
+        "slot_ea": "0x0054658C",
+        "target": "0x004F1410",
+        "target_func": "0x004F1410",
+        "target_name": "sub_4F1410"
+      }
+    ],
+    "xrefs_to": [
+      "0x004F3500",
+      "0x004F3588",
+      "0x004F3698",
+      "0x004F47A0",
+      "0x004F4825"
+    ]
+  },
+  {
+    "ea": "0x005465F0",
+    "segment": ".rdata",
+    "name": "??_7HyperTextEditControl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005465F0",
+        "target": "0x004F5F10",
+        "target_func": "0x004F5F10",
+        "target_name": "sub_4F5F10"
+      },
+      {
+        "slot_ea": "0x005465F4",
+        "target": "0x004F7220",
+        "target_func": "0x004F7220",
+        "target_name": "sub_4F7220"
+      },
+      {
+        "slot_ea": "0x005465F8",
+        "target": "0x004F40C0",
+        "target_func": "0x004F40C0",
+        "target_name": "sub_4F40C0"
+      },
+      {
+        "slot_ea": "0x005465FC",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00546600",
+        "target": "0x004F42D0",
+        "target_func": "0x004F42D0",
+        "target_name": "sub_4F42D0"
+      },
+      {
+        "slot_ea": "0x00546604",
+        "target": "0x004F6A30",
+        "target_func": "0x004F6A30",
+        "target_name": "sub_4F6A30"
+      },
+      {
+        "slot_ea": "0x00546608",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x0054660C",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00546610",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00546614",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00546618",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x0054661C",
+        "target": "0x004F6A10",
+        "target_func": "0x004F6A10",
+        "target_name": "sub_4F6A10"
+      }
+    ],
+    "xrefs_to": [
+      "0x004F4909",
+      "0x004F5DFC",
+      "0x004F7079"
+    ]
+  },
+  {
+    "ea": "0x00546738",
+    "segment": ".rdata",
+    "name": "??_7ImageCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00546738",
+        "target": "0x004F72F0",
+        "target_func": "0x004F72F0",
+        "target_name": "sub_4F72F0"
+      },
+      {
+        "slot_ea": "0x0054673C",
+        "target": "0x004F7BA0",
+        "target_func": "0x004F7BA0",
+        "target_name": "sub_4F7BA0"
+      },
+      {
+        "slot_ea": "0x00546740",
+        "target": "0x004F78C0",
+        "target_func": "0x004F78C0",
+        "target_name": "sub_4F78C0"
+      },
+      {
+        "slot_ea": "0x00546744",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00546748",
+        "target": "0x004F7470",
+        "target_func": "0x004F7470",
+        "target_name": "sub_4F7470"
+      },
+      {
+        "slot_ea": "0x0054674C",
+        "target": "0x004F75F0",
+        "target_func": "0x004F75F0",
+        "target_name": "sub_4F75F0"
+      },
+      {
+        "slot_ea": "0x00546750",
+        "target": "0x004F7A10",
+        "target_func": "0x004F7A10",
+        "target_name": "sub_4F7A10"
+      },
+      {
+        "slot_ea": "0x00546754",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00546758",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x0054675C",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00546760",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00546764",
+        "target": "0x004F7A90",
+        "target_func": "0x004F7A90",
+        "target_name": "sub_4F7A90"
+      }
+    ],
+    "xrefs_to": [
+      "0x004F72D5",
+      "0x004F7AB9"
+    ]
+  },
+  {
+    "ea": "0x0054688C",
+    "segment": ".rdata",
+    "name": "??_7?$basic_stringbuf@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@6B@",
+    "entry_count": 15,
+    "entries": [
+      {
+        "slot_ea": "0x0054688C",
+        "target": "0x004F8B80",
+        "target_func": "0x004F8B80",
+        "target_name": "sub_4F8B80"
+      },
+      {
+        "slot_ea": "0x00546890",
+        "target": "0x0052F2F8",
+        "target_func": "0x0052F2F8",
+        "target_name": "?_Lock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UAEXXZ"
+      },
+      {
+        "slot_ea": "0x00546894",
+        "target": "0x0052F2FE",
+        "target_func": "0x0052F2FE",
+        "target_name": "?_Unlock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UAEXXZ"
+      },
+      {
+        "slot_ea": "0x00546898",
+        "target": "0x004F8850",
+        "target_func": "0x004F8850",
+        "target_name": "sub_4F8850"
+      },
+      {
+        "slot_ea": "0x0054689C",
+        "target": "0x004F8A10",
+        "target_func": "0x004F8A10",
+        "target_name": "sub_4F8A10"
+      },
+      {
+        "slot_ea": "0x005468A0",
+        "target": "0x0052F2E6",
+        "target_func": "0x0052F2E6",
+        "target_name": "?showmanyc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JXZ"
+      },
+      {
+        "slot_ea": "0x005468A4",
+        "target": "0x004F8620",
+        "target_func": "0x004F8620",
+        "target_name": "sub_4F8620"
+      },
+      {
+        "slot_ea": "0x005468A8",
+        "target": "0x0052F304",
+        "target_func": "0x0052F304",
+        "target_name": "?uflow@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAEHXZ"
+      },
+      {
+        "slot_ea": "0x005468AC",
+        "target": "0x0052F2EC",
+        "target_func": "0x0052F2EC",
+        "target_name": "?xsgetn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JPAD_J@Z"
+      },
+      {
+        "slot_ea": "0x005468B0",
+        "target": "0x0052F2F2",
+        "target_func": "0x0052F2F2",
+        "target_name": "?xsputn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAE_JPBD_J@Z"
+      },
+      {
+        "slot_ea": "0x005468B4",
+        "target": "0x004F8690",
+        "target_func": "0x004F8690",
+        "target_name": "sub_4F8690"
+      },
+      {
+        "slot_ea": "0x005468B8",
+        "target": "0x004F8A60",
+        "target_func": "0x004F8A60",
+        "target_name": "sub_4F8A60"
+      },
+      {
+        "slot_ea": "0x005468BC",
+        "target": "0x0052F30A",
+        "target_func": "0x0052F30A",
+        "target_name": "?setbuf@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAEPAV12@PAD_J@Z"
+      },
+      {
+        "slot_ea": "0x005468C0",
+        "target": "0x0052F310",
+        "target_func": "0x0052F310",
+        "target_name": "?sync@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAEHXZ"
+      },
+      {
+        "slot_ea": "0x005468C4",
+        "target": "0x0052F316",
+        "target_func": "0x0052F316",
+        "target_name": "?imbue@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MAEXABVlocale@2@@Z"
+      }
+    ],
+    "xrefs_to": [
+      "0x004F8B83",
+      "0x004F8D52",
+      "0x004FBD1B"
+    ]
+  },
+  {
+    "ea": "0x00546B1C",
+    "segment": ".rdata",
+    "name": "??_7ListItemCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00546B1C",
+        "target": "0x004FDE00",
+        "target_func": "0x004FDE00",
+        "target_name": "sub_4FDE00"
+      },
+      {
+        "slot_ea": "0x00546B20",
+        "target": "0x004FE2E0",
+        "target_func": "0x004FE2E0",
+        "target_name": "sub_4FE2E0"
+      },
+      {
+        "slot_ea": "0x00546B24",
+        "target": "0x004FDB90",
+        "target_func": "0x004FDB90",
+        "target_name": "sub_4FDB90"
+      },
+      {
+        "slot_ea": "0x00546B28",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00546B2C",
+        "target": "0x004FCAF0",
+        "target_func": "0x004FCAF0",
+        "target_name": "sub_4FCAF0"
+      },
+      {
+        "slot_ea": "0x00546B30",
+        "target": "0x004FCE30",
+        "target_func": "0x004FCE30",
+        "target_name": "sub_4FCE30"
+      },
+      {
+        "slot_ea": "0x00546B34",
+        "target": "0x004FD370",
+        "target_func": "0x004FD370",
+        "target_name": "sub_4FD370"
+      },
+      {
+        "slot_ea": "0x00546B38",
+        "target": "0x004FD460",
+        "target_func": "0x004FD460",
+        "target_name": "sub_4FD460"
+      },
+      {
+        "slot_ea": "0x00546B3C",
+        "target": "0x004FD520",
+        "target_func": "0x004FD520",
+        "target_name": "sub_4FD520"
+      },
+      {
+        "slot_ea": "0x00546B40",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00546B44",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00546B48",
+        "target": "0x004FDDE0",
+        "target_func": "0x004FDDE0",
+        "target_name": "sub_4FDDE0"
+      }
+    ],
+    "xrefs_to": [
+      "0x004FD7D0",
+      "0x004FDA49"
+    ]
+  },
+  {
+    "ea": "0x00546E9C",
+    "segment": ".rdata",
+    "name": "??_7ListCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00546E9C",
+        "target": "0x005007A0",
+        "target_func": "0x005007A0",
+        "target_name": "sub_5007A0"
+      },
+      {
+        "slot_ea": "0x00546EA0",
+        "target": "0x004FFEE0",
+        "target_func": "0x004FFEE0",
+        "target_name": "sub_4FFEE0"
+      },
+      {
+        "slot_ea": "0x00546EA4",
+        "target": "0x005002E0",
+        "target_func": "0x005002E0",
+        "target_name": "sub_5002E0"
+      },
+      {
+        "slot_ea": "0x00546EA8",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00546EAC",
+        "target": "0x004FEC30",
+        "target_func": "0x004FEC30",
+        "target_name": "sub_4FEC30"
+      },
+      {
+        "slot_ea": "0x00546EB0",
+        "target": "0x004FE910",
+        "target_func": "0x004FE910",
+        "target_name": "sub_4FE910"
+      },
+      {
+        "slot_ea": "0x00546EB4",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00546EB8",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00546EBC",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00546EC0",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00546EC4",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00546EC8",
+        "target": "0x004FF8A0",
+        "target_func": "0x004FF8A0",
+        "target_name": "sub_4FF8A0"
+      }
+    ],
+    "xrefs_to": [
+      "0x004FF5BA",
+      "0x004FF699"
+    ]
+  },
+  {
+    "ea": "0x005471AC",
+    "segment": ".rdata",
+    "name": "??_7CMenuListControl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005471AC",
+        "target": "0x00501550",
+        "target_func": "0x00501550",
+        "target_name": "sub_501550"
+      },
+      {
+        "slot_ea": "0x005471B0",
+        "target": "0x00502A00",
+        "target_func": "0x00502A00",
+        "target_name": "sub_502A00"
+      },
+      {
+        "slot_ea": "0x005471B4",
+        "target": "0x00502490",
+        "target_func": "0x00502490",
+        "target_name": "sub_502490"
+      },
+      {
+        "slot_ea": "0x005471B8",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005471BC",
+        "target": "0x00501460",
+        "target_func": "0x00501460",
+        "target_name": "sub_501460"
+      },
+      {
+        "slot_ea": "0x005471C0",
+        "target": "0x00501080",
+        "target_func": "0x00501080",
+        "target_name": "sub_501080"
+      },
+      {
+        "slot_ea": "0x005471C4",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005471C8",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005471CC",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005471D0",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005471D4",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005471D8",
+        "target": "0x00502470",
+        "target_func": "0x00502470",
+        "target_name": "sub_502470"
+      }
+    ],
+    "xrefs_to": [
+      "0x005021D0",
+      "0x00502214",
+      "0x00502A59"
+    ]
+  },
+  {
+    "ea": "0x00547258",
+    "segment": ".rdata",
+    "name": "??_7MiniHelpCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00547258",
+        "target": "0x0050FCA0",
+        "target_func": "0x0050FCA0",
+        "target_name": "sub_50FCA0"
+      },
+      {
+        "slot_ea": "0x0054725C",
+        "target": "0x00502F50",
+        "target_func": "0x00502F50",
+        "target_name": "sub_502F50"
+      },
+      {
+        "slot_ea": "0x00547260",
+        "target": "0x0050FBA0",
+        "target_func": "0x0050FBA0",
+        "target_name": "sub_50FBA0"
+      },
+      {
+        "slot_ea": "0x00547264",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547268",
+        "target": "0x0050F450",
+        "target_func": "0x0050F450",
+        "target_name": "sub_50F450"
+      },
+      {
+        "slot_ea": "0x0054726C",
+        "target": "0x00502AB0",
+        "target_func": "0x00502AB0",
+        "target_name": "sub_502AB0"
+      },
+      {
+        "slot_ea": "0x00547270",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00547274",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547278",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x0054727C",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00547280",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00547284",
+        "target": "0x0050F970",
+        "target_func": "0x0050F970",
+        "target_name": "sub_50F970"
+      }
+    ],
+    "xrefs_to": [
+      "0x00502CA8",
+      "0x00502FAA"
+    ]
+  },
+  {
+    "ea": "0x005472C0",
+    "segment": ".rdata",
+    "name": "??_7CMinimapControl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005472C0",
+        "target": "0x00514430",
+        "target_func": "0x00514430",
+        "target_name": "sub_514430"
+      },
+      {
+        "slot_ea": "0x005472C4",
+        "target": "0x005030A0",
+        "target_func": "0x005030A0",
+        "target_name": "sub_5030A0"
+      },
+      {
+        "slot_ea": "0x005472C8",
+        "target": "0x00503140",
+        "target_func": "0x00503140",
+        "target_name": "sub_503140"
+      },
+      {
+        "slot_ea": "0x005472CC",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005472D0",
+        "target": "0x00503180",
+        "target_func": "0x00503180",
+        "target_name": "sub_503180"
+      },
+      {
+        "slot_ea": "0x005472D4",
+        "target": "0x00512430",
+        "target_func": "0x00512430",
+        "target_name": "sub_512430"
+      },
+      {
+        "slot_ea": "0x005472D8",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005472DC",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005472E0",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005472E4",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005472E8",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005472EC",
+        "target": "0x00503150",
+        "target_func": "0x00503150",
+        "target_name": "sub_503150"
+      }
+    ],
+    "xrefs_to": [
+      "0x00503023",
+      "0x00503083",
+      "0x00503153"
+    ]
+  },
+  {
+    "ea": "0x005473C8",
+    "segment": ".rdata",
+    "name": "??_7ProgressBar@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005473C8",
+        "target": "0x00503A10",
+        "target_func": "0x00503A10",
+        "target_name": "sub_503A10"
+      },
+      {
+        "slot_ea": "0x005473CC",
+        "target": "0x00503D00",
+        "target_func": "0x00503D00",
+        "target_name": "sub_503D00"
+      },
+      {
+        "slot_ea": "0x005473D0",
+        "target": "0x005038E0",
+        "target_func": "0x005038E0",
+        "target_name": "sub_5038E0"
+      },
+      {
+        "slot_ea": "0x005473D4",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005473D8",
+        "target": "0x00503630",
+        "target_func": "0x00503630",
+        "target_name": "sub_503630"
+      },
+      {
+        "slot_ea": "0x005473DC",
+        "target": "0x0046AEF0",
+        "target_func": "0x0046AEF0",
+        "target_name": "nullsub_2"
+      },
+      {
+        "slot_ea": "0x005473E0",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005473E4",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005473E8",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005473EC",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005473F0",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005473F4",
+        "target": "0x005039F0",
+        "target_func": "0x005039F0",
+        "target_name": "sub_5039F0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00503609"
+    ]
+  },
+  {
+    "ea": "0x00547520",
+    "segment": ".rdata",
+    "name": "??_7RadioButtonCtrl@SphereUI@@6B@",
+    "entry_count": 13,
+    "entries": [
+      {
+        "slot_ea": "0x00547520",
+        "target": "0x004E0590",
+        "target_func": "0x004E0590",
+        "target_name": "sub_4E0590"
+      },
+      {
+        "slot_ea": "0x00547524",
+        "target": "0x00503E10",
+        "target_func": "0x00503E10",
+        "target_name": "sub_503E10"
+      },
+      {
+        "slot_ea": "0x00547528",
+        "target": "0x004E0980",
+        "target_func": "0x004E0980",
+        "target_name": "sub_4E0980"
+      },
+      {
+        "slot_ea": "0x0054752C",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547530",
+        "target": "0x004E0A80",
+        "target_func": "0x004E0A80",
+        "target_name": "sub_4E0A80"
+      },
+      {
+        "slot_ea": "0x00547534",
+        "target": "0x004E08C0",
+        "target_func": "0x004E08C0",
+        "target_name": "sub_4E08C0"
+      },
+      {
+        "slot_ea": "0x00547538",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x0054753C",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547540",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00547544",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00547548",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x0054754C",
+        "target": "0x005039F0",
+        "target_func": "0x005039F0",
+        "target_name": "sub_5039F0"
+      },
+      {
+        "slot_ea": "0x00547550",
+        "target": "0x00503DB0",
+        "target_func": "0x00503DB0",
+        "target_name": "sub_503DB0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00503DF8",
+      "0x00503E6A"
+    ]
+  },
+  {
+    "ea": "0x005475C0",
+    "segment": ".rdata",
+    "name": "??_7RichEditCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005475C0",
+        "target": "0x00503ED0",
+        "target_func": "0x00503ED0",
+        "target_name": "sub_503ED0"
+      },
+      {
+        "slot_ea": "0x005475C4",
+        "target": "0x00505860",
+        "target_func": "0x00505860",
+        "target_name": "sub_505860"
+      },
+      {
+        "slot_ea": "0x005475C8",
+        "target": "0x00505DC0",
+        "target_func": "0x00505DC0",
+        "target_name": "sub_505DC0"
+      },
+      {
+        "slot_ea": "0x005475CC",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005475D0",
+        "target": "0x005047E0",
+        "target_func": "0x005047E0",
+        "target_name": "sub_5047E0"
+      },
+      {
+        "slot_ea": "0x005475D4",
+        "target": "0x00506260",
+        "target_func": "0x00506260",
+        "target_name": "sub_506260"
+      },
+      {
+        "slot_ea": "0x005475D8",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005475DC",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005475E0",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005475E4",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005475E8",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005475EC",
+        "target": "0x005053E0",
+        "target_func": "0x005053E0",
+        "target_name": "sub_5053E0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00504F69",
+      "0x0050578D"
+    ]
+  },
+  {
+    "ea": "0x005475F4",
+    "segment": ".rdata",
+    "name": "??_7ScrollBar@SphereUI@@6B@",
+    "entry_count": 14,
+    "entries": [
+      {
+        "slot_ea": "0x005475F4",
+        "target": "0x005065D0",
+        "target_func": "0x005065D0",
+        "target_name": "sub_5065D0"
+      },
+      {
+        "slot_ea": "0x005475F8",
+        "target": "0x00507950",
+        "target_func": "0x00507950",
+        "target_name": "sub_507950"
+      },
+      {
+        "slot_ea": "0x005475FC",
+        "target": "0x00507500",
+        "target_func": "0x00507500",
+        "target_name": "sub_507500"
+      },
+      {
+        "slot_ea": "0x00547600",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547604",
+        "target": "0x00506910",
+        "target_func": "0x00506910",
+        "target_name": "sub_506910"
+      },
+      {
+        "slot_ea": "0x00547608",
+        "target": "0x00506B70",
+        "target_func": "0x00506B70",
+        "target_name": "sub_506B70"
+      },
+      {
+        "slot_ea": "0x0054760C",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00547610",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547614",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00547618",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x0054761C",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00547620",
+        "target": "0x00507E20",
+        "target_func": "0x00507E20",
+        "target_name": "sub_507E20"
+      },
+      {
+        "slot_ea": "0x00547624",
+        "target": "0x005072D0",
+        "target_func": "0x005072D0",
+        "target_name": "sub_5072D0"
+      },
+      {
+        "slot_ea": "0x00547628",
+        "target": "0x00507740",
+        "target_func": "0x00507740",
+        "target_name": "sub_507740"
+      }
+    ],
+    "xrefs_to": [
+      "0x005064A5",
+      "0x00506548"
+    ]
+  },
+  {
+    "ea": "0x00547788",
+    "segment": ".rdata",
+    "name": "??_7SliderCtrl@SphereUI@@6B@",
+    "entry_count": 14,
+    "entries": [
+      {
+        "slot_ea": "0x00547788",
+        "target": "0x00507AF0",
+        "target_func": "0x00507AF0",
+        "target_name": "sub_507AF0"
+      },
+      {
+        "slot_ea": "0x0054778C",
+        "target": "0x00507EA0",
+        "target_func": "0x00507EA0",
+        "target_name": "sub_507EA0"
+      },
+      {
+        "slot_ea": "0x00547790",
+        "target": "0x00507500",
+        "target_func": "0x00507500",
+        "target_name": "sub_507500"
+      },
+      {
+        "slot_ea": "0x00547794",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547798",
+        "target": "0x00507D10",
+        "target_func": "0x00507D10",
+        "target_name": "sub_507D10"
+      },
+      {
+        "slot_ea": "0x0054779C",
+        "target": "0x00506B70",
+        "target_func": "0x00506B70",
+        "target_name": "sub_506B70"
+      },
+      {
+        "slot_ea": "0x005477A0",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005477A4",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005477A8",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005477AC",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005477B0",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005477B4",
+        "target": "0x00507E20",
+        "target_func": "0x00507E20",
+        "target_name": "sub_507E20"
+      },
+      {
+        "slot_ea": "0x005477B8",
+        "target": "0x00507CA0",
+        "target_func": "0x00507CA0",
+        "target_name": "sub_507CA0"
+      },
+      {
+        "slot_ea": "0x005477BC",
+        "target": "0x00507A90",
+        "target_func": "0x00507A90",
+        "target_name": "sub_507A90"
+      }
+    ],
+    "xrefs_to": [
+      "0x00507A72",
+      "0x00507EF9"
+    ]
+  },
+  {
+    "ea": "0x00547888",
+    "segment": ".rdata",
+    "name": "??_7SlotCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00547888",
+        "target": "0x00509040",
+        "target_func": "0x00509040",
+        "target_name": "sub_509040"
+      },
+      {
+        "slot_ea": "0x0054788C",
+        "target": "0x00509420",
+        "target_func": "0x00509420",
+        "target_name": "sub_509420"
+      },
+      {
+        "slot_ea": "0x00547890",
+        "target": "0x00508CA0",
+        "target_func": "0x00508CA0",
+        "target_name": "sub_508CA0"
+      },
+      {
+        "slot_ea": "0x00547894",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547898",
+        "target": "0x00508030",
+        "target_func": "0x00508030",
+        "target_name": "sub_508030"
+      },
+      {
+        "slot_ea": "0x0054789C",
+        "target": "0x00508750",
+        "target_func": "0x00508750",
+        "target_name": "sub_508750"
+      },
+      {
+        "slot_ea": "0x005478A0",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005478A4",
+        "target": "0x00507FC0",
+        "target_func": "0x00507FC0",
+        "target_name": "sub_507FC0"
+      },
+      {
+        "slot_ea": "0x005478A8",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005478AC",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005478B0",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005478B4",
+        "target": "0x00508BA0",
+        "target_func": "0x00508BA0",
+        "target_name": "sub_508BA0"
+      }
+    ],
+    "xrefs_to": [
+      "0x005089EA",
+      "0x00508AF8"
+    ]
+  },
+  {
+    "ea": "0x00547BE0",
+    "segment": ".rdata",
+    "name": "??_7SpinButton@SphereUI@@6B@",
+    "entry_count": 13,
+    "entries": [
+      {
+        "slot_ea": "0x00547BE0",
+        "target": "0x0050CFA0",
+        "target_func": "0x0050CFA0",
+        "target_name": "sub_50CFA0"
+      },
+      {
+        "slot_ea": "0x00547BE4",
+        "target": "0x0050D850",
+        "target_func": "0x0050D850",
+        "target_name": "sub_50D850"
+      },
+      {
+        "slot_ea": "0x00547BE8",
+        "target": "0x0050D480",
+        "target_func": "0x0050D480",
+        "target_name": "sub_50D480"
+      },
+      {
+        "slot_ea": "0x00547BEC",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547BF0",
+        "target": "0x0050D1B0",
+        "target_func": "0x0050D1B0",
+        "target_name": "sub_50D1B0"
+      },
+      {
+        "slot_ea": "0x00547BF4",
+        "target": "0x0050D270",
+        "target_func": "0x0050D270",
+        "target_name": "sub_50D270"
+      },
+      {
+        "slot_ea": "0x00547BF8",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00547BFC",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547C00",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00547C04",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00547C08",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00547C0C",
+        "target": "0x0050D460",
+        "target_func": "0x0050D460",
+        "target_name": "sub_50D460"
+      },
+      {
+        "slot_ea": "0x00547C10",
+        "target": "0x0050D640",
+        "target_func": "0x0050D640",
+        "target_name": "sub_50D640"
+      }
+    ],
+    "xrefs_to": [
+      "0x0050CEC6",
+      "0x0050CF18"
+    ]
+  },
+  {
+    "ea": "0x00547ED8",
+    "segment": ".rdata",
+    "name": "??_7TextCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00547ED8",
+        "target": "0x0050EE30",
+        "target_func": "0x0050EE30",
+        "target_name": "sub_50EE30"
+      },
+      {
+        "slot_ea": "0x00547EDC",
+        "target": "0x0050F0C0",
+        "target_func": "0x0050F0C0",
+        "target_name": "sub_50F0C0"
+      },
+      {
+        "slot_ea": "0x00547EE0",
+        "target": "0x005129A0",
+        "target_func": "0x005129A0",
+        "target_name": "sub_5129A0"
+      },
+      {
+        "slot_ea": "0x00547EE4",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547EE8",
+        "target": "0x0050EF10",
+        "target_func": "0x0050EF10",
+        "target_name": "sub_50EF10"
+      },
+      {
+        "slot_ea": "0x00547EEC",
+        "target": "0x0050ED60",
+        "target_func": "0x0050ED60",
+        "target_name": "sub_50ED60"
+      },
+      {
+        "slot_ea": "0x00547EF0",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00547EF4",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547EF8",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00547EFC",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00547F00",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00547F04",
+        "target": "0x005039F0",
+        "target_func": "0x005039F0",
+        "target_name": "sub_5039F0"
+      }
+    ],
+    "xrefs_to": [
+      "0x0050ED43",
+      "0x0050F11A"
+    ]
+  },
+  {
+    "ea": "0x00547F58",
+    "segment": ".rdata",
+    "name": "??_7ToolTipCtrl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x00547F58",
+        "target": "0x0050FCA0",
+        "target_func": "0x0050FCA0",
+        "target_name": "sub_50FCA0"
+      },
+      {
+        "slot_ea": "0x00547F5C",
+        "target": "0x0050F990",
+        "target_func": "0x0050F990",
+        "target_name": "sub_50F990"
+      },
+      {
+        "slot_ea": "0x00547F60",
+        "target": "0x0050FBA0",
+        "target_func": "0x0050FBA0",
+        "target_name": "sub_50FBA0"
+      },
+      {
+        "slot_ea": "0x00547F64",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x00547F68",
+        "target": "0x0050F450",
+        "target_func": "0x0050F450",
+        "target_name": "sub_50F450"
+      },
+      {
+        "slot_ea": "0x00547F6C",
+        "target": "0x0050F210",
+        "target_func": "0x0050F210",
+        "target_name": "sub_50F210"
+      },
+      {
+        "slot_ea": "0x00547F70",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x00547F74",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x00547F78",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x00547F7C",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x00547F80",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x00547F84",
+        "target": "0x0050F970",
+        "target_func": "0x0050F970",
+        "target_name": "sub_50F970"
+      }
+    ],
+    "xrefs_to": [
+      "0x0050F8D2"
+    ]
+  },
+  {
+    "ea": "0x005480A4",
+    "segment": ".rdata",
+    "name": "??_7CWebBrowserControl@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005480A4",
+        "target": "0x00510880",
+        "target_func": "0x00510880",
+        "target_name": "sub_510880"
+      },
+      {
+        "slot_ea": "0x005480A8",
+        "target": "0x00510620",
+        "target_func": "0x00510620",
+        "target_name": "sub_510620"
+      },
+      {
+        "slot_ea": "0x005480AC",
+        "target": "0x00510930",
+        "target_func": "0x00510930",
+        "target_name": "sub_510930"
+      },
+      {
+        "slot_ea": "0x005480B0",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005480B4",
+        "target": "0x0050FF90",
+        "target_func": "0x0050FF90",
+        "target_name": "sub_50FF90"
+      },
+      {
+        "slot_ea": "0x005480B8",
+        "target": "0x005100E0",
+        "target_func": "0x005100E0",
+        "target_name": "sub_5100E0"
+      },
+      {
+        "slot_ea": "0x005480BC",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005480C0",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005480C4",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005480C8",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005480CC",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005480D0",
+        "target": "0x00510440",
+        "target_func": "0x00510440",
+        "target_name": "sub_510440"
+      }
+    ],
+    "xrefs_to": [
+      "0x0051030A",
+      "0x00510379",
+      "0x005104A3"
+    ]
+  },
+  {
+    "ea": "0x005484B0",
+    "segment": ".rdata",
+    "name": "??_7Window@SphereUI@@6B@",
+    "entry_count": 12,
+    "entries": [
+      {
+        "slot_ea": "0x005484B0",
+        "target": "0x00514430",
+        "target_func": "0x00514430",
+        "target_name": "sub_514430"
+      },
+      {
+        "slot_ea": "0x005484B4",
+        "target": "0x00515190",
+        "target_func": "0x00515190",
+        "target_name": "sub_515190"
+      },
+      {
+        "slot_ea": "0x005484B8",
+        "target": "0x005129A0",
+        "target_func": "0x005129A0",
+        "target_name": "sub_5129A0"
+      },
+      {
+        "slot_ea": "0x005484BC",
+        "target": "0x00511450",
+        "target_func": "0x00511450",
+        "target_name": "sub_511450"
+      },
+      {
+        "slot_ea": "0x005484C0",
+        "target": "0x00512160",
+        "target_func": "0x00512160",
+        "target_name": "sub_512160"
+      },
+      {
+        "slot_ea": "0x005484C4",
+        "target": "0x00512430",
+        "target_func": "0x00512430",
+        "target_name": "sub_512430"
+      },
+      {
+        "slot_ea": "0x005484C8",
+        "target": "0x005125C0",
+        "target_func": "0x005125C0",
+        "target_name": "sub_5125C0"
+      },
+      {
+        "slot_ea": "0x005484CC",
+        "target": "0x00512700",
+        "target_func": "0x00512700",
+        "target_name": "sub_512700"
+      },
+      {
+        "slot_ea": "0x005484D0",
+        "target": "0x00512660",
+        "target_func": "0x00512660",
+        "target_name": "sub_512660"
+      },
+      {
+        "slot_ea": "0x005484D4",
+        "target": "0x00511530",
+        "target_func": "0x00511530",
+        "target_name": "sub_511530"
+      },
+      {
+        "slot_ea": "0x005484D8",
+        "target": "0x00511570",
+        "target_func": "0x00511570",
+        "target_name": "sub_511570"
+      },
+      {
+        "slot_ea": "0x005484DC",
+        "target": "0x005039F0",
+        "target_func": "0x005039F0",
+        "target_name": "sub_5039F0"
+      }
+    ],
+    "xrefs_to": [
+      "0x005131BD",
+      "0x0051347D",
+      "0x00514E4D"
+    ]
+  },
+  {
+    "ea": "0x00549284",
+    "segment": ".rdata",
+    "name": "??_7CCursor@@6B@",
+    "entry_count": 14,
+    "entries": [
+      {
+        "slot_ea": "0x00549284",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x00549288",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0054928C",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x00549290",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x00549294",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x00549298",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x0054929C",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492A0",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492A4",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492A8",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492AC",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492B0",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492B4",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      },
+      {
+        "slot_ea": "0x005492B8",
+        "target": "0x0052E7B2",
+        "target_func": "0x0052E7B2",
+        "target_name": "_purecall"
+      }
+    ],
+    "xrefs_to": [
+      "0x005177C0",
+      "0x00517FC8"
+    ]
+  },
+  {
+    "ea": "0x005492C0",
+    "segment": ".rdata",
+    "name": "??_7CHardwareCursor@@6B@",
+    "entry_count": 14,
+    "entries": [
+      {
+        "slot_ea": "0x005492C0",
+        "target": "0x00517FC0",
+        "target_func": "0x00517FC0",
+        "target_name": "sub_517FC0"
+      },
+      {
+        "slot_ea": "0x005492C4",
+        "target": "0x005178D0",
+        "target_func": "0x005178D0",
+        "target_name": "sub_5178D0"
+      },
+      {
+        "slot_ea": "0x005492C8",
+        "target": "0x00517930",
+        "target_func": "0x00517930",
+        "target_name": "sub_517930"
+      },
+      {
+        "slot_ea": "0x005492CC",
+        "target": "0x00517970",
+        "target_func": "0x00517970",
+        "target_name": "sub_517970"
+      },
+      {
+        "slot_ea": "0x005492D0",
+        "target": "0x00517980",
+        "target_func": "0x00517980",
+        "target_name": "sub_517980"
+      },
+      {
+        "slot_ea": "0x005492D4",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x005492D8",
+        "target": "0x00517990",
+        "target_func": "0x00517990",
+        "target_name": "sub_517990"
+      },
+      {
+        "slot_ea": "0x005492DC",
+        "target": "0x005179E0",
+        "target_func": "0x005179E0",
+        "target_name": "sub_5179E0"
+      },
+      {
+        "slot_ea": "0x005492E0",
+        "target": "0x00517A20",
+        "target_func": "0x00517A20",
+        "target_name": "sub_517A20"
+      },
+      {
+        "slot_ea": "0x005492E4",
+        "target": "0x00517A50",
+        "target_func": "0x00517A50",
+        "target_name": "sub_517A50"
+      },
+      {
+        "slot_ea": "0x005492E8",
+        "target": "0x00517A90",
+        "target_func": "0x00517A90",
+        "target_name": "sub_517A90"
+      },
+      {
+        "slot_ea": "0x005492EC",
+        "target": "0x00517AB0",
+        "target_func": "0x00517AB0",
+        "target_name": "sub_517AB0"
+      },
+      {
+        "slot_ea": "0x005492F0",
+        "target": "0x00517AD0",
+        "target_func": "0x00517AD0",
+        "target_name": "sub_517AD0"
+      },
+      {
+        "slot_ea": "0x005492F4",
+        "target": "0x00517AE0",
+        "target_func": "0x00517AE0",
+        "target_name": "sub_517AE0"
+      }
+    ],
+    "xrefs_to": [
+      "0x005178A4"
+    ]
+  },
+  {
+    "ea": "0x005492FC",
+    "segment": ".rdata",
+    "name": "??_7CSoftwareCursor@@6B@",
+    "entry_count": 14,
+    "entries": [
+      {
+        "slot_ea": "0x005492FC",
+        "target": "0x00517FC0",
+        "target_func": "0x00517FC0",
+        "target_name": "sub_517FC0"
+      },
+      {
+        "slot_ea": "0x00549300",
+        "target": "0x00517C30",
+        "target_func": "0x00517C30",
+        "target_name": "sub_517C30"
+      },
+      {
+        "slot_ea": "0x00549304",
+        "target": "0x00517CB0",
+        "target_func": "0x00517CB0",
+        "target_name": "sub_517CB0"
+      },
+      {
+        "slot_ea": "0x00549308",
+        "target": "0x00517D20",
+        "target_func": "0x00517D20",
+        "target_name": "sub_517D20"
+      },
+      {
+        "slot_ea": "0x0054930C",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x00549310",
+        "target": "0x00517D80",
+        "target_func": "0x00517D80",
+        "target_name": "sub_517D80"
+      },
+      {
+        "slot_ea": "0x00549314",
+        "target": "0x00517DC0",
+        "target_func": "0x00517DC0",
+        "target_name": "sub_517DC0"
+      },
+      {
+        "slot_ea": "0x00549318",
+        "target": "0x00517DE0",
+        "target_func": "0x00517DE0",
+        "target_name": "sub_517DE0"
+      },
+      {
+        "slot_ea": "0x0054931C",
+        "target": "0x00517E00",
+        "target_func": "0x00517E00",
+        "target_name": "sub_517E00"
+      },
+      {
+        "slot_ea": "0x00549320",
+        "target": "0x00517F50",
+        "target_func": "0x00517F50",
+        "target_name": "sub_517F50"
+      },
+      {
+        "slot_ea": "0x00549324",
+        "target": "0x00517F60",
+        "target_func": "0x00517F60",
+        "target_name": "sub_517F60"
+      },
+      {
+        "slot_ea": "0x00549328",
+        "target": "0x00517F70",
+        "target_func": "0x00517F70",
+        "target_name": "sub_517F70"
+      },
+      {
+        "slot_ea": "0x0054932C",
+        "target": "0x00517F80",
+        "target_func": "0x00517F80",
+        "target_name": "sub_517F80"
+      },
+      {
+        "slot_ea": "0x00549330",
+        "target": "0x00517F90",
+        "target_func": "0x00517F90",
+        "target_name": "sub_517F90"
+      }
+    ],
+    "xrefs_to": [
+      "0x00517BFE"
+    ]
+  },
+  {
+    "ea": "0x00554F30",
+    "segment": ".rdata",
+    "name": "off_554F30",
+    "entry_count": 3,
+    "entries": [
+      {
+        "slot_ea": "0x00554F30",
+        "target": "0x0052D400",
+        "target_func": "0x0052D400",
+        "target_name": "sub_52D400"
+      },
+      {
+        "slot_ea": "0x00554F34",
+        "target": "0x0052D420",
+        "target_func": "0x0052D420",
+        "target_name": "sub_52D420"
+      },
+      {
+        "slot_ea": "0x00554F38",
+        "target": "0x0052D440",
+        "target_func": "0x0052D440",
+        "target_name": "sub_52D440"
+      }
+    ],
+    "xrefs_to": [
+      "0x0056448C"
+    ]
+  },
+  {
+    "ea": "0x0055F0E0",
+    "segment": ".data",
+    "name": "off_55F0E0",
+    "entry_count": 18,
+    "entries": [
+      {
+        "slot_ea": "0x0055F0E0",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F0E4",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F0E8",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F0EC",
+        "target": "0x00461670",
+        "target_func": "0x00461670",
+        "target_name": "sub_461670"
+      },
+      {
+        "slot_ea": "0x0055F0F0",
+        "target": "0x00461670",
+        "target_func": "0x00461670",
+        "target_name": "sub_461670"
+      },
+      {
+        "slot_ea": "0x0055F0F4",
+        "target": "0x00461670",
+        "target_func": "0x00461670",
+        "target_name": "sub_461670"
+      },
+      {
+        "slot_ea": "0x0055F0F8",
+        "target": "0x00461680",
+        "target_func": "0x00461680",
+        "target_name": "sub_461680"
+      },
+      {
+        "slot_ea": "0x0055F0FC",
+        "target": "0x00461690",
+        "target_func": "0x00461690",
+        "target_name": "sub_461690"
+      },
+      {
+        "slot_ea": "0x0055F100",
+        "target": "0x00461690",
+        "target_func": "0x00461690",
+        "target_name": "sub_461690"
+      },
+      {
+        "slot_ea": "0x0055F104",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F108",
+        "target": "0x00461850",
+        "target_func": "0x00461850",
+        "target_name": "sub_461850"
+      },
+      {
+        "slot_ea": "0x0055F10C",
+        "target": "0x00461690",
+        "target_func": "0x00461690",
+        "target_name": "sub_461690"
+      },
+      {
+        "slot_ea": "0x0055F110",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F114",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F118",
+        "target": "0x00461690",
+        "target_func": "0x00461690",
+        "target_name": "sub_461690"
+      },
+      {
+        "slot_ea": "0x0055F11C",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F120",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F124",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      }
+    ],
+    "xrefs_to": [
+      "0x0055F128"
+    ]
+  },
+  {
+    "ea": "0x0055F12C",
+    "segment": ".data",
+    "name": "off_55F12C",
+    "entry_count": 57,
+    "entries": [
+      {
+        "slot_ea": "0x0055F12C",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F130",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F134",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F138",
+        "target": "0x004618A0",
+        "target_func": "0x004618A0",
+        "target_name": "sub_4618A0"
+      },
+      {
+        "slot_ea": "0x0055F13C",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F140",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F144",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F148",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F14C",
+        "target": "0x0047AF20",
+        "target_func": "0x0047AF20",
+        "target_name": "sub_47AF20"
+      },
+      {
+        "slot_ea": "0x0055F150",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F154",
+        "target": "0x004615E0",
+        "target_func": "0x004615E0",
+        "target_name": "sub_4615E0"
+      },
+      {
+        "slot_ea": "0x0055F158",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F15C",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F160",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F164",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F168",
+        "target": "0x004616A0",
+        "target_func": "0x004616A0",
+        "target_name": "sub_4616A0"
+      },
+      {
+        "slot_ea": "0x0055F16C",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F170",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F174",
+        "target": "0x00461850",
+        "target_func": "0x00461850",
+        "target_name": "sub_461850"
+      },
+      {
+        "slot_ea": "0x0055F178",
+        "target": "0x00461790",
+        "target_func": "0x00461790",
+        "target_name": "sub_461790"
+      },
+      {
+        "slot_ea": "0x0055F17C",
+        "target": "0x004617A0",
+        "target_func": "0x004617A0",
+        "target_name": "sub_4617A0"
+      },
+      {
+        "slot_ea": "0x0055F180",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F184",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F188",
+        "target": "0x00461850",
+        "target_func": "0x00461850",
+        "target_name": "sub_461850"
+      },
+      {
+        "slot_ea": "0x0055F18C",
+        "target": "0x004617C0",
+        "target_func": "0x004617C0",
+        "target_name": "sub_4617C0"
+      },
+      {
+        "slot_ea": "0x0055F190",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F194",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F198",
+        "target": "0x004617E0",
+        "target_func": "0x004617E0",
+        "target_name": "sub_4617E0"
+      },
+      {
+        "slot_ea": "0x0055F19C",
+        "target": "0x004618C0",
+        "target_func": "0x004618C0",
+        "target_name": "sub_4618C0"
+      },
+      {
+        "slot_ea": "0x0055F1A0",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1A4",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1A8",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1AC",
+        "target": "0x00461800",
+        "target_func": "0x00461800",
+        "target_name": "sub_461800"
+      },
+      {
+        "slot_ea": "0x0055F1B0",
+        "target": "0x004618D0",
+        "target_func": "0x004618D0",
+        "target_name": "sub_4618D0"
+      },
+      {
+        "slot_ea": "0x0055F1B4",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F1B8",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1BC",
+        "target": "0x00461850",
+        "target_func": "0x00461850",
+        "target_name": "sub_461850"
+      },
+      {
+        "slot_ea": "0x0055F1C0",
+        "target": "0x00461850",
+        "target_func": "0x00461850",
+        "target_name": "sub_461850"
+      },
+      {
+        "slot_ea": "0x0055F1C4",
+        "target": "0x00461860",
+        "target_func": "0x00461860",
+        "target_name": "sub_461860"
+      },
+      {
+        "slot_ea": "0x0055F1C8",
+        "target": "0x00461E00",
+        "target_func": "0x00461E00",
+        "target_name": "sub_461E00"
+      },
+      {
+        "slot_ea": "0x0055F1CC",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F1D0",
+        "target": "0x004617D0",
+        "target_func": "0x004617D0",
+        "target_name": "sub_4617D0"
+      },
+      {
+        "slot_ea": "0x0055F1D4",
+        "target": "0x004615A0",
+        "target_func": "0x004615A0",
+        "target_name": "sub_4615A0"
+      },
+      {
+        "slot_ea": "0x0055F1D8",
+        "target": "0x004615B0",
+        "target_func": "0x004615B0",
+        "target_name": "sub_4615B0"
+      },
+      {
+        "slot_ea": "0x0055F1DC",
+        "target": "0x004615D0",
+        "target_func": "0x004615D0",
+        "target_name": "sub_4615D0"
+      },
+      {
+        "slot_ea": "0x0055F1E0",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1E4",
+        "target": "0x00461840",
+        "target_func": "0x00461840",
+        "target_name": "sub_461840"
+      },
+      {
+        "slot_ea": "0x0055F1E8",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F1EC",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F1F0",
+        "target": "0x00461830",
+        "target_func": "0x00461830",
+        "target_name": "sub_461830"
+      },
+      {
+        "slot_ea": "0x0055F1F4",
+        "target": "0x004615E0",
+        "target_func": "0x004615E0",
+        "target_name": "sub_4615E0"
+      },
+      {
+        "slot_ea": "0x0055F1F8",
+        "target": "0x004615F0",
+        "target_func": "0x004615F0",
+        "target_name": "sub_4615F0"
+      },
+      {
+        "slot_ea": "0x0055F1FC",
+        "target": "0x00461600",
+        "target_func": "0x00461600",
+        "target_name": "_DllMain@12"
+      },
+      {
+        "slot_ea": "0x0055F200",
+        "target": "0x00461600",
+        "target_func": "0x00461600",
+        "target_name": "_DllMain@12"
+      },
+      {
+        "slot_ea": "0x0055F204",
+        "target": "0x00461610",
+        "target_func": "0x00461610",
+        "target_name": "sub_461610"
+      },
+      {
+        "slot_ea": "0x0055F208",
+        "target": "0x00461630",
+        "target_func": "0x00461630",
+        "target_name": "sub_461630"
+      },
+      {
+        "slot_ea": "0x0055F20C",
+        "target": "0x00461650",
+        "target_func": "0x00461650",
+        "target_name": "sub_461650"
+      }
+    ],
+    "xrefs_to": [
+      "0x00461C00"
+    ]
+  },
+  {
+    "ea": "0x0055FB28",
+    "segment": ".data",
+    "name": "jpt_47754E",
+    "entry_count": 164,
+    "entries": [
+      {
+        "slot_ea": "0x0055FB28",
+        "target": "0x0047B930",
+        "target_func": "0x00477500",
+        "target_name": "loc_47B930"
+      },
+      {
+        "slot_ea": "0x0055FB2C",
+        "target": "0x0047B930",
+        "target_func": "0x00477500",
+        "target_name": "loc_47B930"
+      },
+      {
+        "slot_ea": "0x0055FB30",
+        "target": "0x0047B980",
+        "target_func": "0x00477500",
+        "target_name": "loc_47B980"
+      },
+      {
+        "slot_ea": "0x0055FB34",
+        "target": "0x0047B9C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47B9C0"
+      },
+      {
+        "slot_ea": "0x0055FB38",
+        "target": "0x0047B9F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47B9F0"
+      },
+      {
+        "slot_ea": "0x0055FB3C",
+        "target": "0x0047BAF0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BAF0"
+      },
+      {
+        "slot_ea": "0x0055FB40",
+        "target": "0x0047BA90",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BA90"
+      },
+      {
+        "slot_ea": "0x0055FB44",
+        "target": "0x0047BA50",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BA50"
+      },
+      {
+        "slot_ea": "0x0055FB48",
+        "target": "0x0047BB20",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BB20"
+      },
+      {
+        "slot_ea": "0x0055FB4C",
+        "target": "0x0047F5B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F5B0"
+      },
+      {
+        "slot_ea": "0x0055FB50",
+        "target": "0x00480490",
+        "target_func": "0x00477500",
+        "target_name": "loc_480490"
+      },
+      {
+        "slot_ea": "0x0055FB54",
+        "target": "0x0047BDA0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BDA0"
+      },
+      {
+        "slot_ea": "0x0055FB58",
+        "target": "0x0047BF10",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BF10"
+      },
+      {
+        "slot_ea": "0x0055FB5C",
+        "target": "0x0047BF50",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BF50"
+      },
+      {
+        "slot_ea": "0x0055FB60",
+        "target": "0x0047BFA0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BFA0"
+      },
+      {
+        "slot_ea": "0x0055FB64",
+        "target": "0x00481D20",
+        "target_func": "0x00477500",
+        "target_name": "loc_481D20"
+      },
+      {
+        "slot_ea": "0x0055FB68",
+        "target": "0x0047BFD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BFD0"
+      },
+      {
+        "slot_ea": "0x0055FB6C",
+        "target": "0x0047C030",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C030"
+      },
+      {
+        "slot_ea": "0x0055FB70",
+        "target": "0x0047C0C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C0C0"
+      },
+      {
+        "slot_ea": "0x0055FB74",
+        "target": "0x0047C150",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C150"
+      },
+      {
+        "slot_ea": "0x0055FB78",
+        "target": "0x0047C570",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C570"
+      },
+      {
+        "slot_ea": "0x0055FB7C",
+        "target": "0x0047C5C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C5C0"
+      },
+      {
+        "slot_ea": "0x0055FB80",
+        "target": "0x0047C5E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C5E0"
+      },
+      {
+        "slot_ea": "0x0055FB84",
+        "target": "0x0047C640",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C640"
+      },
+      {
+        "slot_ea": "0x0055FB88",
+        "target": "0x0047C6A0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C6A0"
+      },
+      {
+        "slot_ea": "0x0055FB8C",
+        "target": "0x0047C780",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C780"
+      },
+      {
+        "slot_ea": "0x0055FB90",
+        "target": "0x0047C7E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C7E0"
+      },
+      {
+        "slot_ea": "0x0055FB94",
+        "target": "0x0047C780",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C780"
+      },
+      {
+        "slot_ea": "0x0055FB98",
+        "target": "0x0047C1A0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C1A0"
+      },
+      {
+        "slot_ea": "0x0055FB9C",
+        "target": "0x0047D290",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D290"
+      },
+      {
+        "slot_ea": "0x0055FBA0",
+        "target": "0x0047D2C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D2C0"
+      },
+      {
+        "slot_ea": "0x0055FBA4",
+        "target": "0x00477C10",
+        "target_func": "0x00477500",
+        "target_name": "loc_477C10"
+      },
+      {
+        "slot_ea": "0x0055FBA8",
+        "target": "0x0047D350",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D350"
+      },
+      {
+        "slot_ea": "0x0055FBAC",
+        "target": "0x0047CB20",
+        "target_func": "0x00477500",
+        "target_name": "loc_47CB20"
+      },
+      {
+        "slot_ea": "0x0055FBB0",
+        "target": "0x0047D3B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D3B0"
+      },
+      {
+        "slot_ea": "0x0055FBB4",
+        "target": "0x0047D5C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D5C0"
+      },
+      {
+        "slot_ea": "0x0055FBB8",
+        "target": "0x0047D890",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D890"
+      },
+      {
+        "slot_ea": "0x0055FBBC",
+        "target": "0x0047D9C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D9C0"
+      },
+      {
+        "slot_ea": "0x0055FBC0",
+        "target": "0x0047DBE0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47DBE0"
+      },
+      {
+        "slot_ea": "0x0055FBC4",
+        "target": "0x0047C710",
+        "target_func": "0x00477500",
+        "target_name": "loc_47C710"
+      },
+      {
+        "slot_ea": "0x0055FBC8",
+        "target": "0x0047E500",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E500"
+      },
+      {
+        "slot_ea": "0x0055FBCC",
+        "target": "0x0047E590",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E590"
+      },
+      {
+        "slot_ea": "0x0055FBD0",
+        "target": "0x0047E6A0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E6A0"
+      },
+      {
+        "slot_ea": "0x0055FBD4",
+        "target": "0x0047E6D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E6D0"
+      },
+      {
+        "slot_ea": "0x0055FBD8",
+        "target": "0x0047E750",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E750"
+      },
+      {
+        "slot_ea": "0x0055FBDC",
+        "target": "0x0047EA60",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EA60"
+      },
+      {
+        "slot_ea": "0x0055FBE0",
+        "target": "0x0047EAC0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EAC0"
+      },
+      {
+        "slot_ea": "0x0055FBE4",
+        "target": "0x0047EB40",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EB40"
+      },
+      {
+        "slot_ea": "0x0055FBE8",
+        "target": "0x0047EC50",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EC50"
+      },
+      {
+        "slot_ea": "0x0055FBEC",
+        "target": "0x0047F0A0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F0A0"
+      },
+      {
+        "slot_ea": "0x0055FBF0",
+        "target": "0x0047F120",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F120"
+      },
+      {
+        "slot_ea": "0x0055FBF4",
+        "target": "0x0047F180",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F180"
+      },
+      {
+        "slot_ea": "0x0055FBF8",
+        "target": "0x0047EEB0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EEB0"
+      },
+      {
+        "slot_ea": "0x0055FBFC",
+        "target": "0x0047F1C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F1C0"
+      },
+      {
+        "slot_ea": "0x0055FC00",
+        "target": "0x0047ED00",
+        "target_func": "0x00477500",
+        "target_name": "loc_47ED00"
+      },
+      {
+        "slot_ea": "0x0055FC04",
+        "target": "0x0047ED40",
+        "target_func": "0x00477500",
+        "target_name": "loc_47ED40"
+      },
+      {
+        "slot_ea": "0x0055FC08",
+        "target": "0x0047ED80",
+        "target_func": "0x00477500",
+        "target_name": "loc_47ED80"
+      },
+      {
+        "slot_ea": "0x0055FC0C",
+        "target": "0x0047EDC0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EDC0"
+      },
+      {
+        "slot_ea": "0x0055FC10",
+        "target": "0x0047EE00",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EE00"
+      },
+      {
+        "slot_ea": "0x0055FC14",
+        "target": "0x0047EE40",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EE40"
+      },
+      {
+        "slot_ea": "0x0055FC18",
+        "target": "0x0047EE80",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EE80"
+      },
+      {
+        "slot_ea": "0x0055FC1C",
+        "target": "0x0047F270",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F270"
+      },
+      {
+        "slot_ea": "0x0055FC20",
+        "target": "0x0047F3F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F3F0"
+      },
+      {
+        "slot_ea": "0x0055FC24",
+        "target": "0x0047F420",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F420"
+      },
+      {
+        "slot_ea": "0x0055FC28",
+        "target": "0x0047EAD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EAD0"
+      },
+      {
+        "slot_ea": "0x0055FC2C",
+        "target": "0x0047E870",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E870"
+      },
+      {
+        "slot_ea": "0x0055FC30",
+        "target": "0x0047E8C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E8C0"
+      },
+      {
+        "slot_ea": "0x0055FC34",
+        "target": "0x0047F720",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F720"
+      },
+      {
+        "slot_ea": "0x0055FC38",
+        "target": "0x0047E9F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E9F0"
+      },
+      {
+        "slot_ea": "0x0055FC3C",
+        "target": "0x0047E9C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E9C0"
+      },
+      {
+        "slot_ea": "0x0055FC40",
+        "target": "0x0047E8E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E8E0"
+      },
+      {
+        "slot_ea": "0x0055FC44",
+        "target": "0x0047E930",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E930"
+      },
+      {
+        "slot_ea": "0x0055FC48",
+        "target": "0x0047E960",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E960"
+      },
+      {
+        "slot_ea": "0x0055FC4C",
+        "target": "0x0047F470",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F470"
+      },
+      {
+        "slot_ea": "0x0055FC50",
+        "target": "0x0047EA30",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EA30"
+      },
+      {
+        "slot_ea": "0x0055FC54",
+        "target": "0x0047DA60",
+        "target_func": "0x00477500",
+        "target_name": "loc_47DA60"
+      },
+      {
+        "slot_ea": "0x0055FC58",
+        "target": "0x0047DAE0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47DAE0"
+      },
+      {
+        "slot_ea": "0x0055FC5C",
+        "target": "0x0047F9D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F9D0"
+      },
+      {
+        "slot_ea": "0x0055FC60",
+        "target": "0x0047FBF0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FBF0"
+      },
+      {
+        "slot_ea": "0x0055FC64",
+        "target": "0x0047FCD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FCD0"
+      },
+      {
+        "slot_ea": "0x0055FC68",
+        "target": "0x0047D200",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D200"
+      },
+      {
+        "slot_ea": "0x0055FC6C",
+        "target": "0x0047BBB0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BBB0"
+      },
+      {
+        "slot_ea": "0x0055FC70",
+        "target": "0x0047FD40",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FD40"
+      },
+      {
+        "slot_ea": "0x0055FC74",
+        "target": "0x0047EF30",
+        "target_func": "0x00477500",
+        "target_name": "loc_47EF30"
+      },
+      {
+        "slot_ea": "0x0055FC78",
+        "target": "0x0047F060",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F060"
+      },
+      {
+        "slot_ea": "0x0055FC7C",
+        "target": "0x0047FD70",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FD70"
+      },
+      {
+        "slot_ea": "0x0055FC80",
+        "target": "0x0047E4D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E4D0"
+      },
+      {
+        "slot_ea": "0x0055FC84",
+        "target": "0x0047FDD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FDD0"
+      },
+      {
+        "slot_ea": "0x0055FC88",
+        "target": "0x0047FE30",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FE30"
+      },
+      {
+        "slot_ea": "0x0055FC8C",
+        "target": "0x0047FE90",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FE90"
+      },
+      {
+        "slot_ea": "0x0055FC90",
+        "target": "0x0047FEC0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FEC0"
+      },
+      {
+        "slot_ea": "0x0055FC94",
+        "target": "0x0047E320",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E320"
+      },
+      {
+        "slot_ea": "0x0055FC98",
+        "target": "0x0047FEF0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FEF0"
+      },
+      {
+        "slot_ea": "0x0055FC9C",
+        "target": "0x0047FFA0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FFA0"
+      },
+      {
+        "slot_ea": "0x0055FCA0",
+        "target": "0x00480010",
+        "target_func": "0x00477500",
+        "target_name": "loc_480010"
+      },
+      {
+        "slot_ea": "0x0055FCA4",
+        "target": "0x0047D7B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D7B0"
+      },
+      {
+        "slot_ea": "0x0055FCA8",
+        "target": "0x0047FC60",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FC60"
+      },
+      {
+        "slot_ea": "0x0055FCAC",
+        "target": "0x00480070",
+        "target_func": "0x00477500",
+        "target_name": "loc_480070"
+      },
+      {
+        "slot_ea": "0x0055FCB0",
+        "target": "0x004800F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4800F0"
+      },
+      {
+        "slot_ea": "0x0055FCB4",
+        "target": "0x0047F220",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F220"
+      },
+      {
+        "slot_ea": "0x0055FCB8",
+        "target": "0x00480150",
+        "target_func": "0x00477500",
+        "target_name": "loc_480150"
+      },
+      {
+        "slot_ea": "0x0055FCBC",
+        "target": "0x00480220",
+        "target_func": "0x00477500",
+        "target_name": "loc_480220"
+      },
+      {
+        "slot_ea": "0x0055FCC0",
+        "target": "0x004802C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4802C0"
+      },
+      {
+        "slot_ea": "0x0055FCC4",
+        "target": "0x00483C70",
+        "target_func": "0x00477500",
+        "target_name": "loc_483C70"
+      },
+      {
+        "slot_ea": "0x0055FCC8",
+        "target": "0x004819D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4819D0"
+      },
+      {
+        "slot_ea": "0x0055FCCC",
+        "target": "0x0047F580",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F580"
+      },
+      {
+        "slot_ea": "0x0055FCD0",
+        "target": "0x0047BB80",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BB80"
+      },
+      {
+        "slot_ea": "0x0055FCD4",
+        "target": "0x00481A20",
+        "target_func": "0x00477500",
+        "target_name": "loc_481A20"
+      },
+      {
+        "slot_ea": "0x0055FCD8",
+        "target": "0x0047FAF0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47FAF0"
+      },
+      {
+        "slot_ea": "0x0055FCDC",
+        "target": "0x00481AA0",
+        "target_func": "0x00477500",
+        "target_name": "loc_481AA0"
+      },
+      {
+        "slot_ea": "0x0055FCE0",
+        "target": "0x00481B10",
+        "target_func": "0x00477500",
+        "target_name": "loc_481B10"
+      },
+      {
+        "slot_ea": "0x0055FCE4",
+        "target": "0x00481BC0",
+        "target_func": "0x00477500",
+        "target_name": "loc_481BC0"
+      },
+      {
+        "slot_ea": "0x0055FCE8",
+        "target": "0x00481E80",
+        "target_func": "0x00477500",
+        "target_name": "loc_481E80"
+      },
+      {
+        "slot_ea": "0x0055FCEC",
+        "target": "0x00481D70",
+        "target_func": "0x00477500",
+        "target_name": "loc_481D70"
+      },
+      {
+        "slot_ea": "0x0055FCF0",
+        "target": "0x00481F60",
+        "target_func": "0x00477500",
+        "target_name": "loc_481F60"
+      },
+      {
+        "slot_ea": "0x0055FCF4",
+        "target": "0x004820E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4820E0"
+      },
+      {
+        "slot_ea": "0x0055FCF8",
+        "target": "0x0047E650",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E650"
+      },
+      {
+        "slot_ea": "0x0055FCFC",
+        "target": "0x00486A60",
+        "target_func": "0x00486A60",
+        "target_name": "sub_486A60"
+      },
+      {
+        "slot_ea": "0x0055FD00",
+        "target": "0x004822B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4822B0"
+      },
+      {
+        "slot_ea": "0x0055FD04",
+        "target": "0x004822E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4822E0"
+      },
+      {
+        "slot_ea": "0x0055FD08",
+        "target": "0x00482330",
+        "target_func": "0x00482330",
+        "target_name": "sub_482330"
+      },
+      {
+        "slot_ea": "0x0055FD0C",
+        "target": "0x0047F820",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F820"
+      },
+      {
+        "slot_ea": "0x0055FD10",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0055FD14",
+        "target": "0x00480340",
+        "target_func": "0x00477500",
+        "target_name": "loc_480340"
+      },
+      {
+        "slot_ea": "0x0055FD18",
+        "target": "0x0047E7C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E7C0"
+      },
+      {
+        "slot_ea": "0x0055FD1C",
+        "target": "0x0047BA20",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BA20"
+      },
+      {
+        "slot_ea": "0x0055FD20",
+        "target": "0x0047E030",
+        "target_func": "0x00477500",
+        "target_name": "loc_47E030"
+      },
+      {
+        "slot_ea": "0x0055FD24",
+        "target": "0x0047F7B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47F7B0"
+      },
+      {
+        "slot_ea": "0x0055FD28",
+        "target": "0x00483C00",
+        "target_func": "0x00477500",
+        "target_name": "loc_483C00"
+      },
+      {
+        "slot_ea": "0x0055FD2C",
+        "target": "0x0048AE50",
+        "target_func": "0x00477500",
+        "target_name": "loc_48AE50"
+      },
+      {
+        "slot_ea": "0x0055FD30",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0055FD34",
+        "target": "0x004803E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4803E0"
+      },
+      {
+        "slot_ea": "0x0055FD38",
+        "target": "0x00489C10",
+        "target_func": "0x00477500",
+        "target_name": "loc_489C10"
+      },
+      {
+        "slot_ea": "0x0055FD3C",
+        "target": "0x0046B620",
+        "target_func": "0x0046B620",
+        "target_name": "nullsub_1"
+      },
+      {
+        "slot_ea": "0x0055FD40",
+        "target": "0x0047BE30",
+        "target_func": "0x00477500",
+        "target_name": "loc_47BE30"
+      },
+      {
+        "slot_ea": "0x0055FD44",
+        "target": "0x0047D820",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D820"
+      },
+      {
+        "slot_ea": "0x0055FD48",
+        "target": "0x0047D4B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_47D4B0"
+      },
+      {
+        "slot_ea": "0x0055FD4C",
+        "target": "0x0047DB60",
+        "target_func": "0x00477500",
+        "target_name": "loc_47DB60"
+      },
+      {
+        "slot_ea": "0x0055FD50",
+        "target": "0x00482340",
+        "target_func": "0x00477500",
+        "target_name": "loc_482340"
+      },
+      {
+        "slot_ea": "0x0055FD54",
+        "target": "0x004823B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4823B0"
+      },
+      {
+        "slot_ea": "0x0055FD58",
+        "target": "0x00482420",
+        "target_func": "0x00477500",
+        "target_name": "loc_482420"
+      },
+      {
+        "slot_ea": "0x0055FD5C",
+        "target": "0x00482490",
+        "target_func": "0x00477500",
+        "target_name": "loc_482490"
+      },
+      {
+        "slot_ea": "0x0055FD60",
+        "target": "0x004824F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4824F0"
+      },
+      {
+        "slot_ea": "0x0055FD64",
+        "target": "0x00482560",
+        "target_func": "0x00477500",
+        "target_name": "loc_482560"
+      },
+      {
+        "slot_ea": "0x0055FD68",
+        "target": "0x004825D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4825D0"
+      },
+      {
+        "slot_ea": "0x0055FD6C",
+        "target": "0x00482650",
+        "target_func": "0x00477500",
+        "target_name": "loc_482650"
+      },
+      {
+        "slot_ea": "0x0055FD70",
+        "target": "0x004826D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4826D0"
+      },
+      {
+        "slot_ea": "0x0055FD74",
+        "target": "0x00487490",
+        "target_func": "0x00477500",
+        "target_name": "loc_487490"
+      },
+      {
+        "slot_ea": "0x0055FD78",
+        "target": "0x004828B0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4828B0"
+      },
+      {
+        "slot_ea": "0x0055FD7C",
+        "target": "0x004828C0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4828C0"
+      },
+      {
+        "slot_ea": "0x0055FD80",
+        "target": "0x004828D0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4828D0"
+      },
+      {
+        "slot_ea": "0x0055FD84",
+        "target": "0x004828E0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4828E0"
+      },
+      {
+        "slot_ea": "0x0055FD88",
+        "target": "0x004828F0",
+        "target_func": "0x00477500",
+        "target_name": "loc_4828F0"
+      },
+      {
+        "slot_ea": "0x0055FD8C",
+        "target": "0x00482990",
+        "target_func": "0x00477500",
+        "target_name": "loc_482990"
+      },
+      {
+        "slot_ea": "0x0055FD90",
+        "target": "0x00482AD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482AD0"
+      },
+      {
+        "slot_ea": "0x0055FD94",
+        "target": "0x00482AE0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482AE0"
+      },
+      {
+        "slot_ea": "0x0055FD98",
+        "target": "0x00482AF0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482AF0"
+      },
+      {
+        "slot_ea": "0x0055FD9C",
+        "target": "0x00482B00",
+        "target_func": "0x00477500",
+        "target_name": "loc_482B00"
+      },
+      {
+        "slot_ea": "0x0055FDA0",
+        "target": "0x00482B10",
+        "target_func": "0x00477500",
+        "target_name": "loc_482B10"
+      },
+      {
+        "slot_ea": "0x0055FDA4",
+        "target": "0x00482BD0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482BD0"
+      },
+      {
+        "slot_ea": "0x0055FDA8",
+        "target": "0x00482CC0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482CC0"
+      },
+      {
+        "slot_ea": "0x0055FDAC",
+        "target": "0x00454780",
+        "target_func": "0x00477500",
+        "target_name": "loc_454780"
+      },
+      {
+        "slot_ea": "0x0055FDB0",
+        "target": "0x00442040",
+        "target_func": "0x00477500",
+        "target_name": "loc_442040"
+      },
+      {
+        "slot_ea": "0x0055FDB4",
+        "target": "0x00482DA0",
+        "target_func": "0x00477500",
+        "target_name": "loc_482DA0"
+      }
+    ],
+    "xrefs_to": [
+      "0x00477527"
+    ]
+  }
+]

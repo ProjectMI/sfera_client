@@ -42,7 +42,12 @@ bool SferaResourceManager::ScanBootstrapResources()
     RegisterExpectedResource("Models\\Materials.cfg", ESferaResourceKind::Material, false);
     RegisterExpectedResource("matbase.dat", ESferaResourceKind::Material, false);
     RegisterExpectedResource("filelist.dat", ESferaResourceKind::FileList, false);
+    RegisterExpectedResource("xupdate", ESferaResourceKind::FileList, false);
+    RegisterExpectedResource("sphere.exe", ESferaResourceKind::ExecutableIgnored, false);
     RegisterExpectedResource("xadd\\subobjs.dat", ESferaResourceKind::Model, false);
+    RegisterExpectedResource("landscape\\contours.bin", ESferaResourceKind::Landscape, false);
+    RegisterExpectedResource("models\\textures\\wf00.dds", ESferaResourceKind::Texture, false);
+    RegisterExpectedResource("models\\textures\\wr00.dds", ESferaResourceKind::Texture, false);
     RegisterExpectedResource("fonts\\font.txt", ESferaResourceKind::FontDefinition, false);
     RegisterExpectedResource("Effects\\loadscreen.ui", ESferaResourceKind::UserInterface, false);
     RegisterExpectedResource("Effects\\sprites.ui", ESferaResourceKind::UserInterface, false);

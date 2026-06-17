@@ -114,7 +114,7 @@ void FUiFontCatalog::ParseSfnt(FUiFontFace& face, const std::vector<uint8>& byte
         glyph.SourceW = ReadInt16Le(bytes, glyphOffset + 0);
         glyph.SourceH = ReadInt16Le(bytes, glyphOffset + 2);
         glyph.BearingX = ReadInt16Le(bytes, glyphOffset + 4);
-        glyph.BearingY = ReadInt16Le(bytes, glyphOffset + 6);
+        glyph.BearingY = ReadInt16Le(bytes, glyphOffset + 6) - face.Baseline;
         glyph.Advance = ReadInt16Le(bytes, glyphOffset + 8);
         glyph.U1 = ReadFloatLe(bytes, glyphOffset + 12);
         glyph.V1 = ReadFloatLe(bytes, glyphOffset + 16);

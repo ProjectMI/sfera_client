@@ -1,74 +1,226 @@
 <?xml version='1.0' encoding='utf-8'?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <Filter Include="Source">
-      <UniqueIdentifier>{244385EC-682A-5889-8FD4-8E87CCFC9565}</UniqueIdentifier>
+      <UniqueIdentifier>{e25fdf9a-e54e-5571-a8f0-d1ecf6236d1e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader">
-      <UniqueIdentifier>{7F170C8A-1929-56AD-9A95-C9D56C64097F}</UniqueIdentifier>
+      <UniqueIdentifier>{eb55e901-b06f-598e-8756-29a50f70cd34}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private">
-      <UniqueIdentifier>{ED85433C-0A94-5699-B021-C54119D2C03A}</UniqueIdentifier>
+      <UniqueIdentifier>{bc748582-d360-56f4-9e29-49cb9ab1290e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Client">
+      <UniqueIdentifier>{43eedfec-546d-542f-8732-82aa74774fe1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\Compression">
-      <UniqueIdentifier>{C50B44D3-8403-59B0-A33D-4261711570A1}</UniqueIdentifier>
+      <UniqueIdentifier>{145e21c1-52f4-591a-8587-75d5f3acc9ae}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\Config">
-      <UniqueIdentifier>{342E08FF-983E-58BC-AB8F-A4E8A8593ACE}</UniqueIdentifier>
+      <UniqueIdentifier>{fa0cd636-870c-5117-94fe-80f56e189745}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\Core">
-      <UniqueIdentifier>{989D97EA-51FA-547B-8EF3-BBAEC6DDC9E4}</UniqueIdentifier>
+      <UniqueIdentifier>{1abef000-c071-5c23-9300-edc29ecba3f3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\FileSystem">
-      <UniqueIdentifier>{910E557D-9B21-5F11-84BC-32A3FBF0279A}</UniqueIdentifier>
+      <UniqueIdentifier>{a7ada824-8ff6-5125-9e65-e027afbfe47f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\GameObjects">
-      <UniqueIdentifier>{13DB1D7E-195B-52EF-82F9-35D5CCA41A88}</UniqueIdentifier>
+      <UniqueIdentifier>{03c88e6c-25c3-5eba-8667-11d8adf23dbd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\MBC">
-      <UniqueIdentifier>{8E15F30C-E0F4-5D3E-92F8-4F1212FBE58C}</UniqueIdentifier>
+      <UniqueIdentifier>{04f64a71-95ce-54d0-b150-e3e16846cad4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\Network">
-      <UniqueIdentifier>{854355DC-47B1-5113-A689-8D63E8480CAF}</UniqueIdentifier>
+      <UniqueIdentifier>{ec830e79-9f5d-5d2f-9c09-56b741b2c69a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Platform">
+      <UniqueIdentifier>{8a59b137-385f-5f9a-b18e-2d2fd4b7f098}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Renderer">
+      <UniqueIdentifier>{9a503d25-f003-5ef3-8134-0bfcd2463248}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\ResourceLoader">
-      <UniqueIdentifier>{53800DA8-E28F-5B9E-B143-EE16996B5076}</UniqueIdentifier>
+      <UniqueIdentifier>{dfe53f52-4a88-55c7-86ed-7e0b2f2cb24b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\UI">
+      <UniqueIdentifier>{5c5c2ddc-245b-56f3-b5bf-a1307a11c090}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\WorldScene">
-      <UniqueIdentifier>{486ED455-8E0F-5821-807A-DD495F96260A}</UniqueIdentifier>
+      <UniqueIdentifier>{b6c33ba0-6340-5d76-8a95-a4b8f2c5dfc5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public">
-      <UniqueIdentifier>{C73D4A15-8E7C-56F7-AAB8-7A4AD53B2344}</UniqueIdentifier>
+      <UniqueIdentifier>{9d20a09e-33ac-5ece-9311-56322a2c35b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Client">
+      <UniqueIdentifier>{6677a351-fda6-5595-aff9-fff71be31fe2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Compression">
-      <UniqueIdentifier>{1F6337D7-FC19-5F20-8532-BE9CE40316FC}</UniqueIdentifier>
+      <UniqueIdentifier>{8ded1608-965f-5129-9220-25ebba9bae82}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Config">
-      <UniqueIdentifier>{CC8313EB-B016-5346-BC1B-CA600614E217}</UniqueIdentifier>
+      <UniqueIdentifier>{f2fb79a4-e82a-5385-8e9e-16c3d1452f50}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Core">
-      <UniqueIdentifier>{1E99B638-03FE-595C-A028-C1FD63D2C9E3}</UniqueIdentifier>
+      <UniqueIdentifier>{30868c52-aa66-54d2-80ba-2854f706c54f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\FileSystem">
-      <UniqueIdentifier>{EC9462B7-ED99-5A4F-93D7-62C48762FF91}</UniqueIdentifier>
+      <UniqueIdentifier>{2ad4d949-3eee-56c8-85a2-0ed6efe55fc6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\GameObjects">
-      <UniqueIdentifier>{F7F6729B-3566-5823-9C00-FD69D16552E4}</UniqueIdentifier>
+      <UniqueIdentifier>{e6e35cf6-0813-5854-86ed-101d17cc9c46}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\MBC">
-      <UniqueIdentifier>{69943140-2BAF-5E0C-81E0-EA2B483D27F0}</UniqueIdentifier>
+      <UniqueIdentifier>{c5c94603-99f2-5b6a-bfa9-26b282997832}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Network">
-      <UniqueIdentifier>{DBBF44BE-6661-5BE5-A841-72A0FC4FCC6F}</UniqueIdentifier>
+      <UniqueIdentifier>{349f95b6-53b9-5cc4-a0c7-f74ef41f2a41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Platform">
+      <UniqueIdentifier>{72207d9c-e49d-593f-b1bd-7982ff08f3e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Renderer">
+      <UniqueIdentifier>{adcb8daa-40ca-5007-9245-31327fa6251a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\ResourceLoader">
-      <UniqueIdentifier>{0E637AE3-4361-577C-9CB9-B3652AED71DD}</UniqueIdentifier>
+      <UniqueIdentifier>{96e78373-795d-539f-afe9-8f8f1252bf52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\UI">
+      <UniqueIdentifier>{0a93cbeb-627e-55b9-ac00-6637c57a80f0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\WorldScene">
-      <UniqueIdentifier>{A30272A9-7369-574B-B3D2-B5E3C36394A7}</UniqueIdentifier>
+      <UniqueIdentifier>{58864230-be51-5512-a706-65ee82c704a1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientFrontendRuntime.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Client</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\CompressionService.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\LzssCodec.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\SphrCodec.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\ZlibInflate.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigDocument.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Logger.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp">
+      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp">
+      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp">
+      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectRegistry.cpp">
+      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp">
+      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp">
+      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp">
+      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp">
+      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientProtocol.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientSession.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp">
+      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp">
+      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp">
+      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\LoadingScreen.cpp">
+      <Filter>Source\SferaCoreLoader\Private\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiResourceDocument.cpp">
+      <Filter>Source\SferaCoreLoader\Private\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp">
+      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp">
+      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp">
+      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h">
+      <Filter>Source\SferaCoreLoader\Public\Client</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\CompressionService.h">
       <Filter>Source\SferaCoreLoader\Public\Compression</Filter>
     </ClInclude>
@@ -147,6 +299,12 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcVirtualMachine.h">
       <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientProtocol.h">
+      <Filter>Source\SferaCoreLoader\Public\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientSession.h">
+      <Filter>Source\SferaCoreLoader\Public\Network</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ConnectManager.h">
       <Filter>Source\SferaCoreLoader\Public\Network</Filter>
     </ClInclude>
@@ -159,6 +317,12 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h">
       <Filter>Source\SferaCoreLoader\Public\Network</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h">
+      <Filter>Source\SferaCoreLoader\Public\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h">
+      <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h">
       <Filter>Source\SferaCoreLoader\Public\ResourceLoader</Filter>
     </ClInclude>
@@ -167,6 +331,12 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h">
       <Filter>Source\SferaCoreLoader\Public\ResourceLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\LoadingScreen.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiResourceDocument.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h">
       <Filter>Source\SferaCoreLoader\Public\WorldScene</Filter>
@@ -180,109 +350,5 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h">
       <Filter>Source\SferaCoreLoader\Public\WorldScene</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\CompressionService.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\LzssCodec.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\SphrCodec.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\ZlibInflate.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Compression</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigDocument.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Config</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Config</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Logger.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp">
-      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp">
-      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp">
-      <Filter>Source\SferaCoreLoader\Private\FileSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectRegistry.cpp">
-      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp">
-      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp">
-      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp">
-      <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp">
-      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp">
-      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp">
-      <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp">
-      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp">
-      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp">
-      <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

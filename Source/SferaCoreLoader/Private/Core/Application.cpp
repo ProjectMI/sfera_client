@@ -1,9 +1,14 @@
 #include "Core/Application.h"
+#include "Client/ClientFrontendRuntime.h"
 #include "FileSystem/PathUtils.h"
 #include "MBC/MbcDisassembler.h"
 #include "MBC/MbcEngineBridge.h"
 #include <algorithm>
 #include <memory>
+#include <cstdlib>
+#include <atomic>
+#include <thread>
+#include <exception>
 
 namespace Sfera {
 FApplication::FApplication() : ExecutableRoot(PathUtils::GetExecutableDirectory()), Logger(ExecutableRoot / "core_loader.log"), FileSystem(ExecutableRoot) {}
@@ -11,21 +16,67 @@ FApplication::FApplication() : ExecutableRoot(PathUtils::GetExecutableDirectory(
 int FApplication::Run() {
     Logger.Info("SferaCoreLoader x64 bootstrap");
     Logger.Info("executable resource root: " + ExecutableRoot.string());
-    FileSystem.BuildCatalog(&Logger);
-    Config = std::make_unique<FConfigService>(FileSystem);
-    Config->LoadKnownConfigs(&Logger);
-    Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
-    Resources->BuildCatalog(&Logger);
-    LoadWorldAndObjects();
-    RegisterRecoveredNatives();
-    ProbeMbcModules();
-    BuildMbcRuntime();
-    Network = std::make_unique<FConnectManager>(*Config);
-    auto endpoint = Network->ReadEndpointFromConfig();
-    if (endpoint) { Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port)); }
-    else { Logger.Warning("network endpoint not found; connect manager initialized but not connected"); }
+
+    FClientFrontendRuntime frontend(&Logger);
+    FStatus frontendStatus = frontend.CreateShell();
+    if (!frontendStatus.IsOk()) {
+        Logger.Error("frontend shell creation failed: " + frontendStatus.Message());
+        return 1;
+    }
+
+    std::atomic_bool bootstrapDone{false};
+    std::atomic_bool bootstrapOk{true};
+    std::thread bootstrapThread([&]() {
+        try {
+            frontend.SetStage("cataloging files", 0.05f);
+            FileSystem.BuildCatalog(&Logger);
+            frontend.SetStage("loading configs", 0.12f);
+            Config = std::make_unique<FConfigService>(FileSystem);
+            Config->LoadKnownConfigs(&Logger);
+            frontend.SetStage("building resource catalog", 0.20f);
+            Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
+            Resources->BuildCatalog(&Logger);
+            frontend.InitializeLoadingResources(*Resources);
+            frontend.InitializeD3D9(*Resources);
+
+            frontend.SetStage("loading game objects and world scene", 0.38f);
+            LoadWorldAndObjects();
+            frontend.SetStage("registering script natives", 0.52f);
+            RegisterRecoveredNatives();
+            frontend.SetStage("loading script modules", 0.60f);
+            ProbeMbcModules();
+            frontend.SetStage("linking script runtime", 0.68f);
+            BuildMbcRuntime();
+
+            Network = std::make_unique<FConnectManager>(*Config);
+            auto endpoint = Network->ReadEndpointFromConfig();
+            if (endpoint) { Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port)); }
+            else { Logger.Warning("network endpoint not found; connect manager initialized but not connected"); }
+
+            FClientFrontendDesc frontendDesc;
+            frontendDesc.Endpoint = endpoint;
+            frontend.StartNetworkProbe(frontendDesc);
+            bootstrapOk.store(true);
+        } catch (const std::exception& ex) {
+            bootstrapOk.store(false);
+            Logger.Error(std::string("frontend bootstrap worker failed: ") + ex.what());
+            frontend.AddStatusLine(std::string("bootstrap error: ") + ex.what());
+            frontend.SetStage("bootstrap failed", 1.0f);
+        } catch (...) {
+            bootstrapOk.store(false);
+            Logger.Error("frontend bootstrap worker failed: unknown exception");
+            frontend.AddStatusLine("bootstrap error: unknown exception");
+            frontend.SetStage("bootstrap failed", 1.0f);
+        }
+        bootstrapDone.store(true);
+    });
+
+    frontendStatus = frontend.RunEventLoop();
+    if (!frontendStatus.IsOk()) { Logger.Error("frontend event loop failed: " + frontendStatus.Message()); }
+    if (bootstrapThread.joinable()) { bootstrapThread.join(); }
+
     Logger.Info("core-loader finished bootstrap");
-    return 0;
+    return frontendStatus.IsOk() && bootstrapOk.load() ? 0 : 1;
 }
 
 void FApplication::LoadWorldAndObjects() {

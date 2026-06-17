@@ -41,14 +41,15 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SFERA_WIN64_ONLY;WIN64;_CONSOLE;NOMINMAX;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SFERA_WIN64_ONLY;WIN64;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>Ws2_32.lib;User32.lib;Gdi32.lib;D3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -57,20 +58,67 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SFERA_WIN64_ONLY;WIN64;_CONSOLE;NOMINMAX;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SFERA_WIN64_ONLY;WIN64;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;User32.lib;Gdi32.lib;D3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientFrontendRuntime.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\CompressionService.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\LzssCodec.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\SphrCodec.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\ZlibInflate.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigDocument.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Logger.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectRegistry.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientProtocol.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientSession.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\LoadingScreen.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiResourceDocument.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\CompressionService.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\LzssCodec.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\SphrCodec.h" />
@@ -97,52 +145,22 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcProject.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcVirtualMachine.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientProtocol.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientSession.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ConnectManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\NetworkTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\PacketBuffer.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\LoadingScreen.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiResourceDocument.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\CompressionService.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\LzssCodec.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\SphrCodec.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\ZlibInflate.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigDocument.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Logger.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectRegistry.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
   </ItemGroup>
 </Project>

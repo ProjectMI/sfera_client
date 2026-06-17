@@ -9,6 +9,8 @@ namespace Sfera {
 struct FUiFontFace {
     int Index = -1;
     std::string Name;
+    std::string InternalName;
+    std::string SystemFace;
     std::string DescriptorResource;
     std::string TextureName;
     std::string TextureResource;

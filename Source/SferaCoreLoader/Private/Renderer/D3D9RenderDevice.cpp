@@ -347,9 +347,15 @@ void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect,
     if (uiFont) {
         switch (uiFont->Index) {
         case 0: faceName = L"Tahoma"; break;
+        case 1: faceName = L"Tahoma"; break;
+        case 2: faceName = L"Tahoma"; break;
+        case 3: faceName = L"Arial"; break;
+        case 4: faceName = L"Calibri"; break;
+        case 5: faceName = L"Century"; break;
         case 6: faceName = L"Consolas"; break;
         case 7: faceName = L"Garamond"; break;
         case 8: faceName = L"Georgia"; break;
+        case 9: faceName = L"Microsoft Sans Serif"; break;
         case 10: faceName = L"Times New Roman"; break;
         case 11: faceName = L"Verdana"; break;
         default: break;

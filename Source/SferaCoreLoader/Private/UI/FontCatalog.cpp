@@ -68,10 +68,16 @@ std::string FUiFontCatalog::ResolveResource(const FResourceManager& resources, s
         }
     }
     std::string wanted = LowerCopy(baseName);
+    FPath wantedPath{baseName};
+    std::string wantedStem = LowerCopy(wantedPath.stem().string());
+    std::vector<std::string> allowedExts;
+    for (std::string_view ext : extensions) { if (!ext.empty()) { allowedExts.push_back(LowerCopy(std::string(ext))); } }
     for (const auto& record : resources.Catalog().All()) {
+        std::string ext = LowerCopy(record.RelativePath.extension().string());
+        if (!allowedExts.empty() && std::find(allowedExts.begin(), allowedExts.end(), ext) == allowedExts.end()) { continue; }
         std::string stem = LowerCopy(record.RelativePath.stem().string());
         std::string filename = LowerCopy(record.RelativePath.filename().string());
-        if (stem == wanted || filename == wanted) { return record.RelativePath.generic_string(); }
+        if (stem == wanted || filename == wanted || (!wantedStem.empty() && stem == wantedStem)) { return record.RelativePath.generic_string(); }
     }
     return {};
 }
@@ -81,9 +87,29 @@ void FUiFontCatalog::ParseSfnt(FUiFontFace& face, const std::vector<uint8>& byte
     size_t offset = 4;
     std::string internalName = ReadCString(bytes, offset);
     std::string textureName = ReadCString(bytes, offset);
-    if (!internalName.empty()) { face.Name = internalName; }
+    if (!internalName.empty()) { face.InternalName = internalName; }
     if (!textureName.empty()) { face.TextureName = textureName; }
     if (offset + 8 <= bytes.size()) { face.NativeHeight = std::max(0, ReadInt32Le(bytes, offset + 4)); }
+}
+
+namespace {
+std::string RecoveredSystemFaceForFontIndex(int index) {
+    switch (index) {
+    case 0: return "Tahoma";
+    case 1: return "Tahoma";
+    case 2: return "Tahoma";
+    case 3: return "Arial";
+    case 4: return "Calibri";
+    case 5: return "Century";
+    case 6: return "Consolas";
+    case 7: return "Garamond";
+    case 8: return "Georgia";
+    case 9: return "Microsoft Sans Serif";
+    case 10: return "Times New Roman";
+    case 11: return "Verdana";
+    default: return "Arial";
+    }
+}
 }
 
 void FUiFontCatalog::Load(const FResourceManager& resources, FLogger* logger) {
@@ -102,6 +128,7 @@ void FUiFontCatalog::Load(const FResourceManager& resources, FLogger* logger) {
         FUiFontFace face;
         face.Index = static_cast<int>(i);
         face.Name = names[i];
+        face.SystemFace = RecoveredSystemFaceForFontIndex(face.Index);
         face.DescriptorResource = ResolveResource(resources, names[i], {"effects/", "Effects/", ""}, {".sfn"});
         if (!face.DescriptorResource.empty()) {
             auto sfnt = resources.Load(face.DescriptorResource);
@@ -109,7 +136,7 @@ void FUiFontCatalog::Load(const FResourceManager& resources, FLogger* logger) {
         }
         face.TextureResource = ResolveResource(resources, face.TextureName.empty() ? face.Name : face.TextureName, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""});
         FontFaces.push_back(face);
-        if (logger) { logger->Info("UI font attached: id=" + std::to_string(face.Index) + ", name=" + face.Name + ", descriptor=" + face.DescriptorResource + ", texture=" + face.TextureResource); }
+        if (logger) { logger->Info("UI font attached: id=" + std::to_string(face.Index) + ", name=" + face.Name + ", internal=" + face.InternalName + ", system=" + face.SystemFace + ", descriptor=" + face.DescriptorResource + ", texture=" + face.TextureResource); }
     }
     if (logger) { logger->Info("UI fonts attached: " + std::to_string(FontFaces.size())); }
 }

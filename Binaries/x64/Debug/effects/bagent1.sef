@@ -1,0 +1,94 @@
+//=====================================================================
+// Definition   : Отрицательный агент, зелёный цвет
+// Effect number: 510
+//=====================================================================
+
+effect_def
+{
+   effect_name   "agent green"
+   effect_number 510
+   effect_time   -1
+   subeffects_num 1
+
+   sound_def
+   {
+     audio_file "sounds\mg_fb_fly1.wav"
+     min_distance 1.0
+     max_distance 15.0
+   }
+
+   light_def
+   {
+     light_pos   0.0 -2.0 0.0
+     light_color 260 1560 260 255
+   }
+
+   subeffect 0 EFF_PSYSTEM "spell1"
+}
+
+
+psystem_def
+{
+  psystem_name      "spell1"
+  particles_num     300
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH | PS_EMITONPOSCHANGE | PS_USEDISTORTION
+  self_illumination 255
+  distortion_vec 0.008 0.008 0.008
+
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           0.06
+     emit_num         5.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          30.0
+    lifetime_rf       30.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_spark01"
+    blendmode PS_BLENDADD  
+  }
+  
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+       rkey  0  0.0  0.15 0.15
+        key  1  1.0  0.05
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 100 200 200 0
+        key  1   0.1 100 200 200 150
+        key  2   1.0 100 200 200 0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+  }
+}
+
+
+
+

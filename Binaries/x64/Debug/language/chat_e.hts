@@ -1,0 +1,20 @@
+CHAT (chat.hts)
+hypertext
+{
+<tab><cl=F0F010>CHAT<cl=A2A2A2><br><br>
+<tab>The chat window has two forms: full and minor. Use the "chat" button on the <l="hts:\\language\constwin.hts">right system panel<\l> to switch between the forms.<br>
+<tab><cl=FFFFFF>In the minor form<cl=B0B0B0> you see the last two message lines. Press "/" (by default) to see your message. You will also see the text field. Input is finished by pressing Enter. To cancel input press "close window" or enter an empty line.<br>
+<tab>Messages can be sent in the following modes:<br>
+<tab><cl=FFFFFF>Whisper<cl=B0B0B0> - your message will be seen by those no more than 10 meters from you.<br>
+<tab><cl=FFFFFF>Normal speech<cl=B0B0B0> - your message will be seen by those no more than 50 meters from you.<br>
+<tab><cl=FFFFFF>Trade<cl=B0B0B0> - Trade messages.<br>
+<tab><cl=FFFFFF>Clan<cl=B0B0B0> - your message will be seen by your clan members.<br><br>
+<tab><cl=FFFFFF>Group<cl=B0B0B0> - your message will be seen by your group members.<br><br>
+<tab><cl=FFFFFF>In the full chat form<cl=B0B0B0> you can see several last lines and view several hundred last messages using the scroll bar. Use the same key "/" for input or click on the input field which in this form is permanently on the screen.<br> You can also set message filters using buttons in the upper part of the chat window: usual talk, clan messages, system messages, damage messages, group messages and trade messages.<br>
+<tab>You can <cl=FFFFFF>switch between message types<cl=B0B0B0> using the functional keys:<br>
+<cl=FFFFFF>F2<cl=B0B0B0><tab>- whisper<br>
+<cl=FFFFFF>F3<cl=B0B0B0><tab>- normal speech<br>
+<cl=FFFFFF>F4<cl=B0B0B0><tab>- trade<br>
+<cl=FFFFFF>F6<cl=B0B0B0><tab>- clan messages<br>
+<cl=FFFFFF>F7<cl=B0B0B0><tab>- group messages<br>
+}

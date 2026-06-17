@@ -1,0 +1,111 @@
+//=====================================================================
+// Definition   : Spiderman eff
+// Effect number: 740
+//=====================================================================
+
+effect_def
+{
+   effect_name   "spiderman"
+   effect_number 740
+   effect_time   -1
+
+   boundbox 4.0 3.0 4.0 -4.0 -3.0 -4.0
+
+   subeffects_num   1
+
+   subeffect 0 EFF_PSYSTEM "fire"
+
+   light_def
+   {
+     light_pos   0.0 -1.0 0.0
+     light_color 15 15 255 255
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "fire"
+  particles_num     40
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH
+  self_illumination 255
+
+  position_track
+  {
+    numkeys 1
+    key 0 0.0 0.0 -0.8 0.0
+  }
+
+  emission_def
+  {
+     shape            EMITSHAPE_DISK
+     randseed         -1
+     radius           1.5
+     emit_num         1.0
+  }
+
+  particleborn_def
+  {
+    lifetime          32.0
+    lifetime_rf       32.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    texture   "fx_meteor"
+    blendmode PS_BLENDADD
+  }
+
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+     ngravitation_tracks 1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+
+       rkey  0  0.0  0.85  0.55
+        key  1  1.0  0.35
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0 25 35 155  0
+        key  1   0.1 25 35 155  200
+        key  2   0.3 25 35 155  200
+        key  3   1.0 25 35 155  0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+       mrkey 0 0.0 0.0 0.0 0.0 0.005 0.005 0.005
+     }
+
+     gravitation_track
+     {
+       track_num 0
+       numkeys 1
+       rkey 0 0.0 0.0 0.0 0.0 0.0 -0.005 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+     gravitation_track 0
+  }
+}
+
+

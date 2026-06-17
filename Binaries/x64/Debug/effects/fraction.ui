@@ -1,0 +1,267 @@
+//-------------------------------------------------------------------------
+// Window: fraction
+//-------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+     sprite
+     {
+      name "window"
+      size 236 275
+      texture "i_journal" 65 90 195 152  53 0 183 62
+      texture "i_help" 0 163 202 227  16 62 218 126
+      texture "i_help" 0 163 202 227  16 126 218 190
+      texture "i_trade" 152 53 155 213  218 62 221 222
+      texture "i_help" 53 56 0 109  185 222 238 275
+      texture "i_help" 0 56 50 109  0 222 50 275
+      texture "i_help" 61 56 196 109  50 222 185 275
+      texture "i_journal" 54 90 0 152  183 0 237 62
+      texture "i_journal" 0 90 53 152  0 0 53 62
+      texture "i_help" 160 125 160 109  221 62 237 222
+      texture "i_help" 160 109 160 125  0 62 16 222
+      texture "i_help" 0 163 202 195  16 190 218 222
+      
+      tcoords 9  160 125 160 109 0 109 0 125
+      tcoords 10  160 109 160 125 0 125 0 109
+     }
+     
+     sprite
+     {
+      name "ok_normal"
+      size 32 24
+      texture "i_ctrls" 63 0 95 24  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "ok_focus"
+      size 32 24
+      texture "i_ctrls" 96 0 128 24  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "ok_push"
+      size 32 24
+      texture "i_ctrls" 96 50 128 74  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "cancel_normal"
+      size 32 24
+      texture "i_ctrls" 63 25 95 49  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "cancel_focus"
+      size 32 24
+      texture "i_ctrls" 96 25 128 49  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "cancel_push"
+      size 32 24
+      texture "i_ctrls" 96 75 128 99  0 0 32 24
+     }
+     
+     sprite
+     {
+      name "sc_polzun"
+      size 24 26
+      texture "i_ctrls" 38 0 62 26  0 0 24 26
+     }
+     
+     sprite
+     {
+      name "sc_lbfocus"
+      size 18 18
+      texture "i_ctrls" 38 27 56 45  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_lbpush"
+      size 18 18
+      texture "i_ctrls" 57 50 75 68  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_lbdis"
+      size 18 18
+      texture "i_ctrls" 44 88 62 106  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbfocus"
+      size 18 18
+      texture "i_ctrls" 38 46 56 64  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbpush"
+      size 18 18
+      texture "i_ctrls" 76 50 94 68  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbdis"
+      size 18 18
+      texture "i_ctrls" 44 107 62 125  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "check_mark"
+      size 256 256
+      texture "i_miss" 208 0 215 7  0 0 7 7
+     }
+     
+   }
+
+   windowName  "fraction"
+   windowText UISTR_WC_MISS00
+   drawMethod SPRITE "window"
+   showTitle 3 0
+   position  0 0
+   size      236 280
+   font      3
+   rectTitle 10 10 230 29
+   showEffect  ALPHA_IN  0.2500 0.0000 0.0000
+   hideEffect  ALPHA_OUT  0.2500 0.0000 0.0000
+   textcolor 237 208 161 255
+   alignWin  CENTER_X | CENTER_Y
+   escapeHandle true
+   canNotCross true
+   saveLastPosition true
+   
+   control                                   // id = 1
+   {
+    classID Text
+    position  24 45
+    size      85 20
+    font      3
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC4
+   }
+   
+   control                                   // id = 2
+   {
+    classID Button
+    position  82 238
+    size      32 24
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT23
+    }
+
+    drawMethod SPRITE
+    checkedImage "ok_push"
+    uncheckedImage "ok_normal"
+    focusedImage "ok_focus"
+   }
+   
+   control                                   // id = 3
+   {
+    classID Button
+    position  120 238
+    size      32 24
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT24
+    }
+
+    drawMethod SPRITE
+    checkedImage "cancel_push"
+    uncheckedImage "cancel_normal"
+    focusedImage "cancel_focus"
+    buttonStyle SEND_QUIT
+   }
+   
+   control                                   // id = 4
+   {
+    classID RadioButton
+    position  30 78
+    size      192 30
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC1
+    checkedImage "check_mark"
+    imageOffset -10 4
+   }
+   
+   control                                   // id = 5
+   {
+    classID RadioButton
+    position  30 124
+    size      190 51
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC1
+    checkedImage "check_mark"
+    imageOffset -10 4
+   }
+   
+   control                                   // id = 6
+   {
+    classID Text
+    position  117 78
+    size      100 20
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC2
+   }
+   
+   control                                   // id = 7
+   {
+    classID Text
+    position  116 124
+    size      100 20
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC2
+   }
+   
+   control                                   // id = 8
+   {
+    classID Text
+    position  75 146
+    size      100 20
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WC_FRAC3
+    textFormat  CENTER_X
+   }
+   
+   control                                   // id = 9
+   {
+    classID Text
+    position  112 45
+    size      104 20
+    font      3
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+   }
+ }

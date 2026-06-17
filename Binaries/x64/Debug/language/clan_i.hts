@@ -1,0 +1,20 @@
+FINESTRA DEL CLAN(clan.hts)
+hypertext
+{
+<tab><cl=F0F010>CLAN<cl=A2A2A2><br><br>
+<tab>La finestra del clan si attiva premendo il tasto "N" (default) o "clan" nel <l="hts:\\language\constwin.hts">pannello di sistema di destra.<\l><br>
+<tab>Se non si è membro di un clan, verrà visualizzata la <cl=FFFFFF>finestra di creazione del clan.<cl=B0B0B0> <br>
+<br><tab><cl=00FF00>Creazione del clan<cl=A2A2A2><br>
+<tab>Scegliere <cl=FFFFFF>"creare clan"<cl=B0B0B0> per inserire il nome del tuo futuro clan e sceglierne l'emblema. Automaticamente si diverrà il <cl=FFFFFF>feudatario<cl=B0B0B0> del nuovo clan. <cl=FF0000>Il nome del clan non deve comprendere parole o termini osceni o offensivi.<cl=B0B0B0><br>
+<tab>Una volta selezionato il menù <cl=FFFFFF>"unirsi al clan"<cl=B0B0B0> , una linea corrispondente seguirà il cursore. Cliccare col tasto sinistro su <cl=FFFFFF>feudatario<cl=B0B0B0> o <cl=FFFFFF>siniscalco<cl=B0B0B0> del clan che si cerca. Riceveranno la tua richiesta di unirsi al clan e decideranno se accettarla o rifiutarla.<br>
+<br><tab><cl=00FF00>Gerarchia del clan<cl=A2A2A2><br>
+<tab>Ogni clan comprende 4 stadi:<br>
+<tab><cl=FFFFFF>Feudatario<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Siniscalco<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Vassallo<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Neofita<cl=B0B0B0><br>
+Un <cl=FFFFFF>Feudatario<cl=B0B0B0> è in grado di ammettere nel clan, allontanare dal clan, promuovere o degradare siniscalchi, vassalli e neofiti.<br>
+Un <cl=FFFFFF>Siniscalco<cl=B0B0B0> è in grado di ammettere nel clan, allontanare dal clan, promuovere o degradare vassalli e neofiti.<br>
+Un <cl=FFFFFF>Vassallo<cl=B0B0B0> è in grado di escludere i neofiti dal clan.<br>
+
+}

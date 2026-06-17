@@ -1,0 +1,8 @@
+FINESTRA SCAMBIO (COMPRARE) (trade.hts)
+hypertext
+{
+<tab><cl=F0F010>COMPRARE<cl=A2A2A2><br><br>
+Da questa finestra si possono comprare beni dagli abitanti di Sphere e dagli altri personaggi. Nella colonna di sinistra si trovano le icone dei beni in vendita. Si può avere informazioni ulteriori riguardo all'oggetto voluto usando la funzione <cl=FFFFFF>guarda<cl=B0B0B0>. Nella colonna successiva vengono mostrati i prezzi ed è presente un campo per la propria offerta. Basta cliccare sul campo e fare l'offerta.<br><tab> Per comprare gli oggetti in vendita cliccare sul pulsante "comprare" o trascinando la borsa dei soldi sull'icon appropriata. Se non si hanno abbastanza soldi, il pulsante non sarà selezionabile.<br>
+<tab>Si possono anche vendere oggetti. Per farlo <cl=FFFFFF>insieme alla finestra per comprare<cl=B0B0B0> si deve aprire la <l="hts:\\language\tradechar.hts"> finestra di vendita <\l> premendo il tasto "T".<br>
+}
+

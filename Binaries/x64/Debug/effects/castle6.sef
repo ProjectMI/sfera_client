@@ -1,0 +1,242 @@
+//=====================================================================
+// Definition   : 
+// Effect number: 755
+//=====================================================================
+
+effect_def
+{
+   effect_name      "castle6"
+   effect_number    757
+   effect_time      -1
+   effect_timelimit 256
+
+   boundbox 4.5 4.5 4.5 -4.5 -6.5 -4.5
+
+   subeffects_num   2
+
+   subeffect 0 EFF_PSYSTEM "magic_ps1"
+   subeffect 1 EFF_PSYSTEM "magic_ps2"
+
+
+}
+
+
+psystem_def
+{
+  psystem_name      "magic_ps1"
+  particles_num     100
+  psystem_flags     PS_ROTATEY | PS_USEMAGNITE
+  self_illumination 255
+
+  rotation_track
+  {
+     numkeys 2
+     key 0   0.0  0.0    0.0  0.0
+     key 1 256.0  0.0  720.0  0.0
+  }
+
+  position_track
+  {
+     numkeys 1
+     key 0 0.0 0.0 -0.3 0.0
+  }
+
+  magnite_def
+  {
+    magpos 0.0 0.0 0.0
+    magfactor_track
+    {
+      numkeys 3
+      key 0  0.0     0.0  0.0   0.0
+      key 1  0.25   16.0  16.0   16.0
+      key 2  0.75   -60.0 -60.0   -60.0
+   }
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           4.5
+     height           0.0
+     emit_num         2.0
+
+     emissionpos_track
+     {
+       interpolation I_COSINE
+       numkeys 5
+       key     0    0.0  0.0  0.0  0.0
+       key     1   64.0  2.0 -2.5  2.0
+       key     2  128.0  -2.0  0.0  2.0
+       key     3  192.0  2.0 -2.5  0.0
+       key     4  256.0  0.0  0.0  0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          64.0
+    lifetime_rf       32.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+
+       rkey  0  0.0   0.4 0.5
+     }
+
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0 205  105 5  15 
+        key  1   0.4 205  105 5  255
+        key  2   0.8 205  105 5  255
+        key  3   1.0 205  105 5  0  
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+        mrkey 0 0.0 0.0 0.0 0.0 0.1 0.1 0.1
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+
+psystem_def
+{
+  psystem_name      "magic_ps2"
+  particles_num     100
+  psystem_flags     PS_ROTATEY | PS_USEMAGNITE
+  self_illumination 255
+
+  rotation_track1
+  {
+     numkeys 2
+     key 0   0.0  0.0    0.0  0.0
+     key 1 256.0  0.0  720.0  0.0
+  }
+
+  magnite_def
+  {
+    magpos 0.0 0.0 0.0
+    magfactor_track
+    {
+      numkeys 3
+      key 0  0.0     0.0  0.0   0.0
+      key 1  0.25   16.0  16.0   16.0
+      key 2  0.75   -60.0  -60.0  -60.0
+   }
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           1.5
+     height           0.0
+     emit_num         2.0
+
+     emissionpos_track
+     {
+       interpolation I_COSINE
+       numkeys 5
+       key     0    0.0  0.0 -2.5  0.0
+       key     1   64.0  -2.5 -0.0  2.5
+       key     2  128.0  0.0 -0.0  0.0
+       key     3  192.0  2.0 -0.0  2.5
+       key     4  256.0  0.0 -2.5  0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          64.0
+    lifetime_rf       32.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+
+        numkeys   1
+
+       rkey  0  0.0  0.4  0.5
+     }
+
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0  205  105 5  15
+        key  1   0.4  205  105 5  255
+        key  2   0.8  205  105 5  255
+        key  3   1.0  205  105 5  0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+      mrkey 0 0.0 0.0 0.0 0.0 0.1 0.1 0.1
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+
+
+

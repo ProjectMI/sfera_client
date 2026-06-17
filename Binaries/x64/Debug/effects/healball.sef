@@ -1,0 +1,102 @@
+//=====================================================================
+// Definition   : Целебный шар
+// Effect number: 210
+//=====================================================================
+
+effect_def
+{
+   effect_name     "heal ball"
+   effect_number   210
+   effect_time    -1
+   subeffects_num  1
+
+   subeffect 0 EFF_PSYSTEM "healball"
+
+   boundbox 0.5 0.5 0.5 -0.5 -0.5 -0.5
+
+   light_def
+   {
+     light_pos   0.0 -2.0 0.0
+     light_color 260 1560 260 255
+   }
+
+   sound_def
+   {
+      flags SF_PLAY_RANDOM
+      min_distance 1.0
+      max_distance 15.0
+      audio_files
+      {
+        source 0 "sounds\mg_heal_fly1.wav"
+        source 1 "sounds\mg_heal_fly2.wav"
+      }
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "healball"
+  particles_num     40
+  psystem_flags     PS_TRANSLATEONLY
+  self_illumination 255
+
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           0.25
+     emit_num         1.5
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          25.0
+    lifetime_rf       20.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_star"
+    blendmode PS_BLENDADD  
+  }
+  
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.0
+       rkey 1 1.0 0.3 0.3
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0 0   250   0 255
+        key  1   1.0 200 200 200   0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     texture_frame  RANDOM
+  }
+}
+
+

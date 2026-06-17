@@ -1,0 +1,63 @@
+hypertext
+{
+Organização dos mágicos<br>
+<br>
+<cl=00FF00>Primeiro estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +96<br>
+<tab>Resistência: -6<br>
+<tab>Outras habilidades: -4<br>
+<tab>Componentes: +12<br>
+<br>
+<cl=00FF00>Segundo estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +190<br>
+<tab>Resistência: -10<br>
+<tab>Outras habilidades: -6<br>
+<tab>Componentes: +18<br>
+<br>
+<cl=00FF00>Third estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +297<br>
+<tab>Resistência: -14<br>
+<tab>Outras habilidades: -10<br>
+<tab>Componentes: +25<br>
+<br>
+<cl=00FF00>Quarto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +512<br>
+<tab>Resistência: -18<br>
+<tab>Outras habilidades: -14<br>
+<tab>Componentes: +36<br>
+<br>
+<cl=00FF00>Quinto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +808<br>
+<tab>Resistência: -24<br>
+<tab>Outras habilidades: -18<br>
+<tab>Componentes: +48<br>
+<br>
+<cl=00FF00>Sexto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +1320<br>
+<tab>Resistência: -48<br>
+<tab>Outras habilidades: -24<br>
+<tab>Componentes: +56<br>
+<br>
+<sp><l="hts:\\language\guilds_p.hts">Volta para lista de organizações<\l><br>
+<sp><l="hts:\\language\guilde_p.hts">Volta para descrição da organização<\l><br>
+<br>
+<l="hts:\\language\guild_descd_p.hts">Organização anterior<\l> <cl=FFFF00>| <l="hts:\\language\guild_descf_p.hts">Próxima organização<\l><br>
+}

@@ -1,0 +1,38 @@
+soundtrack
+{
+  audio_file "sounds\music\forest_1n.ogg"
+  volume 1.0
+
+  samples
+  {
+    sample 01 00:00.000 00:19.597
+    sample 02 00:20.805 00:39.566
+    sample 03 00:41.610 01:01.207
+    sample 04 01:02.508 01:21.130
+
+    sample 05 01:23.359 01:41.424
+    sample 08 01:44.211 02:02.229
+    sample 06 02:05.109 02:23.731
+    sample 07 02:26.007 02:45.186
+
+    sample 09 02:46.858 03:04.134
+    sample 10 03:07.710 03:26.796
+    sample 11 03:28.608 03:47.741
+    sample 12 03:49.506 04:09.057
+
+    sample 13 04:10.357 04:29.258
+    sample 14 04:31.162 04:50.202
+    sample 15 04:52.060 05:11.100
+    sample 16 05:12.912 05:31.952
+  }
+
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p01,p02,p03,p04,j02 | p09,p10,p11,p12,j02
+     pattern 02 p05,p06,p07,p08,j03 | p13,p14,p15,p16,j03
+     pattern 03 p01,p03,p04,p02,j04 | p09,p11,p12,p10,j04
+     pattern 04 p05,p07,p08,p06,j01 | p13,p15,p16,p14,j01
+  }
+}

@@ -1,0 +1,2469 @@
+//-----------------------------------------------------------------
+// Parameters:
+//-----------------------------------------------------------------
+// eff_number   - номер эффекта
+// min_distance - минимальна€ дистанци€ после которой звук
+//                не увел. в громкости ( доходит пика ) ( метры )
+// max_distance - максимальна€ дистанци€ после которой звук
+                  не слышен ( в метрах )
+// mix_duration - в секундах, момент когда начинаетс€ другой звук,
+//                тоесть start_mix = sound_time - mix_duration
+//                default: 1.0
+// audio_file   - задаетс€ им€ звукового файла
+// audio_files  - если имеетс€ набор звук. файлов, то он задаетс€
+//                в этом блоке
+//                audio_files
+//                {
+//                  source 0 "sounds\file01.wav"
+//                  source 1 "sounds\file02.wav"
+//                  source 2 ...
+//                  ...
+//                }
+// cache_lifetime -  врем€ жизни звука в кэше после проигрывани€
+//                   в секундах. default: 5.0
+//                   -1 - звук не удал€етс€ из кэша
+// flags          - флаги, можно указать несколько через |
+                  - SF_PLAY_LOOPED - играть зацикленно звук
+                  - SF_TYPE_ENVIRONMENT - звук не €вл€етьс€ 3D звуком
+                  - SF_PLAY_RANDOM      - по рандому выбираетьс€ звук
+                                          из набора и играетс€
+                  - SF_PLAY_RANDOMMIX   - звуки играютьс€ рандомно,
+                                          последовательно микшируютс€
+                                          образу€ зацикленный звук
+// offset_vec     - вектор сдвига относительно позиции объекта
+                    в метрах (floatX,floatY,floatZ)
+//--------------------------------------------------------------------
+
+//-----------------------------------------------------------------
+// Description: Fireball explosion
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5000
+   flags SF_PLAY_LOOPED
+
+   min_distance 0.5
+   max_distance 20.0
+   audio_file "sounds\bloodlust.wav"
+}
+
+// *************************************************************************
+// **************************** SOUNDS OF STEPS ****************************
+// *************************************************************************
+
+// ******************************* Male set ********************************
+//-----------------------------------------------------------------
+// Description: male grass steps 
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5200
+   min_distance 1.0
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_mgrass.wav"
+      source 1 "sounds\pc_step_mgrass1.wav"
+      source 2 "sounds\pc_step_mgrass2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male grass steps 
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5201
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_mgrass.wav"
+      source 1 "sounds\pc_run_mgrass1.wav"
+      source 2 "sounds\pc_run_mgrass2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male grass stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5202
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_grass.wav"
+}
+//-----------------------------------------------------------------
+// Description: male ground steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5203
+   flags SF_PLAY_RANDOM
+   min_distance 1.0
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_mground.wav"
+      source 1 "sounds\pc_step_mground1.wav"
+      source 2 "sounds\pc_step_mground2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male ground run
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5204
+   flags SF_PLAY_RANDOM   
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_mground.wav"
+      source 1 "sounds\pc_run_mground1.wav"
+      source 2 "sounds\pc_run_mground2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male ground stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5205
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_ground.wav"
+}
+//-----------------------------------------------------------------
+// Description: male road steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5206
+   flags SF_PLAY_RANDOM
+   min_distance 1.0
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_mroad.wav"
+      source 1 "sounds\pc_step_mroad1.wav"
+      source 2 "sounds\pc_step_mroad2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male road steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5207
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_mroad.wav"
+      source 1 "sounds\pc_run_mroad1.wav"
+      source 2 "sounds\pc_run_mroad2.wav"   
+   }
+}
+//-----------------------------------------------------------------
+// Description: male road stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5208
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_road.wav"
+}
+//-----------------------------------------------------------------
+// Description: male water steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5209
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_mwater.wav"
+      source 1 "sounds\pc_step_mwater1.wav"
+      source 2 "sounds\pc_step_mwater2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male water steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5210
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_mwater.wav"
+      source 1 "sounds\pc_run_mwater1.wav"
+      source 2 "sounds\pc_run_mwater2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male water stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5211
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_water.wav"
+}
+//-----------------------------------------------------------------
+// Description: male wood steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5212
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_mwood.wav"
+      source 1 "sounds\pc_step_mwood1.wav"
+      source 2 "sounds\pc_step_mwood2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male wood steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5213
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_mwood.wav"
+      source 1 "sounds\pc_run_mwood1.wav"
+      source 2 "sounds\pc_run_mwood2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male wood stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5214
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_wood.wav"
+}
+//-----------------------------------------------------------------
+// Description: male snow steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5215
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_msnow.wav"
+      source 1 "sounds\pc_step_msnow1.wav"
+      source 2 "sounds\pc_step_msnow2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male snow steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5216
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_msnow.wav"
+      source 1 "sounds\pc_run_msnow1.wav"
+      source 2 "sounds\pc_run_msnow2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male snow stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5217
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_step_msnow.wav"
+}
+
+// ************************** Female set **************************
+//-----------------------------------------------------------------
+// Description: female grass steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5220
+   flags SF_PLAY_RANDOM
+   min_distance 1.0
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wgrass.wav"
+      source 1 "sounds\pc_step_wgrass1.wav"
+      source 2 "sounds\pc_step_wgrass2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female grass steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5221
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wgrass.wav"
+      source 1 "sounds\pc_run_wgrass1.wav"
+      source 2 "sounds\pc_run_wgrass2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female grass stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5222
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_grass.wav"
+}
+//-----------------------------------------------------------------
+// Description: female ground steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5223
+   flags SF_PLAY_RANDOM
+   min_distance 1.0
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wground.wav"
+      source 1 "sounds\pc_step_wground1.wav"
+      source 2 "sounds\pc_step_wground2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female ground steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5224
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wground.wav"
+      source 1 "sounds\pc_run_wground1.wav"
+      source 2 "sounds\pc_run_wground2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female ground stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5225
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_ground.wav"
+}
+//-----------------------------------------------------------------
+// Description: female road steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5226
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wroad.wav"
+      source 1 "sounds\pc_step_wroad1.wav"
+      source 2 "sounds\pc_step_wroad2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female road steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5227
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wroad.wav"
+      source 1 "sounds\pc_run_wroad1.wav"
+      source 2 "sounds\pc_run_wroad2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female road stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5228
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_road.wav"
+}
+//-----------------------------------------------------------------
+// Description: female water steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5229
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wwater.wav"
+      source 1 "sounds\pc_step_wwater1.wav"
+      source 2 "sounds\pc_step_wwater2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female water steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5230
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wwater.wav"
+      source 1 "sounds\pc_run_wwater1.wav"
+      source 2 "sounds\pc_run_wwater2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female water stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5231
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_water.wav"
+}
+//-----------------------------------------------------------------
+// Description: male wood steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5232
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wwood.wav"
+      source 1 "sounds\pc_step_wwood1.wav"
+      source 2 "sounds\pc_step_wwood2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female wood steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5233
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wwood.wav"
+      source 1 "sounds\pc_run_wwood1.wav"
+      source 2 "sounds\pc_run_wwood2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female wood stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5234
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_stop_wood.wav"
+}
+//-----------------------------------------------------------------
+// Description: male snow steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5235
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_step_wsnow.wav"
+      source 1 "sounds\pc_step_wsnow1.wav"
+      source 2 "sounds\pc_step_wsnow2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female snow steps
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5236
+   flags SF_PLAY_RANDOM
+   min_distance 1
+   max_distance 12.0
+   audio_files
+   {
+      source 0 "sounds\pc_run_wsnow.wav"
+      source 1 "sounds\pc_run_wsnow1.wav"
+      source 2 "sounds\pc_run_wsnow2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female snow stop
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5237
+   min_distance 1.0
+   max_distance 12.0
+   audio_file "sounds\pc_step_wsnow.wav"
+}
+
+// *************************************************************************
+// ********************************  ROARS  ********************************
+// *************************************************************************
+
+// ******************************* Male 1 set *******************************
+//-----------------------------------------------------------------
+// Description: male 1 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5300
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_m1a.wav"
+        source 1 "sounds\pc_howl_m1b.wav"
+   }
+}
+
+//-----------------------------------------------------------------
+// Description: male 1 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5301
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_m1.wav"
+}
+
+//-----------------------------------------------------------------
+// Description: male 1 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5302
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_m1a.wav"
+}
+
+//-----------------------------------------------------------------
+// Description: male 1 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5303
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_m1.wav"
+}
+
+// ******************************* Male 2 set *******************************
+//-----------------------------------------------------------------
+// Description: male 2 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5320
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_m2a.wav"
+        source 1 "sounds\pc_howl_m2b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male 2 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5321
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_m2.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 2 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5322
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_m2a.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 2 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5323
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_m2.wav"
+}
+
+// ******************************* Male 3 set *******************************
+//-----------------------------------------------------------------
+// Description: male 3 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5340
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_m3a.wav"
+        source 1 "sounds\pc_howl_m3b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male 3 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5341
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_m3.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 3 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5342
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_m3a.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 3 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5343
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_m3.wav"
+}
+
+// ******************************* male 4 set *******************************
+//-----------------------------------------------------------------
+// Description: male 4 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5360
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_m4a.wav"
+        source 1 "sounds\pc_howl_m4b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male 4 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5361
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_m4.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 4 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5362
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_m4a.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 4 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5363
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_m4.wav"
+}
+
+// ******************************* male 5 set *******************************
+//-----------------------------------------------------------------
+// Description: male 5 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5380
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_m5a.wav"
+        source 1 "sounds\pc_howl_m5b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: male 5 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5381
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_m5.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 5 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5382
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_m5a.wav"
+}
+//-----------------------------------------------------------------
+// Description: male 5 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5383
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_m5.wav"
+}
+
+// ******************************* female 1 set *******************************
+//-----------------------------------------------------------------
+// Description: female 1 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5400
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_w1a.wav"
+        source 1 "sounds\pc_howl_w1b.wav"
+   }
+}
+
+//-----------------------------------------------------------------
+// Description: female 1 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5401
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_w1.wav"
+}
+
+//-----------------------------------------------------------------
+// Description: female 1 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5402
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_w1a.wav"
+}
+
+//-----------------------------------------------------------------
+// Description: female 1 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5403
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_w1.wav"
+}
+
+// ******************************* female 2 set *******************************
+//-----------------------------------------------------------------
+// Description: female 2 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5420
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_w2a.wav"
+        source 1 "sounds\pc_howl_w2b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female 2 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5421
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_w2.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 2 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5422
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_w2a.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 2 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5423
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_w2.wav"
+}
+
+// ******************************* female 3 set *******************************
+//-----------------------------------------------------------------
+// Description: female 3 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5440
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_w3a.wav"
+        source 1 "sounds\pc_howl_w3b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female 3 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5441
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_w3.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 3 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5442
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_w3a.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 3 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5443
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_w3.wav"
+}
+
+// ******************************* female 4 set *******************************
+//-----------------------------------------------------------------
+// Description: female 4 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5460
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_w4a.wav"
+        source 1 "sounds\pc_howl_w4b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female 4 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5461
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_w4.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 4 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5462
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_w4a.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 4 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5463
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_w4.wav"
+}
+
+// ******************************* female 5 set *******************************
+//-----------------------------------------------------------------
+// Description: female 5 howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   flags SF_PLAY_RANDOM
+   eff_number  5480
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+        source 0 "sounds\pc_howl_w5a.wav"
+        source 1 "sounds\pc_howl_w5b.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: female 5 death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5481
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_dead_w5.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 5 roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5482
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_howl_w5a.wav"
+}
+//-----------------------------------------------------------------
+// Description: female 5 attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5483
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\pc_whoop_w5.wav"
+}
+
+// *************************************************************************
+// ****************************  MONSTER ROARS  ****************************
+// *************************************************************************
+
+// ******************************* psoglav *******************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5500
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc47_roar1.wav"
+     source 1 "sounds\ms_npc47_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5501
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc47_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5502
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc47_roar1.wav"
+     source 1 "sounds\ms_npc47_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5503
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc47_att.wav"
+}
+
+// **************************** palochnik *****************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5510
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc40_roar1.wav"
+     source 1 "sounds\ms_npc40_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5511
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc40_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5512
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc40_roar1.wav"
+     source 1 "sounds\ms_npc40_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5513
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc40_roar1.wav"
+}
+
+// **************************** letun *****************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5520
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_ctr51_roar1.wav"
+     source 1 "sounds\ms_ctr51_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5521
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_ctr51_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5522
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_ctr51_roar1.wav"
+     source 1 "sounds\ms_ctr51_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5523
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_ctr51_att.wav"
+}
+
+// **************************** rzhavyj rycar ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5530
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc55_roar1.wav"
+     source 1 "sounds\ms_npc55_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5531
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc55_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5532
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc55_roar1.wav"
+     source 1 "sounds\ms_npc55_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5533
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc55_att.wav"
+}
+
+// **************************** koshka ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5540
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt04_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5541
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt04_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5542
+   flags SF_PLAY_RANDOM
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_crt04_roar1.wav"
+     source 1 "sounds\ms_crt04_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5543
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt04_roar1.wav"
+}
+
+// **************************** wolf ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5550
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt11_roar2.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5551
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt11_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5552
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt11_roar1.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5553
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt11_att.wav"
+   }
+}
+
+// **************************** tropos ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5560
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc62_roar2.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5561
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc62_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5562
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc62_roar1.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5563
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_npc62_att.wav"
+   }
+}
+
+// **************************** bull ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5570
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt03_roar1.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5571
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt03_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5572
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt03_roar2.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5573
+   min_distance 2.5
+   max_distance 20.0
+   audio_files
+   {
+     source 0 "sounds\ms_crt03_att.wav"
+   }
+}
+
+// **************************** boar ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5580
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt07_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5581
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt07_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5582
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt07_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5583
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt07_att.wav"
+}
+
+// **************************** dragon ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5590
+   min_distance 20.0
+   max_distance 45.0
+   audio_file "sounds\ms_crt01_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5591
+   min_distance 20.0
+   max_distance 45.0
+   audio_file "sounds\ms_crt01_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5592
+   min_distance 20.0
+   max_distance 45.0
+   audio_file "sounds\ms_crt01_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5593
+   min_distance 20.0
+   max_distance 45.0
+   audio_file "sounds\ms_crt01_att.wav"
+}
+
+// **************************** skolopendra ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5600
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt05_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5601
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt05_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5602
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt05_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5603
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt05_att.wav"
+}
+
+
+// **************************** golem ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5610
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc50_roar1.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5611
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc50_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5612
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_npc50_roar1.wav"
+     source 1 "sounds\ms_npc50_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5613
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc50_att.wav"
+}
+
+// **************************** cyanos ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5620
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc33_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5621
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc33_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5622
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_npc33_roar.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5623
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc33_att.wav"
+}
+
+// **************************** spider ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5630
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt13_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5631
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt13_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5632
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_crt13_roar.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5633
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt13_att.wav"
+}
+
+// **************************** salamander ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5640
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt12_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5641
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt12_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5642
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_crt12_roar.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5643
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt12_att.wav"
+}
+
+// **************************** scorpion ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5650
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt10_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5651
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt10_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5652
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_crt10_roar.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5653
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt10_att.wav"
+}
+
+// **************************** thyphon ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5660
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt14_roar1.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5661
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt14_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5662
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_crt14_roar1.wav"
+     source 1 "sounds\ms_crt14_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5663
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt14_att.wav"
+}
+
+// **************************** ludoed ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5670
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc61_roar2.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5671
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc61_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5672
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_npc61_roar1.wav"
+     source 1 "sounds\ms_npc61_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5673
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc61_att.wav"
+}
+
+// **************************** skeleton ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5680
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc60_roar2.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5681
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc60_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5682
+   min_distance 2.5
+   max_distance 20.0
+   flags SF_PLAY_RANDOM
+   audio_files
+   {
+     source 0 "sounds\ms_npc60_roar1.wav"
+     source 1 "sounds\ms_npc60_roar2.wav"
+   }
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5683
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc60_att.wav"
+}
+
+// **************************** assasin ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5690
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc68_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5691
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc68_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5692
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc68_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5693
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc68_att.wav"
+}
+
+// **************************** dracost ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5700
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt56_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5701
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt56_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5702
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt56_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5703
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt56_att.wav"
+}
+// **************************** mamont ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5710
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt52_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5711
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt52_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5712
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt52_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5713
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt52_att.wav"
+}
+// **************************** zomby ************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5720
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc63_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5721
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc63_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5722
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc63_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5723
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc63_att.wav"
+}
+// **************************** charmed tree***********************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5730
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt54_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5731
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt54_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5732
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt54_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5733
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt54_att.wav"
+}
+// **************************** kamneed ***********************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5740
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc66_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5741
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc66_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5742
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc66_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5743
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc66_att.wav"
+}
+// **************************** xodiachiy trup ********************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5750
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67a_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5751
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67a_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5752
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67a_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5753
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67a_att.wav"
+}
+// **************************** Kadavr ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5760
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5761
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5762
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5763
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc67_att.wav"
+}
+// **************************** Netopyr ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5770
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt55_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5771
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt55_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5772
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt55_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5773
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt55_att.wav"
+}
+// **************************** Manada ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5780
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc04_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5781
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc04_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5782
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc04_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5783
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc04_att.wav"
+}
+// **************************** karlyk ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5790
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc80_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5791
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc80_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5792
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc80_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5793
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_npc80_att.wav"
+}
+
+// **************************** Vestnik smerti ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5800
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt57_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5801
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt57_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5802
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt57_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5803
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt57_att.wav"
+}
+
+
+// **************************** Kurgannik ***************************
+//-----------------------------------------------------------------
+// Description: howl
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5810
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt58_howl.wav"
+}
+//-----------------------------------------------------------------
+// Description: death
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5811
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt58_dead.wav"
+}
+//-----------------------------------------------------------------
+// Description: roar
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5812
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt58_roar.wav"
+}
+//-----------------------------------------------------------------
+// Description: attack
+//-----------------------------------------------------------------
+soundeffect
+{
+   eff_number  5813
+   min_distance 2.5
+   max_distance 20.0
+   audio_file "sounds\ms_crt58_att.wav"
+}

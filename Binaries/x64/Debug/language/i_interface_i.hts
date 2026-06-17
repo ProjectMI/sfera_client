@@ -1,0 +1,19 @@
+INTERFACCIA (i_interface.hts)
+hypertext 
+{
+<tab><cl=F0F010>INTERFACCIA<cl=A2A2A2><br><br>
+<tab><l="hts:\\language\i_mainp.hts">Controlli<\l><br><br>
+<tab><l="hts:\\language\options.hts">Menu<\l><br><br>
+<tab><l="hts:\\language\constwin.hts">pannelli di sistema<\l><br><br>
+<tab><l="hts:\\language\statinfo.hts">Finestra statistiche<\l><br><br>
+<tab><l="hts:\\language\puppet.hts">Finestra personaggio<\l><br><br>
+<tab><l="hts:\\language\inventory.hts">Inventario<\l><br><br>
+<tab><l="hts:\\language\chat.hts">Chat<\l><br><br>
+<tab><l="hts:\\language\hotkeys.hts">Tasti rapidi<\l><br><br>
+<tab><l="hts:\\language\clan.hts">Finestra Clan<\l><br><br>
+<tab><l="hts:\\language\ally.hts">Box alleanze e guerre<\l><br><br>
+<tab><l="hts:\\language\group.hts">Finestra gruppo<\l><br><br>
+<tab><l="hts:\\language\trade.hts">Finestra scambi (comprare)<\l><br><br>
+<tab><l="hts:\\language\tradechar.hts">Finestra scambi (vendere)<\l><br><br>
+<tab><l="hts:\\language\missions.hts">Finestra missione<\l><br><br>
+}

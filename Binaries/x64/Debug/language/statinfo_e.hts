@@ -1,0 +1,19 @@
+STATISTICS WINDOW (statinfo.hts)
+hypertext
+{
+<tab><cl=F0F010>STATISTICS WINDOW<cl=A2A2A2><br><br>
+<tab>This window shows your character's <l="hts:\\language\i_charact.hts">attributes<\l> You can open it by pressing "H".<br>
+<br><tab><cl=00FF00>Title and degree<cl=A2A2A2><br>
+<tab>In the upper part of this window is shown your title and magic degree together with the number of title and degree marks currently in your possession and the number required to move up to the next level.<br>
+<br><tab><cl=00FF00>Carma and clan<cl=A2A2A2><br>
+<tab>Lower in the window, there is your karma and name of your <l="hts:\\language\clan.hts">clan<\l>. If you are not in any clan, the clan name field is empty.<br>
+<br><tab><cl=00FF00>Health, Prajna, Satiation<cl=A2A2A2><br>
+<tab>Next, there are your character's Health, Prajna and Satiation (current and maximum possible values).<br>
+<br><tab><cl=00FF00>Attack and protection<cl=A2A2A2><br>
+<tab>In the middle of the window are shown your character's attack and protection.<br> 
+In the itmes "combat attack" and "magic attack" the numbers appear only when you take weapons or magic objects which may be used to inflict damage or heal. Damage potential is shown using a negative number while healing power - a positive one.<br>
+<tab>Items <l="hts:\\language\i_charact.hts">"combat protection" and "magic protection"<\l> show corresponding protection levels. Protection depends on available protection devices (see "<l="hts:\\language\puppet.hts">character window<\l>"), and <l="hts:\\language\i_mutators.hts">mutators<\l>.<br>
+<br><tab><cl=00FF00>Ablilities and elements<cl=A2A2A2><br>
+<tab>At the bottom are shown your current values of <l="hts:\\language\i_charact.hts">abilities and elements<\l> together with the number of title and degree elementals you have.<br>
+<tab>Here you also can distribute your title elementals between your various abilities and degree elementals between elements.
+}

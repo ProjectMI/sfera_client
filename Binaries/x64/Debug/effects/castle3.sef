@@ -1,0 +1,84 @@
+//=====================================================================
+// Definition   : 
+// Effect number: 752
+//=====================================================================
+
+effect_def
+{
+   effect_name    "castle3"
+   effect_number  752
+   effect_time    -1
+   effect_timelimit 256
+
+   boundbox 0.4 0.1 0.4 -0.4 -6.5 -0.4
+
+   subeffects_num 1
+   subeffect 0 EFF_PSYSTEM "stars"   
+}
+
+psystem_def
+{
+  psystem_name   "stars"
+  particles_num  128
+  psystem_flags  PS_TRANSLATEONLY
+  self_illumination 255
+    
+  emission_def
+  {
+     shape            EMITSHAPE_POINT
+     emit_num         1.0
+  }
+
+  particleborn_def
+  {
+    lifetime          128.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_flare"
+    blendmode PS_BLENDADD
+  }
+
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+        rkey 0 0.0 0.2 0.3
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 45 45 200 255
+        key  1   0.9 45 45 200 255
+        key  2   1.0 45 45 200 0
+     }
+
+     velocity_track
+     {
+       track_num 0
+       numkeys   1
+       key 0 0.0 0.0 -0.1 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+

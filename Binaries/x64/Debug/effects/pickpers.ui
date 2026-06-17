@@ -1,0 +1,1508 @@
+//----------------------------------------------------------------------------------
+// Window: Create person
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "window"
+	size 394 404
+	texture "i_pick01"    0 0 256 256    0 0 256 256
+        texture "i_pick02"    0 0 256 148    0 256 256 404
+        texture "i_pick02"    0 148 138 256  256 0 394 108
+
+        texture "i_pick03"    0 0 0 0  256 364 394 404
+        texture "i_pick03"    0 0  138 256   256 108 394 364
+
+        tcoords 3         256 0 256 138 216 138 216 0
+      }
+
+
+      sprite
+      {
+        name "help_focus"
+        size 14 14
+        texture "i_ctrls" 0 76 14 90 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_push"
+        size 14 14
+        texture "i_ctrls" 0 106 14 120 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_normal"
+        size 14 14
+        texture "i_ctrls" 0 91 14 105 0 0 14 14
+      }
+
+      sprite
+      {
+        name "spin"
+        size 37 26
+        texture "i_map"  103 120 140 146 0 0 37 26
+      }
+
+
+      sprite
+      {
+        name "sl_focus"
+        size 18 18
+        texture "i_ctrls" 0 19 18 37 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sl_normal"
+        size 18 18
+        texture "i_ctrls" 0 0 18 18 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sl_push"
+        size 18 18
+        texture "i_ctrls" 0 38 18 56 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sl_disabled"
+        size 18 18
+        texture "i_ctrls" 0 57 18 75 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_focus"
+        size 18 18
+        texture "i_ctrls" 19 19 37 37 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_push"
+        size 18 18
+        texture "i_ctrls" 19 38 37 56 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_disabled"
+        size 18 18
+        texture "i_ctrls" 19 57 37 75 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_normal"
+        size 18 18
+        texture "i_ctrls" 19 0 37 18 0 0 18 18
+      }
+
+
+      sprite
+      {
+	name "check_mark"
+	size 125 7
+	texture "i_miss" 208 0 215 7 0 0 7 7
+	texture "i_miss" 208 0 215 7 118 0 125 7
+      }
+   }
+
+   windowName  "pick_person"
+   windowText  UISTR_WT_CPS01
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    -20 20
+   size        394 404
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 360 29
+   textcolor   237 208 161
+   alignWin    RIGHT_X
+   saveLastPosition false
+   canNotCross TRUE   
+
+   control			 		 // id = 1
+   {
+     classID	BUTTON
+     position	360 13
+     size	14 14
+     drawMethod SPRITE
+     buttonStyle SEND_HELP
+     windowHelp  "language\createdude.hts"
+
+     checkedImage     "help_push"
+     focusedImage     "help_focus"
+     uncheckedImage   "help_normal"
+
+     tooltip
+     {
+       toolstr UISTR_HELP
+     }
+   }
+
+   // ------------ Telo, Volosi, Pol, etc..
+
+   control                                           // id = 2
+   {
+     classID   TEXT
+     position  68 220
+     size      85 20
+     textformat CENTER_Y
+     font      3
+     textcolor 237 208 161
+     windowText UISTR_WT_CPS06
+   }
+
+   control                                         // id = 3
+   {
+     classID   TEXT
+     position  68 248
+     size      75 20
+     textformat CENTER_Y
+     font      3
+     textcolor 237 208 161
+     windowText UISTR_WT_CPS02
+   }
+
+   control                                          // id = 4
+   {
+     classID   TEXT
+     position  68 276
+     size      75 20
+     textformat CENTER_Y
+     font      3
+     textcolor 237 208 161
+     windowText UISTR_WT_CPS03
+   }
+
+   control                                           // id = 5
+   {
+     classID   TEXT
+     position  68 304
+     size      75 20
+     textformat CENTER_Y
+     font      3
+     textcolor 237 208 161
+     windowText UISTR_WT_CPS04
+   }
+
+   control                                           // id = 6
+   {
+     classID   TEXT
+     position  68 332
+     size      75 20
+     textformat CENTER_Y
+     font      3
+     textcolor 237 208 161
+     windowText UISTR_WT_CPS05
+   }
+
+   control				             // id = 7
+   {
+     classID	IMAGE
+     position	18 216
+     size	37 26
+     image      "spin"
+   }
+
+   control					     // id = 8
+   {
+     classID	IMAGE
+     position	18 245
+     size	37 26
+     image      "spin"
+   }
+
+   control					     // id = 9
+   {
+     classID	IMAGE
+     position	18 274
+     size	37 26
+     image      "spin"
+   }
+
+   control			                     // id = 10
+   {
+     classID	IMAGE
+     position	18 303
+     size	37 26
+     image      "spin"
+   }
+
+   control			                     // id = 11
+   {
+     classID	IMAGE
+     position	18 332
+     size	37 26
+     image      "spin"
+//     hidden true
+   }
+
+   control					     // id = 12
+   {
+     classID   SPINBUTTON
+     position  17 216
+     notifyChange true
+     defButtonStyle false
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					       // id = 13
+   {
+     classID   SPINBUTTON
+     position  17 245
+     notifyChange true
+     defButtonStyle false
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					   // id = 14
+   {
+     classID   SPINBUTTON
+     position  17 274
+     notifyChange true
+     defButtonStyle false
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 15
+   {
+     classID   SPINBUTTON
+     position  17 303
+     notifyChange true
+     defButtonStyle false
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 16
+   {
+     classID   SPINBUTTON
+     position  17 332
+     notifyChange true
+     defButtonStyle false
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+// ------------ Sila/lovkost/metkost/etc..
+
+   control                                      // id = 17
+   {
+     classID    TEXT
+     position   203 283
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT15
+     }
+   }
+
+   control                                      // id = 18
+   {
+     classID    TEXT
+     position   203 304
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT16
+     }
+   }
+
+   control                                      // id = 19
+   {
+     classID    TEXT
+     position   203 325
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT17
+     }
+   }
+
+   control                                      // id = 20
+   {
+     classID    TEXT
+     position   203 346
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT18
+     }
+   }
+
+   control			                     // id = 21
+   {
+     classID	IMAGE
+     position	234 275
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 22
+   {
+     classID	IMAGE
+     position	234 297
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 23
+   {
+     classID	IMAGE
+     position	234 319
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 24
+   {
+     classID	IMAGE
+     position	234 341
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control					  // id = 25
+   {
+     classID   SPINBUTTON
+     position  233 275
+     notifyChange true
+     badyCtrlID 17
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 26
+   {
+     classID   SPINBUTTON
+     position  233 297
+     notifyChange true
+     badyCtrlID 18
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 27
+   {
+     classID   SPINBUTTON
+     position  233 319
+     notifyChange true
+     badyCtrlID 19
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 28
+   {
+     classID   SPINBUTTON
+     position  233 341
+     notifyChange true
+     badyCtrlID 20
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+// ------------- Ogon/voda/zemlya/etc..
+
+   control                                      // id = 29
+   {
+     classID    TEXT
+     position   305 283
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT19
+     }
+   }
+
+   control                                      // id = 30
+   {
+     classID    TEXT
+     position   305 304
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT20
+     }
+   }
+
+   control                                      // id = 31
+   {
+     classID    TEXT
+     position   305 325
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT21
+     }
+   }
+
+   control                                      // id = 32
+   {
+     classID    TEXT
+     position   305 346
+     size       23 12
+     font       2
+     textFormat CENTER
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT22
+     }
+   }
+
+   control			                     // id = 33
+   {
+     classID	IMAGE
+     position	340 275
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 34
+   {
+     classID	IMAGE
+     position	340 297
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 35
+   {
+     classID	IMAGE
+     position	340 319
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control			                     // id = 36
+   {
+     classID	IMAGE
+     position	340 341
+     size	37 26
+     image      "spin"
+     hidden     true
+   }
+
+   control					  // id = 37
+   {
+     classID   SPINBUTTON
+     position  340 275
+     notifyChange true
+     badyCtrlID 29
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 38
+   {
+     classID   SPINBUTTON
+     position  340 297
+     notifyChange true
+     badyCtrlID 30
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 39
+   {
+     classID   SPINBUTTON
+     position  340 319
+     notifyChange true
+     badyCtrlID 31
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+   control					  // id = 40
+   {
+     classID   SPINBUTTON
+     position  340 341
+     notifyChange true
+     badyCtrlID 32
+     hidden     true
+
+     rightbutton
+     {
+       position   1 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sl_focus"
+       checkedImage   "sl_push"
+       disabledImage  "sl_disabled"
+       uncheckedImage "sl_normal"
+     }
+
+     leftbutton
+     {
+       position   19 4
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage   "sr_focus"
+       checkedImage   "sr_push"
+       disabledImage  "sr_disabled"
+       uncheckedImage "sr_normal"
+     }
+   }
+
+// ------------------------------------
+
+   control                                      // id = 41
+   {
+     classID    PROGRESS_BAR                
+     position   211 60
+     size       167 4
+     font       2
+     drawMethod SPRITE "green"
+     statusShow STYLE1        
+     statusPos  0 -14
+     range      0 100
+     progressPos 100
+   }
+
+   control                                      // id = 42
+   {
+     classID    PROGRESS_BAR                
+     position   210 101
+     size       167 4
+     font       2
+     drawMethod SPRITE "blue"
+     range      0 100
+     progressPos 100
+     statusShow STYLE1        
+     statusPos  0 -14
+   }
+
+   control                                      // id = 43
+   {
+     classID    TEXT
+     position   211 36
+     size       130 10
+     font       2
+     textcolor  230 230 230
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT01
+     }
+   }
+
+   control                                      // id = 44
+   {
+     classID    TEXT
+     position   210 77
+     size       130 10
+     font       2
+     textcolor  230 230 230
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT02
+     }
+   }
+
+
+// ------------------------------------
+
+   control                                      // id = 45
+   {
+     classID    PROGRESS_BAR                
+     position   210 164
+     size       108 4
+     font       2
+     drawMethod SPRITE "green"
+     progressPos 100
+     statusShow STYLE1        
+     statusPos  116 -4
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT06
+     }
+   }
+
+   control                                      // id = 46
+   {
+     classID    PROGRESS_BAR                
+     position   210 179
+     size       108 4
+     font       2
+     drawMethod SPRITE "blue"
+     progressPos 100
+     statusShow STYLE1        
+     statusPos  116 -4
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT07
+     }
+   }
+
+   control                                      // id = 47
+   {
+     classID    PROGRESS_BAR                
+     position   210 193
+     size       108 4
+     font       2
+     drawMethod SPRITE "yellow"
+     progressPos 100
+     statusShow STYLE1        
+     statusPos  116 -4
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT08
+     }
+   }
+
+// ----------------- attaka/zashita/etc.. -------------------
+
+   control                                      // id = 48
+   {
+     classID    TEXT
+     position   208 216
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT09
+     }
+   }
+
+   control                                      // id = 49
+   {
+     classID    TEXT
+     position   208 238
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT11
+     }
+   }
+
+   control                                      // id = 50
+   {
+     classID    TEXT
+     position   208 260
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT13
+     }
+   }
+
+// -----------------mag attaka/zashita/.. -------------------
+
+   control                                      // id = 51
+   {
+     classID    TEXT
+     position   311 216
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT10
+     }
+   }
+
+   control                                      // id = 52
+   {
+     classID    TEXT
+     position   311 238
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT12
+     }
+   }
+
+   control                                      // id = 53
+   {
+     classID    TEXT
+     position   311 260
+     size       64 12
+     font       2
+     textFormat CENTER_Y
+     tooltip
+     {
+       toolstr  UISTR_TT_STAT14
+     }
+   }
+
+// ---------------clan info---------------------
+
+   control                                      // id = 54 - clan image
+   {
+     classID    IMAGE
+     position   181 119
+     size       30 29
+     tooltip
+     {
+       toolstr UISTR_TT_STAT05
+     }
+   }
+
+   control                                      // id = 55 - clan name
+   {
+     classID    TEXT
+     position   220 117
+     size       140 14
+     font       2
+     textFormat CENTER_Y
+     textcolor   237 208 161
+   }
+
+   control                                      // id = 56 - karma
+   {
+     classID    TEXT
+     position   220 129
+     size       140 14
+     font       2
+     textFormat CENTER_Y
+     textcolor   237 208 161
+   }
+
+// ----buttons : delete/quit/start -------------------------------------------
+
+   control				             // id = 57 - delete
+   {
+     classID	BUTTON
+     position	39 139
+     size	110 16
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+     textformat CENTER_Y
+     windowText UISTR_WT_CPS08
+   }
+
+   control				             // id = 58 - quit
+   {
+     classID	BUTTON
+     position	139 372
+     size	70 16
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+     textformat CENTER_Y
+     windowText UISTR_WT_CPS09
+   }
+
+   control				             // id = 59 - start
+   {
+     classID	BUTTON
+     position	245 372
+     size	90 16
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+     textformat CENTER_Y
+     windowText UISTR_WT_CPS10
+	 hotKey "ENTER" 0 0 0
+   }
+
+// ---- edit char names -------------------------------------------
+
+   control					      // id = 60
+   {
+     classID	EDIT
+     position	40 39
+     size       115 20
+     font       3
+     textformat CENTER_Y
+     maxsymbols 15
+     hidden     true
+   }
+
+   control					      // id = 61
+   {
+     classID	EDIT
+     position	40 67
+     size       115 20
+     font       3
+     textformat CENTER_Y
+     maxsymbols 15
+     hidden     true
+   }
+
+   control					      // id = 62
+   {
+     classID	EDIT
+     position	40 94
+     size       115 20
+     font       3
+     textformat CENTER_Y
+     maxsymbols 15
+     hidden     true
+   }
+
+// ------- radio buttons for chars -----------------------------------
+
+   control					 // id = 63
+   {
+     classID	RADIOBUTTON
+     position	40 39
+     size	100 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText UISTR_WT_CPS10
+   }
+
+   control					 // id = 64
+   {
+     classID	RADIOBUTTON
+     position	40 67
+     size	100 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText UISTR_WT_CPS10
+   }
+
+   control					 // id = 65
+   {
+     classID	RADIOBUTTON
+     position	40 94
+     size	100 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText UISTR_WT_CPS10
+   }
+
+   control                                   // id = 66
+   {
+    classID Image
+    position  170 282
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT15
+    }
+
+   }
+   
+   control                                   // id = 67
+   {
+    classID Image
+    position  170 302
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT16
+    }
+
+   }
+   
+   control                                   // id = 68
+   {
+    classID Image
+    position  170 323
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT17
+    }
+
+   }
+   
+   control                                   // id = 69
+   {
+    classID Image
+    position  170 345
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT18
+    }
+
+   }
+
+   control                                   // id = 70
+   {
+    classID Image
+    position  274 282
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT19
+    }
+
+   }
+   
+   control                                   // id = 71
+   {
+    classID Image
+    position  274 302
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT20
+    }
+
+   }
+   
+   control                                   // id = 72
+   {
+    classID Image
+    position  274 323
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT21
+    }
+
+   }
+   
+   control                                   // id = 73
+   {
+    classID Image
+    position  274 345
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT22
+    }
+
+   }
+
+   control                                   // id = 74
+   {
+    classID Image
+    position  170 214
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT09
+    }
+
+   }
+
+   control                                   // id = 75
+   {
+    classID Image
+    position  170 236
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT11
+    }
+
+   }
+
+   control                                   // id = 76
+   {
+    classID Image
+    position  170 258
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT13
+    }
+
+   }
+
+   control                                   // id = 77
+   {
+    classID Image
+    position  274 214
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT10
+    }
+
+   }
+
+   control                                   // id = 78
+   {
+    classID Image
+    position  274 236
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT12
+    }
+
+   }
+
+   control                                   // id = 79
+   {
+    classID Image
+    position  274 258
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT14
+    }
+
+   }
+
+   control                                   // id = 80
+   {
+    classID Image
+    position  170 39
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT01
+    }
+
+   }
+
+   control                                   // id = 81
+   {
+    classID Image
+    position  170 78
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT02
+    }
+
+   }
+
+   control                                   // id = 82
+   {
+    classID Image
+    position  170 158
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT06
+    }
+
+   }
+
+   control                                   // id = 83
+   {
+    classID Image
+    position  170 174
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT07
+    }
+
+   }
+
+   control                                   // id = 84
+   {
+    classID Image
+    position  170 190
+    size      40 15
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_TT_STAT08
+    }
+
+   }
+
+ }

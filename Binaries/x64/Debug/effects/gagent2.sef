@@ -1,0 +1,192 @@
+//=====================================================================
+// Definition   : Положительный агент, голубой цвет
+// Effect number: 501
+//=====================================================================
+
+effect_def
+{
+   effect_name     "agent blue"
+   effect_number   501
+   effect_time    -1
+   effect_timelimit 256
+   subeffects_num  2
+
+   subeffect 0 EFF_PSYSTEM "aaa"
+   subeffect 1 EFF_PSYSTEM "zzz"
+
+   boundbox 1.0 1.0 1.0 -1.0 -1.0 -1.0
+
+   sound_def
+   {
+      flags SF_PLAY_RANDOM
+      min_distance 1.0
+      max_distance 15.0
+      audio_files
+      {
+        source 0 "sounds\mg_heal_fly1.wav"
+        source 1 "sounds\mg_heal_fly2.wav"
+      }
+   }
+
+   light_def
+   {
+     light_pos   0.0 -2.0 0.0
+     light_color 160 160 1560 255
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "aaa"
+  particles_num     40
+  psystem_flags     PS_ROTATEY
+  self_illumination 255
+
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_RING
+     randseed         -1
+     radius           0.25
+     emit_num         1.5
+  }
+
+  rotation_track
+  {
+     numkeys 2
+     key 0 0.0 0.0 0.0 0.0
+     key 1 256.0 0.0 720.0 0.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          25.0
+    lifetime_rf       20.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_star"
+    blendmode PS_BLENDADD  
+  }
+  
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.0
+       rkey 1 1.0 0.3 0.3
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0 0     0 250 255
+        key  1   1.0 200 200 200   0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+  }
+}
+
+
+
+psystem_def
+{
+  psystem_name      "zzz"
+  particles_num     80
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH
+  self_illumination 255
+
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_RING
+     randseed         -1
+     radius           0.25
+     emit_num         2.0
+  }
+
+  rotation_track
+  {
+     numkeys 2
+     key 0 0.0 0.0 0.0 0.0
+     key 1 128.0 0.0 720.0 0.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          25.0
+    lifetime_rf       20.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD  
+  }
+  
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+       rkey 0 0.0 0.1 0.1
+        key 1 1.0 0.05
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 50   50   250 0
+        key  1   0.3 50   50   250 255
+        key  2   1.0 200 200 200 0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+       rkey 0 0.0 0.0 0.005 0.0 0.0 0.01 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+

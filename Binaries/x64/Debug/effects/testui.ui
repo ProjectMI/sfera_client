@@ -1,0 +1,146 @@
+//-------------------------------------------------------------------------
+// Window: chat_st2
+//-------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+     sprite
+     {
+      name "chat_window"
+      size 583 400
+      texture "i_mantra" 60 120 61 121  0 0 583 400
+      texture "i_mantra" 31 41 31 41  0 375 583 377
+      texture "i_mantra" 31 41 31 41  0 26 583 27
+      }
+     
+    
+     
+     sprite
+     {
+      name "CloseButtonDisabled"
+      size 22 22
+      texture "i_ctrls" 14 76 28 88  0 0 22 22
+     }
+     
+     sprite
+     {
+      name "CloseButtonNormal"
+      size 22 22
+      texture "i_ctrls" 14 76 28 88  0 0 22 22
+     }
+     
+     sprite
+     {
+      name "CloseButtonFocused"
+      size 22 22
+      texture "i_ctrls" 14 76 28 88  0 0 22 22
+     }
+     
+     sprite
+     {
+      name "CloseButtonPressed"
+      size 22 22
+      texture "i_ctrls" 14 76 28 88  0 0 22 22
+     }
+
+     
+     
+   }
+
+   windowName  "testui"
+   showTitle   3 0
+   drawMethod SPRITE "chat_window"
+   position  10 -150
+   size      583 400
+   font      0
+   rectTitle 0 0 465 33
+//   disabled true
+   textcolor 2 255 2 255
+   alignWin  RIGHT_Y
+   saveLastPosition true
+   escapeHandle true
+   
+   control                                   // id = 1
+   {
+    classID  TEXTLIST
+    position  15 35
+    size      540 332
+    font      4
+    textcolor 255 2 2 255
+    disabledcolor 128 128 128 255
+    canSelect true
+    formatStrings true
+//    chatlike true
+
+
+    scrollbar
+    {
+      classID	 SCROLL_BAR
+      position  550 17
+      size      16 305
+      deltaStep 30
+      
+      leftbutton
+      {
+        position  -1 -17
+        size      18 18
+        drawMethod SPRITE
+
+      }
+      
+      rightbutton
+      {
+        position  -1 305
+        size      18 18
+        font      0
+        textcolor 255 255 255 255
+        disabledcolor 128 128 128 255
+        drawMethod SPRITE
+      }
+    }
+   }
+   
+   
+   control                                   // id = 2
+   {
+    classID Edit
+    position  8 379
+    size      560 24
+    font      4
+    textcolor 255 255 2 255
+    disabledcolor 128 128 128 255
+    maxsymbols 128
+    enteredOnFocus true
+    cursoroffset 0 -2
+retmsg true
+   }
+   
+   
+   control                                   // id = 3
+   {
+    classID Button
+    position  556 0
+    size      24 24
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+
+    tooltip
+    {
+      toolstr UISTR_CLOSEW
+    }
+
+    drawMethod SPRITE
+    checkedImage "CloseButtonPressed"
+    uncheckedImage "CloseButtonNormal"
+    focusedImage "CloseButtonFocused"
+    buttonStyle SEND_QUIT
+
+   }
+
+
+
+ }
+

@@ -1,0 +1,69 @@
+hypertext
+{
+Organização dos Armeiros<br>
+<br>
+<cl=00FF00>Primeiro estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 16<br>
+<tab><tab>Nível máximo: 15<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +65<br>
+<tab>Proteção mágica: +98<br>
+<tab>Ataque físico: +82<br>
+<tab>Habilidade: -6<br>
+<tab>Componentes: -4<br>
+<br>
+<cl=00FF00>Segundo estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 21<br>
+<tab><tab>Nível máximo: 15<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +120<br>
+<tab>Proteção mágica: +225<br>
+<tab>Ataque físico: +150<br>
+<tab>Habilidade: -14<br>
+<tab>Componentes: -6<br>
+<br>
+<cl=00FF00>Terceiro estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 31<br>
+<tab><tab>Nível máximo: 15<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +198<br>
+<tab>Proteção mágica: +372<br>
+<tab>Ataque físico: +248<br>
+<tab>Habilidade: -22<br>
+<tab>Componentes: -10<br>
+<br>
+<cl=00FF00>Quarto estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 41<br>
+<tab><tab>Nível máximo: 15 <br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +350<br>
+<tab>Proteção mágica: +618<br>
+<tab>Ataque físico: +412<br>
+<tab>Habilidade: -42<br>
+<tab>Componentes: -15<br>
+<br>
+<cl=00FF00>Quinto estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 51<br>
+<tab><tab>Nível máximo: 15<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +490<br>
+<tab>Proteção mágica: +980<br>
+<tab>Ataque físico: +653<br>
+<tab>Habilidade: -60<br>
+<tab>Componentes: -20<br>
+<br>
+<cl=00FF00>Sexto estágio<br>
+<tab><tab><cl=A2A2A2>Título mínimo: 60<br>
+<tab><tab>Nível máximo: 15<br>
+<br><cl=ABCDEF>
+<tab>Proteção física: +889<br>
+<tab>Proteção mágica: +1440<br>
+<tab>Ataque físico: +960<br>
+<tab>Habilidade: -86<br>
+<tab>Componentes: -24<br>
+<br>
+<sp><l="hts:\\language\guilds_p.hts">Volta para lista de organizações<\l><br>
+<sp><l="hts:\\language\guildj_p.hts">Volta para descrição da organização<\l><br>
+<br>
+<l="hts:\\language\guild_desci_p.hts">Organização anterior<\l> <cl=FFFF00>| <l="hts:\\language\guild_desck_p.hts">Próxima organização<\l><br>
+}

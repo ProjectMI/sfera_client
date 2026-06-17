@@ -1,0 +1,34 @@
+soundtrack
+{
+  audio_file "sounds\music\city_1n.ogg"
+  volume 1.0
+
+  samples
+  {
+    sample 01 00:00.000 00:15.092
+
+    sample 02 00:19.086 00:35.712
+    sample 03 00:37.616 00:54.288
+    sample 04 00:56.238 01:12.957
+    sample 05 01:15.093 01:31.672
+
+    sample 06 01:34.087 01:50.480
+    sample 07 01:52.570 02:09.149
+
+    sample 08 02:11.099 02:28.282
+    sample 09 02:30.186 02:47.555
+
+    sample 10 02:49.598 03:06.827
+    sample 11 03:08.685 03:25.914
+  }
+
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p01,p02,p03,p04,05,j02 | p01,p06,p07,j02
+     pattern 02 p08,p09,j03 | p10,p11,j03
+     pattern 03 p02,p04,p05,p03,j04 | p07,p06,j04
+     pattern 04 p09,p08,s4,j01 | p11,p10,s4,j01 
+  }
+}

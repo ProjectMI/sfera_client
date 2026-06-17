@@ -1,0 +1,10 @@
+INFO "DEATH AND REINCARNATION" (i_reincarn.hts)
+hypertext
+{
+<tab><cl=F0F010>DEATH AND REINCARNATION<cl=A2A2A2><br><br>
+<tab>For us, visitors from the real world, death in the Sphere is not an end. We can return to this magic world through one of Weaver's portals. However, while in the Sphere, each character accumulates <l="hts:\\language\i_charact.hts">karma<\l>. Depending on the amount of karma, you can be reincarnated in different portals. Some of them are in good places, others - in bad, still others - in neutral. Overall, the portals are graded into five categories. You are reincarnated in the portal closest to your place of death, which also matches your karma. Beware of reincarnation on <l="hts:\\language\i_geo.hts"> Charon!<\l> <br>
+<tab>When you die you may lose part of your <l="hts:\\language\inventory.hts">inventory<\l>. What you carry on your body (see <l="hts:\\language\puppet.hts">"Character window"<\l>), usually remains.  The loss depends on your karma - the better the karma, the fewer are the losses. You also lose part of your <l="hts:\\language\i_charact.hts"> title marks and degree marks.<\l><br>
+<tab>You will not lose objects stored in the "eternal cells" of <l="hts:\\language\inventory.hts">inventory<\l>.<br>
+<tab><cl=FFFFFF>Note: if your title and degree are both below level 6 you don't lose anything. You need to be at least <l="hts:\\language\i_charact.hts">"a guest" or "a candidate"<\l><cl=B0B0B0> to lose things.<br>
+}
+

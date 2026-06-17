@@ -1,0 +1,32 @@
+soundtrack
+{
+  audio_file "sounds\music\dung_1.ogg"
+  volume 1.0
+
+  samples
+  {
+    sample 01 00:00.000  00:12.000
+    sample 02 00:14.000  00:26.284
+    sample 03 00:28.235  00:40.263
+    sample 04 00:42.213  00:54.540
+    sample 05 00:56.600  01:08.057
+    sample 06 01:10.542  01:22.663
+    sample 07 01:24.659  01:37.000
+    sample 08 01:39.000  01:50.800
+    sample 09 01:53.011  02:05.039
+    sample 10 02:07.000  02:19.273
+    sample 11 02:21.084  02:33.205
+    sample 12 02:35.178  02:47.485
+    sample 13 02:49.319  03:00.906
+   }
+
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p02,p02,p03,j02 | p04,p05,p06,j02 | p07,p08,p09,j02 | p10,p11,p12,p13,j02
+     pattern 02 p02,p04,p06,p11,j03 | p01,p03,p05,p13,j03 | p07,p09,p12,p10,j03 | p03,p04,p09,s20,j03
+     pattern 03 p12,p09,p06,j01 | p13,p10,p07,j01 | p11,p08,p05,j01 | p03,p04,p02,j01 | p12,p11,s20,j01
+
+  }
+}

@@ -1,0 +1,171 @@
+//=====================================================================
+// Definition   : Tropos magic
+// Effect number: 566
+//=====================================================================
+
+effect_def
+{
+   effect_name   "tropos magic"
+   effect_number 566
+   effect_time   -1
+   subeffects_num 2
+   effftype          1
+
+   boundbox 1.5 0.2 1.5 -1.5 -3.5 -1.5
+
+   subeffect 1 EFF_PSYSTEM "spell2" ATTACH_LEFTHAND
+   subeffect 0 EFF_PSYSTEM "spell1" ATTACH_LEFTHAND
+
+   light_def
+   {
+     attach ATTACH_LEFTHAND
+     light_color 10 255 255 255     
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "spell1"
+  particles_num     120
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH | PS_EMITONPOSCHANGE
+  self_illumination 255
+
+  emission_def
+  {
+     shape            EMITSHAPE_BOX
+     randseed         -1
+     radius           0.1
+     height           0.1
+     width            0.1
+     emit_num         2.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          60.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_flare"
+    blendmode PS_BLENDADD  
+  }
+  
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+       rkey  0  0.0  0.15 0.15
+        key  1  1.0  0.05
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 20  250  210 100
+        key  1   0.4 20  250  210 100
+        key  2   1.0 100 100  100 0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1 
+       mrkey 0 0.0 0.0 0.0 0.0 0.005 0.005 0.005
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0 
+  }
+}
+
+
+psystem_def
+{
+  psystem_name      "spell2"
+  particles_num     60
+  psystem_flags     PS_TRANSLATEONLY
+  self_illumination 255
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           0.1
+     emit_num         2.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          15.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_flare"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+       rkey 0 0.0 0.1 0.1
+        key 1 1.0 0.0
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0 15 250  225     0
+        key  1   0.2 25 250  225   150
+        key  2   0.8 15 215  225   100
+        key  3   1.0 100 100 100   0
+     }
+ 
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+        mrkey 0 0.0 0.0 0.0 0.0 0.015 0.015 0.015
+    }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+

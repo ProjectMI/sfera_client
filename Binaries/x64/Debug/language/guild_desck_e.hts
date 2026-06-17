@@ -1,0 +1,57 @@
+hypertext
+{
+Guild of blacksmith<br>
+<br>
+<cl=00FF00>First stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 16<br>
+<tab><tab>Minimum degree: 16<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +82<br>
+<tab>Magical attack: +82<br>
+<tab>All characteristics: -6<br>
+<br>
+<cl=00FF00>Second stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 21<br>
+<tab><tab>Minimum degree: 21<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +150<br>
+<tab>Magical attack: +150<br>
+<tab>All characteristics: -20<br>
+<br>
+<cl=00FF00>Third stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 31<br>
+<tab><tab>Minimum degree: 31<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +248<br>
+<tab>Magical attack: +248<br>
+<tab>All characteristics: -27<br>
+<br>
+<cl=00FF00>Fourth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 41<br>
+<tab><tab>Minimum degree: 41<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +412<br>
+<tab>Magical attack: +412<br>
+<tab>All characteristics: -43<br>
+<br>
+<cl=00FF00>Fifth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 51<br>
+<tab><tab>Minimum degree: 51<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +653<br>
+<tab>Magical attack: +653<br>
+<tab>All characteristics: -52<br>
+<br>
+<cl=00FF00>Sixth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 60<br>
+<tab><tab>Minimum degree: 60<br>
+<br><cl=ABCDEF>
+<tab>Physical attack: +960<br>
+<tab>Magical attack: +960<br>
+<tab>All characteristics: -68<br>
+<br>
+<sp><l="hts:\\language\guilds_e.hts">Back to guilds list<\l><br>
+<sp><l="hts:\\language\guildk_e.hts">Back to guild description<\l><br>
+<br>
+<l="hts:\\language\guild_descj_e.hts">Previous guild<\l> <cl=FFFF00>| <l="hts:\\language\guild_descl_e.hts">Next guild<\l><br>
+}

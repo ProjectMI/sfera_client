@@ -1,0 +1,10 @@
+INFO "MORTE E REINCARNAZIONE" (i_reincarn.hts)
+hypertext
+{
+<tab><cl=F0F010>MORTE E REINCARNAZIONE<cl=A2A2A2><br><br>
+<tab>In Sphere la morte non è la fine. Si può tornare in questo magico mondo attraverso i portali del Weaver. Tuttavia, in Sphere, ogni personaggio accumula <l="hts:\\language\i_charact.hts">karma<\l>. A seconda del livello di karma, ci si reincarna attraverso differenti portali. Alcuni si trovano in posti buoni, altri in cattivi, altri ancora in luoghi neutrali. In tutto, i portali sono divisi in icnque categorie. Ci si reincarna nel portale più vicino al luogo dove si muore, in accordo col proprio karma. Attenzione alla reincarnazione a <l="hts:\\language\i_geo.hts"> Charon!<\l> <br>
+<tab>Morendo si può perdere parte del proprio <l="hts:\\language\inventory.hts">inventario<\l>. Ciò che si porta addosso (guardare <l="hts:\\language\puppet.hts">"Finestra personaggio"<\l>), solitamente resta. La perdita dipende dal karma: migliore è il karma, minore sarà la perdita. Si perdono anche parte dei propri <l="hts:\\language\i_charact.hts"> punti titolo e punti grado.<\l><br>
+<tab>Non si perdono gli oggetti messi nel "posto eterno" dell'<l="hts:\\language\inventory.hts">inventario<\l>.<br>
+<tab><cl=FFFFFF>Nota: se il proprio titolo e grado è inferiore al livello 6 non si perde nulla. Si deve essere almeno <l="hts:\\language\i_charact.hts">"ospite" o "candidato"<\l><cl=B0B0B0> per perdere oggetti.<br>
+}
+

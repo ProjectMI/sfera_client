@@ -1,0 +1,19 @@
+FINESTRA STATISTICHE (statinfo.hts)
+hypertext
+{
+<tab><cl=F0F010>FINESTRA STATISTICHE<cl=A2A2A2><br><br>
+<tab>Questa finestra mostra gli <l="hts:\\language\i_charact.hts">attributi<\l> del personaggio. La si può aprire premendo il tasto "H".<br>
+<br><tab><cl=00FF00>Titolo e grado<cl=A2A2A2><br>
+<tab>Nella parte alta di questa finestra è mostrato il proprio titolo e il grado magico insieme ai numeri dei punti titolo e punti grado attualmente in proprio possesso e il numero richiesto per il prossimo livello.<br>
+<br><tab><cl=00FF00>Karma e clan<cl=A2A2A2><br>
+<tab>In basso a questa finestra si trovano il proprio karma e il nome del proprio <l="hts:\\language\clan.hts">clan<\l>. Se non si appartiene ad alcun clan, il campo del nome del clan apparirà vuoto.<br>
+<br><tab><cl=00FF00>Salute, Prana, Sazietà<cl=A2A2A2><br>
+<tab>Qui si trova il livello di salute del personaggio, del prana e della sazietà (valore attuale e massimale).<br>
+<br><tab><cl=00FF00>Attacco e protezione<cl=A2A2A2><br>
+<tab>Nel mezzo della finestra vengono mostrati attacco e protezione del personaggio.<br> 
+Alla voce "attacco di combattimento" e "attacco magico" i numeri appaiono solamente quando si prende un'arma o un oggetto magico che possono essere usati per infliggere danno o per curare. Il danno potenziale viene visualizzato con un numero negativo (-) mentre il potere di cura da un numero positivo (+).<br>
+<tab>Le voci <l="hts:\\language\i_charact.hts">"protezione in combattimento" e "protezione magica"<\l> mostrano il rispettivo livello di protezione. La protezione dipende dagli oggetti che conferiscono protezione (guardare "<l="hts:\\language\puppet.hts">finestra personaggio<\l>"), e <l="hts:\\language\i_mutators.hts">mutatori<\l>.<br>
+<br><tab><cl=00FF00>Abilità e elementi<cl=A2A2A2><br>
+<tab>In basso viene mostrato il proprio valore di <l="hts:\\language\i_charact.hts">abilità e elementi<\l> insieme al numero di elementi di titolo e grado in proprio possesso.<br>
+<tab>Qui è possibile anche distribuire gli elementi titolo tra le varie abilità e gli elementi grado tra i vari elementi.
+}

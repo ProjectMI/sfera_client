@@ -1,0 +1,380 @@
+//----------------------------------------------------------------------------------
+// Window: Journal mini
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "jour_window"
+	size 205 176
+	texture "i_map"      0 153 205 256  0 0 205 103
+	texture "i_journal"  0 0 205 73     0 103 205 176
+      }
+
+      sprite
+      {
+	name "icons"
+	size 23 54
+	texture "i_journal"  233 0 256 54  0 0 23 54
+      }
+
+      sprite
+      {
+	name "pole_vvoda"
+	size 176 16
+	texture "i_journal"  0 74 176 90 0 0 176 16
+      }
+
+      sprite
+      {
+        name "close_focus"
+        size 14 14
+        texture "i_ctrls" 15 76 29 90 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_push"
+        size 14 14
+        texture "i_ctrls" 15 106 29 120 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_normal"
+        size 14 14
+        texture "i_ctrls" 15 91 29 105 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_focus"
+        size 14 14
+        texture "i_ctrls" 0 76 14 90 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_push"
+        size 14 14
+        texture "i_ctrls" 0 106 14 120 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_normal"
+        size 14 14
+        texture "i_ctrls" 0 91 14 105 0 0 14 14
+      }
+
+      sprite
+      {
+	name "sc_polzun"
+	size 24 26
+	texture "i_ctrls"  38 0 62 26 0 0 24 26
+      }
+
+      sprite
+      {
+	name "sc_lbfocus"
+	size 18 18
+	texture "i_ctrls"  38 27 56 45 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_lbpush"
+	size 18 18
+	texture "i_ctrls"  57 50 75 68 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_lbdis"
+	size 18 18
+	texture "i_ctrls"  44 88 62 106 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbfocus"
+	size 18 18
+	texture "i_ctrls"  38 46 56 64 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbpush"
+	size 18 18
+	texture "i_ctrls"  76 50 94 68 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbdis"
+	size 18 18
+	texture "i_ctrls"  44 107 62 125 0 0 18 18
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_disabled"
+        size 32 24
+        texture "i_ctrls" 63 88 95 112 0 0 32 24
+      }
+
+
+      sprite
+      {
+        name "cancel_normal"
+        size 32 24
+        texture "i_ctrls" 63 25 95 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_focus"
+        size 32 24
+        texture "i_ctrls" 96 25 128 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_push"
+        size 32 24
+        texture "i_ctrls" 96 75 128 99 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_disabled"
+        size 32 24
+        texture "i_ctrls" 96 100 128 124 0 0 32 24
+      }
+   }
+
+   windowName  "journal_mini"
+   windowText  UISTR_WT_JOUR
+   showTitle   4 1
+   drawMethod  SPRITE "jour_window"
+   position    0 200
+   size        205 176
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 160 29
+   alignWin    RIGHT_X
+   canDragDrop true
+   textcolor   237 208 161
+   escapeHandle TRUE
+
+   control					// id = 1
+   {
+     classID	IMAGE
+     position	30 111
+     size	23 54
+     image      "icons"
+   }
+
+   control					 // id = 2
+   {
+     classID	BUTTON
+     position	55 112
+     size	94 17
+     font	3
+     focuscolor 255 239 212
+     textcolor	237 208 161
+     windowText UISTR_WC_JOUR01
+     disabledcolor 150 150 150
+     textformat CENTER_Y
+//     drawmethod SPRITE
+//    uncheckedImage "slot_empty"
+//     hidden true
+   }
+
+   control					 // id = 3
+   {
+     classID	BUTTON
+     position	55 130
+     size	94 17
+     font	3
+     focuscolor 255 239 212
+     textcolor	237 208 161
+     windowText UISTR_WC_JOUR02
+     disabledcolor 150 150 150
+     textformat CENTER_Y
+//     drawmethod SPRITE
+//     uncheckedImage "slot_empty"
+//     hidden true
+   }
+
+   control					 // id = 4
+   {
+     classID	BUTTON
+     position	55 148
+     size	110 17
+     font	3
+     focuscolor 255 239 212
+     textcolor	237 208 161
+     windowText UISTR_WC_JOUR03
+     disabledcolor 150 150 150
+     textformat CENTER_Y
+//     drawmethod SPRITE
+ //   uncheckedImage "slot_empty"
+//     hidden true
+   }
+
+   control					 // id = 5
+   {
+     classID	BUTTON
+     position	70 140
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "ok_normal"
+     checkedImage   "ok_push"
+     focusedImage   "ok_focus"
+     disabledImage  "ok_disabled"
+//     hidden         true
+     hotKey     "ENTER" 0 0 0
+   }
+
+   control					 // id = 6
+   {
+     classID	BUTTON
+     position	104 140
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "cancel_normal"
+     checkedImage   "cancel_push"
+     focusedImage   "cancel_focus"    
+     disabledImage  "cancel_disabled"
+//     hidden          true
+   }
+
+   control                                     // id = 7
+   {
+     classID    IMAGE                          
+     position   14 117
+     size       176 16
+     image      "pole_vvoda"
+//     hidden      true
+   }
+
+   control                                     // id = 8
+   {
+     classID    EDIT
+     position   18 117
+     size       168 16
+     font       2
+//     hidden     true
+     maxsymbols 280
+   }
+
+   control				       // id = 9
+   {
+     classID       TEXTLIST
+     position 17 37
+     size     150 69
+     font          2
+     useContinueMark true
+     canSelect       true
+     maxitems        1000
+     chatlike        true
+     selectionBorder 3
+     selectionColor     237 208 161 80
+     selectionLineColor 50 50 50 155
+
+     scrollbar
+     {
+      classID	 SCROLL_BAR
+      position	 160 18
+      size	 16 35
+      scrollSpr  "sc_polzun" 24 26
+      deltaStep  10
+
+      leftbutton
+      {
+       position   -1 -18
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sc_lbfocus"
+       checkedImage "sc_lbpush"
+       disabledImage "sc_lbdis"
+      }
+
+      rightbutton
+      {
+       position   -1 34
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sc_rbfocus"
+       checkedImage "sc_rbpush"
+       disabledImage "sc_rbdis"
+      }
+    }
+   }
+
+   control                                       // id = 10
+   {
+     classID    BUTTON   
+     position   175 15
+     size       14 14
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+
+     checkedImage     "close_push"
+     focusedImage     "close_focus"
+     uncheckedImage   "close_normal"
+
+     tooltip
+     {
+       toolstr UISTR_CLOSEW
+     }
+   }
+
+   control					// id = 11
+   {
+     classID	BUTTON
+     position	160 15
+     size	14 14
+     drawMethod SPRITE
+     buttonStyle SEND_HELP
+     windowHelp  "language\journal.hts"
+
+     checkedImage     "help_push"
+     focusedImage     "help_focus"
+     uncheckedImage   "help_normal"
+
+     tooltip
+     {
+       toolstr UISTR_HELP
+     }
+   }
+
+ }

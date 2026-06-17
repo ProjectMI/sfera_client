@@ -1,0 +1,314 @@
+//----------------------------------------------------------------------------------
+// Window: System right
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+        name "sp_window"
+        size 212 48
+        texture "i_comp"  0 50 212 98 0 0 212 48
+      }
+
+      sprite
+      {
+        name "min_focus"
+        size 26 24
+        texture "i_comp"  126 151 152 175 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_normal"
+        size 26 24
+        texture "i_comp"  126 201 152 225 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_push"
+        size 26 24
+        texture "i_comp"  126 176 152 200 0 0 26 24
+      }
+
+      sprite
+      {
+        name "clk_clip"
+        size 43 43
+	texture "i_comp"  152 100 195 143 0 0 43 43
+      }
+
+      sprite
+      {
+        name "st_big"
+        size 3 30
+        texture "i_comp"  243 101 246 131 0 0 3 30
+      }
+
+      sprite
+      {
+        name "st_small"
+        size 5 24
+        texture "i_comp"  228 101 233 125 0 0 5 24
+      }
+
+      sprite
+      {
+        name "b1_focus"
+        size 16 15
+        texture "i_comp"  153 150 169 165 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b2_focus"
+        size 16 15
+        texture "i_comp"  0 116 16 131 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b3_focus"
+        size 16 15
+        texture "i_comp"  17 116 33 131 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b4_focus"
+        size 16 15
+        texture "i_comp"  34 116 50 131 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b5_focus"
+        size 16 15
+        texture "i_comp"  51 116 67 131 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b6_focus"
+        size 16 15
+        texture "i_comp"  68 116 84 131 0 0 16 15
+      }
+
+      sprite
+      {
+        name "b7_focus"
+        size 16 15
+        texture "i_comp"  85 116 101 131 0 0 16 15
+      }
+   }
+
+   windowName "system_right"
+   drawMethod  SPRITE "sp_window"
+   position    0 0
+   size        212 48
+
+   showEffect  MOVE_LEFT  0.25 195 195
+   hideEffect  MOVE_RIGHT 0.25 195 195
+
+   canGoTop    false
+   alignWin    RIGHT_X
+   saveLastPosition false
+   canNotCross TRUE
+
+   control                            // id = 1
+   {
+     classID    BUTTON   
+     position   15 0
+     size       26 24
+     drawMethod SPRITE
+
+     checkedImage     "min_push"
+     focusedImage     "min_focus"
+     uncheckedImage   "min_normal"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL07
+     }
+   }
+
+   control                           // id = 2
+   {
+     classID TEXT
+     position 45 5
+     size     116 11
+     textFormat CENTER
+
+     font 2
+     textcolor 169 152 84 255
+ 
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL12
+     }
+   }
+
+   control                           // id = 3
+   {
+     classID TEXT
+     position 172 8
+     size     33 25
+     textFormat CENTER
+
+     font 2
+     textcolor 169 152 84 255 
+   }
+
+   control                            // id = 4
+   {
+     classID    BUTTON
+     position   44 20
+     size       16 15
+     drawMethod SPRITE
+
+     focusedImage     "b1_focus"
+     checkedImage     "b1_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL20
+     }
+   }
+
+   control                            // id = 5
+   {
+     classID    BUTTON
+     position   61 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b2_focus"
+     focusedImage     "b2_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL14
+     }
+   }
+
+   control                            // id = 6
+   {
+     classID    BUTTON
+     position   78 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b3_focus"
+     focusedImage     "b3_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL15
+     }
+   }
+
+   control                            // id = 7
+   {
+     classID    BUTTON
+     position   95 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b4_focus"
+     focusedImage     "b4_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL16
+      }
+   }
+
+   control                            // id = 8
+   {
+     classID    BUTTON
+     position   112 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b5_focus"
+     focusedImage     "b5_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL17
+     }
+   }
+
+   control                            // id = 9
+   {
+     classID    BUTTON
+     position   129 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b6_focus"
+     focusedImage     "b6_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL18
+     }
+   }
+
+   control                            // id = 10
+   {
+     classID    BUTTON
+     position   146 20
+     size       16 15
+     drawMethod SPRITE
+
+     checkedImage     "b7_focus"
+     focusedImage     "b7_focus"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL19
+     }
+   }
+
+   control                              // id = 11     - 4asi
+   {
+     classID    IMAGE
+     position   186 7
+     size       6 28
+     image      "st_small"
+     rotate     90
+   }
+
+   control                              // id = 12    - minuti
+   {
+     classID    IMAGE
+     position   188 3
+     size       4 34
+     image      "st_small"
+//     rotate     180
+   }
+
+   control                            // id = 13
+   {
+     classID    IMAGE
+     position   167 0
+     size       43 43
+     image      "clk_clip"
+   }
+
+   control                            // id = 14
+   {
+     classID    BUTTON
+     position   167 0
+     size       43 43
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL13
+     }
+   }
+ }

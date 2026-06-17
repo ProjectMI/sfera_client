@@ -1,0 +1,11 @@
+ATALHOS(hotkeys_p.hts)
+hypertext
+{
+<tab><cl=F0F010> ATALHOS <cl=A2A2A2><br><br>
+<tab>Atalhos são para se ter acesso rápido acesso em objetos que você anteriormente selecionou. A janela de atalho pode aparecer na tela nos dois modos, grande e pequeno. Para selecionar entre eles, pressione "K" (padrão), ou clique no botão no <l="hts:\\language\constwin_p.hts">painel esquerdo<\l>.<br>
+<tab>no <cl=FFFFFF>formato pequeno<cl=B0B0B0> a janela aparece como uma coluna de 10 fendas conservando objetos designados para as teclas 1, 2, 3, 4, 5, 6, 7, 8, 9, e 0 respectivamente. Pressione Ctrl para escolher entre os próximos 10 objetos, que podem ser acessados pressionando Ctrl+"número" (combinação de teclas).<br>
+<tab><cl=FFFFFF>No formato grande<cl=B0B0B0> você pode designar atalhos em objetos arrastando eles para o slot desejado do <l="hts:\\language\inventory.hts">Inventário<\l>. Se o slot já estiver ocupado será cancelado e substituído por outro.<br>
+<tab><cl=FFFFFF>Importante:<cl=B0B0B0> os atalhos não podem lembrar dos objetos por ele mesmo. Quando um objeto é movido é movido de sua posição original do inventário o atalho ficará vazio, e vice versa, se colocar outro objeto na posiçao "cheia" posição no inventário pressionando o atalho vai levar até <cl=FFFFFF>usando<cl=B0B0B0> do seu novo objeto.<br>
+<tab>Quando você sair do jogo a posição do atalho será salva.<br>
+}
+

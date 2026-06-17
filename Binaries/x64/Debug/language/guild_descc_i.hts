@@ -1,0 +1,111 @@
+hypertext
+{
+Gilda degli inquisitori<br>
+<br>
+<cl=00FF00>Primo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +96<br>
+<tab>Protezione fisica: +82<br>
+<tab>Resistenza: -6<br>
+<tab>Altre abilità: -4<br>
+<tab>Terra: -6<br>
+<tab>Acqua: -10<br>
+<tab>Fuoco: +12<br>
+<tab>Attacco magico: +45<br>
+<tab><br>
+<tab>Risveglio: ogni 6 ore<br>
+<tab>Catene: 4 minuti in 4 ore<br>
+<tab>Purificazione: 1 mutatore in 3 ore<br>
+<br>
+<cl=00FF00>Secondo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +190<br>
+<tab>Protezione fisica: +150<br>
+<tab>Resistenza: -10<br>
+<tab>Altre abilità: -6<br>
+<tab>Terra: -10<br>
+<tab>Acqua: -14<br>
+<tab>Fuoco: +28<br>
+<tab>Attacco magico: +88<br>
+<tab><br>
+<tab>Risveglio: ogni 4 ore<br>
+<tab>Catene: 8 minuti in 3 ore<br>
+<tab>Purificazione: 2 mutatori in 3 ore<br>
+<br>
+<cl=00FF00>Terzo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +297<br>
+<tab>Protezione fisica: +248<br>
+<tab>Resistenza: -14<br>
+<tab>Altre abilità: -10<br>
+<tab>Terra: -14<br>
+<tab>Acqua: -18<br>
+<tab>Fuoco: +48<br>
+<tab>Attacco magico: +148<br>
+<tab><br>
+<tab>Risveglio: ogni 4 ore<br>
+<tab>Catene: 10 minuti in 3 ore<br>
+<tab>Purificazione: 3 mutatori in 2 ore<br>
+<br>
+<cl=00FF00>Quarto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +512<br>
+<tab>Protezione fisica: +412<br>
+<tab>Resistenza: -18<br>
+<tab>Altre abilità: -14<br>
+<tab>Terra: -18<br>
+<tab>Acqua: -24<br>
+<tab>Fuoco: +64<br>
+<tab>Attacco magico: +251<br>
+<tab><br>
+<tab>Risveglio: once in 3 ore<br>
+<tab>Catene: 12 minuti in 3 ore<br>
+<tab>Purificazione: 4 mutatori ogni ora<br>
+<br>
+<cl=00FF00>Quinto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +808<br>
+<tab>Protezione fisica: +653<br>
+<tab>Resistenza: -24<br>
+<tab>Altre abilità: -18<br>
+<tab>Terra: -24<br>
+<tab>Acqua: -48<br>
+<tab>Fuoco: +72<br>
+<tab>Attacco magico: +520<br>
+<tab><br>
+<tab>Risveglio: once in 3 ore<br>
+<tab>Catene: 14 minuti in 3 ore<br>
+<tab>Purificazione: 4 mutatori ogni ora<br>
+<br>
+<cl=00FF00>Sesto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo massimo: 15<br>
+<tab><tab>Grado minimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Protezione magica: +1320<br>
+<tab>Protezione fisica: +960<br>
+<tab>Resistenza: -48<br>
+<tab>Altre abilità: -24<br>
+<tab>Terra: -48<br>
+<tab>Acqua: -58<br>
+<tab>Fuoco: +84<br>
+<tab>Attacco magico: +1380<br>
+<tab><br>
+<tab>Risveglio: ogni 2 ore<br>
+<tab>Catene: 20 minuti in 3 ore<br>
+<tab>Purificazione: 6 mutatori ogni ora<br>
+<br>
+<sp><l="hts:\\language\guilds.hts">Torna alla lista delle gilde<\l><br>
+<sp><l="hts:\\language\guildc.hts">Torna alla descrizione della gilda<\l><br>
+<br>
+<l="hts:\\language\guild_descb.hts">Gilda precedente<\l> <cl=FFFF00>| <l="hts:\\language\guild_descd.hts">Gilda successiva<\l><br>
+}

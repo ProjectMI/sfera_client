@@ -1,0 +1,63 @@
+hypertext
+{
+Guild of barbarian<br>
+<br>
+<cl=00FF00>First stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 16<br>
+<tab><tab>Minimum degree: 16<br>
+<br><cl=ABCDEF>
+<tab>Power: +10<br>
+<tab>Dexterity: -4<br>
+<tab>Earth: +2<br>
+<tab>Fire: -12<br>
+<br>
+<cl=00FF00>Second stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 21<br>
+<tab><tab>Minimum degree: 21<br>
+<br><cl=ABCDEF>
+<tab>Power: +30<br>
+<tab>Dexterity: -6<br>
+<tab>Earth: +6<br>
+<tab>Fire: -24   <br>
+<br>
+<cl=00FF00>Third stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 31<br>
+<tab><tab>Minimum degree: 31<br>
+<br><cl=ABCDEF>
+<tab>Power: +44<br>
+<tab>Dexterity: -12<br>
+<tab>Earth: +20<br>
+<tab>Fire: -36<br>
+<br>
+<cl=00FF00>Fourth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 41<br>
+<tab><tab>Minimum degree: 41<br>
+<br><cl=ABCDEF>
+<tab>Power: +65<br>
+<tab>Dexterity: -30<br>
+<tab>Earth: +28<br>
+<tab>Fire: -48<br>
+<br>
+<cl=00FF00>Fifth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 51<br>
+<tab><tab>Minimum degree: 51<br>
+<br><cl=ABCDEF>
+<tab>Power: +72<br>
+<tab>Dexterity: -47<br>
+<tab>Earth: +42<br>
+<tab>Fire: -56<br>
+<br>
+<cl=00FF00>Sixth stage<br>
+<tab><tab><cl=A2A2A2>Minimum title: 60<br>
+<tab><tab>Minimum degree: 60<br>
+<br><cl=ABCDEF>
+<tab>Power: +96<br>
+<tab>Dexterity: -68<br>
+<tab>Earth: +50<br>
+<tab>Fire: -70<br>
+<br>
+<sp><l="hts:\\language\guilds_e.hts">Back to guilds list<\l><br>
+<sp><l="hts:\\language\guildf_e.hts">Back to guild description<\l><br>
+<br>
+<l="hts:\\language\guild_desce_e.hts">Previous guild<\l> <cl=FFFF00>| <l="hts:\\language\guild_descg_e.hts">Next guild<\l><br>
+}

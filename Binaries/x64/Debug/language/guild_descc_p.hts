@@ -1,0 +1,111 @@
+hypertext
+{
+Organização dos inquisidores<br>
+<br>
+<cl=00FF00>Primeiro estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +96<br>
+<tab>Proteção física: +82<br>
+<tab>Resistência: -6<br>
+<tab>Outras habilidades: -4<br>
+<tab>Terra: -6<br>
+<tab>Água: -10<br>
+<tab>Fogo: +12<br>
+<tab>Ataque mágico: +45<br>
+<tab><br>
+<tab>Restabelecimento: cada 6 horas<br>
+<tab>Algemas: 4 minutos em 4 horas<br>
+<tab>Purificação: 1 modificador a cada 3 horas<br>
+<br>
+<cl=00FF00>Segundo estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +190<br>
+<tab>Proteção física: +150<br>
+<tab>Resistência: -10<br>
+<tab>Outras habilidades: -6<br>
+<tab>Terra: -10<br>
+<tab>Água: -14<br>
+<tab>Fogo: +28<br>
+<tab>Ataque mágico: +88<br>
+<tab><br>
+<tab>Restabelecimento: cada 4 horas<br>
+<tab>Algemas: 8 minutos em 3 horas<br>
+<tab>Purificação: 2 modificadores a cada 3 horas <br>
+<br>
+<cl=00FF00>Terceiro estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +297<br>
+<tab>Proteção física: +248<br>
+<tab>Resistência: -14<br>
+<tab>Outras habilidades: -10<br>
+<tab>Terra: -14<br>
+<tab>Água: -18<br>
+<tab>Fogo: +48<br>
+<tab>Ataque mágico: +148<br>
+<tab><br>
+<tab>Restabelecimento: cada 4 horas<br>
+<tab>Algemas: 10 minutos em 3 horas<br>
+<tab>Purificação: 3 modificadores por hora <br>
+<br>
+<cl=00FF00>Quarto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +512<br>
+<tab>Proteção física: +412<br>
+<tab>Resistência: -18<br>
+<tab>Outras habilidades: -14<br>
+<tab>Terra: -18<br>
+<tab>Água: -24<br>
+<tab>Fogo: +64<br>
+<tab>Ataque mágico: +251<br>
+<tab><br>
+<tab>Restabelecimento: 1 em 3 horas<br>
+<tab>Algemas: 12 minutos em 3 horas<br>
+<tab>Purificação: 4 modificadores por hora<br>
+<br>
+<cl=00FF00>Quinto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +808<br>
+<tab>Proteção física: +653<br>
+<tab>Resistência: -24<br>
+<tab>Outras habilidades: -18<br>
+<tab>Terra: -24<br>
+<tab>Água: -48<br>
+<tab>Fogo: +72<br>
+<tab>Ataque mágico: +520<br>
+<tab><br>
+<tab>Restabelecimento: 1 em 3 horas<br>
+<tab>Algemas: 14 minutos em 3 horas<br>
+<tab>Purificação: 4 modificadores por hora<br>
+<br>
+<cl=00FF00>Sexto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Grau mínimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Proteção mágica: +1320<br>
+<tab>Proteção física: +960<br>
+<tab>Resistência: -48<br>
+<tab>Outras habilidades: -24<br>
+<tab>Terra: -48<br>
+<tab>Água: -58<br>
+<tab>Fogo: +84<br>
+<tab>Ataque mágico: +1380<br>
+<tab><br>
+<tab>Restabelecimento: cada 2 horas<br>
+<tab>Algemas: 20 minutos em 3 horas<br>
+<tab>Purificação: 6 modificadores por hora<br>
+<br>
+<sp><l="hts:\\language\guilds_p.hts">Volta para lista de organizações<\l><br>
+<sp><l="hts:\\language\guildc_p.hts">Volta para descrição da organização<\l><br>
+<br>
+<l="hts:\\language\guild_descb_p.hts">Organização anterior<\l> <cl=FFFF00>| <l="hts:\\language\guild_descd_p.hts">Próxima organização<\l><br>
+}

@@ -1,0 +1,26 @@
+CONTROL (i_mainp.hts)
+hypertext
+{
+<tab><cl=F0F010>CONTROL<cl=A2A2A2><br><br>
+<br><tab><cl=00FF00>Control<cl=A2A2A2><br>
+<tab>There are two control modes: <cl=FFFFFF>standard control<cl=B0B0B0> and <cl=FFFFFF>battle control<cl=B0B0B0>.  In the standard control mode there is a conventional mouse pointer (arrow) on the screen and you can manipulate various windows and handle various objects. The battle control is designed to be used primarily for dynamic combat and long marches. In battle control there is no movable pointer on the screen - it takes the form of fixed crosshairs in the screen center. You can toggle between the two modes using TAB key (default setting).<br>
+<br><tab><cl=00FF00>Hand<cl=A2A2A2><br>
+<tab>Your character's hand might be either <cl=FFFFFF>"free"<cl=B0B0B0> or <cl=FFFFFF>"in use"<cl=B0B0B0>. The <cl=FFFFFF>hand<cl=B0B0B0> is used to hold objects, such as weapons, which are needed for certain repeated actions. When the hand is in use, there is an image of it together with the object it holds in the right lower corner of the screen. You can take into your hand only the objects which are in the <l="hts:\\language\inventory.hts">inventory<\l>. To free hand, press 
+"-".<br>
+<br><tab><cl=00FF00>Control in standard mode<cl=A2A2A2><br>
+<tab>The appearance of the pointer indicates the action which you want to (or can) do.<br>
+<tab>The pointer<cl=FFFFFF>lighted<cl=B0B0B0> with yellow shows that the object you are pointing at is within reach (3 meters). You can <cl=FFFFFF>use<cl=B0B0B0> that object by clicking it with the left mouse button. Some of the objects (primarily weapons, healing powders and mantras) move automatically into your<cl=FFFFFF>hand<cl=B0B0B0> when you use them.<br>
+<tab>When<cl=FFFFFF> you hold an object,<cl=B0B0B0> there is an icon of this object sticking to the pointer. Depending on its operating distance, the object in your hand can be <cl=FFFFFF>used<cl=B0B0B0> towards various surrounding objects by clicking those objects.<br>
+<tab><cl=FFFFFF>Eye<cl=B0B0B0> appears beside the pointer when you press and hold down the Shift key. With that eye on, you can <cl=FFFFFF>look<cl=B0B0B0> at the object of interest by simply clicking it. If that object of interest is close enough, you'll get its full description and if it's too far - only its name.<br>
+<tab><cl=FFFFFF>Human figure<cl=B0B0B0> appears near the pointer when you hold down the Alt key. This functionality allows you to <cl=FFFFFF>use<cl=B0B0B0> the object on yourself.<br>
+<tab><cl=FFFFFF>When you drag<cl=B0B0B0> an object, there is an icon of that object sticking to the pointer. Dragging is done by holding down the left mouse button. You can't drag objects if there is something in your hand.<br>
+<tab>In standard control mode you also can manipulate windows, i.e. drag and customize them. When you exit the game, current window postitions are saved and restored when you next enter the game provided you don't change video mode.
+<br><tab>Clicking and holding down the right mouse button while in the standard mode puts the pointer at screen center and switches the game into the battle mode.<br>
+<br><tab><cl=00FF00>Battle control mode<cl=A2A2A2><br>
+In this mode the pointer is fixed at screen center while the mouse is used for turning. The response to up-down motions of the mouse may be changed in "mouse inversion" item (control options).<br>
+<tab> Shift and Alt keys as well as the left mouse button have exactly the same functions as in the standard control mode. You can't drag objects in battle control mode.<br>
+<br><tab><cl=00FF00>Hot keys<cl=A2A2A2><br>
+<tab>Quick <cl=FFFFFF>use<cl=B0B0B0> of the objects in your inventary  may be effected by "hot keys". These are the keys 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 on the keyboard. In combination with the Ctrl  key you can have 20 hot keys in all. To assign an object to a hot key use <l="hts:\\language\hotkeys.hts">hot keys window<\l>.<br>
+<br><tab><cl=00FF00>Fist<cl=A2A2A2><br>
+<tab>If, for some reason, you can't use weapons, you may use your fists instead (tilde key, "`"). With a fist you can inflict minor but frequent damages.<br>
+}

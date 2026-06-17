@@ -1,0 +1,197 @@
+//=====================================================================
+// Definition   : Truha palo4nika
+// Effect number: 312
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "palblood"
+   effect_number  312
+   effect_time    100
+
+   subeffects_num 1
+
+   boundbox 3.0 3.0 3.0 -3.0 -2.0 -3.0
+
+   subeffect 0 EFF_PSYSTEM "blood"
+}
+
+
+
+psystem_def
+{
+  psystem_name      "blood"
+  particles_num     30
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH
+  self_illumination 255
+
+  position_track
+  {
+    numkeys 1
+    key 0 0.0 0.0 -1.6 0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1	 
+     radius           0.2
+     emission_track
+     {
+       numkeys 2
+      rkey 0 1.0 5.0 5.0
+       key 1 2.0 0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          100.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    texture   "fx_sp"
+    blendmode PS_BLENDALPHA
+  }
+
+  // childs
+  childs_def
+  {
+    childs_num 1
+    child 0 "smoketale"
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1 
+     ngravitation_tracks 1
+
+     size_track
+     {
+       track_num 0
+       numkeys   1
+       rkey 0 0.0 0.053 0.053
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0 55 25 25 255
+        key  1   1.0 15 25 25 0
+     }
+
+     velocity_track
+     {
+	track_num 0
+	numkeys 1
+	mrkey 0 0.0 0.0 -0.0 0.0 0.08 0.0 0.08
+     }
+
+     gravitation_track
+     {
+	track_num 0
+	numkeys 2
+        key 0 0.0 0.0 0.0 0.0 
+       rkey 1 0.4 0.0 0.06 0.0 0.0 0.06 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+     gravitation_track 0
+     child_ps       0
+  }
+}
+
+
+psystem_def
+{
+  psystem_name      "smoketale"
+  particles_num     350
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH
+  self_illumination 0
+
+  power_track
+  {
+    numkeys 2
+    key 0   0.0 0.6
+    key 1 100.0 0.0
+  }
+  
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           0.02
+     emit_num         2.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          30.0
+    lifetime_rf       15.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    texture   "fx_sp"
+    blendmode PS_BLENDALPHA
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+        rkey 0 0.0 0.05 0.15
+     }
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0 255 255 255 160
+        key  1   1.0 255 255 255  0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 3
+        key 0 0.0 0.0 0.0 0.0
+        key 1 0.2 0.0 0.0 0.0
+        key 2 0.4 0.0 0.005 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+     texture_frame  RANDOM
+  }
+}
+

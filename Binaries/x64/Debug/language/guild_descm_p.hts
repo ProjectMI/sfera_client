@@ -1,0 +1,88 @@
+hypertext
+{
+Organização dos Necromantes<br>
+<br>
+
+<cl=00FF00>Primeiro estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Prana: +168<br>
+<tab>Proteção física: +65<br>
+<tab>Proteção mágica: +65<br>
+<tab>Poder, precisão e resistência: -6<br>
+<tab>Terra: +10<br>
+<tab>Ar e fogo: -6<br>
+<tab>Ataque mágico: +45<br>
+<br>
+
+<cl=00FF00>Segundo estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Prana: +305<br>
+<tab>Proteção física: +118<br>
+<tab>Proteção mágica: +120<br>
+<tab>Poder, precisão e resistência: -20<br>
+<tab>Terra: +14<br>
+<tab>Ar e fogo: -14<br>
+<tab>Ataque mágico: +88<br>
+<br>
+
+<cl=00FF00>Terceiro estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Prana: +572<br>
+<tab>Proteção física: +182<br>
+<tab>Proteção mágica: +198<br>
+<tab>Poder, precisão e resistência: -28<br>
+<tab>Terra: +26<br>
+<tab>Ar e fogo: -22<br>
+<tab>Ataque mágico: +148<br>
+<br>
+
+<cl=00FF00>Quarto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Prana: +918<br>
+<tab>Proteção física: +246<br>
+<tab>Proteção mágica: +350<br>
+<tab>Poder, precisão e resistência: -42<br>
+<tab>Terra: +48<br>
+<tab>Ar e fogo: -58<br>
+<tab>Ataque mágico: +251<br>
+<br>
+
+<cl=00FF00>Quinto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Prana: +1680<br>
+<tab>Proteção física: +312<br>
+<tab>Proteção mágica: +490<br>
+<tab>Poder, precisão e resistência: -60<br>
+<tab>Terra: +72<br>
+<tab>Ar e fogo: -102<br>
+<tab>Ataque mágico: +520<br>
+<br>
+
+<cl=00FF00>Sexto estágio<br>
+<tab><tab><cl=A2A2A2>Título máximo: 15<br>
+<tab><tab>Nível mínimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Prana: +2240<br>
+<tab>Proteção física: +398<br>
+<tab>Proteção mágica: +889<br>
+<tab>Poder, precisão e resistência: -96<br>
+<tab>Terra: +112<br>
+<tab>Ar e fogo: -144<br>
+<tab>Ataque mágico: +988<br>
+<br>
+
+<sp><l="hts:\\language\guilds_p.hts">Volta para lista de organizações<\l><br>
+<sp><l="hts:\\language\guildm_p.hts">Volta para descrição da organização<\l><br>
+<br>
+<l="hts:\\language\guild_descl_p.hts">Organização anterior<\l> <cl=FFFF00>| <l="hts:\\language\guild_descn_p.hts">Próxima organização<\l><br>
+}

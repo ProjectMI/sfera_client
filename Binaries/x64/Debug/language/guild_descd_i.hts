@@ -1,0 +1,99 @@
+hypertext
+{
+Gilda dei cacciatori<br>
+<br>
+<cl=00FF00>Primo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 16<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +40<br>
+<tab>Protezione magica: +82<br>
+<tab>Potere: -6<br>
+<tab>Precisione: +6<br>
+<tab>Resistenza: -4<br>
+<tab>Elementi: -4<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +80, 60 minuti in 4 ore<br>
+<tab>Doppia freccia: 10 minuti in 10 ore<br>
+<tab>Girovago: 20 minuti in 6 ore<br>
+<br>
+<cl=00FF00>Secondo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 21<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +74<br>
+<tab>Protezione magica: +150<br>
+<tab>Potere: -10<br>
+<tab>Precisione: +10<br>
+<tab>Resistenza: -6<br>
+<tab>Elementi: -6<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +120, 60 minuti in 4 ore<br>
+<tab>Doppia freccia: 10 minuti in 8 ore<br>
+<tab>Girovago: 30 minuti in 6 ore<br>
+<br>
+<cl=00FF00>Terzo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 31<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +180<br>
+<tab>Protezione magica: +248<br>
+<tab>Potere: -14<br>
+<tab>Precisione: +14<br>
+<tab>Resistenza: -20<br>
+<tab>Elementi: -10<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +250, 60 minuti in 3 ore<br>
+<tab>Doppia freccia: 15 minuti in 7 ore<br>
+<tab>Girovago: 35 minuti in 5 ore<br>
+<br>
+<cl=00FF00>Quarto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 41<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +220<br>
+<tab>Protezione magica: +412<br>
+<tab>Potere: -18<br>
+<tab>Precisione: +18<br>
+<tab>Resistenza: -28<br>
+<tab>Elementi: -15<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +420, 60 minuti in 3 ore<br>
+<tab>Doppia freccia: 15 minuti in 7 ore<br>
+<tab>Girovago: 40 minuti in 4 ore<br>
+<br>
+<cl=00FF00>Quinto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 51<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +340<br>
+<tab>Protezione magica: +653<br>
+<tab>Potere: -24<br>
+<tab>Precisione: +24<br>
+<tab>Resistenza: -42<br>
+<tab>Elementi: -20<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +750, 60 minuti in 2 ore<br>
+<tab>Doppia freccia: 15 minuti in 7 ore<br>
+<tab>Girovago: 35 minuti in 3 ore<br>
+<br>
+<cl=00FF00>Sesto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 60<br>
+<tab><tab>Grado massimo: 15<br>
+<br><cl=ABCDEF>
+<tab>Protezione fisica: +480<br>
+<tab>Protezione magica: +960<br>
+<tab>Potere: -48<br>
+<tab>Precisione: +48<br>
+<tab>Resistenza: -60<br>
+<tab>Elementi: -24<br>
+<tab><br>
+<tab>Occhio dello scoiattolo: attacco fisico +1200, 40 minuti in 2 ore<br>
+<tab>Doppia freccia: 30 minuti in 5 ore<br>
+<tab>Girovago: 30 minuti in 2 ore<br>
+<br>
+<sp><l="hts:\\language\guilds.hts">Torna alla lista delle gilde<\l><br>
+<sp><l="hts:\\language\guildd.hts">Torna alla descrizione della gilda<\l><br>
+<br>
+<l="hts:\\language\guild_descc.hts">Gilda precedente<\l> <cl=FFFF00>| <l="hts:\\language\guild_desce.hts">Gilda successiva<\l><br>
+}

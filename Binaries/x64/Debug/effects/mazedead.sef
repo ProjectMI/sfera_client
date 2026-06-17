@@ -1,0 +1,95 @@
+//=====================================================================
+// Definition   : MazeDead
+// Effect number: 626
+//=====================================================================
+
+effect_def
+{
+   effect_name    "MazeDead"
+   effect_number  626
+   effect_time    -1
+
+   boundbox 3.5 3.5 3.5 -3.5 -3.5 -3.5
+
+   subeffects_num 1
+
+   subeffect 0 EFF_PSYSTEM "clouds"
+}
+
+psystem_def
+{
+  psystem_name   "clouds"
+  particles_num  200     
+  psystem_flags  PS_TRANSLATEONLY
+  self_illumination 255
+
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     height           0.0
+     radius           2.0
+     emit_num         2.0
+  }
+
+  particleborn_def
+  {
+    lifetime          40.0
+    lifetime_rf       32.0
+  }
+
+  texture_def
+  {
+    numframes 16
+    type      PS_TANIMCOORD
+    texture   "fx_smokes"
+    blendmode PS_BLENDALPHA
+    frame 0  0.000 0.000 0.250 0.000 0.250 0.250 0.000 0.250
+    frame 1  0.250 0.000 0.500 0.000 0.500 0.250 0.250 0.250
+    frame 2  0.500 0.000 0.750 0.000 0.750 0.250 0.500 0.250
+    frame 3  0.750 0.000 1.000 0.000 1.000 0.250 0.750 0.250
+    frame 4  0.000 0.250 0.250 0.250 0.250 0.500 0.000 0.500
+    frame 5  0.250 0.250 0.500 0.250 0.500 0.500 0.250 0.500
+    frame 6  0.500 0.250 0.750 0.250 0.750 0.500 0.500 0.500
+    frame 7  0.750 0.250 1.000 0.250 1.000 0.500 0.750 0.500
+    frame 8  0.000 0.500 0.250 0.500 0.250 0.750 0.000 0.750
+    frame 9  0.250 0.500 0.500 0.500 0.500 0.750 0.250 0.750
+    frame 10  0.500 0.500 0.750 0.500 0.750 0.750 0.500 0.750
+    frame 11  0.750 0.500 1.000 0.500 1.000 0.750 0.750 0.750
+    frame 12  0.000 0.750 0.250 0.750 0.250 1.000 0.000 1.000
+    frame 13  0.250 0.750 0.500 0.750 0.500 1.000 0.250 1.000
+    frame 14  0.500 0.750 0.750 0.750 0.750 1.000 0.500 1.000
+    frame 15  0.750 0.750 1.000 0.750 1.000 1.000 0.750 1.000
+  }
+
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+        key 0 0.0 2.0
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 55 95 255 0
+        key  1   0.5 55 95 255 80
+        key  2   1.0 255 255 255 0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     texture_frame  RANDOM
+  }
+}
+

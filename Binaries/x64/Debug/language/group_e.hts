@@ -1,0 +1,13 @@
+GROUP WINDOW (group.hts)
+hypertext
+{
+<tab><cl=F0F010>GROUP<cl=A2A2A2><br><br>
+<tab>The group window is activated by pressing the "G" key (by default) or the "clan" button on the <l="hts:\\language\constwin.hts">right system panel.<\l><br>
+<tab>If you are not a group member, you will see the <cl=FFFFFF>group creation window.<cl=B0B0B0> <br>
+<br><tab><cl=00FF00>Group creation<cl=A2A2A2><br>
+<tab>By choosing <cl=FFFFFF>"create group"<cl=B0B0B0>, you automatically become <cl=FFFFFF>head<cl=B0B0B0> of the new group. <cl=FF0000> <br>
+<tab> Once the menu item <cl=FFFFFF>"join group"<cl=B0B0B0> is selected, a corresponding line is "attached" to the cursor. Left-click on the <cl=FFFFFF>group head<cl=B0B0B0>. He receives your request to join the group and decides to admit or not. Once you are admitted, you become an ordinary group member.<br>
+A <cl=FFFFFF>group head<cl=B0B0B0> can delete any group member and disband the group. When the group is disbanded, the member at the top of the list becomes the head. <cl=FFFFFF>The maximum number of group members is 5.<cl=B0B0B0><br>
+<br><tab><cl=00FF00>Receiving title and degree marks in group<cl=A2A2A2><br>
+Experience given for destroying monsters is shared by all group members at a range of no more than 50 m, proportionally to their level. Destroying one monster, a group is given more experience than one character, and more experience is given to a bigger group.<br>
+}

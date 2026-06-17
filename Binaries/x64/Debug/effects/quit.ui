@@ -1,0 +1,115 @@
+//----------------------------------------------------------------------------------
+// Window: Quit
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "window"
+	size 265 149
+	texture "i_msg"    0 0 256 149  0 0 256 149
+        texture "i_mantra" 246 62 255 211 256 0 265 149
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_normal"
+        size 32 24
+        texture "i_ctrls" 63 25 95 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_focus"
+        size 32 24
+        texture "i_ctrls" 96 25 128 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_push"
+        size 32 24
+        texture "i_ctrls" 96 75 128 99 0 0 32 24
+      }
+
+
+   }
+
+   windowName  "quit"
+   windowText  UISTR_WT_MESS01
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    0 0
+   size        265 149
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 255 29
+   textcolor   237 208 161
+   alignWin    CENTER_X | CENTER_Y
+   saveLastPosition false
+   escapeHandle TRUE
+   canNotCross TRUE
+
+   control					    // id = 1
+   {
+     classID	BUTTON
+     position	100 110
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "ok_normal"
+     checkedImage   "ok_push"
+     focusedImage   "ok_focus"
+     hotKey     "ENTER" 0 0 0
+   }
+
+   control					    // id = 2
+   {
+     classID	BUTTON
+     position	134 110
+     size	32 24
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+     uncheckedImage "cancel_normal"
+     checkedImage   "cancel_push"
+     focusedImage   "cancel_focus"
+   }
+
+   control					    // id = 3
+   {
+     classID	TEXTLIST
+     position	16 37
+     size	234 64
+
+     font       3
+     formatstrings true
+     textformat CENTER_X
+     addstring  UISTR_WC_MESS02 FFFFFF
+     addstring  UISTR_WC_MESS01 EDD0A1
+   }
+
+ }

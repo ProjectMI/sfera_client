@@ -1,0 +1,578 @@
+//----------------------------------------------------------------------------------
+// Window: Hot keys big
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+        name "h_window"
+        size 205 185
+	texture "i_mantra"  0 143 205 256  0 0 205 113
+        texture "i_invent"  0 149 205 221  0 113 205 185
+      }
+
+      sprite
+      {
+        name "slot_simple"
+        size 36 35
+	texture "i_invent"  220 175 256 210 0 0 36 35
+      }
+
+      sprite
+      {
+        name "slot_simpleborder"
+        size 36 35
+	texture "i_invent"  36 221 72 256 0 0 36 35
+      }
+
+      sprite
+      {
+        name "close_focus"
+        size 14 14
+        texture "i_invent" 242 212 256 226 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_push"
+        size 14 14
+        texture "i_invent" 242 242 256 256 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_normal"
+        size 14 14
+        texture "i_invent" 242 227 256 241 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_focus"
+        size 14 14
+        texture "i_invent" 227 212 241 226 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_push"
+        size 14 14
+        texture "i_invent" 227 242 241 256 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_normal"
+        size 14 14
+        texture "i_invent" 227 227 241 241 0 0 14 14
+      }
+
+   }
+
+   windowName  "hotkeys"
+   windowText  UISTR_WT_HOTKEYS
+   showTitle   3 -1
+   drawMethod  SPRITE "h_window"
+   position    0 50
+   size        205 185
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 12 165 29
+   canDragDrop true
+   textcolor   237 208 161
+   escapeHandle TRUE
+
+   control                                       // id = 1
+   {
+     classID    BUTTON   
+     position   175 13
+     size       14 14
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+
+     checkedImage     "close_push"
+     focusedImage     "close_focus"
+     uncheckedImage   "close_normal"
+
+     tooltip
+     {
+       toolstr UISTR_CLOSEW
+     }
+   }
+
+   control					// id = 2
+   {
+     classID	BUTTON
+     position	160 13
+     size	14 14
+     drawMethod SPRITE
+     buttonStyle SEND_HELP
+     windowHelp  "language\hotkeys.hts"
+
+     checkedImage     "help_push"
+     focusedImage     "help_focus"
+     uncheckedImage   "help_normal"
+
+     tooltip
+     {
+       toolstr UISTR_HELP
+     }
+   }
+
+   // texts
+
+   control                                     // id = 23
+   {
+     classID    TEXT
+     position   14 33
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "1"
+     font          3
+   }
+
+   control                                    // id = 24
+   {
+     classID    TEXT            
+     position   50 33
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "2"
+     font       3
+   }
+
+   control                                    // id = 25
+   {
+     classID    TEXT
+     position   86 33
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "3"
+     font          3
+   }
+
+   control                                   // id = 26
+   {
+     classID    TEXT
+     position   122 33
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "4"
+     font          3
+   }
+
+   control                                   // id = 27
+   {
+     classID    TEXT
+     position   158 33
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "5"  
+     font          3
+   }
+
+   control                                     // id = 28
+   {
+     classID    TEXT
+     position   14 68
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "6"
+     font          3
+   }
+
+   control                                    // id = 29
+   {
+     classID    TEXT
+     position   50 68
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "7"
+     font          3
+   }
+
+   control                                    // id = 30
+   {
+     classID    TEXT
+     position   86 68
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "8"
+     font          3
+   }
+
+   control                                   // id = 31
+   {
+     classID    TEXT
+     position   122 68
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "9"
+     font          3
+   }
+
+   control                                   // id = 32
+   {
+     classID    TEXT
+     position   158 68
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "0"
+     font          3
+   }
+
+   control                                     // id = 33
+   {
+     classID    TEXT
+     position   14 103
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-1"
+     font          3
+   }
+
+   control                                    // id = 34
+   {
+     classID    TEXT
+     position   50 103
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-2"
+     font          3
+   }
+
+   control                                    // id = 35
+   {
+     classID    TEXT
+     position   86 103
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-3"
+     font          3
+   }
+
+   control                                   // id = 36
+   {
+     classID    TEXT
+     position   122 103
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-4"
+     font          3
+   }
+
+   control                                   // id = 37
+   {
+     classID    TEXT
+     position   158 103
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-5"
+     font          3
+   }
+
+   control                                     // id = 38
+   {
+     classID    TEXT
+     position   14 138
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-6"
+     font          3
+   }
+
+   control                                    // id = 39
+   {
+     classID    TEXT
+     position   50 138
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-7"
+     font          3
+   }
+
+   control                                    // id = 40
+   {
+     classID    TEXT
+     position   86 138
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-8"
+     font          3
+   }
+
+   control                                   // id = 41
+   {
+     classID    TEXT
+     position   122 138
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-9"
+     font          3
+   }
+
+   control                                   // id = 42
+   {
+     classID    TEXT
+     position   158 138
+     size       32 32
+     textcolor  237 208 161 
+     textFormat CENTER
+     setwindowtext "ct-0"
+     font          3
+   }
+
+
+
+   // slots
+
+   control                                     // id = 3
+   {
+     classID    SLOT            
+     position   14 33
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 4
+   {
+     classID    SLOT             
+     position   50 33
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 5
+   {
+     classID    SLOT
+     position   86 33
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 6
+   {
+     classID    SLOT
+     position   122 33
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 7
+   {
+     classID    SLOT
+     position   158 33
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+
+   control                                     // id = 8
+   {
+     classID    SLOT            
+     position   14 68
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 9
+   {
+     classID    SLOT             
+     position   50 68
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 10
+   {
+     classID    SLOT
+     position   86 68
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 11
+   {
+     classID    SLOT
+     position   122 68
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 12
+   {
+     classID    SLOT
+     position   158 68
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+
+   control                                     // id = 13
+   {
+     classID    SLOT            
+     position   14 103
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 14
+   {
+     classID    SLOT             
+     position   50 103
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 15
+   {
+     classID    SLOT
+     position   86 103
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 16
+   {
+     classID    SLOT
+     position   122 103
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 17
+   {
+     classID    SLOT
+     position   158 103
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                     // id = 18
+   {
+     classID    SLOT            
+     position   14 138
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 19
+   {
+     classID    SLOT             
+     position   50 138
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                    // id = 20
+   {
+     classID    SLOT
+     position   86 138
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 21
+   {
+     classID    SLOT
+     position   122 138
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+   control                                   // id = 22
+   {
+     classID    SLOT
+     position   158 138
+     size       32 32
+     slotfull   "slot_simple"
+     slotempty  "slot_simple"
+     slotborder "slot_simpleborder" 
+     slotpicofs -2 -1
+   }
+
+
+
+
+
+ }

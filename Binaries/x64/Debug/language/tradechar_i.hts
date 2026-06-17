@@ -1,0 +1,8 @@
+FINESTRA SCAMBIO (VENDERE) (tradechar.hts)
+hypertext
+{
+<tab><cl=F0F010>VENDERE<cl=A2A2A2><br><br>
+Tramite questa finestra sarà possibile vendere beni. Per mettere un oggetto in vendita, trascinarlo dal proprio <l="hts:\\language\inventory.hts"> inventario<\l> o dalla <l="hts:\\language\puppet.hts">finestra personaggio<\l> in una qualsiasi casella libera. Nella seconda colonna si può stabilire il prezzo di vendita. Fino a che non si deciderà il prezzo di vendita, gli altri personaggi non potranno comprare ciò si vende e che visualizzano nella loro <l="hts:\\language\trade.hts">finestra comprare<\l>. Potranno fare la loro offerta, visibile nella terza colonna. A questo punto si potrà accettare o declinare l'offerta, usando i pulsanti presenti nella quarta colonna.<br>
+<tab>Gli oggetti messi in vendita rimangono in questa finestra fino a che non si muore o si esce dal gioco. Quando un oggetto è in vendita e il prezzo è deciso, può essere comprato in ogni momento e da qualsiasi personaggio che ci si avvicina.<br>
+}
+

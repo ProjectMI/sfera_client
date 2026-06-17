@@ -1,0 +1,495 @@
+
+  Для каждого паттерна задаётся:
+  - Плотность засадки (int)(в метрах)
+  - Список объектов с параметрами
+
+  Параметры объекта:
+  - Имя
+  - Относительная вероятность появления (int)
+  - Радиус (float). Либо -1, для невертикальных объектов
+
+  Основной Лесной паттерн
+a00     d = 14
+a00_00  n=tree_01m,  v=6,   r=0.4
+a00_01  n=tree_05,  v=2,   r=1.2
+a00_02  n=tree6_10,  v=6,   r=0.4
+a00_03  n=tree6_11,  v=6,   r=0.4
+a00_04  n=tree6_12,  v=6,   r=0.4
+a00_05  n=tree6_14,  v=6,   r=0.4
+a00_06  n=tree_02m,  v=12,   r=0.2
+a00_07  n=grass_02m,  v=12,   r=0.2
+a00_08  n=grass_01m,  v=6,   r=-1
+a00_09  n=tree_03m,  v=3,   r=0.4
+a00_10  n=tree_04m,  v=3,   r=-1
+a00_11  n=c_stone01,  v=1,   r=0.6
+a00_12  n=c_stone02,  v=1,   r=0.6
+a00_13  n=c_stone03,  v=1,   r=0.6
+a00_14  n=c_stone04,  v=1,   r=0.6
+a00_15  n=rock01,  v=1,   r=3
+a00_16  n=rock02,  v=1,   r=3
+a00_17  n=rock04,  v=1,   r=3
+a00_18  n=rock05,  v=1,   r=1.5
+a00_19  n=grass_03m,  v=2,   r=-1
+
+  Основной Равнинный паттерн
+a01     d = 18
+a01_00  n=tree_01m,  v=2,   r=0.4
+a01_01  n=tree_05,  v=1,   r=1.2
+a01_02  n=tree6_10,  v=2,   r=0.4
+a01_03  n=tree6_11,  v=2,   r=0.4
+a01_04  n=tree6_12,  v=2,   r=0.4
+a01_05  n=tree6_15,  v=2,   r=0.4
+a01_06  n=tree_02m,  v=11,   r=0.2
+a01_07  n=grass_02m,  v=11,   r=0.2
+a01_08  n=grass_03m,  v=2,   r=0.4
+a01_09  n=c_stone03,  v=8,   r=0.6
+a01_10  n=c_stone04,  v=8,   r=0.6
+a01_11  n=c_stone01,  v=8,   r=0.6
+a01_12  n=c_stone02,  v=8,   r=0.6
+a01_13  n=rock03,  v=6,   r=3
+a01_14  n=rock10,  v=6,   r=2.3
+a01_15  n=rock11,  v=6,   r=1.8
+a01_16  n=rock12,  v=6,   r=2.6
+a01_17  n=rock13,  v=6,   r=2.5
+a01_18  n=rock01,  v=6,   r=3
+a01_19  n=rock02,  v=6,   r=3
+a01_20  n=rock04,  v=6,   r=3
+a01_21  n=rock05,  v=6,   r=1.5
+a01_22  n=bush60,  v=6,   r=0.1
+
+  Сухой лес
+a02     d = 11
+a02_00  n=tree6_15,  v=6,   r=0.4
+a02_01  n=tree6_16,  v=6,   r=0.4
+a02_02  n=tree6_17,  v=6,   r=0.4
+a02_03  n=tree6_18,  v=6,   r=0.4
+a02_04  n=tree6_19,  v=6,   r=0.4
+a02_05  n=tree_03m,  v=4,   r=0.4
+a02_06  n=tree_04m,  v=4,   r=-1
+a02_07  n=c_stone04,  v=1,   r=0.6
+a02_08  n=c_stone01,  v=1,   r=0.6
+a02_09 n=c_stone02,  v=1,   r=0.6
+a02_10  n=c_stone03,  v=1,   r=0.6
+a02_11  n=rock02,  v=1,   r=3
+a02_12  n=rock13,  v=1,   r=2.5
+a02_13  n=rock11,  v=1,   r=1.8
+
+  Вдоль реки, каменистый берег
+a03     d = 12
+a03_00  n=stone1,  v=8,   r=1.1
+a03_01  n=stone2,  v=8,   r=1.4
+a03_02  n=stone3,  v=2,   r=1.4
+a03_03  n=tree_02m,  v=9,   r=0.4
+a03_04  n=bush30,  v=1,   r=0.1
+a03_05  n=bush60,  v=1,   r=0.1
+a03_06  n=grass_02m,  v=6,   r=0.2
+
+
+  Рощицы
+a04     d = 8
+a04_00  n=tree_01m,  v=6,   r=0.4
+a04_01  n=tree_05,  v=2,   r=1.2
+a04_02  n=tree6_10,  v=6,   r=0.4
+a04_03  n=tree6_11,  v=6,   r=0.4
+a04_04  n=tree6_12,  v=6,   r=0.4
+a04_05  n=tree6_14,  v=6,   r=0.4
+a04_06  n=tree_02m,  v=9,   r=0.2
+a04_07  n=grass_02m,  v=9,   r=0.2
+a04_08  n=grass_01m,  v=6,   r=-1
+a04_09  n=tree_03m,  v=2,   r=0.4
+a04_10  n=tree_04m,  v=2,   r=-1
+a04_11  n=c_stone01,  v=1,   r=0.6
+a04_12  n=c_stone02,  v=1,   r=0.6
+a04_13  n=c_stone03,  v=1,   r=0.6
+a04_14  n=c_stone04,  v=1,   r=0.6
+a04_15  n=rock01,  v=1,   r=3
+a04_16  n=rock02,  v=1,   r=3
+a04_17  n=rock04,  v=1,   r=3
+a04_18  n=rock05,  v=1,   r=1.5
+a04_19  n=tree6_15,  v=1,   r=0.4
+a04_20  n=tree6_16,  v=1,   r=0.4
+a04_21  n=tree6_17,  v=1,   r=0.4
+a04_22  n=tree6_18,  v=1,   r=0.4
+a04_23  n=tree6_19,  v=1,   r=0.4
+
+  Вдоль дорог
+a05     d = 10
+a05_00  n=tree_01m,  v=6,   r=0.4
+a05_01  n=tree_05,  v=2,   r=1.2
+a05_02  n=tree6_10,  v=6,   r=0.4
+a05_03  n=tree6_11,  v=6,   r=0.4
+a05_04  n=tree6_12,  v=6,   r=0.4
+a05_05  n=tree6_14,  v=6,   r=0.4
+a05_06  n=tree_02m,  v=9,   r=0.2
+a05_07  n=grass_02m,  v=9,   r=0.2
+a05_08  n=grass_01m,  v=2,   r=-1
+a05_09  n=tree_03m,  v=2,   r=0.4
+a05_10  n=tree_04m,  v=2,   r=-1
+a05_11  n=c_stone01,  v=1,   r=0.6
+a05_12  n=c_stone02,  v=1,   r=0.6
+a05_13  n=c_stone03,  v=1,   r=0.6
+a05_14  n=c_stone04,  v=1,   r=0.6
+a05_15  n=rock01,  v=1,   r=3
+a05_16  n=rock02,  v=1,   r=3
+a05_17  n=rock04,  v=1,   r=3
+a05_28  n=rock05,  v=1,   r=1.5
+a05_19  n=rock03,  v=1,   r=3
+a05_20  n=grass_03m,  v=4,   r=-1
+
+  Около замков и городов
+a06     d = 15
+a06_00  n=c_stone03,  v=1,   r=0.6
+a06_01  n=c_stone04,  v=1,   r=0.6
+a06_02  n=tree_02m,  v=8,   r=0.2
+a06_03  n=grass_02m,  v=8,   r=0.2
+a06_04  n=tree_03m,  v=10,   r=0.4
+a06_05  n=tree_04m,  v=9,   r=-1
+a06_06  n=c_stone01,  v=1,   r=0.6
+a06_07  n=c_stone02,  v=1,   r=0.6
+a06_08  n=rock01,  v=1,   r=3
+a06_09  n=rock02,  v=1,   r=3
+a06_10  n=rock04,  v=1,   r=3
+a06_11  n=rock05,  v=1,   r=1.5
+a06_12  n=rock03,  v=1,   r=3
+
+  Густой Лес
+a07     d = 2
+a07_00  n=tree_01m,  v=11,   r=0.4
+a07_01  n=tree_05,  v=3,   r=1.2
+a07_02  n=tree6_10,  v=11,   r=0.4
+a07_03  n=tree6_11,  v=11,   r=0.4
+a07_04  n=tree6_12,  v=11,   r=0.4
+a07_05  n=tree6_14,  v=11,   r=0.4
+a07_06  n=tree_02m,  v=15,   r=0.2
+a07_07  n=grass_02m,  v=15,   r=0.2
+a07_08  n=grass_01m,  v=4,   r=-1
+a07_09  n=tree_03m,  v=3,   r=0.4
+a07_10  n=tree_04m,  v=3,   r=-1
+a07_11  n=grass_03m,  v=4,   r=-1
+a07_12  n=bush60,  v=4,  r=0.1
+
+  Хвойный лес
+a08     d = 6
+a08_00  n=tree4_1,  v=7,   r=0.3
+a08_01  n=tree4_2,  v=7,   r=0.3
+a08_02  n=tree4_3,  v=7,   r=0.3
+a08_03  n=tree4_4,  v=12,   r=0.3
+a08_03  n=tree4_5,  v=12,   r=0.2
+a08_04  n=tree4_6,  v=12,   r=0.2
+a08_05  n=tree4_13g,  v=1,   r=3
+a08_06  n=tree4_15g,  v=1,   r=3
+a08_07  n=tree4_14g,  v=3,   r=0.5
+a08_08  n=tree4_16g,  v=2,   r=0.5
+a08_09  n=tree4_10s,  v=3,   r=0.3
+a08_10  n=tree4_7s,  v=3,   r=0.3
+a08_11  n=tree4_7s,  v=3,   r=0.3
+a08_12  n=tree4_11s,  v=3,   r=0.3
+a08_13  n=tree4_9s,  v=3,   r=0.3
+a08_14  n=c_stone01,  v=1,   r=0.6
+a08_15  n=c_stone02,  v=1,   r=0.6
+a08_16  n=c_stone03,  v=1,   r=0.6
+a08_17  n=c_stone04,  v=1,   r=0.6
+a08_18  n=c_stone11,  v=1,   r=0.3
+a08_19  n=c_stone12,  v=1,   r=0.3
+a08_20  n=stone1,  v=1,   r=1.1
+a08_21  n=stone2,  v=1,   r=1.4
+a08_22  n=stone3,  v=1,   r=1.4
+a08_23  n=grass_01m,  v=5,   r=-1
+a08_24  n=tree_04m,  v=2,   r=-1
+
+
+
+  Смешанный лес
+a09     d = 13
+a09_00  n=tree_d01,  v=2,   r=0.3
+a09_01  n=tree_d02,  v=2,   r=0.3
+a09_02  n=tree_d03,  v=2,   r=0.3
+a09_03  n=tree1_1,  v=2,   r=1.2
+a09_04  n=tree1_2,  v=2,   r=2.4
+a09_05  n=tree_05,  v=2,   r=1.2
+a09_06  n=tree4_1,  v=2,   r=0.3
+a09_07  n=tree4_2,  v=2,   r=0.3
+a09_08  n=tree4_3,  v=2,   r=0.3
+a09_09  n=tree4_4,  v=2,   r=0.3
+a09_10  n=tree4_5,  v=2,   r=0.2
+a09_11  n=tree4_6,  v=2,   r=0.2
+a09_12  n=tree4_13g,  v=1,   r=3
+a09_13  n=tree4_15g,  v=1,   r=3
+a09_14  n=tree4_14g,  v=1,   r=0.5
+a09_15  n=tree4_16g,  v=1,   r=0.5
+a09_16  n=tree4_10s,  v=2,   r=0.3
+a09_17  n=tree4_7s,  v=2,   r=0.3
+a09_18  n=tree4_7s,  v=2,   r=0.3
+a09_19  n=tree4_11s,  v=2,   r=0.3
+a09_20  n=tree4_9s,  v=2,   r=0.3
+a09_21  n=c_stone01,  v=1,   r=0.6
+a09_22  n=c_stone02,  v=1,   r=0.6
+a09_23  n=c_stone03,  v=1,   r=0.6
+a09_24  n=c_stone04,  v=1,   r=0.6
+a09_25  n=stone1,  v=1,   r=1.1
+a09_26  n=tree_03m,  v=1,   r=0.4
+a09_27  n=tree_04m,  v=2,   r=-1
+
+
+  лес с высокими хвойными деревьями и крупными камнями
+a10     d = 10
+a10_00  n=tree4_1,  v=11,   r=0.3
+a10_01  n=tree4_2,  v=11,   r=0.3
+a10_02  n=tree4_3,  v=11,   r=0.3
+a10_03  n=tree4_6,  v=11,   r=0.2
+a10_04  n=tree4_5,  v=11,   r=0.2
+a10_05  n=tree4_13g,  v=1,   r=3
+a10_06  n=tree4_15g,  v=1,   r=3
+a10_07  n=tree4_14g,  v=3,   r=0.5
+a10_08  n=tree4_16g,  v=2,   r=0.5
+a10_09  n=c_stone03,  v=6,   r=0.6
+a10_10  n=c_stone04,  v=6,   r=0.6
+a10_11  n=c_stone01,  v=6,   r=0.6
+a10_12  n=c_stone02,  v=6,   r=0.6
+a10_13  n=rock03,  v=3,   r=3
+a10_14  n=rock10,  v=3,   r=2.3
+a10_15  n=rock11,  v=3,   r=1.8
+a10_16  n=rock12,  v=3,   r=2.6
+a10_17  n=rock13,  v=3,   r=2.5
+a10_18  n=rock01,  v=3,   r=3
+a10_19  n=rock02,  v=3,   r=3
+a10_20  n=rock04,  v=3,   r=3
+a10_21  n=rock05,  v=3,   r=1.5
+a10_22  n=tree4_10s,  v=1,   r=0.3
+a10_23  n=tree4_7s,  v=1,   r=0.3
+a10_24  n=tree4_8s,  v=1,   r=0.3
+a10_25  n=tree_04m,  v=2,   r=-1
+
+
+  Рощицы из акаций
+a11     d = 6
+a11_00  n=tree_d01,  v=6,   r=0.3
+a11_01  n=tree_d02,  v=6,   r=0.3
+a11_02  n=tree_d03,  v=6,   r=0.3
+a11_03  n=tree6_11,  v=2,   r=0.4
+a11_04  n=tree6_12,  v=2,   r=0.4
+a11_05  n=tree6_14,  v=2,   r=0.4
+a11_06  n=tree_02m,  v=3,   r=0.2
+a11_07  n=grass_02m,  v=5,   r=0.2
+a11_08  n=grass_01m,  v=1,   r=-1
+a11_09  n=tree_03m,  v=1,   r=0.4
+a11_10  n=tree_04m,  v=1,    r=-1
+a11_11  n=c_stone01,  v=1,   r=0.6
+a11_12  n=c_stone02,  v=1,   r=0.6
+a11_13  n=c_stone03,  v=1,   r=0.6
+a11_14  n=c_stone04,  v=1,   r=0.6
+a11_15  n=rock01,  v=1,   r=3
+a11_16  n=rock02,  v=1,   r=3
+a11_17  n=rock04,  v=1,   r=3
+a11_18  n=rock05,  v=1,   r=1.5
+a11_19  n=c_stone11,  v=1,   r=0.3
+a11_20  n=c_stone12,  v=1,   r=0.3
+a11_21  n=tree6_16,   v=2,   r=0.4
+
+
+  Харон. Мелкие светлые камни
+a12   d=14
+a12_00  n=hr_rock1,  v=3,   r=3
+a12_01  n=hr_rock3,  v=3,   r=3
+a12_02  n=hr_rock4,  v=3,   r=5
+
+  Харон. Мелкие темные камни
+a13   d=14
+a13_00  n=hr_rock6,  v=3,  r=5
+a13_01  n=hr_rock7,  v=3,  r=3.6
+a13_02  n=hr_rock5,  v=1,  r=4
+
+  Харон. Мелкие светлые + крупные светлые+мелкие темные
+a14   d=16
+a14_00  n=hr_rock1,  v=3,   r=3
+a14_01  n=hr_rock3,  v=3,   r=3
+a14_02  n=hr_rock4,  v=3,   r=5
+a14_03  n=hr_rock2,  v=1,   r=3.5
+a14_04  n=hr_rock8,  v=1,   r=5
+a14_05  n=hr_rock6,  v=1,  r=5
+a14_06  n=hr_rock7,  v=1,  r=3.6
+
+  Харон. Мелкие темные + крупные темные+мелкие светлые
+a15   d=12
+a15_00  n=hr_rock6,  v=3,  r=5
+a15_01  n=hr_rock7,  v=3,  r=3.6
+a15_02  n=hr_rock5,  v=2,  r=4
+a15_03  n=hr_rock1,  v=1,   r=3
+a15_04  n=hr_rock3,  v=1,   r=3
+a15_05  n=hr_rock4,  v=1,   r=5
+
+  Харон. светлые камни + деревья
+a16   d=14
+a16_00  n=hr_rock1,  v=2,   r=3
+a16_01  n=hr_rock3,  v=2,   r=3
+a16_02  n=hr_rock4,  v=2,   r=5
+a16_03  n=hr_rock2,  v=2,   r=3.5
+a16_04  n=hr_rock8,  v=2,   r=5
+a16_05  n=hr_tree10,  v=2,  r=3.3
+a16_06  n=hr_tree11,  v=2,  r=3
+a16_07  n=hr_tree14,  v=2,  r=3.2
+
+  Харон. темные камни + деревья
+a17   d=14
+a17_00  n=hr_rock6,  v=3,  r=5
+a17_01  n=hr_rock7,  v=3,  r=3.6
+a17_02  n=hr_rock5,  v=1,  r=4
+a17_03  n=hr_tree01,  v=2,  r=2.15
+a17_04  n=hr_tree02,  v=2,  r=2
+a17_05  n=hr_tree03,  v=2,  r=2.3
+
+  Харон. комбинация из деревьев №1
+a18  d=12
+a18_00  n=hr_tree04,  v=2,  r=2.7
+a18_01  n=hr_tree05,  v=2,  r=2.5
+a18_02  n=hr_tree06,  v=2,  r=2.2
+a18_03  n=hr_tree10,  v=2,  r=3.3
+a18_04  n=hr_tree11,  v=2,  r=3
+a18_05  n=hr_tree14,  v=2,  r=3.2
+
+  Харон. комбинация из деревьев №2
+a19  d=7
+a19_00  n=hr_tree04,  v=2,  r=2.7
+a19_01  n=hr_tree05,  v=2,  r=2.5
+a19_02  n=hr_tree06,  v=2,  r=2.2
+a19_03  n=hr_tree01,  v=2,  r=2.15
+a19_04  n=hr_tree02,  v=2,  r=2
+a19_05  n=hr_tree03,  v=2,  r=2.3
+
+  Харон. комбинация из деревьев №3
+a20  d=10
+a20_00  n=hr_tree10,  v=2,  r=3.3
+a20_01  n=hr_tree11,  v=2,  r=3
+a20_02  n=hr_tree14,  v=2,  r=3.2
+a20_03  n=hr_tree01,  v=2,  r=2.15
+a20_04  n=hr_tree02,  v=2,  r=2
+a20_05  n=hr_tree03,  v=2,  r=2.3
+
+ !!!Харон. камни + деревья, те которые сочитаются
+a21  d=11
+a21_00  n=hr_tree04,  v=3,  r=2.7
+a21_01  n=hr_tree05,  v=3,  r=2.5
+a21_02  n=hr_tree06,  v=3,  r=2.2
+a21_03  n=hr_rock1,  v=1,   r=3
+a21_04  n=hr_rock3,  v=1,   r=3
+a21_05  n=hr_rock4,  v=1,   r=5
+a21_06  n=hr_rock6,  v=1,   r=5
+a21_07  n=hr_rock7,  v=1,   r=3.6
+a21_08  n=hr_tree01,  v=1,  r=2.15
+a21_09  n=hr_tree02,  v=1,  r=2
+a21_10  n=hr_tree03,  v=1,  r=2.3
+
+a22  d=6
+a22_00  n=hr_tree13,  v=1,  r=2.5
+
+  -=-==--=-=-=-==-=-
+
+ Феб. только пальмы
+a23     d = 11
+a23_00  n=ph_tree6,  v=6,   r=0.3
+a23_01  n=ph_tree7,  v=6,   r=0.3
+a23_02  n=ph_tree5,  v=11,   r=0.2
+
+ Феб. каштан+олива (густое)
+a24     d = 6
+a24_00  n=ph_tree2,  v=6,   r=0.75
+a24_01  n=ph_tree1,  v=6,   r=0.5
+a24_02  n=ph_tree4,  v=6,   r=0.1
+a24_03  n=ph_tree3,  v=6,   r=0.075
+
+ Феб.  каштан+папая
+a25     d = 8
+a25_00  n=ph_tree2,  v=6,   r=0.75
+a25_01  n=ph_tree1,  v=6,   r=0.5
+a25_02  n=ph_tree8,  v=11,   r=0.25
+a25_03  n=ph_tree9,  v=11,   r=0.1
+ 
+ Феб. пальма+папая (густое)
+a26     d = 6
+a26_00  n=ph_tree6,  v=6,   r=0.3
+a26_01  n=ph_tree7,  v=6,   r=0.3
+a26_02  n=ph_tree5,  v=6,   r=0.2
+a26_03  n=ph_tree8,  v=11,   r=0.25
+a26_04  n=ph_tree9,  v=11,   r=0.1
+
+ Феб. папайя+олива
+a27  d=12
+a27_00  n=ph_tree8,  v=11,   r=0.25
+a27_01  n=ph_tree9,  v=11,   r=0.1
+a27_02  n=ph_tree4,  v=6,   r=0.1
+a27_03  n=ph_tree3,  v=6,   r=0.075
+
+
+  Феб. пальма+олива
+a28  d=7
+a28_00  n=ph_tree6,  v=6,   r=0.3
+a28_01  n=ph_tree7,  v=6,   r=0.3
+a28_02  n=ph_tree5,  v=6,   r=0.2
+a28_03  n=ph_tree4,  v=6,   r=0.1
+a28_04  n=ph_tree3,  v=6,   r=0.075
+
+
+  Феб.  каштан папая олива 
+a29  d=10
+a29_00  n=ph_tree2,  v=6,   r=0.75
+a29_01  n=ph_tree1,  v=6,   r=0.5
+a29_02  n=ph_tree8,  v=11,   r=0.25
+a29_03  n=ph_tree9,  v=11,   r=0.1
+a29_04  n=ph_tree4,  v=6,   r=0.1
+a29_05  n=ph_tree3,  v=6,   r=0.075
+
+  Феб.  пальма_малая папая олива 
+a30  d=7
+a30_00  n=ph_tree5,  v=11,   r=0.2
+a30_01  n=ph_tree8,  v=11,   r=0.25
+a30_02  n=ph_tree9,  v=11,   r=0.1
+a30_03  n=ph_tree3,  v=6,   r=0.075
+
+  Феб.  пальма папая олива 
+a31  d=8
+a31_00  n=ph_tree6,  v=8,   r=0.3
+a31_01  n=ph_tree7,  v=8,   r=0.3
+a31_02  n=ph_tree8,  v=8,   r=0.25
+a31_03  n=ph_tree9,  v=8,   r=0.1
+a13_04  n=ph_tree3,  v=6,   r=0.075
+
+  Феб.   каштан_малый олива_малая папая_малая
+a32  d=8
+a32_00  n=ph_tree1,  v=10,   r=0.5
+a32_01  n=ph_tree3,  v=9,   r=0.075
+a32_02  n=ph_tree9,  v=10,   r=0.1
+
+  -=-==-==-=-=-=-==-
+  =============================
+
+ a07     d = 12
+ a07_00  n=c_stone05,  v=1,   r=-1
+ a07_01  n=c_stone06,  v=1,   r=-1
+ a07_02  n=c_stone07,  v=1,   r=-1
+ a07_03  n=c_stone08,  v=1,   r=-1
+ a07_04  n=c_stone09,  v=1,   r=-1
+ a07_05  n=c_stone10,  v=1,   r=-1
+ a07_06  n=c_stone11,  v=1,   r=0.3
+ a07_07  n=c_stone12,  v=1,   r=0.3
+ a07_08  n=c_stone13,  v=1,   r=-1
+ a07_09  n=c_stone14,  v=1,   r=-1
+ a07_10  n=c_stone15,  v=1,   r=-1
+ a07_11  n=c_stone16,  v=1,   r=-1
+
+
+ a08     d = 20
+ a08_00  n=tree_01m,  v=1,   r=0.4
+ a08_01  n=tree_05,  v=2,   r=1.2
+ a08_02  n=tree_02m,  v=10,   r=0.2
+ a08_03  n=grass_02m,  v=10,   r=0.2
+ a08_04  n=grass_01m,  v=2,   r=-1
+ a08_05  n=tree_03m,  v=3,   r=0.4
+ a08_06  n=tree_04m,  v=3,   r=-1
+ a08_07  n=c_stone01,  v=1,   r=0.6
+ a08_08  n=c_stone02,  v=1,   r=0.6
+ a08_09  n=rock01,  v=1,   r=3
+ a08_10  n=rock02,  v=1,   r=3
+ a08_11  n=rock04,  v=1,   r=3
+ a08_12  n=rock05,  v=1,   r=1.5
+
+

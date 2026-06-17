@@ -1,0 +1,141 @@
+//=====================================================================
+// Definition   : Неуспешная реакция - "пшик" (дымок, ничего не получилось)
+// Effect number: 47
+//=====================================================================
+
+effect_def
+{
+   effect_name    "null.reaction"
+   effect_number  47
+   effect_time    256
+
+   boundbox 0.2 -0.0 0.2 -0.2 -0.6 -0.2
+
+   subeffects_num 1
+
+   subeffect 0 EFF_PSYSTEM "smoke"
+
+   sound_def
+   {
+         audio_file "sounds\mg_null_reaction.wav"
+         min_distance 1.0
+         max_distance 15.0
+   }
+}
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "smoke"       
+  particles_num  30
+  psystem_flags  PS_TRANSLATEONLY
+  self_illumination 255
+
+  position_track
+  {
+     numkeys 1
+     key     0 0.0 0.0 -0.15 0.0
+  }
+
+  power_track
+  {
+    numkeys 3
+    key 0   0.0 1.0
+    key 1 192.0 1.0
+    key 2 256.0 0.0
+  }
+  
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_DISK
+     radius           0.08
+     randseed         -1	      
+     emit_num         1.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          32.0
+    lifetime_rf       32.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 16
+    type      PS_TANIMCOORD
+    texture   "fx_smokes"
+    blendmode PS_BLENDALPHA
+    frame 0  0.000 0.000 0.250 0.000 0.250 0.250 0.000 0.250
+    frame 1  0.250 0.000 0.500 0.000 0.500 0.250 0.250 0.250
+    frame 2  0.500 0.000 0.750 0.000 0.750 0.250 0.500 0.250
+    frame 3  0.750 0.000 1.000 0.000 1.000 0.250 0.750 0.250
+    frame 4  0.000 0.250 0.250 0.250 0.250 0.500 0.000 0.500
+    frame 5  0.250 0.250 0.500 0.250 0.500 0.500 0.250 0.500
+    frame 6  0.500 0.250 0.750 0.250 0.750 0.500 0.500 0.500
+    frame 7  0.750 0.250 1.000 0.250 1.000 0.500 0.750 0.500
+    frame 8  0.000 0.500 0.250 0.500 0.250 0.750 0.000 0.750
+    frame 9  0.250 0.500 0.500 0.500 0.500 0.750 0.250 0.750
+    frame 10  0.500 0.500 0.750 0.500 0.750 0.750 0.500 0.750
+    frame 11  0.750 0.500 1.000 0.500 1.000 0.750 0.750 0.750
+    frame 12  0.000 0.750 0.250 0.750 0.250 1.000 0.000 1.000
+    frame 13  0.250 0.750 0.500 0.750 0.500 1.000 0.250 1.000
+    frame 14  0.500 0.750 0.750 0.750 0.750 1.000 0.500 1.000
+    frame 15  0.750 0.750 1.000 0.750 1.000 1.000 0.750 1.000
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+     ngravitation_tracks 1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.05
+       rkey 1 0.8 0.05 0.05
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 255 255 255 0
+        key  1   0.3 255 255 255 200
+        key  2   1.0 255 255 255 0
+     }
+
+     velocity_track
+     {
+ 	track_num 0
+	numkeys 1
+        mrkey 0 0.0 0.0 0.0 0.0 0.001 0.0 0.001
+     }
+
+     gravitation_track
+     {
+	track_num 0
+	numkeys 1
+	rkey 0 0.0 0.0 -0.003 0.0 0.0 -0.003 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track        0
+     color_track       0
+     velocity_track    0
+     gravitation_track 0
+     texture_frame     RANDOM
+  }
+}
+
+

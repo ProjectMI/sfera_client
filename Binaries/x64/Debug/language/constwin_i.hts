@@ -1,0 +1,10 @@
+PANNELLI DI SISTEMA (constwin.hts)
+hypertext
+{
+<tab><cl=F0F010>PANNELLI DI SISTEMA<cl=A2A2A2><br><br>
+<tab>Negli angoli in alto dello schermo si trovano il <cl=FFFFFF>panello di sistema destro<cl=B0B0B0> e <cl=FFFFFF>sinistro<cl=B0B0B0>. Premendo i rispettivi bottoni potrete minimizzarli.<br><br>
+<tab><cl=00FF00>Pannello di sistema di sinistra<cl=B0B0B0>.<br>
+<tab>Nel pannello di sistema di sinistra si trova una bussola (se il tuo personaggio ha una missione attiva, la bussola visualizzerà la direzione per la missione), indicatori di <cl=FFFFFF>Salute<cl=B0B0B0>, <cl=FFFFFF>Prana<cl=B0B0B0> e tasti rapidi: <l="hts:\\language\statinfo.hts">Statistiche<\l>; <l="hts:\\language\i_charact.hts">Personaggio<\l>; <l="hts:\\language\inventory.hts">Inventario<\l>; <l="hts:\\language\hotkeys.hts">Tasti rapidi<\l>; <l="hts:\\language\tradechar.hts">Scambio (vendere)<\l> e <l="hts:\\language\options.hts">Menu Principale</l>.<br><br>
+<tab><cl=00FF00>Pannello di sistema di destra<cl=B0B0B0>.<br>
+<tab>Nel pannello di sistema di destra si trova il tempo di Sphere, data e ora (cliccare col tasto sinistro per selezionare la modalità digitale) e i bottoni: <l="hts:\\language\map.hts">Mappa<\l>; <l="hts:\\language\clan.hts">Finestra del clan<\l>; <l="hts:\\language\chat.hts">Chat<\l>; <l="hts:\\language\alchemicbook.hts">Libro delle Formule<\l>; <l="hts:\\language\mantrabook.hts">Libro dei Mantra<\l> and the <l="hts:\\language\journal.hts">Log<\l>.<br>
+}

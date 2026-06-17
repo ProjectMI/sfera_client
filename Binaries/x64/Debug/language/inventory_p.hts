@@ -1,0 +1,15 @@
+INVENTÁRIO (inventory_p.hts)
+hypertext
+{
+<tab><cl=F0F010>INVENTÁRIO<cl=A2A2A2><br><br>
+<tab>As células nesta janela mostram os objetos que você carrega. Alguns destes objetos podem ser perdidos após sua <l="hts:\\language\i_reincarn_p.hts">death<\l> dependendo do seu karma.<br>
+<tab>As duas ultimas colunas podem ser usadas para manter qualquer objeto, inclusive armas. A coluna superior contem 5 células especiais:<br>
+<tab><cl=FFFFFF>Dinheiro<cl=B0B0B0> - Suas reservas em thalers.<br>
+<tab><cl=FFFFFF>Bolsa de lona<cl=B0B0B0> - Célula de bolsa de lona. Bolsas contem suas próprias células onde você pode colocar vários objetos.<br>
+<tab><cl=FFFFFF>2 chaves<cl=B0B0B0> - Nestas células você pode levar até 2 chaves de quartos hotel ou quartos castelo.<br>
+<tab><cl=FFFFFF>Chave de missão<cl=B0B0B0> - A célula para manter a chave de 1 missão.<br>
+<tab>Para colocar objetos no seu inventário simplesmente <l="hts:\\language\i_mainp_p.hts">arraste<\l> para sua célula apropriada. O objeto deve ser colocado na célula correta. Se uma célula não for correta para o objeto, irá ficar vermelho quando tentar colocar na célula. Se uma célula pode abrigar o objeto, se torna verde.<br>
+<tab>Recomendamos que armas e outros objetos freqüentemente usados sejam colocados <l="hts:\\language\hotkeys_p.hts">no atalhos<\l>.<br>
+<tab>A fileira do meio - 5 células - são "permanentes". Significa que, objetos ali contidos, não vão ser perdidos com a morte, apenas dinheiro e as bolsas. Se a célula que contem um objeto ter a cor azul, esse objeto não se perderá com a morte. Dependendo do karma e da disposição do personagem, nem todas as células estarão ativas. Quando o karma for malígno, somente 1 das 5 células estará ativa. Karma benígno mantem todas ativas. Se o personagme estiver no continente de Charon, é ao contrário, karma benígno deixa 1 só ativada e malígno ativa todas.<br>
+}
+

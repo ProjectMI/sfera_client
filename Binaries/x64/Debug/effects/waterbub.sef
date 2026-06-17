@@ -1,0 +1,100 @@
+//=====================================================================
+// Definition   : Water bubbles
+// Effect number: 300
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "water bubbles"
+   effect_number  300
+   effect_time    -1
+   effect_timelimit 256
+
+   subeffects_num 1
+   subeffect 0 EFF_PSYSTEM "stars"
+}
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "stars"           // particle system reference name
+  particles_num  200                // number of particles
+  psystem_flags  PS_TRANSLATEONLY | PS_USEDISTORTION | PS_NOHEAVYATTACH                                                                       
+  self_illumination 255
+  distortion_vec 0.005 0.0 0.005
+
+  position_track
+  {
+    numkeys 1
+    key 0 0.0 0.0 -0.8 0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_CYLINDER
+     randseed         -1     
+     radius           1.0
+     height           0.5
+     emit_num         2.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          128.0
+    lifetime_rf       64.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_bubble"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+       rkey 0 0.0 0.015 0.015
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 255 255 255 255
+        key  1   0.7 255 255 255 255
+	key  2   1.0 255 255 255 0
+     }
+
+     velocity_track
+     {
+	track_num 0
+	numkeys 1
+	rkey 0 0.0 0.0 -0.007 0.0 0.0 -0.007 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+

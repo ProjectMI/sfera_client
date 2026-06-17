@@ -1,0 +1,11 @@
+СИСТЕМНЫЕ ПАНЕЛИ (constwin.hts)
+hypertext
+{
+<tab><cl=F0F010>СИСТЕМНЫЕ ПАНЕЛИ<cl=A2A2A2><br><br>
+<tab>В верхних углах экрана всегда присутствуют <cl=FFFFFF>левая<cl=B0B0B0> и <cl=FFFFFF>правая системные панели<cl=B0B0B0>. При желании их можно минимизировать, нажав на соответствующие стрелочки.<br><br>
+<tab><cl=00FF00>Левая системная панель<cl=B0B0B0>.<br>
+<tab>На левой системной панели расположен компас (при наличии у Вашего персонажа миссии, на компасе обозначается направление расположения миссии), показатели <cl=FFFFFF>Здоровья<cl=B0B0B0>, <cl=FFFFFF>Праны<cl=B0B0B0>, а также  кнопки вызова окон: <l="hts:\\language\statinfo.hts">Статистики<\l>; <l="hts:\\language\i_charact.hts">Персонажа<\l>; <l="hts:\\language\inventory.hts">Инвентаря<\l>; <l="hts:\\language\hotkeys.hts">Горячих клавиш<\l>; <l="hts:\\language\tradechar.hts">Торговли (продажи)<\l> и <l="hts:\\language\options.hts">Главного меню</l>.<br><br>
+<tab><cl=00FF00>Правая системная панель<cl=B0B0B0>.<br>
+<tab>На правой системной панели указаны текущая дата и время в "Сфере" (часы щелчком левой кнопки мыши могут быть преобразованы в электронный вид), а также  кнопки вызова: <l="hts:\\language\map.hts">Карты<\l>; <l="hts:\\language\clan.hts">Окна клана<\l>; <l="hts:\\language\chat.hts">Чата<\l>; <l="hts:\\language\alchemicbook.hts">Книги рецептов<\l>; <l="hts:\\language\mantrabook.hts">Книги мантр<\l> и <l="hts:\\language\journal.hts">Журнала<\l>.<br>
+}
+ 

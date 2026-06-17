@@ -1,0 +1,196 @@
+//----------------------------------------------------------------------------------
+// Window: Message
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+        name "window"
+        size 295 149
+        texture "i_msg"    0 0 242 149  0 0 242 149
+        texture "i_msg"    212 0 242 149  242 0 272 149	
+        texture "i_msg"    242 0 256 149  272 0 286 149	
+        texture "i_mantra" 246 62 255 211 286 0 295 149
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_normal"
+        size 32 24
+        texture "i_ctrls" 63 25 95 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_focus"
+        size 32 24
+        texture "i_ctrls" 96 25 128 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_push"
+        size 32 24
+        texture "i_ctrls" 96 75 128 99 0 0 32 24
+      }
+
+
+   }
+
+   windowName  "message"
+//   windowText  UISTR_WT_MESS01
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    0 0
+   size        295 149
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 285 29
+   textcolor   237 208 161
+   alignWin    CENTER_X | CENTER_Y
+//   saveLastPosition false
+   escapeHandle TRUE
+   canNotCross TRUE
+
+   control					    // id = 1
+   {
+     classID	BUTTON
+     position	115 110
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "ok_normal"
+     checkedImage   "ok_push"
+     focusedImage   "ok_focus"
+   }
+
+   control					    // id = 2
+   {
+     classID	BUTTON
+     position	149 110
+     size	32 24
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+     uncheckedImage "cancel_normal"
+     checkedImage   "cancel_push"
+     focusedImage   "cancel_focus"
+   }
+
+   control					    // id = 3
+   {
+     classID	TEXTLIST
+     position	14 34
+     size	268 80
+     font       3
+     formatstrings true
+     textformat CENTER_X
+   }
+
+ }
+
+
+ // window message ok
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "window"
+	size 265 149
+	texture "i_msg"    0 0 256 149  0 0 256 149
+        texture "i_mantra" 246 62 255 211 256 0 265 149
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+   }
+
+   windowName  "messageok"
+//   windowText  UISTR_WT_MESS01
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    0 0
+   size        265 149
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 255 29
+   textcolor   237 208 161
+   alignWin    CENTER_X | CENTER_Y
+//   saveLastPosition false
+   escapeHandle TRUE
+   canNotCross TRUE
+
+   control					    // id = 1
+   {
+     classID	TEXTLIST
+     position	16 37
+     size		234 64
+     font       3
+     formatstrings false
+     textformat CENTER_X
+   }
+
+   control					    // id = 2
+   {
+     classID	BUTTON
+     position	125 115
+     size		60 17
+
+     font	3
+     focuscolor 255 239 212
+     textcolor	237 208 161
+     windowText UISTR_WC_SMS02
+     disabledcolor 150 150 150
+     textformat CENTER_Y
+
+     //drawMethod SPRITE
+     //uncheckedImage "ok_normal"
+     //checkedImage   "ok_push"
+     //focusedImage   "ok_focus"
+   }
+ }

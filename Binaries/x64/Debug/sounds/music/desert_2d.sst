@@ -1,0 +1,35 @@
+soundtrack
+{
+  audio_file "sounds\music\hr\haron_day_1.ogg"
+  volume 1.0
+
+  samples
+  {
+sample 01 00:00.000  00:18.250
+sample 02 00:21.176  00:39.752
+sample 03 00:42.538  01:01.022
+sample 04 01:03.901  01:22.384
+sample 05 01:25.217  01:43.746
+sample 06 01:46.626  02:05.155
+sample 07 02:08.034  02:26.517
+sample 08 02:29.397  02:47.880
+sample 09 02:50.713  03:09.289
+sample 10 03:12.075  03:30.558
+sample 11 03:33.391  03:51.874
+sample 12 03:54.846  04:13.329
+sample 13 04:16.208  04:34.645
+sample 14 04:37.524  04:56.007
+sample 15 04:58.840  05:17.277
+sample 16 05:20.203  05:38.668
+  }
+
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p01,p02,p03,p04,j02 | p05,p06,p07,p08,j02
+     pattern 02 p09,p10,p11,p12,j03 | p13,p14,p15,p16,j03
+     pattern 03 p01,p03,p04,p02,j04 | p05,p07,p08,p06,j04
+     pattern 04 p09,p11,p12,p10,s5,j01 | p13,p15,p16,p14,s5,j01
+  }
+}

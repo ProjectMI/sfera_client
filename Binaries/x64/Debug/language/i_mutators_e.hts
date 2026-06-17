@@ -1,0 +1,6 @@
+MUTATORS (i_mutators.hts)
+hypertext
+{
+<tab><cl=F0F010>MUTATORS<cl=A2A2A2><br><br>
+<tab>Mutator is a magic effect or influence which, when applied, changes some of your characteristics or gives you some extra capabillities. There are "positive"  mutators (for instance the ones that increase the damage you inflict on the enemy - in that case it'll be desirable for you to have it applied to all your "allies" ), as well as "negative" (for instance health reducing mutators). While you are under the influence of a mutator there is a shiny disk on the right of the screen. In additon to that, to other players the character with a mutator appears to have a halo around him.<br>
+}

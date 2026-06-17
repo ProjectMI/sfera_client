@@ -1,0 +1,117 @@
+//=====================================================================
+// Definition   : «Испепеление»: На цели отображается ярко-белая вспышка
+// Effect number: 493
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "zzzz"
+   effect_number  493
+   effect_time    200
+
+   subeffects_num 1
+
+   boundbox 0.9 -0.0 0.9 -0.9 -2.0 -0.9
+
+   subeffect 0 EFF_PSYSTEM "light"
+
+   light_def
+   {
+     light_pos   -0.0 -2.5 0.0
+     
+     color_track
+     {
+       numkeys 5
+       key 0   0.0    0.0    0.0   0.0
+       key 1  16.0    0.0    0.0   0.0
+       key 2  32.0 1500.0 1500.0 1500.0
+       key 3 160.0 1500.0 1500.0 1500.0
+       key 4 200.0    0.0    0.0   0.0   
+     }
+   }
+}
+
+
+
+psystem_def
+{
+  psystem_name      "light"
+  particles_num     150
+  psystem_flags     PS_TRANSLATEONLY | PS_USEDISTORTION
+  self_illumination 255
+  distortion_vec    0.005 0.005 0.005 
+
+  position_track
+  {
+    numkeys 1
+    key 0 0.0 0.0 -1.0 0.0
+  }
+
+  // power track definition
+  power_track
+  {
+     numkeys 3
+     key 0  32.0 1.0
+     key 1 160.0 1.0
+     key 2 200.0 0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1	 
+     radius           0.5
+     emit_num         2
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          32.0    
+    lifetime_rf       32.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    texture   "fx_sp"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   3
+
+        key  0  0.0  0.3
+       rkey  1  0.6  0.4  0.4
+        key  2  1.0  0.1
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 255 255 255 0
+        key  1   0.2 255 255 255 155
+        key  2   1.0 255 255 255 0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+  }
+}
+
+

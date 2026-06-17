@@ -1,0 +1,69 @@
+hypertext
+{
+Guild of sorcerer<br>
+<br>
+<cl=00FF00>First stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 16<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +98<br>
+<tab>Magical protection: +65<br>
+<tab>Skills: -4<br>
+<tab>Elements: -6<br>
+<tab>Magical attack: +82<br>
+<br>
+<cl=00FF00>Second stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 21<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +225<br>
+<tab>Magical protection: +120<br>
+<tab>Skills: -6<br>
+<tab>Elements: -14<br>
+<tab>Magical attack: +150<br>
+<br>
+<cl=00FF00>Third stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 31<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +372<br>
+<tab>Magical protection: +198<br>
+<tab>Skills: -10<br>
+<tab>Elements: -22<br>
+<tab>Magical attack: +248<br>
+<br>
+<cl=00FF00>Fourth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 41<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +618<br>
+<tab>Magical protection: +350<br>
+<tab>Skills: -15<br>
+<tab>Elements: -42<br>
+<tab>Magical attack: +412<br>
+<br>
+<cl=00FF00>Fifth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 51<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +980    <br>
+<tab>Magical protection: +490<br>
+<tab>Skills: -20<br>
+<tab>Elements: -60<br>
+<tab>Magical attack: +653<br>
+<br>
+<cl=00FF00>Sixth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 60<br>
+<br><cl=ABCDEF>
+<tab>Physical protection: +1440<br>
+<tab>Magical protection: +889<br>
+<tab>Skills: -24<br>
+<tab>Elements: -86<br>
+<tab>Magical attack: +960<br>
+<br>
+<sp><l="hts:\\language\guilds_e.hts">Back to guilds list<\l><br>
+<sp><l="hts:\\language\guildl_e.hts">Back to guild description<\l><br>
+<br>
+<l="hts:\\language\guild_desck_e.hts">Previous guild<\l> <cl=FFFF00>| <l="hts:\\language\guild_desca_e.hts">Next guild<\l><br>
+}

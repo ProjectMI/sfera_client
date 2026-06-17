@@ -1,0 +1,136 @@
+//----------------------------------------------------------------------------------
+// Window: System left minimized
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+        name "sp_window"
+        size 91 48
+	texture "i_comp"  0 132 91 180 0 0 91 48
+      }
+
+      sprite
+      {
+        name "comp_clip"
+        size 45 44
+	texture "i_comp"  103 100 148 144 0 0 45 44
+      }
+
+      sprite
+      {
+        name "min_focus"
+        size 26 24
+        texture "i_comp"  126 151 152 175 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_normal"
+        size 26 24
+        texture "i_comp"  126 201 152 225 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_push"
+        size 26 24
+        texture "i_comp"  126 176 152 200 0 0 26 24
+      }
+
+      sprite
+      {
+        name "kompas"
+        size 11 37
+        texture "i_comp"  200 101 211 138 0 0 11 37
+      }
+
+      sprite
+      {
+        name "st_small"
+        size 5 53
+        texture "i_comp"  228 101 233 154 0 0 5 53
+      }
+
+      sprite
+      {
+        name "st_small2"
+        size 5 53
+        texture "i_comp"  221 101 226 154 0 0 5 53
+      }
+   }
+
+   windowName "system_leftmin"
+   drawMethod  SPRITE "sp_window"
+   position    0 0
+   size        91 48
+   showEffect  MOVE_RIGHT  0.25 91 0
+   hideEffect  MOVE_LEFT   0.25 91 0
+   canGoTop    false
+   saveLastPosition false
+   canNotCross TRUE
+
+   control                            // id = 1
+   {
+     classID    BUTTON   
+     position   51 0
+     size       26 24
+     drawMethod SPRITE
+
+     checkedImage     "min_push"
+     focusedImage     "min_focus"
+     uncheckedImage   "min_normal"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL10
+     }
+   }
+
+   control                              // id = 2
+   {
+     classID    IMAGE
+     position   20 3
+     size       11 37
+     image      "kompas"
+   }
+
+   control                              // id = 3
+   {
+     classID    IMAGE
+     position   3 0
+     size       45 44
+     image      "comp_clip"
+     tooltip
+     {
+        toolstr UISTR_TT_SYSL11
+     }
+   }
+
+   control                              // id = 4 - metka missiy
+   {
+     classID    IMAGE
+     position   23 -5
+     size       5 53
+     image      "st_small"
+   }
+
+   control                              // id = 5 - metka clana
+   {
+     classID    IMAGE
+     position   23 -5
+     size       5 53
+     image      "st_small"
+   }
+
+   control                              // id = 6 - Метка на карте
+   {
+     classID    IMAGE
+     position   23 -5
+     size       5 53
+     image      "st_small2"
+   }
+ }

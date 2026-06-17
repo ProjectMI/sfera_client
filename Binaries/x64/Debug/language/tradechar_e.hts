@@ -1,0 +1,8 @@
+TRADE WINDOW (SELLING) (tradechar.hts)
+hypertext
+{
+<tab><cl=F0F010>SELLING<cl=A2A2A2><br><br>
+Using this window you can sell goods. To put an object on sale just drag it from your <l="hts:\\language\inventory.hts"> inventory<\l> or <l="hts:\\language\puppet.hts">character window<\l> into any unoccupied cell in this window. In the second column you can set your price. Until you set the price, other characters but can't buy although they can see what you are selling in their <l="hts:\\language\trade.hts">buy window<\l>. They may offer their own price which you will see in the third column. You can accept or reject their price using the buttons in the fourth column.<br>
+<tab>The objects put on sale remain in this window until you die or exit the game. When an object is on sale and the price is set, it may be bought at any moment by any character who approaches you.<br>
+}
+

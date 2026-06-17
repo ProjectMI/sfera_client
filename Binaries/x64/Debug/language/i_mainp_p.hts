@@ -1,0 +1,25 @@
+CONTROLE (i_mainp.hts)
+hypertext
+{
+<tab><cl=F0F010>CONTROLE<cl=A2A2A2><br><br>
+<br><tab><cl=00FF00>Controle<cl=A2A2A2><br>
+<tab>Existem dois modos de controle: <cl=FFFFFF>controle clássico<cl=B0B0B0> e <cl=FFFFFF>controle de batalha<cl=B0B0B0>.  No modo de controle clássico tem o ponteiro convencional do mouse (seta) na tela e você pode manipular várias janelas e segurar vários objetos. O modo controle de batalha foi projetado para ser usado em combate dinâmico e longas marchas. Neste modo de controle não existe ponto móvel na tela - ele se transforma numa cruz fixa no centro da tela. Você pode mudar entre os dois usando a tecla "TAB" (ajuste padrão).<br>
+<br><tab><cl=00FF00>mão<cl=A2A2A2><br>
+<tab>Seu personagem pode ter as mãos <cl=FFFFFF>"livres"<cl=B0B0B0> ou <cl=FFFFFF>"em uso"<cl=B0B0B0>. A <cl=FFFFFF>mão<cl=B0B0B0> é usada para segurar objetos, como armas, que são usadas em algumas ações repetidas. Quando a mão está em uso, aparece no canto inferior direito da tela uma imagem dela junto com o objeto que segura. Você somente poderá segurar coisas que estão no <l="hts:\\language\inventory_p.hts">inventário<\l>. Para deixar a mão livre, pressione "-".<br>
+<br><tab><cl=00FF00>Controle no modo clássico<cl=A2A2A2><br>
+<tab>A aparência do ponteiro indica a ação que deseja (ou pode) fazer.<br>
+<tab>A seta (mouse)<cl=FFFFFF>marcada<cl=B0B0B0> com amarelo mostra que o objeto que você aponta está ao seu alcance (3 metros). Você pode <cl=FFFFFF>usar<cl=B0B0B0> aquele objeto clicando com o botão esquerdo do mouse. Alguns dos objetos (armas, pó de cura e mantras) se movem automaticamente para sua<cl=FFFFFF>mão<cl=B0B0B0> quando você utiliza.<br>
+<tab>Quando<cl=FFFFFF> você segura um objeto, <cl=B0B0B0> existe um ícone deste objeto apontando para a seta. Dependendo da operação, o objeto na sua mão pode ser <cl=FFFFFF>usado<cl=B0B0B0> prontamente em vários outros objetos pelo local, simplesmente clicando neles.<br>
+<tab><cl=FFFFFF>Olho<cl=B0B0B0> aparece ao lado do ponteiro quando você pressiona e segura a tecla "shift". Com este olho ativado, vocÊ pode <cl=FFFFFF>olhar<cl=B0B0B0> ao objeto de interesse simplesmente clicando nele. Se este objeto estiver perto o bastante, você terá detalhes completos dele, e se estiver mais distante apenas o seu nome.<br>
+<tab><cl=FFFFFF>Figura humana<cl=B0B0B0> aparece perto do ponteiro quando você pressiona e segura a tecla "alt". Esta função permite você <cl=FFFFFF>usar<cl=B0B0B0> o objeto em si mesmo.<br>
+<tab><cl=FFFFFF>Quando você arrasta<cl=B0B0B0> um objeto, tem um ícone do objeto direcionado ao ponteiro. O arrastar do objeto é feito pressionando o botão esquerdo do mouse e segurando no objeto. Você não pode arrastar nada se tiver algo em sua mão.<br>
+<tab>No modo de controle clássico você também pode mover as janelas, arrastar e usá-las. Quando você sair do jogo, as posições das janelas são salvas e voltarão para ultima posição quando reiniciar o jogo.
+<br><tab>Clicando e segurando o botão direito do mouse modifica o modo clássico para modo de batalha.<br>
+<br><tab><cl=00FF00>Controle no modo de batalha<cl=A2A2A2><br>
+Neste modo o ponteiro é fixado no centro da tela e o mouse é utilizado para girar. A resposta de subir e descer do mouse podem ser mudados no item "inverter mouse" (Opções de controle).<br>
+<tab> Shift and Alt keys as well as the left mouse button have exactly the same functions as in the standard control mode. You can't drag objects in battle control mode.<br>
+<br><tab><cl=00FF00>Atalhos<cl=A2A2A2><br>
+<tab>Uso <cl=FFFFFF>rápido<cl=B0B0B0> dos objetos no seu inventário podem ser utilizados pelas teclas de atalho. São as teclas 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 do teclado. Em combinação com a tecla "Ctrl" você no total pode ter 20 teclas. Para designar um objeto na tecla de atalho use <l="hts:\\language\hotkeys_p.hts">Janela de atalho<\l>.<br>
+<br><tab><cl=00FF00>Punho<cl=A2A2A2><br>
+<tab>Se, por alguma razão, você não puder usar armas, poderá usar as próprias mãos em vez de armas (Tecla, "`"). Com os punhos você dará menor dano porém com freqüência.<br>
+}

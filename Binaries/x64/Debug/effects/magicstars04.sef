@@ -1,0 +1,179 @@
+//=====================================================================
+// Definition   : Magic stars blue 2
+// Effect number: 43
+// Status       : good
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "magic stars.blue.2"
+   effect_number  43
+   effect_time    256
+   effftype          1
+
+   subeffects_num 1
+   subeffect 0 EFF_PSYSTEM "stars4"
+
+   boundbox 0.2 -0.0 0.2 -0.2 -0.6 -0.2
+
+   light_def
+   {
+     light_pos   0.0 -1.0 0.0
+     
+     color_track
+     {
+       numkeys 4
+       key 0   0.0   0.0   0.0   0.0
+       key 1  64.0   0.0   0.0 500.0
+       key 2 192.0   0.0   0.0 500.0
+       key 3 256.0   0.0   0.0   0.0   
+     }
+   }
+
+   sound_def
+   {
+         audio_file "sounds\mg_good_reaction.wav"
+         min_distance 1.0
+         max_distance 15.0
+   }
+}
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "stars3"           // particle system reference name
+  particles_num  15                 // number of particles
+  psystem_flags  PS_TRANSLATEONLY | PS_USEDISTORTION
+  self_illumination 255
+  distortion_vec 0.006 0.0 0.006
+
+  // power track
+  power_track
+  {
+     numkeys 4
+     key     0   0.0 0.0
+     key     1  32.0 1.0
+     key     2 224.0 1.0
+     key     3 256.0 0.0
+  }
+  
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_DISK
+     randseed         -1
+     radius           0.01
+     emit_num         1.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          32.0
+    lifetime_rf       64.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_star"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+     ngravitation_tracks 1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.09
+        key 1 1.0 0.0
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0  85 85 255 255
+        key  1   0.9  85 85 255 255
+        key  2   1.0  85 85 255 0
+     }
+
+     velocity_track
+     {
+       track_num 0
+       numkeys 1
+       mrkey 0 0.0 0.0 0.0 0.0 0.002 0.0 0.002
+     }
+
+     gravitation_track
+     {
+       track_num 0
+       numkeys 1
+       rkey 0 0.0 0.0 -0.003 0.0 0.0 -0.002 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+     gravitation_track 0
+  }
+}
+
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "stars4"
+  particles_num  2
+  psystem_flags  PS_TRANSLATEONLY | PS_NOLIFETIME | PS_STATICEMITALL
+
+  // power track
+  power_track
+  {
+     numkeys 1
+     key     0 0.0 0.0
+  }
+  
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_POINT
+     shape_numpoints  2
+	 randseed         0
+	 shape_points
+	 {
+		 point 0 -0.06 -0.15 0.0
+		 point 1  0.06 -0.15 0.0		 
+	 }	 
+  }
+
+  childs_def
+  {
+	  childs_num 1
+	  child 0 "stars3"
+  }
+  
+  particles_def
+  {
+     select all
+     child_ps 0
+  }
+
+}
+

@@ -1,0 +1,20 @@
+CHAT (chat.hts)
+hypertext
+{
+<tab><cl=F0F010>CHAT<cl=A2A2A2><br><br>
+<tab>La finestra di chat ha due modalità: piena e ridotta. Usare il bottone "chat" sul <l="hts:\\language\constwin.hts">pannello di sistema di destra<\l> per selezionare le modalità.<br>
+<tab><cl=FFFFFF>Nella forma ridotta<cl=B0B0B0> saranno visualizzate due linee di messaggio. Premere "/" (di default) per vedere il vostro messaggio. Verrà visualizzato anche il campo di testo. Per cancellare premere "chiudere finestra" o inserire una linea vuota.<br>
+<tab>I messaggi possono essere mandati nelle seguenti modalità:<br>
+<tab><cl=FFFFFF>Sussurrare<cl=B0B0B0> - il messaggio sarà visto da coloro non più lontani di 10 metri da voi.<br>
+<tab><cl=FFFFFF>Generale<cl=B0B0B0> - il messaggio sarà visto da coloro non più lontani di 50 metri da voi.<br>
+<tab><cl=FFFFFF>Scambio<cl=B0B0B0> - Messaggi di scambio.<br>
+<tab><cl=FFFFFF>Clan<cl=B0B0B0> - il messaggio sarà visto solo dai membri del clan.<br><br>
+<tab><cl=FFFFFF>Gruppo<cl=B0B0B0> - il messaggio sarà visto solo dai membri del gruppo.<br><br>
+<tab><cl=FFFFFF>Nella modalità piena della chat<cl=B0B0B0> potrete vedere gli ultimi messaggi utilizzando la barra di scorrimento. Usare il tasto "/" per inserire o cliccare sul campo di inserimento che in questa modalità è presente sullo schermo.<br> Si possono usare anche i filtri per i messaggi utilizzando i bottoni nella parte alta della finestra di chat: generale, messaggi del clan, messaggi di sistema, messaggi di danno, messaggi del gruppo e messaggi di scambio.<br>
+<tab>Si può <cl=FFFFFF>cambiare tra i tipi di messaggio<cl=B0B0B0> utilizzando i tasti funzione:<br>
+<cl=FFFFFF>F2<cl=B0B0B0><tab>- sussurrare<br>
+<cl=FFFFFF>F3<cl=B0B0B0><tab>- generale<br>
+<cl=FFFFFF>F4<cl=B0B0B0><tab>- scambio<br>
+<cl=FFFFFF>F6<cl=B0B0B0><tab>- messaggi di clan<br>
+<cl=FFFFFF>F7<cl=B0B0B0><tab>- messaggi di gruppo<br>
+}

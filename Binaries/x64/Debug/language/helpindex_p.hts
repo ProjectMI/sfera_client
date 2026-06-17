@@ -1,0 +1,15 @@
+CONTEÚDO (helpindex.hts)
+hypertext
+{
+<tab><cl=FFFF00>CONTEÚDO<cl=FFFFFF><br><br>
+<tab><l="hts:\\language\i_starting_p.hts">Onde começar?<\l><br><br>
+<tab><l="hts:\\language\i_charact_p.hts">Seu personagem<\l><br><br>
+<tab><l="hts:\\language\i_interface_p.hts">Interface<\l><br><br>
+<tab><l="hts:\\language\guilds_p.hts">Todas organizações<\l><br>
+<tab><l="hts:\\language\authors_p.hts">Sobre os autores<\l><br><br><br>
+
+<tab><l="http:\\www.spherebr.com.br">"Sphere" na Web<\l><br><br>
+<tab><l="mailto:suporte@spherebr.com.br">Suporte técnico<\l><br>
+<br><br><sp>                      <cl=FFFFFF>(c) 2003-2007 Nikita.<cl=B0B0B0><br>
+}
+

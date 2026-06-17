@@ -1,0 +1,57 @@
+hypertext
+{
+Gilda dei ladri<br>
+<br>
+<cl=00FF00>Primo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 16<br>
+<tab><tab>Grado minimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +4<br>
+<tab>Resistenza: -6<br>
+<tab>Elementi: -10<br>
+<br>
+<cl=00FF00>Secondo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 21<br>
+<tab><tab>Grado minimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +6<br>
+<tab>Resistenza: -12<br>
+<tab>Elementi: -14<br>
+<br>
+<cl=00FF00>Terzo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 31<br>
+<tab><tab>Grado minimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +10<br>
+<tab>Resistenza: -24<br>
+<tab>Elementi: -21<br>
+<br>
+<cl=00FF00>Quarto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 41<br>
+<tab><tab>Grado minimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +20<br>
+<tab>Resistenza: -76<br>
+<tab>Elementi: -25<br>
+<br>
+<cl=00FF00>Quinto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 51<br>
+<tab><tab>Grado minimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +32<br>
+<tab>Resistenza: -110<br>
+<tab>Elementi: -44<br>
+<br>
+<cl=00FF00>Sesto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 60<br>
+<tab><tab>Grado minimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Destrezza e Precisione: +44<br>
+<tab>Resistenza: -156<br>
+<tab>Elementi: -59<br>
+<br>
+<sp><l="hts:\\language\guilds.hts">Torna alla lista delle gilde<\l><br>
+<sp><l="hts:\\language\guildh.hts">Torna alla descrizione della gilda<\l><br>
+<br>
+<l="hts:\\language\guild_descg.hts">Gilda precedente<\l> <cl=FFFF00>| <l="hts:\\language\guild_desci.hts">Gilda successiva<\l><br>
+}

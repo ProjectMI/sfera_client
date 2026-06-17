@@ -1,0 +1,10 @@
+INFO "MORTE E REENCARNAÇÃO" (i_reincarn_p.hts)
+hypertext
+{
+<tab><cl=F0F010> MORTE E REENCARNAÇÃO <cl=A2A2A2><br><br>
+<tab>Para nós, visitantes do mundo real, morte em Sphere não é o fim. Nós podemos retornar para este mundo mágico por um dos portais de Weaver. Porém, enquanto está em Sphere, cada personagem acumula <l="hts:\\language\i_charact_p.hts">karma<\l>. Dependendo da quantidade de karma, você pode reencarnar em portais diferentes. Alguns deles em bons locais, outros em ruins, enquanto outros em local neutro. No geral, os portais são divididos em cinco categorias. Você reencarnará no portal mais próximo do local de sua morte, que também acompanha seu karma. Cuidado com reencarnação em <l="hts:\\language\i_geo_p.hts"> Haron!<\l> <br>
+<tab>Quando você morre, poderá perder parte do seu <l="hts:\\language\inventory.hts">inventário<\l>. O que você carrega no corpo (veja <l="hts:\\language\puppet.hts">"janela do personagem"<\l>), é geralmente mantido.  A perda depende do karma - quanto melhor o karma, menor a perda. Você também perde parte da experiência <l="hts:\\language\i_charact.hts"> de título e nível.<\l><br>
+<tab>Você não perderá objetos localizados nas "células permanentes" do <l="hts:\\language\inventory.hts">inventário<\l>.<br>
+<tab><cl=FFFFFF>Note: se o seu título e nível estiverem ambos abaixo de 6 você não perde nada. Você deve estar pelo menos <l="hts:\\language\i_charact_p.hts">"convidado" ou "candidato"<\l><cl=B0B0B0> para perder coisas.<br>
+}
+

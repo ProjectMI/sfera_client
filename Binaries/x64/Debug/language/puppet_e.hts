@@ -1,0 +1,25 @@
+CHARACTER WINDOW (puppet.hts)
+hypertext
+{
+<tab><cl=F0F010>CHARACTER WINDOW<cl=A2A2A2><br><br>
+<tab>In the cells in this window are the objects you wear on your body. These objects are almost never lost after your <l="hts:\\language\i_reincarn.hts">death<\l> (the probability of losing them is very remote).<br>
+<tab>You can put the following objects into these cells:<br>
+<tab><cl=FFFFFF>Helmet<br>
+<tab>Amulet<br>
+<tab>Shield<br>
+<tab>Mail armor<br>
+<tab>Gloves<br>
+<tab>2 bracelets<br>
+<tab>4 rings<br>
+<tab>Pants<br>
+<tab>Footgear<br><cl=B0B0B0>
+<tab>These objects can improve various <l="hts:\\language\i_charact.hts"> attributes <\l> of your character.<br>
+<tab>In the column on the right you can keep the following objects:<br>
+<tab><cl=FFFFFF>Map book<cl=B0B0B0> - here you can put all your maps.<br>
+<tab><cl=FFFFFF>Journal<cl=B0B0B0> - here you can record important happenings.<br>
+<tab><cl=FFFFFF>Recipe book<cl=B0B0B0> - here you can keep magic recipes and manuscripts.<br>
+<tab><cl=FFFFFF>Mantra book<cl=B0B0B0> - allows you to "memorize" mantras.<br>
+<tab><cl=FFFFFF>Inkwell<cl=B0B0B0> - allows you to make records in the journal as well as draw marks on the maps.<br><br>
+<tab>In the cells of the left-hand column you can put objects with exceptional properties (this column is reserved for future use).<br>
+<tab>To put an object into this window simply <l="hts:\\language\i_mainp.hts">drag<\l> it to the appropriate cell. You must put each object into a correct cell. Depending on whether you can put your object into a cell or not, it lights with green or red.<br>
+}

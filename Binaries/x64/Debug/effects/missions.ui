@@ -1,0 +1,496 @@
+//----------------------------------------------------------------------------------
+// Window: Missions
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "window"
+	size 205 281
+	texture "i_miss"    0 0 205 256   0 0 205 256
+	texture "i_miss"    0 0   0   0   2 256 203 281
+        tcoords 1           256 0 256 201 231 201 231 0
+      }
+
+      sprite
+      {
+	name "check_mark"
+	size 7 7
+	texture "i_miss" 208 0 215 7 0 0 7 7
+      }
+
+      sprite
+      {
+        name "close_focus"
+        size 14 14
+        texture "i_ctrls" 15 76 29 90 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_push"
+        size 14 14
+        texture "i_ctrls" 15 106 29 120 0 0 14 14
+      }
+
+      sprite
+      {
+        name "close_normal"
+        size 14 14
+        texture "i_ctrls" 15 91 29 105 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_focus"
+        size 14 14
+        texture "i_ctrls" 0 76 14 90 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_push"
+        size 14 14
+        texture "i_ctrls" 0 106 14 120 0 0 14 14
+      }
+
+      sprite
+      {
+        name "help_normal"
+        size 14 14
+        texture "i_ctrls" 0 91 14 105 0 0 14 14
+      }
+
+
+      sprite
+      {
+        name "sl_focus"
+        size 18 18
+        texture "i_ctrls" 0 19 18 37 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sl_push"
+        size 18 18
+        texture "i_ctrls" 0 38 18 56 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sl_disabled"
+        size 18 18
+        texture "i_ctrls" 0 57 18 75 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_focus"
+        size 18 18
+        texture "i_ctrls" 19 19 37 37 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_push"
+        size 18 18
+        texture "i_ctrls" 19 38 37 56 0 0 18 18
+      }
+
+      sprite
+      {
+        name "sr_disabled"
+        size 18 18
+        texture "i_ctrls" 19 57 37 75 0 0 18 18
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_normal"
+        size 32 24
+        texture "i_ctrls" 63 25 95 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_focus"
+        size 32 24
+        texture "i_ctrls" 96 25 128 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_push"
+        size 32 24
+        texture "i_ctrls" 96 75 128 99 0 0 32 24
+      }
+
+
+   }
+
+   windowName  "missions"
+   windowText  UISTR_WC_MISS00
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    0 50
+   size        205 281
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 165 29
+   textcolor   237 208 161
+   escapeHandle TRUE
+
+   control					 // id = 1
+   {
+     classID	BUTTON
+     position	175 12
+     size	14 14
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+
+     checkedImage     "close_push"
+     focusedImage     "close_focus"
+     uncheckedImage   "close_normal"
+
+     tooltip
+     {
+       toolstr UISTR_CLOSEW
+     }
+   }
+
+   control					 // id = 2
+   {
+     classID	BUTTON
+     position	160 12
+     size	14 14
+     drawMethod SPRITE
+     buttonStyle SEND_HELP
+     windowHelp  "language\missions.hts"
+
+     checkedImage     "help_push"
+     focusedImage     "help_focus"
+     uncheckedImage   "help_normal"
+
+     tooltip
+     {
+       toolstr UISTR_HELP
+     }
+   }
+
+   control					 // id = 3
+   {
+     classID	RADIOBUTTON
+     position	105 32
+     size	70 15
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS01
+   }
+
+   control					 // id = 4
+   {
+     classID	RADIOBUTTON
+     position	105 49
+     size	70 15
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS02
+   }
+
+   control					  // id = 5
+   {
+     classID	RADIOBUTTON
+     position	105 66
+     size	70 15
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS03
+   }
+
+   control					  // id = 6
+   {
+     classID	RADIOBUTTON
+     position	105 83
+     size	70 15
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS04
+   }
+
+
+   control					  // id = 7
+   {
+     classID	RADIOBUTTON
+     position	105 106
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS05
+   }
+
+   control					 // id = 8
+   {
+     classID	RADIOBUTTON
+     position	105 122
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS06
+   }
+
+   control					 // id = 9
+   {
+     classID	RADIOBUTTON
+     position	105 138
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS07
+   }
+
+   control					 // id = 10
+   {
+     classID	RADIOBUTTON
+     position	105 154
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS08
+   }
+
+   control					 // id = 11
+   {
+     classID	RADIOBUTTON
+     position	105 170
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS09
+   }
+
+   control					  // id = 12
+   {
+     classID	RADIOBUTTON
+     position	105 186
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS10
+   }
+
+   control					  // id = 13
+   {
+     classID	RADIOBUTTON
+     position	105 202
+     size	70 15
+     font	3
+     group	1
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+
+     imageOffset -10 4
+     checkedImage   "check_mark"
+     windowText     UISTR_WC_MISS11
+   }
+
+
+   control					  // id = 14
+   {
+     classID   SPINBUTTON
+     position  0 0
+     badyCtrlID 15
+
+     rightbutton
+     {
+       position   157 222
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sl_focus"
+       checkedImage "sl_push"
+       disabledImage "sl_disabled"
+     }
+
+     leftbutton
+     {
+       position   176 222
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sr_focus"
+       checkedImage "sr_push"
+       disabledImage "sr_disabled"
+     }
+   }
+
+   control					     // id = 15
+   {
+     classID	TEXT
+     position	127 226
+     size	25 11
+     textcolor	169 152 84
+     font	2
+     textformat CENTER
+   }
+
+   control					    // id = 16
+   {
+     classID	BUTTON
+     position	70 243
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "ok_normal"
+     checkedImage   "ok_push"
+     focusedImage   "ok_focus"
+
+     tooltip
+     {
+       toolstr UISTR_WC_MISS12
+     }
+   }
+
+   control					    // id = 17
+   {
+     classID	BUTTON
+     position	104 243
+     size	32 24
+     drawMethod SPRITE
+     buttonStyle SEND_QUIT
+     uncheckedImage "cancel_normal"
+     checkedImage   "cancel_push"
+     focusedImage   "cancel_focus"
+
+     tooltip
+     {
+       toolstr UISTR_CANCEL
+     }
+   }
+
+   control                                      // id = 18
+   {
+     classID    TEXT
+     position   14 223
+     size       105 10
+     font       4
+     textcolor  200 200 200
+     textFormat CENTER_Y / CENTER_X
+     windowText UISTR_WC_MISS16
+   }
+
+   control                                      // id = 19
+   {
+     classID    TEXT
+     position   14 108
+     size       70 10
+     font       4
+     textcolor  200 200 200
+     textFormat CENTER_Y 
+     windowText UISTR_WC_MISS15
+   }
+
+   control                                      // id = 20
+   {
+     classID    TEXT
+     position   14 32
+     size       70 10
+     font       4
+     textcolor  200 200 200
+     textFormat CENTER_Y
+     windowText UISTR_WC_MISS13
+   }
+
+   control                                      // id = 21
+   {
+     classID    TEXT
+     position   14 45
+     size       70 10
+     font       4
+     textcolor  200 200 200
+     textFormat CENTER_Y
+     windowText UISTR_WC_MISS14
+   }
+
+
+ }

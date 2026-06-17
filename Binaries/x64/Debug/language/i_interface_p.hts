@@ -1,0 +1,19 @@
+INTERFACE (i_interface_p.hts)
+hypertext 
+{
+<tab><cl=F0F010>INTERFACE<cl=A2A2A2><br><br>
+<tab><l="hts:\\language\i_mainp_p.hts">Controles<\l><br><br>
+<tab><l="hts:\\language\options_p.hts">Menu principal<\l><br><br>
+<tab><l="hts:\\language\constwin_p.hts">Painel de controle<\l><br><br>
+<tab><l="hts:\\language\statinfo_p.hts">Janela de status<\l><br><br>
+<tab><l="hts:\\language\puppet_p.hts">Janela do personagem<\l><br><br>
+<tab><l="hts:\\language\inventory_p.hts">Inventário<\l><br><br>
+<tab><l="hts:\\language\chat_p.hts">Chat<\l><br><br>
+<tab><l="hts:\\language\hotkeys_p.hts">Atalhos<\l><br><br>
+<tab><l="hts:\\language\clan_p.hts">Janela de Clã<\l><br><br>
+<tab><l="hts:\\language\ally_p.hts">Caixa de guerras e alianças<\l><br><br>
+<tab><l="hts:\\language\group_p.hts">Janela dos grupos<\l><br><br>
+<tab><l="hts:\\language\trade_p.hts">Janela de troca (compra)<\l><br><br>
+<tab><l="hts:\\language\tradechar_p.hts">Janela de troca (venda)<\l><br><br>
+<tab><l="hts:\\language\missions_p.hts">Janela de missão<\l><br><br>
+}

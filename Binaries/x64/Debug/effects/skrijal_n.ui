@@ -1,0 +1,743 @@
+//-------------------------------------------------------------------------
+// Window: skrijal
+//-------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+     sprite
+     {
+      name "c_window"
+      size 205 396
+      texture "i_clan2" 195 238 205 241  195 307 205 310
+      texture "i_stat2" 0 153 205 203  0 346 205 396
+      texture "i_clan2" 0 220 205 256  0 310 205 346
+      texture "i_clan2" 0 0 205 256  0 0 205 256
+      texture "i_clan2" 149 72 172 75  172 307 195 310
+      texture "i_clan2" 0 241 205 256  0 292 205 307
+      texture "i_clan2" 0 72 172 75  0 307 172 310
+      texture "i_clan2" 0 220 205 256  0 256 205 292
+
+      texture "i_journal" 0   74  70  89    40 330 110 345
+      texture "i_journal" 105 74 175  89   110 330 180 345
+     }
+     
+     sprite
+     {
+      name "close_focus"
+      size 14 14
+      texture "i_ctrls" 15 76 29 90  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "close_push"
+      size 14 14
+      texture "i_ctrls" 15 106 29 120  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "close_normal"
+      size 14 14
+      texture "i_ctrls" 15 91 29 105  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "help_focus"
+      size 14 14
+      texture "i_ctrls" 0 76 14 90  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "help_push"
+      size 14 14
+      texture "i_ctrls" 0 106 14 120  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "help_normal"
+      size 14 14
+      texture "i_ctrls" 0 91 14 105  0 0 14 14
+     }
+     
+     sprite
+     {
+      name "sc_polzun"
+      size 24 26
+      texture "i_clan2" 232 38 256 64  0 0 24 26
+     }
+     
+     sprite
+     {
+      name "sc_lbfocus"
+      size 18 18
+      texture "i_clan2" 219 19 237 37  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_lbpush"
+      size 18 18
+      texture "i_clan2" 219 0 237 18  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_lbdis"
+      size 18 18
+      texture "i_clan2" 219 67 237 85  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbfocus"
+      size 18 18
+      texture "i_clan2" 238 19 256 37  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbpush"
+      size 18 18
+      texture "i_clan2" 238 0 256 18  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sc_rbdis"
+      size 18 18
+      texture "i_clan2" 238 67 256 85  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "clan_i01"
+      size 15 15
+      texture "i_clan2" 225 87 240 102  0 0 15 15
+     }
+     
+     sprite
+     {
+      name "clan_i02"
+      size 15 15
+      texture "i_clan2" 241 87 256 102  0 0 15 15
+     }
+     
+     sprite
+     {
+      name "clan_i03"
+      size 15 15
+      texture "i_clan2" 225 103 240 118  0 0 15 15
+     }
+     
+     sprite
+     {
+      name "clan_i04"
+      size 15 15
+      texture "i_clan2" 241 103 256 118  0 0 15 15
+     }
+     
+     sprite
+     {
+      name "clan_i05"
+      size 15 15
+      texture "i_clan2" 241 119 256 134  0 0 15 15
+     }
+     
+     sprite
+     {
+      name "slot_name"
+      size 152 21
+      texture "i_stat2" 0 204 152 225  0 0 152 21
+     }
+     
+     sprite
+     {
+      name "check_mark"
+      size 7 7
+      texture "i_miss" 208 0 215 7  0 0 7 7
+     }
+     
+     sprite
+     {
+      name "poshlina"
+      size 32 16
+      texture "i_stat2" 0 204 16 212  0 0 16 8
+      texture "i_stat2" 0 217 16 225  0 8 16 16
+      texture "i_stat2" 136 204 152 212  16 0 32 8
+      texture "i_stat2" 136 217 152 225  16 8 32 16
+     }
+     
+     sprite
+     {
+      name "spin"
+      size 37 26
+      texture "i_map" 103 120 140 146  0 0 37 26
+     }
+     
+     sprite
+     {
+      name "sl_focus"
+      size 18 18
+      texture "i_ctrls" 0 19 18 37  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sl_normal"
+      size 18 18
+      texture "i_ctrls" 0 0 18 18  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sl_push"
+      size 18 18
+      texture "i_ctrls" 0 38 18 56  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sl_disabled"
+      size 18 18
+      texture "i_ctrls" 0 57 18 75  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sr_focus"
+      size 18 18
+      texture "i_ctrls" 19 19 37 37  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sr_push"
+      size 18 18
+      texture "i_ctrls" 19 38 37 56  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sr_disabled"
+      size 18 18
+      texture "i_ctrls" 19 57 37 75  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "sr_normal"
+      size 18 18
+      texture "i_ctrls" 19 0 37 18  0 0 18 18
+     }
+     
+     sprite
+     {
+      name "slot_simple"
+      size 36 35
+      texture "i_invent" 220 175 256 210  0 0 36 35
+     }
+     
+     sprite
+     {
+      name "slot_simpleborder"
+      size 36 35
+      texture "i_invent" 36 221 72 256  0 0 36 35
+     }
+
+     sprite
+     {
+      name "moneyin_normal"
+      size 37 18
+      texture "I_TRADE2" 77 187 114 205  0 0 37 18
+     }
+     
+     sprite
+     {
+      name "moneyout_normal"
+      size 37 18
+      texture "I_TRADE2" 115 187 152 205  0 0 37 18
+     }
+     
+     sprite
+     {
+      name "money"
+      size 16 16
+      texture "IC_MONEY" 0 0 16 16  0 0 16 16
+     }
+     
+     sprite
+     {
+      name "moneyin_focus"
+      size 37 18
+      texture "I_TRADE2" 77 205 114 223  0 0 37 18
+     }
+     
+     sprite
+     {
+      name "moneyin_push"
+      size 37 18
+      texture "I_TRADE2" 77 223 114 241  0 0 37 18
+     }
+     
+     sprite
+     {
+      name "moneyout_focus"
+      size 37 18
+      texture "I_TRADE2" 115 205 152 223  0 0 37 18
+     }
+     
+     sprite
+     {
+      name "moneyout_push"
+      size 37 18
+      texture "I_TRADE2" 115 223 152 241  0 0 37 18
+     }
+     
+   }
+
+   windowName  "skrijal_n"
+   windowText UISTR_WT_SKJ05
+   drawMethod SPRITE "c_window"
+   showTitle 4 1
+   position  0 50
+   size      205 396
+   font      3
+   rectTitle 10 9 159 28
+   showEffect  ALPHA_IN  0.2500 0.0000 0.0000
+   hideEffect  ALPHA_OUT  0.2500 0.0000 0.0000
+   textcolor 237 208 161 255
+   escapeHandle true
+   canDragDrop true
+   saveLastPosition true
+   
+   control                                   // id = 1
+   {
+    classID Button
+    position  175 13
+    size      14 14
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    
+    tooltip
+    {
+      toolstr UISTR_CLOSEW
+    }
+
+    drawMethod SPRITE
+    checkedImage "close_push"
+    uncheckedImage "close_normal"
+    focusedImage "close_focus"
+    buttonStyle SEND_QUIT
+   }
+   
+   control                                   // id = 2
+   {
+    classID Button
+    position  160 13
+    size      14 14
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    windowHelp "language\scrijal.hts"
+    
+    tooltip
+    {
+      toolstr UISTR_HELP
+    }
+
+    drawMethod SPRITE
+    checkedImage "help_push"
+    uncheckedImage "help_normal"
+    focusedImage "help_focus"
+    buttonStyle SEND_HELP
+   }
+   
+   control                                   // id = 3
+   {
+    classID Button
+    position  45 283
+    size      110 17
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WT_SKJ03
+    drawMethod SPRITE
+    focuscolor 255 239 212
+   }
+   
+   control                                   // id = 4
+   {
+    classID Text
+    position  25 256
+    size      100 20
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WT_SKJ04
+   }
+   
+   control                                   // id = 5
+   {
+    classID Image
+    position  105 258
+    size      32 16
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    image "poshlina"
+   }
+   
+   control                                   // id = 6
+   {
+    classID Image
+    position  140 253
+    size      37 26
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    image "spin"
+   }
+   
+   control                                   // id = 7
+   {
+    classID Edit
+    position  108 258
+    size      26 16
+    font      2
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    textFormat  CENTER
+    maxsymbols 4
+    numeric true
+   }
+   
+   control                                   // id = 8
+   {
+    classID SpinButton
+    position  140 253
+    size      0 0
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    range 0 100
+    badyCtrlID 7
+    notifyChange true
+    
+    leftbutton
+    {
+      position  19 4
+      size      18 18
+      font      0
+      textcolor 255 255 255 255
+      disabledcolor 128 128 128 255
+      drawMethod SPRITE
+      checkedImage "sr_push"
+      uncheckedImage "sr_normal"
+      disabledImage "sr_disabled"
+      focusedImage "sr_focus"
+    }
+    
+    rightbutton
+    {
+      position  1 4
+      size      18 18
+      font      0
+      textcolor 255 255 255 255
+      disabledcolor 128 128 128 255
+      drawMethod SPRITE
+      checkedImage "sl_push"
+      uncheckedImage "sl_normal"
+      disabledImage "sl_disabled"
+      focusedImage "sl_focus"
+    }
+   }
+   
+   control                                   // id = 9
+   {
+    classID Text
+    position  55 35
+    size      135 20
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+   }
+   
+   control                                   // id = 10
+   {
+    classID Text
+    position  57 52
+    size      135 20
+    font      2
+    textcolor 240 240 240 255
+    disabledcolor 128 128 128 255
+   }
+   
+   control                                   // id = 11
+   {
+    classID RadioButton
+    position  25 185
+    size      70 15
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    group 1
+    windowText UISTR_WT_SKJ01
+    checkedImage "check_mark"
+    focuscolor 255 239 212
+    imageOffset -10 4
+   }
+   
+   control                                   // id = 12
+   {
+    classID RadioButton
+    position  85 185
+    size      70 15
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    group 1
+    windowText UISTR_WT_SKJ02
+    checkedImage "check_mark"
+    focuscolor 255 239 212
+    imageOffset -10 4
+   }
+   
+   control                                   // id = 13
+   {
+    classID ListItem
+    position  15 80
+    size      152 100
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    canSelectItems true
+    selectSprite "slot_name"
+    
+    itemTemplate
+    {
+      position  0 0
+      size      152 21
+      font      0
+      textcolor 255 255 255 255
+      
+      control                                   // id = 1
+      {
+       classID Image
+       position  2 3
+       size      15 15
+       font      0
+       textcolor 255 255 255 255
+       disabledcolor 128 128 128 255
+      }
+      
+      control                                   // id = 2
+      {
+       classID Text
+       position  22 3
+       size      130 15
+       font      2
+       textcolor 255 255 255 255
+       disabledcolor 128 128 128 255
+       textFormat  CENTER_Y
+      }
+    }
+    
+    vscrollbar
+    {
+      position  161 17
+      size      16 91
+      font      0
+      textcolor 255 255 255 255
+      disabledcolor 128 128 128 255
+      scrollSpr "sc_polzun" 24 26
+      deltaStep 10
+      
+      leftbutton
+      {
+        position  -1 -17
+        size      18 18
+        font      0
+        textcolor 255 255 255 255
+        disabledcolor 128 128 128 255
+        drawMethod SPRITE
+        checkedImage "sc_lbpush"
+        disabledImage "sc_lbdis"
+        focusedImage "sc_lbfocus"
+      }
+      
+      rightbutton
+      {
+        position  -1 90
+        size      18 18
+        font      0
+        textcolor 255 255 255 255
+        disabledcolor 128 128 128 255
+        drawMethod SPRITE
+        checkedImage "sc_rbpush"
+        disabledImage "sc_rbdis"
+        focusedImage "sc_rbfocus"
+      }
+    }
+   }
+   
+   control                                   // id = 14
+   {
+    classID Slot
+    position  24 216
+    size      32 32
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    slotfull "slot_simple"
+    slotempty "slot_simple"
+    slotborder "slot_simpleborder"
+    slotpicofs -2 -1
+    textofs -2 2
+   }
+   
+   control                                   // id = 15
+   {
+    classID Slot
+    position  66 216
+    size      32 32
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    slotfull "slot_simple"
+    slotempty "slot_simple"
+    slotborder "slot_simpleborder"
+    slotpicofs -2 -1
+    textofs -2 2
+   }
+   
+   control                                   // id = 16
+   {
+    classID Slot
+    position  108 216
+    size      32 32
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    slotfull "slot_simple"
+    slotempty "slot_simple"
+    slotborder "slot_simpleborder"
+    slotpicofs -2 -1
+    textofs -2 2
+   }
+   
+   control                                   // id = 17
+   {
+    classID Slot
+    position  150 216
+    size      32 32
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    slotfull "slot_simple"
+    slotempty "slot_simple"
+    slotborder "slot_simpleborder"
+    slotpicofs -2 -1
+    textofs -2 2
+   }
+   
+   /*control                                   // id = 18
+   {
+    classID Slot
+    position  55 327
+    size      32 32
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    slotfull "slot_simple"
+    slotempty "slot_simple"
+    slotborder "slot_simpleborder"
+    slotpicofs -2 -1
+    textofs -2 2
+   }*/
+
+   control                                   // id = 18
+   {
+    classID Text
+    position  40 332
+    size      135 12
+    font      2
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    textFormat  CENTER
+   }
+   
+   control                                   // id = 19
+   {
+    classID Button
+    position  62 368
+    size      84 17
+    font      3
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    windowText UISTR_WT_SKJ06
+    textFormat  CENTER
+    drawMethod SPRITE
+    focuscolor 255 239 212
+   }
+   
+   control                                   // id = 20
+   {
+    classID Text
+    position  12 311
+    size      181 13
+    font      2
+    textcolor 237 208 161 255
+    disabledcolor 128 128 128 255
+    setwindowText "..."
+    textFormat  CENTER
+   }
+   
+   control									// id = 21
+   {
+     classID IMAGE
+     size    32 32
+     position 18 38     
+   }
+
+   control                                   // id = 22
+   {
+    classID Image
+    position  13 327
+    size      20 19
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    image "money"
+   }
+
+   control                                   // id = 23
+   {
+    classID Button
+    position  47 349
+    size      37 18
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    drawMethod SPRITE
+    checkedImage "moneyin_push"
+    uncheckedImage "moneyin_normal"
+    focusedImage "moneyin_focus"
+   }
+   
+   control                                   // id = 24
+   {
+    classID Button
+    position  135 349
+    size      37 18
+    font      0
+    textcolor 255 255 255 255
+    disabledcolor 128 128 128 255
+    drawMethod SPRITE
+    checkedImage "moneyout_push"
+    uncheckedImage "moneyout_normal"
+    focusedImage "moneyout_focus"
+   }
+
+ }

@@ -1,0 +1,15 @@
+SELEÇÃO DA MISSÃO (missions_p.hts)
+hypertext
+{
+<tab><cl=F0F010>SELEÇÃO DA MISSÃO<cl=A2A2A2><br><br>
+<tab>Na janela de missões você pode selecionar o tipo, local e numero de participantes. As seguintes missões estão disponíveis:<br>
+<tab><cl=FFFFFF>Missão de título<cl=B0B0B0> - Se você completar esta missão com sucesso ganhará 1 título como recompensa.<br>
+<tab><cl=FFFFFF>Missão de nível<cl=B0B0B0> - Se tiver sucesso, ganhará 1 nível.<br>
+<tab><cl=FFFFFF>Missão de dinheiro<cl=B0B0B0> - Se completar tal missão você recebera uma quantia em dinheiro.<br>
+<tab><cl=FFFFFF>Missão de karma<cl=B0B0B0> - Se completar este tipo de missão, seu karma aumenta.<br><br>
+<tab>Sua missão pode ser próxima a você ou em um dos continentes. Se selecionar uma missão próxima, você terá que fazê-la não muito distante de onde você pegou a chave. Entretanto, sua recompensa será 3 ou 4 vezes menor.<br>
+<tab>O numero de participantes de uma missão pode variar de 1 até 4 jogadores, com crescimento proporcional na dificuldade da missão. Quando uma missão é terminada, todo mundo que estiver no local da missão (numa caverna, por exemplo) recebe a recompensa. Todo membro da equipe é obrigado a ter 1 chave da missão. O jogador que pegar a chave original simplesmente <cl=FFFFFF>usa<cl=B0B0B0> em todos outros simplesmente fazendo uma copia necessária. Até 5 pessoas podem fazer a missão mas a recompensa será dividida entre todos 5.<br>
+<tab>Lembre-se, depois que a chave ter sido pega, ela dura somente 1 dia no tempo Sphere (Aproximadamente 2 horas no tempo real).<br>
+<tab>Você não pode pegar uma Segunda chave se ja estiver com uma. E uma vez com a chave não poderá se livrar dela até que o tempo expire.<br>
+<tab>Você pode ler a descrição da missão simplesmente <cl=FFFFFF>olhando<cl=B0B0B0> na chave da missão.<br>
+}

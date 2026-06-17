@@ -1,0 +1,218 @@
+//=====================================================================
+// Definition   : king head dump
+// Effect number: 320
+//=====================================================================
+
+effect_def
+{
+   effect_name   "king boom"
+   effect_number 320
+   effect_time   256
+
+   boundbox 1.5 0.2 1.5 -1.5 -10.0 -1.5
+
+   subeffects_num   2
+
+   subeffect 0 EFF_PSYSTEM "fire"
+   subeffect 1 EFF_PSYSTEM "energy"
+
+   light_def
+   {
+     light_pos   -0.0 -2.5 0.0
+     
+     color_track
+     {
+       numkeys 5
+       key 0   0.0    0.0    0.0   0.0
+       key 1  16.0    0.0    0.0   0.0
+       key 2  32.0 1500.0 1500.0 150.0
+       key 3 160.0 1500.0 1500.0 150.0
+       key 4 200.0    0.0    0.0   0.0   
+     }
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "fire"
+  particles_num     160
+  psystem_flags     PS_ROTATEY | PS_EMITCTRLRHW | PS_NOHEAVYATTACH
+  self_illumination 255
+
+  position_track
+  {
+    interpolation I_COSINE
+    numkeys 3
+    key     0   32.0  0.0  0.0  0.0
+    key     1   96.0  0.0 -2.0  0.0
+    key     2  160.0  0.0  0.0  0.0
+  }
+  
+  // power track definition
+  power_track
+  {
+     numkeys 3
+     key 0  32.0 1.0
+     key 1 160.0 1.0
+     key 2 220.0 0.0
+  }
+
+  rotation_track
+  {
+     numkeys 2
+     key 0   0.0  0.0    0.0  0.0
+     key 1 256.0  0.0  720.0  0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_RING
+     randseed         -1
+     radius           0.45
+     height           0.0
+     emit_num         3.0
+
+     // PS_EMITCTRLRHW = (radius,height,width)
+     emissionpos_track
+     {
+       interpolation I_COSINE
+       numkeys 6
+       key     0   32.0  0.2   0.0  0.0
+       key     1   64.0  0.7   0.0  0.0
+       key     2   96.0  0.35  0.0  0.0
+       key     3  112.0  0.7   0.0  0.0
+       key     4  132.0  0.35  0.0  0.0
+       key     5  160.0  0.9   0.0  0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          40.0
+    lifetime_rf       20.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   3
+
+        key  0  0.0  0.07
+       rkey  1  0.6   0.2  0.2
+        key  2  1.0  0.05
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0 255 255 85  150
+        key  1   0.2 255 155 85  150
+        key  2   0.3 255 155 15  150
+        key  3   1.0 255 155 15  0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+        key 0 0.0 0.0 -0.01 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "energy"   
+  particles_num  1          
+  psystem_flags  PS_TRANSLATEONLY | PS_STATICEMITALL
+  self_illumination 255
+  transform_vec0 1.0 5.0 1.0
+  
+  position_track
+  {
+     numkeys 2
+     key     0  0.0 0.0 -10.0 0.0
+     key     1 32.0 0.0  0.0 0.0
+  }
+
+  emission_def
+  {
+     shape            EMITSHAPE_POINT
+     randseed         -1     
+  }
+  
+  particleborn_def
+  {
+    lifetime          32.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    type      PS_TANIMCOORD
+    texture   "fx_power"
+    blendmode PS_BLENDADD
+    frame 0  0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0
+  }
+
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.0
+        key 1 1.0 1.0
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3
+        key  0   0.0 255 255 255 255
+        key  1   0.8 255 255 255 255
+        key  2   1.0 255 255 255 0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+  }
+}
+

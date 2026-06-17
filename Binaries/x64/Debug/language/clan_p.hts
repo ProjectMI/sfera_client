@@ -1,0 +1,20 @@
+JANELA DO CLÃ (clan_p.hts)
+hypertext
+{
+<tab><cl=F0F010>CLÃ<cl=A2A2A2><br><br>
+<tab>A janela é ativada pressionando a tecla "N"(default) ou "Organização" na <l="hts:\\language\constwin_p.hts">painel de controle direito.<\l><br>
+<tab>Se você não for um membro, você verá a <cl=FFFFFF>Janela de criação de organização.<cl=B0B0B0> <br>
+<br><tab><cl=00FF00>Criação de organização<cl=A2A2A2><br>
+<tab>Choose <cl=FFFFFF>"criar organização"<cl=B0B0B0> para ajustar o nome de sua futura organização e selecionar seu emblema (desligado no momento). Você automaticamente se torna um <cl=FFFFFF>Lorde supremo<cl=B0B0B0> na nova organização. <cl=FF0000>O nome não deve conter vocabulário obsceno e frases ofensivas.<cl=B0B0B0><br>
+<tab>Uma vez no item de menu <cl=FFFFFF>"Unir"<cl=B0B0B0> é selecionado, uma linha correspondente é "adicionada" no cursor. Clique com botão esquerdo do mouse no <cl=FFFFFF>Lorde supremo<cl=B0B0B0> ou <cl=FFFFFF>seneschal<cl=B0B0B0> da organização que você necessita. Eles recebem sua requisição para união e decidem se vão ou não admiti-lo.<br>
+<br><tab><cl=00FF00>Hierarquia do Clã<cl=A2A2A2><br>
+<tab>Every clan has four stages:<br>
+<tab><cl=FFFFFF>Lorde supremo<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Seneschal<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Vassalo<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Neófito<cl=B0B0B0><br>
+A <cl=FFFFFF>Lorde supremo<cl=B0B0B0> é qualificado nas admissões, exclusões, evoluir ou rebaixar seneschals, vassalos e neófitos.<br>
+A <cl=FFFFFF>Seneschal<cl=B0B0B0> é qualificado a admitir, excluir, evoluir ou rebaixar vassalos e neófitos.<br>
+<cl=FFFFFF>Vassalo<cl=B0B0B0> é qualificado para exclusão de neófitos.<br>
+
+}

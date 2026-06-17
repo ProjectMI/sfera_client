@@ -1,0 +1,20 @@
+CHAT (chat_p.hts)
+hypertext
+{
+<tab><cl=F0F010>CHAT<cl=A2A2A2><br><br>
+<tab>A janela de chat tem duas formas: cheia e minimizada. Use o botão "chat" no <l="hts:\\language\constwin_p.hts">painel de sistema do lado direito<\l> para escolher entre os formulários.<br>
+<tab><cl=FFFFFF>No menor formulário<cl=B0B0B0> você vê as 2 ultimas linhas de mensagens. Pressione "/" (default) para ver sua mensagem. Você também verá o campo de texto. A inserção estará terminada quando pressionar enter. Para cancelar pressione"fechar janela" ou entre com uma linha vazia.<br>
+<tab>As mensagens podem ser enviadas da seguinte maneira:<br>
+<tab><cl=FFFFFF>Sussurro<cl=B0B0B0> - sua mensagem vai ser enviada até a distancia de 10 metros de você.<br>
+<tab><cl=FFFFFF>Conversa normal<cl=B0B0B0> - sua mensagem vai ser enviada até uma distancia de 50 metros de você.<br>
+<tab><cl=FFFFFF>Troca<cl=B0B0B0> - Mensagens de troca.<br>
+<tab><cl=FFFFFF>Organização<cl=B0B0B0> - sua mensagem vai ser enviada para os membros de sua organização.<br><br>
+<tab><cl=FFFFFF>Grupo<cl=B0B0B0> - sua mensagem vai ser enviada para membros do seu grupo.<br><br>
+<tab><cl=FFFFFF>Na maneira de formulário cheio<cl=B0B0B0> você poderá ver várias linhas e centenas de mensagens usando scroll bar. Use a mesma tecla "/" para inserir ou clique no campo que esta na tela.<br> Você também pode ajustar filtros para a mensagem usando botões na parte superior da janela de chat: conversa comum, mensagens de organização, mensagens de sistema, mensagens de perigo, mensagens de grupos e mensagens de troca.<br>
+<tab>Você pode <cl=FFFFFF>selecionar entre tipos de mensagens<cl=B0B0B0> usando as teclas de funções:<br>
+<cl=FFFFFF>F2<cl=B0B0B0><tab>- sussurro<br>
+<cl=FFFFFF>F3<cl=B0B0B0><tab>- conversa normal<br>
+<cl=FFFFFF>F4<cl=B0B0B0><tab>- troca<br>
+<cl=FFFFFF>F6<cl=B0B0B0><tab>- mensagens de organização<br>
+<cl=FFFFFF>F7<cl=B0B0B0><tab>- mensagens de grupo<br>
+}

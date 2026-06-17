@@ -1,0 +1,66 @@
+INFO "PARÂMETROS DO PERSONAGEM" (i_charact_p.hts)
+hypertext
+{
+<tab><cl=F0F010> PARÂMETROS DO PERSONAGEM <cl=A2A2A2><br><br>
+<br><tab><cl=00FF00>Parametros básicos<cl=A2A2A2><br>
+<tab>Os parâmetros básicos de um personagem na Sphere contem <cl=FFFFFF>Saúde<cl=B0B0B0>, <cl=FFFFFF>Prana<cl=B0B0B0>, <cl=FFFFFF>Fartura<cl=B0B0B0>, e <cl=FFFFFF>Karma<cl=B0B0B0>.<br>
+<tab>A saúde é o estado físico do personagem. É o parâmetro mais importante. Se chegar em 0 o personagem <l="hts:\\language\i_reincarn_p.hts"> morre<\l>. Com o tempo a saúde é restaurada.<br><br>
+<tab>Prana é a força da vida universal que é gasta durante combate ou ações mágicas. Se a Prana é insuficiente seu personagem pode ficar desamparado.<br><br>
+<tab>Karma é a dimensão de boas ou más ações. Ninguém sabe exatamente o seu estado real do seu próprio karma. Você somente poderá ver o valor aproximado: <br>
+<cl=FFFFFF><tab>"Muito ruim"<br>
+<tab>"Ruim"<br>
+<tab>"Neutro"<br>
+<tab>"Bom"<br>
+<tab>"Abençoado"<br><br><cl=B0B0B0>
+<tab>Karma determina onde o personagem <l="hts:\\language\i_reincarn_p.hts">reencarnará<\l> após a morte, assim como afeta a capacidade de usar <l="hts:\\language\i_mantras_p.hts">mantras<\l>. Matar outro personagem ou criaturas neutras podem piorar seu karma, enquanto matar perigosos monstros poderá elevá-la.<br><br>
+<tab>Cada personagem em Sphere necessita comer. Quanto mais baixo seu estado de fartura for, mais lenta será sua restauração de saúde.  Quando fartura for 0 a saúde não se restabelece completamente.<br>
+<br><tab><cl=00FF00>Título e Nível<cl=A2A2A2><br>
+<tab><cl=FFFFFF>Título<cl=B0B0B0> indica o grau de desenvolvimento na arte de combate, enquanto que o <tab><cl=FFFFFF>Nível<cl=B0B0B0> - serve para mostrar o grau de habilidade mágica. Existem 12 títulos e 12 níveis, quebrada em 5 classes (num total de 60 graus). Abaixo está uma lista de títulos e níveis (com a respectiva classe indicada entre parênteses).<br>
+<br><tab><cl=F0F010>Títulos<br>
+<tab><cl=00FF00>pedestre (1-5)<br>
+<tab>convidado (6-10)<br>
+<tab>cidadão (11-15)<br>
+<tab>morador (16-20)<br>
+<tab>escudeiro (21-25)<br>
+<tab>cavalheiro (26-30)<br>
+<tab>barão (31-35)<br>
+<tab>visconde (36-40) <br>
+<tab>conde (41-45)<br>
+<tab>marquês (46-50)<br>
+<tab>duque (51-55)<br>
+<tab>príncipe (56-60)<br>
+<br><tab><cl=F0F010>Níveis<br>
+<tab><cl=00FF00>inculto (1-5) <br>
+<tab>candidato (6-10) <br>
+<tab>pupilo (11-15) <br>
+<tab>noviço (16-20) <br>
+<tab>iniciante (21-25) <br>
+<tab>estudante (26-30) <br>
+<tab>bacharéu (31-35) <br>
+<tab>mestre (36-40) <br>
+<tab>doutor (41-45) <br>
+<tab>professor (46-50) <br>
+<tab>reitor (51-55) <br>
+<tab>chanceler (56-60) <br><br><cl=B0B0B0>
+<tab>Começando do 21º grau do título (escudeiro) ao 26º como nível (bacharel), o personagem é considerado um nobre.<br>
+<tab>Para receber o próximo título ou nível você deverá ganhar certa quantia de <cl=FFFFFF>símbolo de título<cl=B0B0B0> e <cl=FFFFFF>símbolo de nível<cl=B0B0B0>.<br>
+<tab>Quando for para o próximo grau você recebe certa quantia de <cl=FFFFFF>título simples<cl=B0B0B0> e <cl=FFFFFF>nível simples<cl=B0B0B0>. Você pode usar para elevar os pontos de suas <cl=FFFFFF>habilidades e elementos<cl=B0B0B0>. Recebendo um novo título você terá mais elementos, crescimento de nível proporcionará mais elementos de níveis também. Portanto, no primeiro caso crescerá suas <cl=FFFFFF>habilidades<cl=B0B0B0>, enqunanto no segundo caso suas capacidades de manobrar os <cl=FFFFFF>elementos<cl=B0B0B0>. Quando um novo personagem entrar em Sphere ele recebe 4 elementos de título e 4 elementos de nível, que poderá distribuir como desejar.<br>
+<br><tab><cl=00FF00>Skills<cl=A2A2A2><br>
+As habilidades refletem no crescimento físico de seu personagem, segurando objetos que não são mágicos ou qualquer outro objeto. Abaixo esta a lista das funções de habilidades.<br>
+<tab><cl=FF0000>Força<cl=B0B0B0> -  Manejo de machado, parte de manejo com espada ou besta.<br>
+<tab><cl=FF0000>Habilidade<cl=B0B0B0> -  Manejo de espada, parte de manejo de machado ou besta.<br>
+<tab><cl=FF0000>Precisão<cl=B0B0B0> -  Manejo de besta e armas de arremesso (catapulta).<br>
+<tab><cl=FF0000>Resistência<cl=B0B0B0> -  Manejo de escudos, Armadura de correntes e outro tipo de proteção, e manejo de espada pesada e machados.<br>
+<br><tab><cl=00FF00>Elementos<cl=A2A2A2><br>
+<tab>O grau de elementos reflete sua capacidade nos diferentes tipos de magia.<br>
+<tab><cl=0000FF>Terra<cl=B0B0B0> -  Manejo de proteções mágicas significa: amuletos, braceletes, etc. A magia da terra é diretamente ligada a proteção; ataque raramente é usado, porem forte.<br>
+<tab><cl=0000FF>Ar<cl=B0B0B0> -  manejo de magias de combate em distancias e viajem mágica pelo espaço.<br>
+<tab><cl=0000FF>Água<cl=B0B0B0> -  Manejo da magia de cura. O ataque, como no caso da terra, também é raro e forte.<br>
+<tab><cl=0000FF>Fogo<cl=B0B0B0> -  Manejo da magia de combate corpo a corpo, que consiste na maior causa de danos ao inimigo. <br><br>
+<tab>O grau de habilidade e elementos de seu personagem determina sua especialização e existência em Sphere, sendo este o motivo pelo qual você deve pensar sobre estratégia de crescimento <l="hts:\\language\i_starting_p.hts">desde o começo.<\l><br>
+<br><tab><cl=00FF00>Combate e Proteção mágica<cl=A2A2A2><br> 
+<tab>Esta proteção secundária determina as habilidades no combate e danos mágicos. Estes parâmetros estão sujeitos ao nível de proteção de cada objeto (armaduras, escudos, amuletos, etc., veja também<l="hts:\\language\puppet_p.hts">"Janela do personagem"<\l>), assim como nos <l="hts:\\language\i_mutators.hts">modificadores<\l>.<br>
+<br><tab><cl=00FF00>Clã<cl=A2A2A2><br>
+<tab>Alem do crescimento entre hierarquia de títulos e níveis seu personagem tambem pode fazer parte de uma hierarquia do Clã. Para fazer isto você pode tanto <l="hts:\\language\clan_p.hts">criar um novo clã ou se unir em algum já existente.<\l><br>
+<br><tab><cl=FFFFFF>Veja também: <l="hts:\\language\statinfo_p.hts">"Janela de Status"<\l>.<cl=B0B0B0>
+}

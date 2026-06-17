@@ -1,0 +1,20 @@
+CLAN WINDOW (clan.hts)
+hypertext
+{
+<tab><cl=F0F010>CLAN<cl=A2A2A2><br><br>
+<tab>The clan window is activated by pressing the "N" key (by default) or "clan" on the <l="hts:\\language\constwin.hts">right system panel.<\l><br>
+<tab>If you are not a clan member, you will see the <cl=FFFFFF>clan creation window.<cl=B0B0B0> <br>
+<br><tab><cl=00FF00>Clan creation<cl=A2A2A2><br>
+<tab>Choose <cl=FFFFFF>"create clan"<cl=B0B0B0> to set the name of your future clan and select its emblem (off at the moment). You automatically become a <cl=FFFFFF>liege lord<cl=B0B0B0> in the new clan. <cl=FF0000>The clan name must not contain rude or obscene vocabulary and offensive phrases.<cl=B0B0B0><br>
+<tab>Once the menu item <cl=FFFFFF>"join clan"<cl=B0B0B0> is selected, a corresponding line is "attached" to the cursor. Left-click on the <cl=FFFFFF>liege lordå<cl=B0B0B0> or <cl=FFFFFF>seneschal<cl=B0B0B0> of the clan you need. They receive your request to join the clan and decide to admit or not.<br>
+<br><tab><cl=00FF00>clan hierarchy<cl=A2A2A2><br>
+<tab>Every clan has four stages:<br>
+<tab><cl=FFFFFF>Liege lord<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Seneschal<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Vassal<cl=B0B0B0><br>
+<tab><cl=FFFFFF>Neophyte<cl=B0B0B0><br>
+A <cl=FFFFFF>Liege lord<cl=B0B0B0> is entitled to admit to the clan, exclude from the clan, upgrade and downgrade seneschals, vassals and neophytes.<br>
+A <cl=FFFFFF>Seneschal<cl=B0B0B0> is entitled to admit to the clan, exclude from the clan, upgrade and downgrade vassals and neophytes.<br>
+<cl=FFFFFF>Vassal<cl=B0B0B0> is entitled to exclude neophytes from the clan.<br>
+
+}

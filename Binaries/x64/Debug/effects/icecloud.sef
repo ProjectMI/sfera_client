@@ -1,0 +1,109 @@
+//=====================================================================
+// Definition   : Голубое облако от ледяной стрелы
+// Effect number: 431
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "icecloud"
+   effect_number  431
+   effect_time    256
+
+   boundbox 1.0 -0.2 1.0 -1.0 -2.2 -1.0
+
+   subeffects_num 1
+   
+   effftype            0
+
+
+   subeffect 0 EFF_PSYSTEM "lighting"
+}
+
+
+// particle system
+psystem_def
+{
+  psystem_name   "lighting"        // particle system reference name
+  particles_num  60                // number of particles
+  psystem_flags  PS_TRANSLATEONLY
+  self_illumination 255
+
+  position_track
+  {
+     numkeys 1
+     key 0 0.0 0.0 -1.0 0.0
+  }
+
+  // power track
+  power_track
+  {
+     numkeys 3
+     key     0   0.0 1.0
+     key     1 220.0 1.0
+     key     2 256.0 0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_SPHERE
+     randseed         -1
+     radius           0.5
+     emit_num         1.0
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          32.0
+    lifetime_rf       32.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 4
+    animspeed 0
+    texture   "fx_bclouds"
+    type      PS_TANIMCOORD
+    frame 0  0.000 0.000 0.500 0.000 0.500 0.500 0.000 0.500
+    frame 1  0.500 0.000 1.000 0.000 1.000 0.500 0.500 0.500
+    frame 2  0.000 0.500 0.500 0.500 0.500 1.000 0.000 1.000
+    frame 3  0.500 0.500 1.000 0.500 1.000 1.000 0.500 1.000
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   2
+        key 0 0.0 0.0
+       rkey 1 1.0 0.7 0.7
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0 100 150 250 255
+        key  1   1.0 100 150 250 0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     texture_frame  RANDOM
+  }
+}
+
+

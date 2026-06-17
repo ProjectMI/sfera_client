@@ -1,0 +1,7 @@
+LIBRO DELLA MAPPA (mapbook.hts)
+hypertext
+{
+<tab><cl=F0F010>LIBRO DELLA MAPPA<cl=A2A2A2><br><br>
+<tab>Si possono tenere tutte le mappe in questo libro. Per aprire una mappa, doppio click col tasto sinistro del mouse sul nome della mappa<br>
+<tab>Il tasto "M" (default) apre la mappa del luogo dove ci si trova nel momento dell'azione. Se ci sono più di una mappa, verrà aperta la prima della lista.<br>
+} 

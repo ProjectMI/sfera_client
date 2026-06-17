@@ -1,0 +1,104 @@
+//=====================================================================
+// Definition   : MazeStars
+// Effect number: 622
+//=====================================================================
+
+// effect definition
+effect_def
+{
+   effect_name    "MazeStars"
+   effect_number  622
+   effect_time    -1
+   effect_timelimit 256
+
+   subeffects_num 1
+   subeffect 0 EFF_PSYSTEM "stars"
+
+   boundbox 2.2 2.0 2.2 -2.2 -2.0 -2.2
+
+   light_def
+   {
+     light_pos   0.0 0.0 0.0
+     light_color 255 15 15 5
+     brightness  12.0 0.0   
+   }   
+}
+
+psystem_def
+{
+  psystem_name   "stars"
+  particles_num  250
+  psystem_flags  PS_ROTATEY | PS_USEDISTORTION
+  self_illumination 255
+  distortion_vec 0.02 0.02 0.02
+    
+  rotation_track
+  {
+     numkeys 2
+     key 0   0.0 0.0 0.0 0.0
+     key 1 256.0 0.0 360.0 0.0
+  }
+
+  emission_def
+  {
+     shape            EMITSHAPE_BOX
+     radius           3.0
+     width            3.0
+     height           3.0
+     emit_num         3.0
+  }
+
+  particleborn_def
+  {
+    lifetime          64.0
+    lifetime_rf       32.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+        rkey 0 0.0 0.1 0.3
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   3       
+        key  0   0.0 255 45 15 0
+        key  1   0.1 255 45 15 255
+        key  2   1.0 255 45 15 0
+     }
+
+     velocity_track
+     {
+       track_num 0
+       numkeys   1
+       mrkey 0 0.0 0.0 0.0 0.0 0.02 0.02 0.02
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+
+

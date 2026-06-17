@@ -1,0 +1,227 @@
+//=====================================================================
+// Definition   : Fireworks2 blue
+// Effect number: 735
+//=====================================================================
+
+effect_def
+{
+   effect_name      "fireworks2 blue"
+   effect_number    735
+   effect_time      -1
+   effect_timelimit 192
+  
+   worktime         192 0
+   sleeptime        192 128
+
+   subeffects_num 2
+   subeffect 0 EFF_PSYSTEM "stars"
+   subeffect 0 EFF_PSYSTEM "stars2"
+}
+
+
+psystem_def
+{
+  psystem_name   "stars"
+  particles_num  500
+  psystem_flags  PS_TRANSLATEONLY | PS_USEDISTORTION
+  self_illumination 255
+  distortion_vec 0.006 0.0 0.006
+
+  emission_def
+  {
+     shape            EMITSHAPE_POINT
+     randseed         -1     
+     emit_num         3.0
+
+     emission_track
+     {
+         numkeys 2
+         key 0 1.0 200.0
+         key 1 2.0 0.0
+     }
+  }
+
+  particleborn_def
+  {
+    lifetime         300.0
+    lifetime_rf        4.0
+  }
+
+  texture_def
+  {
+    numframes 1
+    animspeed 0
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+     nvelocity_tracks    1
+     ngravitation_tracks 1
+
+     size_track
+     {
+        track_num 0
+        numkeys   3
+        rkey 0 0.0 0.1 0.1
+        key  1 0.5 0.25
+       rkey  2 0.51 0.4 0.2
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   5
+        key  0   0.0  55 155 255 50
+        key  1   0.3  55 155 255 50
+        key  2   0.5  55 155 255 100
+        key  3   0.51 55 155 255 255
+        key  4   1.0  255 255 255 0
+     }
+
+     velocity_track
+     {
+	track_num 0
+	numkeys 3
+        key 0 0.0  0.0 0.0 0.0
+        key 1 0.3  0.0 0.0 0.0
+      mrkey 2 0.31 0.0 0.0 0.0 0.2 0.0 0.2
+     }
+
+     gravitation_track
+     {
+        track_num 0
+        numkeys 3
+       rkey 0 0.0 0.0 -0.15 0.0 0.0 -0.02 0.0
+        key 1 0.3 0.0 -0.15 0.0
+        key 2 0.4 0.0  0.05 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+     gravitation_track 0
+  }
+}
+
+
+psystem_def
+{
+  psystem_name      "stars2"
+  particles_num     500
+  psystem_flags     PS_ROTATEY | PS_EMITCTRLRHW | PS_NOHEAVYATTACH
+  self_illumination 255
+
+  position_track
+  {
+    interpolation I_COSINE
+    numkeys 3
+    key     0   0.0  0.0  0.0  0.0
+    key     1  108.0  0.0 -15.0  0.0
+    key     2  192.0  0.0 -0.0  0.0
+  }
+  
+  // power track definition
+  power_track
+  {
+     numkeys 2
+     key 0 128.0 1.0
+     key 1 192.0 0.0
+  }
+
+  rotation_track
+  {
+     numkeys 2
+     key 0   0.0  0.0    0.0  0.0
+     key 1 192.0  0.0  720.0  0.0
+  }
+
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_RING
+     randseed         -1
+     radius           0.45
+     height           0.0
+     emit_num         3.0
+
+     // PS_EMITCTRLRHW = (radius,height,width)
+     emissionpos_track
+     {
+       interpolation I_COSINE
+       numkeys 6
+       key     0   32.0  0.2   0.0  0.0
+       key     1   64.0  1.7   0.0  0.0
+       key     2   96.0  0.35  0.0  0.0
+       key     3  112.0  0.7   0.0  0.0
+       key     4  132.0  0.35  0.0  0.0
+       key     5  160.0  0.9   0.0  0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          80.0
+    lifetime_rf       5.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 1
+    texture   "fx_lens01"
+    blendmode PS_BLENDADD
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nvelocity_tracks    1
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   3
+
+        key  0  0.0  0.17
+       rkey  1  0.6  0.4 0.4
+        key  2  1.0  0.15
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   4
+        key  0   0.0  55 155 255 100
+        key  1   0.5  55 155 255 100
+        key  2   0.51 55 155 255 255
+        key  3   1.0  255 255 255 0
+     }
+
+     velocity_track
+     {
+        track_num 0
+        numkeys 1
+        key 0 0.0 0.0 -0.01 0.0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     velocity_track 0
+  }
+}
+

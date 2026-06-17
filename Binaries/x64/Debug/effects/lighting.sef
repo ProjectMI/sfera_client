@@ -1,0 +1,109 @@
+//=====================================================================
+// Definition   : 
+// Effect number: 410
+//=====================================================================
+
+effect_def
+{
+   effect_name   "lighting"
+   effect_number 410
+   effect_time   -1
+
+   subeffects_num   1
+
+   subeffect 0 EFF_PSYSTEM "lighting"
+
+   light_def
+   {
+     light_pos   0.0 -1.0 0.0
+     
+     color_track
+     {
+       numkeys 3
+       key 0   0.0 0.0 0.0 0.0
+       key 1   1.0 2500.0 2500.0 2500.0
+       key 2  20.0 0.0 0.0 0.0
+     }
+   }
+}
+
+
+psystem_def
+{
+  psystem_name      "lighting"
+  particles_num     1
+  psystem_flags     PS_TRANSLATEONLY | PS_NOHEAVYATTACH
+  self_illumination 255
+  transform_vec0 1.0 2.0 1.0
+
+  position_track
+  {
+    numkeys 1
+    key     0   0.0  0.0 -3.0  0.0
+  }
+  
+  // particle emission definition
+  emission_def
+  {
+     shape            EMITSHAPE_DISK2
+     randseed         -1
+     radius           30.0
+     height           0.0
+     width            12.0
+     emission_track
+     {
+	numkeys 2
+        key 0 0.0 1.0
+	key 1 1.0 0.0
+     }
+  }
+
+  // particle born definition
+  particleborn_def
+  {
+    lifetime          16.0
+    lifetime_rf       16.0
+  }
+
+  // texture definition
+  texture_def
+  {
+    numframes 2
+    animspeed 0
+    frame 0  "fx_light01"
+    frame 1  "fx_light02"
+    blendmode PS_BLENDADD  
+  }
+
+  // particle tracks definition
+  particletracks_def
+  {
+     nsize_tracks        1
+     ncolor_tracks       1
+
+     size_track
+     {
+        track_num 0
+        numkeys   1
+       rkey  0  0.0   3.0  2.55
+     }
+
+     color_track
+     {
+        track_num 0
+        numkeys   2
+        key  0   0.0  255 255 255  255
+        key  1   1.0  255 255 255  0
+     }
+  }
+
+  particles_def
+  {
+     select all
+     size_track     0
+     color_track    0
+     texture_frame  RANDOM
+  }
+}
+
+

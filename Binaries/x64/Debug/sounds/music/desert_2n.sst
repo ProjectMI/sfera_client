@@ -1,0 +1,35 @@
+soundtrack
+{
+  audio_file "sounds\music\hr\haron_night_1.ogg"
+  volume 1.0
+
+  samples
+  {
+sample 01 00:00.000 00:17.925
+sample 02 00:20.990 00:38.963
+sample 03 00:41.842 01:00.093
+sample 04 01:02.972 01:21.037
+sample 05 01:24.056 01:42.074
+sample 06 01:45.047 02:03.065
+sample 07 02:06.037 02:24.149
+sample 08 02:26.982 02:44.954
+sample 09 02:48.112 03:06.084
+sample 10 03:09.010 03:27.075
+sample 11 03:30.001 03:48.019
+sample 12 03:50.992 04:09.010
+sample 13 04:12.029 04:30.001
+sample 14 04:32.973 04:51.038
+sample 15 04:54.011 05:11.890
+sample 16 05:14.909 05:32.927
+  }
+
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p01,p02,p03,p04,j02 | p05,p06,p07,p08,j02
+     pattern 02 p09,p10,p11,p12,j03 | p13,p14,p15,p16,j03
+     pattern 03 p01,p03,p04,p02,j04 | p05,p07,p08,p06,j04
+     pattern 04 p09,p11,p12,p10,s5,j01 | p13,p15,p16,p14,s5,j01
+  }
+}

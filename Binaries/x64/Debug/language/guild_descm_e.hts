@@ -1,0 +1,88 @@
+hypertext
+{
+Guild of necromancer<br>
+<br>
+
+<cl=00FF00>First stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 16<br>
+<br><cl=ABCDEF>
+<tab>Prana: +168<br>
+<tab>Physical protection: +65<br>
+<tab>Magical protection: +65<br>
+<tab>Power, accuracy and endurance: -6<br>
+<tab>Earth: +10<br>
+<tab>Air and fire: -6<br>
+<tab>Magical attack: +45<br>
+<br>
+
+<cl=00FF00>Second stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 21<br>
+<br><cl=ABCDEF>
+<tab>Prana: +305<br>
+<tab>Physical protection: +118<br>
+<tab>Magical protection: +120<br>
+<tab>Power, accuracy and endurance: -20<br>
+<tab>Earth: +14<br>
+<tab>Air and fire: -14<br>
+<tab>Magical attack: +88<br>
+<br>
+
+<cl=00FF00>Third stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 31<br>
+<br><cl=ABCDEF>
+<tab>Prana: +572<br>
+<tab>Physical protection: +182<br>
+<tab>Magical protection: +198<br>
+<tab>Power, accuracy and endurance: -28<br>
+<tab>Earth: +26<br>
+<tab>Air and fire: -22<br>
+<tab>Magical attack: +148<br>
+<br>
+
+<cl=00FF00>Fourth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 41<br>
+<br><cl=ABCDEF>
+<tab>Prana: +918<br>
+<tab>Physical protection: +246<br>
+<tab>Magical protection: +350<br>
+<tab>Power, accuracy and endurance: -42<br>
+<tab>Earth: +48<br>
+<tab>Air and fire: -58<br>
+<tab>Magical attack: +251<br>
+<br>
+
+<cl=00FF00>Fifth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 51<br>
+<br><cl=ABCDEF>
+<tab>Prana: +1680<br>
+<tab>Physical protection: +312<br>
+<tab>Magical protection: +490<br>
+<tab>Power, accuracy and endurance: -60<br>
+<tab>Earth: +72<br>
+<tab>Air and fire: -102<br>
+<tab>Magical attack: +520<br>
+<br>
+
+<cl=00FF00>Sixth stage<br>
+<tab><tab><cl=A2A2A2>Maximum title: 15<br>
+<tab><tab>Minimum degree: 60<br>
+<br><cl=ABCDEF>
+<tab>Prana: +2240<br>
+<tab>Physical protection: +398<br>
+<tab>Magical protection: +889<br>
+<tab>Power, accuracy and endurance: -96<br>
+<tab>Earth: +112<br>
+<tab>Air and fire: -144<br>
+<tab>Magical attack: +988<br>
+<br>
+
+<sp><l="hts:\\language\guilds_e.hts">Back to guilds list<\l><br>
+<sp><l="hts:\\language\guildm_e.hts">Back to guild description<\l><br>
+<br>
+<l="hts:\\language\guild_descl_e.hts">Previous guild<\l> <cl=FFFF00>| <l="hts:\\language\guild_descn_e.hts">Next guild<\l><br>
+}

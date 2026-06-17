@@ -1,0 +1,39 @@
+soundtrack
+{
+  audio_file "sounds\music\mounts_1n.ogg"
+  volume 1.0
+
+  samples
+  {
+    sample 01 00:00.000 00:17.925
+    sample 02 00:20.387 00:38.916
+    sample 03 00:40.960 00:59.768
+    sample 04 01:01.393 01:20.433
+
+    sample 05 01:21.920 01:40.681
+    sample 06 01:42.492 02:01.115
+    sample 07 02:02.972 02:21.688
+    sample 08 02:23.452 02:42.400
+
+    sample 09 02:43.979 03:02.833
+    sample 10 03:04.505 03:22.570
+    sample 11 03:24.985 03:43.329
+    sample 12 03:45.512 04:04.041
+
+    sample 13 04:05.899 04:24.428
+    sample 14 04:26.286 04:44.119
+    sample 15 04:46.812 05:04.552
+    sample 16 05:07.292 05:25.172
+  }                              
+  
+  patterns
+  {
+     start_pattern 01
+
+     pattern 01 p01,p02,p03,p04,j02 | p09,p10,p11,p12,j02
+     pattern 02 p05,p06,p07,p08,j03 | p13,p14,p15,p16,j03
+     pattern 03 p01,p03,p04,p02,j04 | p09,p11,p12,p10,j04
+     pattern 04 p05,p07,p08,p06,j01 | p13,p15,p16,p14,j01
+  }
+}
+

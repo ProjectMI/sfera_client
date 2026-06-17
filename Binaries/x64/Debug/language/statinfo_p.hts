@@ -1,0 +1,19 @@
+JANELA DE ESTÁTISTICA (statinfo_p.hts)
+hypertext
+{
+<tab><cl=F0F010>JANELA DE ESTÁTISTICA<cl=A2A2A2><br><br>
+<tab>Esta janela mostra os atributos <l="hts:\\language\i_charact_p.hts">do personagem<\l> Você pode abri-la pressionando "H".<br>
+<br><tab><cl=00FF00>Título e nível<cl=A2A2A2><br>
+<tab>Na parte superior desta janela é mostrado seu título e seu grau de magia junto com o numero necessário para subir para o próximo nível.<br>
+<br><tab><cl=00FF00>Karma e Clã<cl=A2A2A2><br>
+<tab>Abaixo na janela, está o seu karma e o nome de seu <l="hts:\\language\clan_p.hts">clã<\l>. Se não estiver em nenhum, estara vazio.<br>
+<br><tab><cl=00FF00>Saúde, Prana, Fartura<cl=A2A2A2><br>
+<tab>Estão saúde, prana e fartura de seu personagem (valores atuais e máximos possíveis).<br>
+<br><tab><cl=00FF00>Ataque e proteção<cl=A2A2A2><br>
+<tab>No meio da janela são mostrados os valores de ataque e proteção de seu personagem.<br> 
+"Ataque de combate" e "Ataque de magia" os números aparecem somente quando você pega armas ou objetos mágicos que podem causar danos ou cura. Os danos são mostrados com um numero negativo enquanto o de cura é com um numero positivo.<br>
+<tab>Itens <l="hts:\\language\i_charact_p.hts">"Proteção de combate" e "Proteção mágica"<\l> mostram os níveis de proteção correspondente. A proteção depende do artigo correspondente (veja "<l="hts:\\language\puppet_p.hts">Janela do personagem<\l>"), e <l="hts:\\language\i_mutators_p.hts">modificadores<\l>.<br>
+<br><tab><cl=00FF00>Habilidades e elementos<cl=A2A2A2><br>
+<tab>Na parte inferior são mostrados os valores de <l="hts:\\language\i_charact_p.hts">habilidades e elementos<\l> juntos com o numero de títulos e graus de elementos que você tem.<br>
+<tab>Aqui vocÊ também pode distribuir seu título de elementos entre suas habilidades e graus entre os elementos.
+}

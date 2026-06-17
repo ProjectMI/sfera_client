@@ -1,0 +1,19 @@
+ИНТЕРФЕЙС (i_interface.hts)
+hypertext
+{
+<tab><cl=F0F010>ИНТЕРФЕЙС<cl=A2A2A2><br><br>
+<tab><l="hts:\\language\i_mainp.hts">Управление<\l><br><br>
+<tab><l="hts:\\language\options.hts">Меню настроек игры<\l><br><br>
+<tab><l="hts:\\language\constwin.hts">Системные панели<\l><br><br>
+<tab><l="hts:\\language\statinfo.hts">Окно статистики<\l><br><br>
+<tab><l="hts:\\language\puppet.hts">Окно персонажа<\l><br><br>
+<tab><l="hts:\\language\inventory.hts">Инвентарь<\l><br><br>
+<tab><l="hts:\\language\chat.hts">Чат<\l><br><br>
+<tab><l="hts:\\language\hotkeys.hts">Горячие клавиши<\l><br><br>
+<tab><l="hts:\\language\clan.hts">Окно клана<\l><br><br>
+<tab><l="hts:\\language\ally.hts">Окно альянсов и войн<\l><br><br>
+<tab><l="hts:\\language\group.hts">Окно группы<\l><br><br>
+<tab><l="hts:\\language\trade.hts">Окно торговли (покупка)<\l><br><br>
+<tab><l="hts:\\language\tradechar.hts">Окно торговли (продажа)<\l><br><br>
+<tab><l="hts:\\language\missions.hts">Окно получения миссии<\l><br><br>
+}

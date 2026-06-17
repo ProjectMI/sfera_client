@@ -1,0 +1,18 @@
+hypertext
+{
+<tab><cl=FFFF00>Guild descriptions:<cl=FFFFFF><br><br>
+<tab><l="hts:\\language\guild_desca_e.hts">Assassin<\l><br>
+<tab><l="hts:\\language\guild_descb_e.hts">Crusader<\l><br>
+<tab><l="hts:\\language\guild_descc_e.hts">Inquisitor<\l><br>
+<tab><l="hts:\\language\guild_descd_e.hts">Hunter<\l><br>
+<tab><l="hts:\\language\guild_desce_e.hts">Archimagician<\l><br>
+<tab><l="hts:\\language\guild_descf_e.hts">Barbarian<\l><br>
+<tab><l="hts:\\language\guild_descg_e.hts">Druid<\l><br>
+<tab><l="hts:\\language\guild_desch_e.hts">Thief<\l><br>
+<tab><l="hts:\\language\guild_desci_e.hts">Steel master<\l><br>
+<tab><l="hts:\\language\guild_descj_e.hts">Armorer<\l><br>
+<tab><l="hts:\\language\guild_desck_e.hts">Blacksmith<\l><br>
+<tab><l="hts:\\language\guild_descl_e.hts">Sorcerer<\l><br>
+<tab><l="hts:\\language\guild_descm_e.hts">Necromancer<\l><br>
+<tab><l="hts:\\language\guild_descn_e.hts">Bandier<\l><br>
+}

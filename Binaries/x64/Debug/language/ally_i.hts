@@ -1,0 +1,44 @@
+BOX DELLE ALLEANZE E DELLE GUERRE (ally.hts)
+hypertext
+{
+<tab><cl=F0F010>ALLEANZE E GUERRE<cl=A2A2A2><br><br>
+
+<tab>La lista dei clan mostra i nomi dei clan neutrali in <cl=727272>grigio<cl=A2A2A2>,
+i nomi dei clan alleati in <cl=00FF00>verde<cl=A2A2A2>,
+e il nome dei clan nemici in <cl=FF0000>rosso<cl=A2A2A2>.<br>
+<br>
+<cl=FFFF00>Alleanza<br>
+<cl=A2A2A2>
+<tab>Un'alleanza permette a un clan alleato di avere accesso al castello di un altro clan.
+Solo i feudatari dei clan possono entrare o uscire da un'alleanza.
+E' impossibile entrare in un'alleanza se i clan sono in guerra ed è impossibile entrare in più di cinque alleanze.<br>
+<tab>Per entrare in un'alleanza, scegli il clan dalla lista e premi <cl=A0A000>"Entrare nell'alleanza".
+<cl=A2A2A2>Il feudatario di questo clan riceverà un invito per confermare l'alleanza.<br>
+<tab>Quando uno di loro conferma l'alleanza:<br>
+<cl=ABCDEF>
+- I mostri del castello alleato non attaccheranno i membri dell'alleanza, 
+almeno fino a quando un ospite del castello non li attaccherà.<br>
+- Il feudatario e il siniscalco di un clan potranno mandare messaggi ai membri dell'alleanza
+usando il comando di chat /sayally "testo del messaggio".<br>
+- I membri dell'alleanza possono usare i teletrasporti del castello degli alleati.<br>
+- La cattura del castello non sarà possibile da parte di un clan alleato.<br>
+<cl=A2A2A2>
+<tab>Per sciogliere l'alleanza, selezionare il clan alleato nel box e premere <cl=A0A000>"Lasciare alleanza".
+<cl=A2A2A2>
+<br><br><br>
+<cl=ABCDEF>Guerra<br>
+<cl=A2A2A2>
+<tab>In tempo di guerra il karma non sarà abbassato dall'uccisione dei nemici. Un clan non può partecipare a più di cinque guerre contemporaneamente.
+Come per l'alleanza, solo i feudatari dei clan possono dichiarare guerra e negoziare la pace.<br>
+<tab>Per dichiarare guerra, scegliere il clan dalla lista e premere <cl=A0A000>"Dichiarare guerra".
+<cl=A2A2A2>
+Una dichiarazione di guerra sarà mandata al feudatario del clan scelto che potrà accettare o rifiutare.<br>
+<tab>Se uno di loro conferma l'inizio della guerra:<br>
+<cl=ABCDEF>
+- L'esperienza persa da un nemico ucciso passerà parzialmente al vincitore.<br>
+- Il karma non sarà abbassato dall'uccisione dei nemici.<br>
+<cl=A2A2A2>
+<tab>E' impossibile dichiarare guerra ad un clan alleato.
+Per negoziare la pace, seleziona il clan nemico dal box e premi <cl=A0A000>"Offerta di pace".<cl=A2A2A2>
+Il feudatario del clan nemico riceverà un messaggio di offerta di pace. Per terminare la guerra almeno uno di loro dovrà accettare.<br>
+}

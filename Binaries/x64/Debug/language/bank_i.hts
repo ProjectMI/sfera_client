@@ -1,0 +1,11 @@
+BANCA (bank.hts)
+hypertext
+{
+<tab><cl=F0F010>    <cl=A2A2A2><br><br>
+<tab>Questa finestra mostra gli oggetti depositati nella banca e visibili a tutti i personaggi dell'account. In banca non si possono depositare le <l="hts:\\language\container.hts">borse<\l>.<br>
+<tab>Il campo nella parte bassa della finestra mostra lo stato corrente del conto bancario. <br>
+<tab>Premendo il pulsante "Cambia password" puoi impostare o cambiare la password di accesso alla banca come sicurezza aggiuntiva.<br>
+<tab>Quando fai degli acquisti di grande valore (costo più di 500000$) esiste la possibilità di trasferire la somma mancante dal conto bancario. Eseguendo questa operazione ti viene presa la commissione del 5% del costo dell'acquisto.<br>
+<tab>Per mettere un oggetto nella banca <l="hts:\\language\i_mainp.hts">trascinalo<\l> nella casella. L'oggetto deve corrispondere ai requisiti della casella. Se l'oggetto non corrisponde, la casella si colora di rossso. Se l'oggetto può essere messo nella casella, quest'ultima viene colorata in verde.<br>
+}
+

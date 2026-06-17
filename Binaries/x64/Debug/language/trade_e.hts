@@ -1,0 +1,9 @@
+TRADE WINDOW (BUYING) (trade.hts)
+hypertext
+{
+<tab><cl=F0F010>BUYING<cl=A2A2A2><br><br>
+In this window you can buy goods from inhabitants of the Sphere and other characters. In the left-hand column there are icons of goods for sale. You can learn more about a particular item using <cl=FFFFFF>look<cl=B0B0B0> functionality. In the next column there are prices and then there is a field for your price offer. You may click in that field and offer your own price.<br>
+<tab>You can buy an article on sale by clicking "buy" button or dragging your money bag to the appropriate icon. If you don't have enough cash, the button is dimmed.<br>
+<tab>You also can sell things. To do that <cl=FFFFFF>together with the buy window<cl=B0B0B0> you must open <l="hts:\\language\tradechar.hts"> sell window <\l> by pressing "T".<br>
+}
+

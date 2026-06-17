@@ -1,0 +1,25 @@
+FINESTRA PERSONAGGIO (puppet.hts)
+hypertext
+{
+<tab><cl=F0F010>FINESTRA PERSONAGGIO<cl=A2A2A2><br><br>
+<tab>Nelle caselle in questa finestra si trovano gli oggetti che si indossano. Questi oggetti solitamente non vengono persi dopo la <l="hts:\\language\i_reincarn.hts">morte<\l> (la probabilità di perdere questi oggetti è remota).<br>
+<tab>Nelle caselle si possono mettere i seguenti oggetti:<br>
+<tab><cl=FFFFFF>Elmo<br>
+<tab>Amuleto<br>
+<tab>Scudo<br>
+<tab>Armatura<br>
+<tab>Guanti<br>
+<tab>2 braccialetti<br>
+<tab>4 anelli<br>
+<tab>Pantaloni<br>
+<tab>Calzature<br><cl=B0B0B0>
+<tab>Questi oggetti possono migliorare differenti <l="hts:\\language\i_charact.hts"> attributi <\l> del personaggio.<br>
+<tab>Nella colonna di destra si possono tenere i seguenti oggetti:<br>
+<tab><cl=FFFFFF>Libro della mappa<cl=B0B0B0> - qui si possono mettere tutte le mappe.<br>
+<tab><cl=FFFFFF>Diario<cl=B0B0B0> - qui puoi registrare importanti avvenimenti.<br>
+<tab><cl=FFFFFF>Libro delle formule<cl=B0B0B0> - qui si possono tenere formule e manoscritti.<br>
+<tab><cl=FFFFFF>Libro dei mantra<cl=B0B0B0> - permette di "memorizzare" i mantra<br>
+<tab><cl=FFFFFF>Calamaio<cl=B0B0B0> - permette di registrare appunti nel diario così come di scrivere note e contrassegnare appunti sulla mappa.<br><br>
+<tab>Nelle caselle della colonna di sinsitra si possono mettere oggetti con proprietà eccezionali (questa colonna è riservata ad un utilizzo futuro).<br>
+<tab>Per mettere un oggetto in questa finestra <l="hts:\\language\i_mainp.hts">trascinare<\l> l'oggetto nella casella appropriata. Si deve mettere ogni oggetto nella casella corretta. A seconda di dove viene messo un oggetto, si illuminerà di verde o di rosso.<br>
+}

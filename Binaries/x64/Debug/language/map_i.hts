@@ -1,0 +1,6 @@
+MAPPA (map.hts)
+hypertext
+{
+<tab><cl=F0F010>MAPPA<cl=A2A2A2><br><br>
+<tab>Se il personaggio possiede una mappa del luogo, potrà aprirla e ridurne o aumentarne la trasparenza con i rispettivi pulsanti "+" e "-" e vedere la propria posizione (un piccola figura sullo schermo) Se il personaggio possiede un calamaio, potrà inserire nella mappa un certo numero di oggetti come mostri, castelli, case, città, ponti, caverne, rovine, ecc. Per farlo cliccare il bottone "continente" (vicino al pulsante "-"). Si aprirà una finestra con icone di diversi oggetti. Cliccare l'icona desiderata (si "attaccherà" al puntatore") e poi cliccare nella posizione desiderata sulla mappa. Si può anche aggiungere una nota alla mappa al fianco dell'oggetto. Cliccare l'oggetto così da farlo lampeggiare, inserire il testo nel box del testo e per finire cliccare sulla mappa.<br>
+} 

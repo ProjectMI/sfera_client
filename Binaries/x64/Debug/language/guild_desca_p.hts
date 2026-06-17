@@ -1,0 +1,81 @@
+hypertext
+{
+<cl=FFFF00>Organização dos assassinos<br>
+<br>
+<cl=00FF00>Primeiro estágio<br>
+<tab><tab><cl=A2A2A2>Titulo mínimo: 16<br>
+<tab><tab>Grau mínimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +10<br>
+<tab>Resistência: -12<br>
+<tab>Componentes: -3<br>
+<br>
+<tab>Invisibilidade:<br>
+<tab>Golpe crítico: dano 500<br>
+<tab>Veneno: Dano 120<br>
+<br>
+<cl=00FF00>Segundo estágio<br>
+<tab><tab><cl=A2A2A2> Titulo mínimo: 21<br>
+<tab><tab> Grau mínimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +30<br>
+<tab>Resistência: -24<br>
+<tab>Componentes: -6<br>
+<br>
+<tab>Invisibilidade: <br>
+<tab>Golpe crítico: dano 750<br>
+<tab>Veneno: Dano 200<br>
+<br>
+<cl=00FF00>Terceiro estágio<br>
+<tab><tab><cl=A2A2A2>Titulo mínimo: 31<br>
+<tab><tab>Grau mínimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +44<br>
+<tab>Resistência: -36<br>
+<tab>Componentes: -10<br>
+<br>
+<tab>Invisibilidade: <br>
+<tab>Golpe crítico: dano 1230<br>
+<tab>Veneno: dano 350 <br>
+<br>
+<cl=00FF00>Quarto estágio<br>
+<tab><tab><cl=A2A2A2>Titulo mínimo: 41<br>
+<tab><tab>Grau mínimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +65<br>
+<tab>Resistência: -46<br>
+<tab>Componentes: -14<br>
+<br>
+<tab>Invisibilidade: <br>
+<tab>Golpe crítico: dano 1620<br>
+<tab>Veneno: dano 560<br>
+<br>
+<cl=00FF00>Quinto estágio<br>
+<tab><tab><cl=A2A2A2>Titulo mínimo: 51<br>
+<tab><tab>Grau mínimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +72<br>
+<tab>Resistência: -62<br>
+<tab>Componentes: -21<br>
+<br>
+<tab>Invisibilidade: <br>
+<tab>Golpe crítico: dano 2150<br>
+<tab>Veneno: dano 820<br>
+<br>
+<cl=00FF00>Sexto estágio<br>
+<tab><tab><cl=A2A2A2>Titulo mínimo: 60<br>
+<tab><tab>Grau mínimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Habilidade: +96<br>
+<tab>Resistência: -72<br>
+<tab>Componentes: -25<br>
+<br>
+<tab>Invisibilidade: <br>
+<tab>Golpe crítico: dano 2600<br>
+<tab>Veneno: dano 1150, at a range of 7 m., <br>
+<br>
+<sp><l="hts:\\language\guilds_p.hts">Volta para lista de organizações<\l><br>
+<sp><l="hts:\\language\guilda_p.hts">Volta para descrição da organização<\l><br>
+<br>
+<l="hts:\\language\guild_descn_p.hts">Organização anterior<\l> <cl=FFFF00>| <l="hts:\\language\guild_descb_p.hts">Próxima organização<\l><br>
+} 

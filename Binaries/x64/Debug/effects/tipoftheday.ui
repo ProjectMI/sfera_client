@@ -1,0 +1,20 @@
+// Окно "Совет дня"
+windowUI
+{
+    windowName   "tipoftheday"
+    drawMethod   NONE
+    position     0 0
+    size         0 0
+    escapeHandle TRUE
+    canNotCross  TRUE
+
+    // Контрол #1
+    control
+    {
+        classID   HYPER_TEXT
+        position  0 0
+        size      0 0
+        font      5
+        linkcolor FFEDD0A1 FFFFEFD4
+    }
+}

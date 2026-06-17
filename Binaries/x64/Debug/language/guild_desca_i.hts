@@ -1,0 +1,81 @@
+hypertext
+{
+<cl=FFFF00>Gilda degli assassini<br>
+<br>
+<cl=00FF00>Primo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 16<br>
+<tab><tab>Grado minimo: 16<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +10<br>
+<tab>Resistenza: -12<br>
+<tab>Elementi: -3<br>
+<br>
+<tab>Invisibilità:<br>
+<tab>Colpo critico: danno 500<br>
+<tab>Veleno: danno 120<br>
+<br>
+<cl=00FF00>Secondo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 21<br>
+<tab><tab>Grado minimo: 21<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +30<br>
+<tab>Resistenza: -24<br>
+<tab>Elementi: -6<br>
+<br>
+<tab>Invisibilità: <br>
+<tab>Colpo critico: danno 750<br>
+<tab>Veleno: danno 200<br>
+<br>
+<cl=00FF00>Terzo stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 31<br>
+<tab><tab>Grado minimo: 31<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +44<br>
+<tab>Resistenza: -36<br>
+<tab>Elementi: -10<br>
+<br>
+<tab>Invisibilità: <br>
+<tab>Colpo critico: danno 1230<br>
+<tab>Veleno: danno 350 <br>
+<br>
+<cl=00FF00>Quarto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 41<br>
+<tab><tab>Grado minimo: 41<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +65<br>
+<tab>Resistenza: -46<br>
+<tab>Elementi: -14<br>
+<br>
+<tab>Invisibilità: <br>
+<tab>Colpo critico: danno 1620<br>
+<tab>Veleno: danno 560<br>
+<br>
+<cl=00FF00>Quinto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 51<br>
+<tab><tab>Grado minimo: 51<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +72<br>
+<tab>Resistenza: -62<br>
+<tab>Elementi: -21<br>
+<br>
+<tab>Invisibilità: <br>
+<tab>Colpo critico: danno 2150<br>
+<tab>Veleno: danno 820<br>
+<br>
+<cl=00FF00>Sesto stadio<br>
+<tab><tab><cl=A2A2A2>Titolo minimo: 60<br>
+<tab><tab>Grado minimo: 60<br>
+<br><cl=ABCDEF>
+<tab>Destrezza: +96<br>
+<tab>Resistenza: -72<br>
+<tab>Elementi: -25<br>
+<br>
+<tab>Invisibilità: <br>
+<tab>Colpo critico: danno 2600<br>
+<tab>Veleno: danno 1150, distanza 7 m., <br>
+<br>
+<sp><l="hts:\\language\guilds.hts">Torna alla lista delle gilde<\l><br>
+<sp><l="hts:\\language\guilda.hts">Torna alla descrizione della gilda<\l><br>
+<br>
+<l="hts:\\language\guild_descn.hts">Gilda precedente<\l> <cl=FFFF00>| <l="hts:\\language\guild_descb.hts">Gilda successiva<\l><br>
+}

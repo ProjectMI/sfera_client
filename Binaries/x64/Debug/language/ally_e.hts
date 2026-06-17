@@ -1,0 +1,47 @@
+BOX OF ALLIANCES AND WARS (ally.hts)
+hypertext
+{
+<tab><cl=F0F010>ALLIANCES AND WARS<cl=A2A2A2><br><br>
+
+<tab>The list of clans gives the names of neutral clans in <cl=727272>grey<cl=A2A2A2>,
+the names of allied clans in <cl=00FF00>green<cl=A2A2A2>,
+and the names of enemy clans in <cl=FF0000>red<cl=A2A2A2>.<br>
+<br>
+<cl=FFFF00>Alliance<br>
+<cl=A2A2A2>
+<tab>An alliance enables an allied clan to get access to the castle of another allied clan.
+Only liege lords of clans can enter into and terminate alliances.
+It is impossible to enter into an alliance with a clan if your clans are at war and it is impossible to
+enter into more than five alliances.<br>
+<tab>To enter into an alliance, choose the clan on the list and press <cl=A0A000>"Enter into alliance".
+<cl=A2A2A2>Liege lords of this clan will be invited to confirm the alliance.<br>
+<tab>When one of them confirms the union:<br>
+<cl=ABCDEF>
+- Monsters in allied clan castles will not attack alliance members, 
+certainly, unless a castle guest attacks them.<br>
+- Liege lords and seneschals of a clan can send messages to alliance members
+using the chat command /sayally "message text".<br>
+- Alliance members can use allies’ castle teleports.<br>
+- Capturing a castle will not be possible by an allied clan.<br>
+<cl=A2A2A2>
+<tab>To terminate an alliance, choose the allied clan in the box and press <cl=A0A000>"Quit alliance".
+<cl=A2A2A2>
+<br><br><br>
+<cl=ABCDEF>War<br>
+<cl=A2A2A2>
+<tab>In time of war karma will not get spoiled by killing an enemy. A clan can take part in no
+more than five wars simultaneously.
+Similarly to alliances, only liege lords of clans can declare war and negotiate a truce.<br>
+<tab>To declare war, choose the clan on the list and press <cl=A0A000>"Declare war".
+<cl=A2A2A2>
+A declaration of war will be sent to the liege lords of the chosen clan which they can accept or reject.<br>
+<tab>If one of them confirms the start of war:<br>
+<cl=ABCDEF>
+- Experience lost by a killed enemy will partially pass to the winner.<br>
+- Karma will not get spoiled by killing enemies.<br>
+<cl=A2A2A2>
+<tab>Declaring war on an allied clan is impossible.
+To negotiate a truce, chose the enemy clan in the box and press <cl=A0A000>"Offer peace".<cl=A2A2A2>
+The liege lords of the enemy clan will receive a message offering peace. To stop the war at least
+one of them must agree.<br>
+}

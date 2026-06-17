@@ -1,0 +1,14 @@
+hypertext
+{
+<cl=F0F010>Guida:<cl=00FF00> Forse vorresti prendere questa vecchia spada? Nessuno può essere sicuro di cosa possa esserci dietro il prossimo angolo.<br><br>
+
+<cl=FFFFFF>Premere il tasto "I" per aprire la finestra Inventario.<br>
+Cliccare il tasto destro del mouse per cambiare in modalità puntatore.<br>
+Trascinare l'oggetto nella finestra Inventario.<br>
+Tenere premuto SHIFT e cliccare il tasto sinistro del mouse per avere informazioni sull'oggetto.<br>
+Cliccare l'oggetto per metterlo in mano.<br>
+Cliccare il tasto destro del mouse per uscire dalla modalità puntatore.<br><br>
+<l="hts:\\language\i_mainp.hts">Altro sui controlli...<\l><br>
+<l="hts:\\language\i_inventory.hts">Altro sull'inventario...<\l><br>
+<l="hts:\\language\helpindex.hts">Aiuto (F1)<\l><br>
+}

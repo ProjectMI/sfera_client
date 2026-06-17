@@ -1,0 +1,66 @@
+INFO "PARAMETRI DEL PERSONAGGIO" (i_charact.hts)
+hypertext
+{
+<tab><cl=F0F010>PARAMETRI DEL PERSONAGGIO<cl=A2A2A2><br><br>
+<br><tab><cl=00FF00>Parametri di base<cl=A2A2A2><br>
+<tab>I parametri di base di un personaggio in Sphere includono <cl=FFFFFF>Salute<cl=B0B0B0>, <cl=FFFFFF>Prana<cl=B0B0B0>, <cl=FFFFFF>Sazietà<cl=B0B0B0>, e <cl=FFFFFF>Karma<cl=B0B0B0>.<br>
+<tab>La Salute mostra lo stato fisico del corpo del personaggio. E' il più importante tra i parametri. Se raggiunge lo zero il personaggio <l="hts:\\language\i_reincarn.hts"> muore<\l>. Con il tempo la salute viene recuperata.<br><br>
+<tab>Il Prana è la forza universale che viene consumata durante i combattimenti e le azioni magiche. Se il Prana è insufficiente, il personaggio può diventare indifeso.<br><br>
+<tab>Il Karma è misura tra le azioni benigne e maligne. Nessuno conosce l'esatto stato del proprio Karma.Si può solo conoscerne il valore approssimativo: <br>
+<cl=FFFFFF><tab>"Molto negativo"<br>
+<tab>"Negativo"<br>
+<tab>"Neutrale"<br>porsismo
+<tab>"Positivo"<br>
+<tab>"Benedetto"<br><br><cl=B0B0B0>
+<tab>Il Karma determina dove il personaggio si <l="hts:\\language\i_reincarn.hts">reincarna<\l> dopo la morte, cos' come determina la capacità di utilizzo dei <l="hts:\\language\i_mantras.hts">mantra<\l>. Uccidere altri personaggi o creature neutrali peggiorerà il Karma, mentre uccidere pericolosi mostri lo migliora leggermente.<br><br>
+<tab>Ogni personaggio in Sphere ha bisogno di mangiare. Più basso è il livello di Sazietà meno velocemente si rigenererà la Salute.  Se la Sazietà raggiunge lo zero, la Salute non verrà rigenerata.<br>
+<br><tab><cl=00FF00>Titolo e Grado<cl=A2A2A2><br>
+<tab>Il <cl=FFFFFF>Titolo<cl=B0B0B0> indica lo sviluppo nell'arte del combattimento, mentre il <tab><cl=FFFFFF>Grado<cl=B0B0B0> - indica il livello dell'abilità magica. Esistono 12 titoli e 12 gradi,  divisi in 5 parti (per un totale di 60 livelli). Di seguito la lista dei titoli e dei gradi (con rispettivi livelli indicati tra parentesi).<br>
+<br><tab><cl=F0F010>Titoli<br>
+<tab><cl=00FF00>vagabondo (1-5)<br>
+<tab>ospite (6-10)<br>
+<tab>cittadino (11-15)<br>
+<tab>abitante cittadino (16-20)<br>
+<tab>scudiero (21-25)<br>
+<tab>cavaliere (26-30)<br>
+<tab>barone (31-35)<br>
+<tab>visconte (36-40) <br>
+<tab>conte (41-45)<br>
+<tab>marchese (46-50)<br>
+<tab>duca (51-55)<br>
+<tab>principe (56-60)<br>
+<br><tab><cl=F0F010>Gradi<br>
+<tab><cl=00FF00>ignorante (1-5) <br>
+<tab>candidato (6-10) <br>
+<tab>allievo (11-15) <br>
+<tab>novizio (16-20) <br>
+<tab>debuttante (21-25) <br>
+<tab>studente (26-30) <br>
+<tab>graduato (31-35) <br>
+<tab>maestro (36-40) <br>
+<tab>dottore (41-45) <br>
+<tab>professore (46-50) <br>
+<tab>decano (51-55) <br>
+<tab>cancelliere (56-60) <br><br><cl=B0B0B0>
+<tab>Partendo dal livello 21 come titolo (scudiero) e dal livello 26 come grado (graduato), il personaggio viene considerato un nobile.<br>
+<tab>Per ricevere il prossimo titolo o grado si deve guadagnare una certa quantità di <cl=FFFFFF>punti titolo<cl=B0B0B0> e <cl=FFFFFF>punti grado<cl=B0B0B0>.<br>
+<tab>Passando al livello successivo si riceve una certa quantità di <cl=FFFFFF>elementi titolo<cl=B0B0B0> e <cl=FFFFFF>elementi grado<cl=B0B0B0>. Si usano per incrementare i punti delle proprie <cl=FFFFFF>abilità ed elementi<cl=B0B0B0>. Ricevendo un nuovo titolo si otterranno più elementi titolo, La crescita nei gradi aumenterà i propri elementi grado. Quindi, nel primo caso si migliorano le proprie <cl=FFFFFF>abilità<cl=B0B0B0>, mentre nel secondo caso si migliora la capacità di gestione degli <cl=FFFFFF>elementi<cl=B0B0B0>. Quando un nuovo personaggio entra in Spehere, riceve 4 elementi titolo e 4 elementi grado, che possono essere distribuiti a proprio piacimento.<br>
+<br><tab><cl=00FF00>Abilità<cl=A2A2A2><br>
+Le abilità indicano la capacità fisica del personaggio nell'usare armi non magiche o altri oggetti. Di seguito le funzioni principali delle abilità.<br>
+<tab><cl=FF0000>Forza<cl=B0B0B0> -  uso di ascia, balestra e in parte spada.<br>
+<tab><cl=FF0000>Destrezza<cl=B0B0B0> -  uso di spada, in parte ascia e balestra.<br>
+<tab><cl=FF0000>Precisione<cl=B0B0B0> -  uso di balestra e armi d'assedio (catapulta).<br>
+<tab><cl=FF0000>Resistenza<cl=B0B0B0> -  uso di scudo, armatura di maglia e altri tipi di protezione e in parte spade e asce pesanti.<br>
+<br><tab><cl=00FF00>Elementi<cl=A2A2A2><br>
+<tab>The element levels reflect your capabilities in different types of magic.<br>
+<tab><cl=0000FF>Terra<cl=B0B0B0> -  uso di magia di protezione: amuleti, braccialetti, ecc. La Magia della Terra è diretta alla protezione; l'attacco significa che l'uso di questo elemento è raro, ma piuttosto forte.<br>
+<tab><cl=0000FF>Aria<cl=B0B0B0> -  uso di magia da combattimento e magia di viaggio attraverso gli spazi. <br>
+<tab><cl=0000FF>Acqua<cl=B0B0B0> -  uso della magia di cura. L'attacco indica che l'uso di questa magia è raro quanto nel caso della magia della Terra.<br>
+<tab><cl=0000FF>Fuoco<cl=B0B0B0> -  uso di magia da combattimento ravvicinato che infligge i danni più potenti. <br><br>
+<tab>Il livello delle abilità e degli elementi del personaggio determina la sua specializzazione e modalità di esistenza in Sphere, che è meglio pianificare <l="hts:\\language\i_starting.hts">fin dal principio.<\l><br>
+<br><tab><cl=00FF00>Protezione magica e in combattimento<cl=A2A2A2><br> 
+<tab>Questa protezione secondaria determina l'abilità del personaggio di combattere con armi bianche e danno magico. Questi parametri dipendono dalla protezione presente (armature, scudi, amuleti, ecc., guardare anche <l="hts:\\language\puppet.hts">"Finestra del personaggio"<\l>), così come <l="hts:\\language\i_mutators.hts">mutatori<\l>.<br>
+<br><tab><cl=00FF00>Clan<cl=A2A2A2><br>
+<tab>Indipendentemente dalla crescita nella gerarchia dei titoli e dei gradi, il personaggio può far parte di un clan. Per questo si può sia <l="hts:\\language\clan.hts">creare un nuovo clan che unirsi a uno esistente.<\l><br>
+<br><tab><cl=FFFFFF>Guardare anche: <l="hts:\\language\statinfo.hts">"Finestra delle statistiche"<\l>.<cl=B0B0B0>
+}

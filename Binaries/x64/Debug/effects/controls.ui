@@ -1,0 +1,306 @@
+//----------------------------------------------------------------------------------
+// Window: Controls options
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+	name "window"
+	size 265 321
+	texture "i_msg"    0 0 256 94  0 0 256 94
+	texture "i_msg"    0 56 256 94  0 94 256 132
+	texture "i_msg"    0 56 256 94  0 132 256 174
+	texture "i_msg"    0 56 256 94  0 174 256 212
+
+	texture "i_msg"    0 58 256 94  0 212 256 248
+	texture "i_msg"    0 58 256 76  0 248 256 266
+	texture "i_msg"    0 94 256 149  0 266 256 321
+
+        texture "i_mantra" 246 62 255 156  256 0 265 94
+
+        texture "i_mantra" 246 118 255 156  256 94 265 132
+        texture "i_mantra" 246 118 255 156  256 132 265 174
+        texture "i_mantra" 246 118 255 156  256 174 265 212
+
+        texture "i_mantra" 246 120 255 156 256 212 265 248
+        texture "i_mantra" 246 120 255 138 256 248 265 266
+        texture "i_mantra" 246 156 255 211 256 266 265 321
+      }
+
+      sprite
+      {
+        name "slider"
+        size 26 198
+        texture "i_mantra" 216 76 242 196 0 0  26 120
+        texture "i_mantra" 216 158 242 196 0 120 26 158
+        texture "i_mantra" 216 194 242 234 0 158 26 198
+      }
+
+      sprite
+      {
+        name "ok_check"
+        size 16 12
+        texture "i_ctrls" 63 0 95 24 0 0 16 12
+      }
+
+      sprite
+      {
+        name "ok_normal"
+        size 32 24
+        texture "i_ctrls" 63 0 95 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_focus"
+        size 32 24
+        texture "i_ctrls" 96 0 128 24 0 0 32 24
+      }
+
+      sprite
+      {
+        name "ok_push"
+        size 32 24
+        texture "i_ctrls" 96 50 128 74 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_normal"
+        size 32 24
+        texture "i_ctrls" 63 25 95 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_focus"
+        size 32 24
+        texture "i_ctrls" 96 25 128 49 0 0 32 24
+      }
+
+      sprite
+      {
+        name "cancel_push"
+        size 32 24
+        texture "i_ctrls" 96 75 128 99 0 0 32 24
+      }
+
+      sprite
+      {
+	name "sc_polzun"
+	size 24 26
+	texture "i_cont"  232 38 256 64 0 0 24 26
+      }
+
+      sprite
+      {
+	name "sc_lbfocus"
+	size 18 18
+	texture "i_cont"  219 19 237 37 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_lbpush"
+	size 18 18
+	texture "i_cont"  219 0 237 18 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_lbdis"
+	size 18 18
+	texture "i_cont"  219 176 237 194 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbfocus"
+	size 18 18
+	texture "i_cont"  238 19 256 37 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbpush"
+	size 18 18
+	texture "i_cont"  238 0 256 18 0 0 18 18
+      }
+
+      sprite
+      {
+	name "sc_rbdis"
+	size 18 18
+	texture "i_cont"  238 176 256 194 0 0 18 18
+      }
+
+      sprite
+      {
+	name "slot_img"
+	size 197 18
+	texture "i_cont"  20 245 151 254 0 0 131 9
+	texture "i_cont"  20 245 151 254 0 9 131 18
+
+	texture "i_cont"  20 245 80   254  132 0 192 9
+	texture "i_cont"  146 245 151 254  192 0 197 9
+
+	texture "i_cont"  20 245 80   254  132 9 192 18
+	texture "i_cont"  146 245 151 254  192 9 197 18
+
+        tcoords 1 20 254 151 254 151 245 20 245
+
+        tcoords 4 20 254 80 254 80 245 20 245
+        tcoords 5 146 254 151 254 151 245 146 245
+      }
+   }
+
+   windowName  "control_options"
+   windowText  UISTR_WT_OPT22
+   showTitle   3 0
+   drawMethod  SPRITE "window"
+   position    0 0
+   size        265 321
+   showEffect  ALPHA_IN   0.25
+   hideEffect  ALPHA_OUT  0.25
+   font        3
+   rectTitle   10 10 255 29
+   textcolor   237 208 161
+   alignWin    CENTER_X | CENTER_Y
+   saveLastPosition false
+   escapeHandle TRUE
+   canNotCross TRUE
+
+   control					    // id = 1
+   {
+     classID	BUTTON
+     position	100 283
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "ok_normal"
+     checkedImage   "ok_push"
+     focusedImage   "ok_focus"
+   }
+
+   control					    // id = 2
+   {
+     classID	BUTTON
+     position	134 283
+     size	32 24
+     drawMethod SPRITE
+     uncheckedImage "cancel_normal"
+     checkedImage   "cancel_push"
+     focusedImage   "cancel_focus"
+   }
+
+   control                                           // id = 3
+   {
+     classID   IMAGE
+     position  220 33
+     size      26 198
+     image     "slider"
+   }
+
+   control				             // id = 4
+   {
+     classID	BUTTON
+     position	20 233
+     size	225 16
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+     textformat CENTER
+     windowText UISTR_WT_OPT23
+   }
+
+   control				             // id = 5
+   {
+     classID LISTITEM
+     position 19 37
+     size     197 190
+//     createitems 10
+
+     itemTemplate
+     {
+       size 197 18
+       drawMethod NONE
+
+       control                                       // listID = 1
+       {
+	 classID    IMAGE
+	 position   0 0
+	 size	    197 18
+         image      "slot_img"
+       }
+
+       control                                       // listID = 2
+       {
+	 classID    TEXT
+	 position   3 3
+	 size	    124 12
+         textformat CENTER_Y | RIGHT_X
+         font       2
+       }
+
+       control                                       // listID = 3
+       {
+	 classID    TEXT
+         textStyle  NOTIFY_CLICK
+	 position   135 3
+	 size	    59 12
+         textformat CENTER
+         font       2
+       }
+
+     }
+
+     vscrollbar
+     {
+      classID	 SCROLL_BAR
+      position	 206 19
+      size	 16 150
+      scrollSpr  "sc_polzun" 24 26
+      deltaStep  10
+
+      leftbutton
+      {
+       position   -1 -18
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sc_lbfocus"
+       checkedImage "sc_lbpush"
+       disabledImage "sc_lbdis"
+      }
+
+      rightbutton
+      {
+       position   -1 149
+       size	  18 18
+       drawMethod SPRITE
+
+       focusedImage "sc_rbfocus"
+       checkedImage "sc_rbpush"
+       disabledImage "sc_rbdis"
+      }
+    }
+   }
+
+   control				             // id = 6
+   {
+     classID	BUTTON
+     position	20 253
+     size	225 16
+     font	3
+     textcolor	237 208 161
+     focuscolor 255 239 212
+     disabledcolor 100 100 100
+     textformat CENTER
+     windowText UISTR_WT_OPT25
+   }
+
+
+ }

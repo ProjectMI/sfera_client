@@ -1,0 +1,6 @@
+RECIPIENTE (container_p.hts)
+hypertext
+{
+<tab><cl=F0F010>RECIPIENTE<cl=A2A2A2><br><br>
+<tab><cl=FFFFFF>Um container<cl=B0B0B0> é uma sacola, saco, baú - ou qualquer outro utensílio que pode guardar objetos. Para ablir clique com o botão esquerdo do mouse. Cada container tem seu peso próprio, assim como capacidade permitida (junto com os objetos que carrega). Para descobrir os pesos <l="hts:\\language\i_mainp.hts">"olhe"<\l> para o container. Você não poderá colocar mais nada caso seja alcançado o limite de peso.<br>Em alguns containers existem células especiais para alguns itens - por exemplo, no baú dos quartos dos hotéis, algumas das últimas células são para ingredientes de alquimia e pós mágicos.<br>
+}

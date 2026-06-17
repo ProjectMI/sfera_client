@@ -1,0 +1,6 @@
+CONTENITORI (container.hts)
+hypertext
+{
+<tab><cl=F0F010>CONTENITORI<cl=A2A2A2><br><br>
+<tab><cl=FFFFFF>Un Contenitore<cl=B0B0B0> è una borsa, una sacca, una cassa o qualsiasi altro recipiente dove poter mettere gli oggetti. Usare il tasto sinistro del mouse per aprire e chiudere un contenitore. Ogni contenitore ha il suo peso, così come un peso massimo che può raggiungere (compreso il peso degli oggetti che contiene). Per saperne il peso <l="hts:\\language\i_mainp.hts">"osservare"<\l> il container. Se viene raggiunto il peso massimo del contenitore, non sarà più possibile metterci oggetti dentro.<br>In alcuni contenitori ci sono degli spazi speciali per alcuni oggetti particolari: per esempio, alcune casse hanno degli spazi appositi per ingredienti alchemici e polveri magiche.<br>
+}

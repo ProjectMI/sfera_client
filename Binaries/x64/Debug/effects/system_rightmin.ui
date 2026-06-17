@@ -1,0 +1,139 @@
+//----------------------------------------------------------------------------------
+// Window: System right minimized
+//----------------------------------------------------------------------------------
+
+ windowUI
+ {
+   spritesDef
+   {
+      sprite
+      {
+        name "sp_window" // 88 48
+        size 88 48
+	texture "i_comp"  0 181 88 229 0 0 88 48
+      }
+
+      sprite
+      {
+        name "clk_clip"
+        size 43 43
+	texture "i_comp"  152 100 195 143 0 0 43 43
+      }
+
+      sprite
+      {
+        name "st_big"
+        size 3 30
+        texture "i_comp"  243 101 246 131 0 0 3 30
+      }
+
+      sprite
+      {
+        name "st_small"
+        size 5 24
+        texture "i_comp"  228 101 233 125 0 0 5 24
+      }
+
+      sprite
+      {
+        name "min_focus"
+        size 26 24
+        texture "i_comp"  99 151 125 175 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_normal"
+        size 26 24
+        texture "i_comp"  99 201 125 225 0 0 26 24
+      }
+
+      sprite
+      {
+        name "min_push"
+        size 26 24
+        texture "i_comp"  99 176 125 200 0 0 26 24
+      }
+   }
+
+   windowName "system_rightmin"
+   drawMethod  SPRITE "sp_window"
+   position    0 0
+   size        88 48
+   showEffect  MOVE_LEFT  0.25 88 88
+   hideEffect  MOVE_RIGHT 0.25 88 88
+
+   canGoTop    false
+   alignWin    RIGHT_X
+   saveLastPosition false
+   canNotCross TRUE
+
+   control                            // id = 1
+   {
+     classID    BUTTON   
+     position   14 0
+     size       26 24
+     drawMethod SPRITE
+
+     checkedImage     "min_push"
+     focusedImage     "min_focus"
+     uncheckedImage   "min_normal"
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL10
+     }
+   }
+
+   control                           // id = 2
+   {
+     classID TEXT
+     position 48 8
+     size     33 25
+     textFormat CENTER
+
+     font 2
+     textcolor 169 152 84 255
+   }
+
+
+   control                              // id = 3     - 4asi
+   {
+     classID    IMAGE
+     position   62 7
+     size       6 28
+     image      "st_small"
+     rotate     90
+   }
+
+   control                              // id = 4    - minuti
+   {
+     classID    IMAGE
+     position   64 3
+     size       4 34
+     image      "st_small"
+//     rotate     180
+   }
+
+   control                            // id = 5
+   {
+     classID    IMAGE
+     position   43 0
+     size       43 43
+     image      "clk_clip"
+   }
+
+   control                            // id = 6
+   {
+     classID    BUTTON
+     position   43 0
+     size       43 43
+
+     tooltip
+     {
+       toolstr UISTR_TT_SYSL13
+     }
+   }
+
+
+ }

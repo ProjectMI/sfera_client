@@ -1,0 +1,7 @@
+MANTRA BOOK (mantrabook.hts)
+hypertext
+{
+<tab><cl=F0F010>MANTRA BOOK<cl=A2A2A2><br><br>
+<tab>Mantra book allows to "remember" found or bought mantras. After placing a mantra to this book your character "remembers" it with some probability, so that it becomes possible to use the "remembered" mantra over and over again.<br>
+<tab>Each cell in the book of mantras is designed for both "white" mantras that have a positive or a neutral effect and for "black" matras that have a negative effect.<br>
+}

@@ -49,12 +49,18 @@ int FApplication::Run() {
             BuildMbcRuntime();
 
             Network = std::make_unique<FConnectManager>(*Config);
-            auto endpoint = Network->ReadEndpointFromConfig();
-            if (endpoint) { Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port)); }
-            else { Logger.Warning("network endpoint not found; connect manager initialized but not connected"); }
+            auto connectSettings = Network->ReadConnectionSettings();
+            auto endpoint = connectSettings.PrimaryEndpoint;
+            if (endpoint) {
+                Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port) + ", candidates=" + std::to_string(connectSettings.EndpointCandidates.size()) + ", connect_type=" + std::to_string(connectSettings.ConnectType));
+            } else {
+                Logger.Warning("network endpoint not found; connect manager initialized but not connected");
+            }
 
             FClientFrontendDesc frontendDesc;
             frontendDesc.Endpoint = endpoint;
+            frontendDesc.EndpointCandidates = connectSettings.EndpointCandidates;
+            frontendDesc.TryNetworkProbe = !connectSettings.Offline;
             frontend.StartNetworkProbe(frontendDesc);
             bootstrapOk.store(true);
         } catch (const std::exception& ex) {

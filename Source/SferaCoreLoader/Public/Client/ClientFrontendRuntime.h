@@ -11,12 +11,14 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace Sfera {
 struct FClientFrontendDesc {
     std::optional<FEndpoint> Endpoint;
+    std::vector<FEndpoint> EndpointCandidates;
     bool TryNetworkProbe = true;
-    uint32 NetworkConnectTimeoutMs = 350;
+    uint32 NetworkConnectTimeoutMs = 5000;
 };
 
 class FClientFrontendRuntime {

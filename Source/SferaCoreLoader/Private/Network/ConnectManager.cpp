@@ -1,13 +1,27 @@
 #include "Network/ConnectManager.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <sstream>
 
 namespace Sfera {
 FConnectManager::FConnectManager(const FConfigService& config) : Config(config) {}
 
 static std::string LowerNet(std::string s) { std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); }); return s; }
+
+static std::optional<std::string> FindConfigString(const FConfigService& config, std::string_view docName, std::string_view key) {
+    const FConfigDocument* doc = config.FindConfig(docName);
+    return doc ? doc->FindString(key) : std::nullopt;
+}
+
 static std::string TrimNet(std::string s) { auto ns = [](unsigned char c) { return !std::isspace(c); }; s.erase(s.begin(), std::find_if(s.begin(), s.end(), ns)); s.erase(std::find_if(s.rbegin(), s.rend(), ns).base(), s.end()); return s; }
+
+static void AddUniqueEndpoint(std::vector<FEndpoint>& endpoints, FEndpoint endpoint) {
+    endpoint.Host = TrimNet(endpoint.Host);
+    if (endpoint.Host.empty() || endpoint.Port == 0) { return; }
+    auto exists = std::find_if(endpoints.begin(), endpoints.end(), [&](const FEndpoint& item) { return LowerNet(item.Host) == LowerNet(endpoint.Host) && item.Port == endpoint.Port; });
+    if (exists == endpoints.end()) { endpoints.push_back(std::move(endpoint)); }
+}
 
 std::vector<std::string> FConnectManager::TokenizeEndpointLine(std::string_view text) {
     std::string s(text);
@@ -55,31 +69,43 @@ std::optional<FEndpoint> FConnectManager::EndpointFromTokens(const std::vector<s
     return std::nullopt;
 }
 
-std::optional<FEndpoint> FConnectManager::ReadEndpointFromConfig() const {
-    auto host = Config.FindString("SERVER");
-    if (!host) { host = Config.FindString("HOST"); }
-    if (!host) { host = Config.FindString("IP"); }
-    if (!host) { host = Config.FindString("ADDRESS"); }
-    if (!host) { host = Config.FindString("MAIN_URL"); }
-    if (!host) { host = Config.FindString("LAST_URL"); }
-    if (!host) { host = Config.FindString("SRV00"); }
-    auto portText = Config.FindString("PORT");
-    if (!portText) { portText = Config.FindString("SERVERPORT"); }
-    if (!portText) { portText = Config.FindString("LOGINPORT"); }
-    if (host && portText) { uint16 parsedPort = 0; if (TryParsePort(TrimNet(*portText), parsedPort)) { return FEndpoint{TrimNet(*host), parsedPort}; } }
+FConnectSettings FConnectManager::ReadConnectionSettings() const {
+    FConnectSettings settings;
+    if (auto offline = Config.FindString("OFFLINE")) { settings.Offline = TrimNet(*offline) == "1" || LowerNet(TrimNet(*offline)) == "true"; }
+    if (auto connectType = Config.FindString("CONNECT_TYPE")) { settings.ConnectType = std::atoi(TrimNet(*connectType).c_str()); }
+
+    uint16 port = 0;
+    for (const char* docName : {"connectn.cfg", "connect.cfg"}) {
+        if (auto portText = FindConfigString(Config, docName, "PORT")) { if (TryParsePort(TrimNet(*portText), port)) { break; } }
+    }
+    if (port == 0) {
+        auto portText = Config.FindString("PORT");
+        if (!portText) { portText = Config.FindString("SERVERPORT"); }
+        if (!portText) { portText = Config.FindString("LOGINPORT"); }
+        if (portText) { TryParsePort(TrimNet(*portText), port); }
+    }
+
+    for (const char* docName : {"connectn.cfg", "connect.cfg"}) {
+        for (const char* key : {"MAIN_URL", "LAST_URL", "SERVER", "HOST", "IP", "ADDRESS", "SRV00"}) {
+            if (auto host = FindConfigString(Config, docName, key)) { if (LooksLikeHost(TrimNet(*host)) && port != 0) { AddUniqueEndpoint(settings.EndpointCandidates, FEndpoint{TrimNet(*host), port}); } }
+        }
+    }
+
     std::vector<std::vector<std::string>> tokenLines;
     for (const auto& docPair : Config.DocumentsByName()) {
         bool likelyConnectDoc = docPair.first.find("connect") != std::string::npos || docPair.first.find("config") != std::string::npos;
         for (const auto& entry : docPair.second.Entries()) {
             std::string key = LowerNet(entry.Scope.empty() ? entry.Key : entry.Scope + "." + entry.Key);
-            if (!host && (key.find("server") != std::string::npos || key.find("host") != std::string::npos || key.find("address") != std::string::npos || key.find("url") != std::string::npos || key == "ip" || key.rfind("srv", 0) == 0)) { if (LooksLikeHost(entry.Value)) { host = TrimNet(entry.Value); } }
-            if (!portText && key.find("port") != std::string::npos) { portText = TrimNet(entry.Value); }
             if (likelyConnectDoc || key.find("server") != std::string::npos || key.find("connect") != std::string::npos || key.find("login") != std::string::npos) { auto tokens = TokenizeEndpointLine(entry.Key + " " + entry.Value); if (tokens.size() >= 2) { tokenLines.push_back(std::move(tokens)); } }
         }
     }
-    if (host && portText) { uint16 parsedPort = 0; if (TryParsePort(TrimNet(*portText), parsedPort)) { return FEndpoint{TrimNet(*host), parsedPort}; } }
-    for (const auto& tokens : tokenLines) { auto endpoint = EndpointFromTokens(tokens); if (endpoint) { return endpoint; } }
-    return std::nullopt;
+    for (const auto& tokens : tokenLines) { if (auto endpoint = EndpointFromTokens(tokens)) { AddUniqueEndpoint(settings.EndpointCandidates, *endpoint); } }
+    if (!settings.EndpointCandidates.empty()) { settings.PrimaryEndpoint = settings.EndpointCandidates.front(); }
+    return settings;
+}
+
+std::optional<FEndpoint> FConnectManager::ReadEndpointFromConfig() const {
+    return ReadConnectionSettings().PrimaryEndpoint;
 }
 
 FStatus FConnectManager::ConnectConfigured() {

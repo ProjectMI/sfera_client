@@ -105,7 +105,7 @@ void FClientFrontendRuntime::InitializeD3D9(const FResourceManager& resources) {
 void FClientFrontendRuntime::StartNetworkProbe(const FClientFrontendDesc& desc) {
     {
         std::lock_guard<std::mutex> lock(SessionMutex);
-        Session.Configure(desc.Endpoint);
+        if (!desc.EndpointCandidates.empty()) { Session.Configure(desc.EndpointCandidates); } else { Session.Configure(desc.Endpoint); }
     }
     if (!ShellCreated) { return; }
     if (desc.TryNetworkProbe && desc.Endpoint) {

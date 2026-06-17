@@ -8,8 +8,8 @@
 namespace Sfera::PathUtils {
 FPath GetExecutablePath() {
     wchar_t buffer[32768] = {};
-    DWORD size = GetModuleFileNameW(nullptr, buffer, static_cast<DWORD>(sizeof(buffer) / sizeof(buffer[0])));
-    if (size == 0 || size >= sizeof(buffer) / sizeof(buffer[0])) { return std::filesystem::current_path(); }
+    DWORD size = GetModuleFileNameW(nullptr, buffer, static_cast<DWORD>(std::size(buffer)));
+    if (size == 0 || size >= std::size(buffer)) { return std::filesystem::current_path(); }
     return FPath(std::wstring(buffer, buffer + size));
 }
 

@@ -9,7 +9,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <utility>
 
 namespace Sfera {
 using uint8 = std::uint8_t;

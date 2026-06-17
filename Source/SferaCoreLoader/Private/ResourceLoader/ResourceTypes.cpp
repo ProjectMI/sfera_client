@@ -1,5 +1,6 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include <algorithm>
+#include <cctype>
 
 namespace Sfera {
 const char* ToString(EResourceKind kind) {
@@ -14,7 +15,9 @@ EResourceKind GuessResourceKind(const FPath& path) {
     if (ext == ".dds" || ext == ".tga" || ext == ".bmp" || ext == ".png") { return EResourceKind::Texture; }
     if (ext == ".mdl" || ext == ".ssm" || ext == ".msh") { return EResourceKind::Model; }
     if (ext == ".mtr" || ext == ".mtx") { return EResourceKind::Material; }
-    if (ext == ".siz" || ext == ".map" || ext == ".lnd") { return EResourceKind::Landscape; }
+    std::string generic = path.generic_string();
+    std::transform(generic.begin(), generic.end(), generic.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    if (ext == ".siz" || ext == ".map" || ext == ".lnd" || (ext == ".bin" && (generic.find("landscape") != std::string::npos || generic.find("xadd/snowpath") != std::string::npos)) || (ext == ".txt" && generic.find("landscape") != std::string::npos)) { return EResourceKind::Landscape; }
     if (ext == ".txt" || ext == ".scr") { return EResourceKind::Script; }
     if (ext == ".wav" || ext == ".ogg" || ext == ".mp3") { return EResourceKind::Sound; }
     return EResourceKind::Binary;

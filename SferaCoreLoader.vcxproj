@@ -1,8 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -40,7 +46,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -53,22 +62,40 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link><SubSystem>Console</SubSystem><EnableCOMDATFolding>true</EnableCOMDATFolding><OptimizeReferences>true</OptimizeReferences><AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\CompressionService.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\LzssCodec.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Compression\SphrCodec.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Compression\ZlibInflate.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Config\ConfigDocument.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Config\ConfigService.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Application.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Logger.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\NumericParse.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Types.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\FileSystem\FileSystem.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\FileSystem\NativeFile.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\FileSystem\PathUtils.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\GameObjectRegistry.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\GameObjectService.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\GameObjectTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\ObjectParamManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcDisassembler.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcEngineBridge.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcLinker.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcModule.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcNativeRegistry.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcOpcode.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcProject.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcVirtualMachine.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ConnectManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\NetworkTypes.h" />
@@ -77,10 +104,16 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\SferaCoreLoader\Private\Compression\CompressionService.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Compression\LzssCodec.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\SphrCodec.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Compression\ZlibInflate.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigDocument.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp" />
@@ -89,9 +122,18 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectRegistry.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp" />
@@ -99,6 +141,8 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

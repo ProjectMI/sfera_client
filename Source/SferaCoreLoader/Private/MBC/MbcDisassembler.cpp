@@ -3,21 +3,38 @@
 #include <sstream>
 
 namespace Sfera {
-static std::string HexByte(uint8 value) {
+static std::string Hex(uint32 value) { std::ostringstream out; out << "0x" << std::uppercase << std::hex << value; return out.str(); }
+static std::string RenderOperands(const FMbcDecodedOpcode& decoded) {
     std::ostringstream out;
-    out << "OP_" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << int(value);
+    bool first = true;
+    for (const auto& [key, value] : decoded.Operands) { if (key == "semantic" || key == "handler" || key == "handler_ea") { continue; } out << (first ? " " : ", ") << key << "=" << value; first = false; }
     return out.str();
 }
-
 std::vector<FMbcInstruction> FMbcDisassembler::Disassemble(const FMbcModule& module, size_t maxInstructions) const {
     std::vector<FMbcInstruction> result;
-    const FByteArray& bytes = module.Bytes();
-    uint32 offset = module.Header().CodeOffset;
-    uint32 end = module.Header().CodeSize ? std::min<uint32>(static_cast<uint32>(bytes.size()), offset + module.Header().CodeSize) : static_cast<uint32>(bytes.size());
-    while (offset < end && result.size() < maxInstructions) {
-        uint8 opcode = bytes[offset];
-        result.push_back({offset, opcode, HexByte(opcode)});
-        ++offset;
+    uint32 offset = 0;
+    const FByteArray& code = module.Code();
+    while (offset < code.size() && result.size() < maxInstructions) {
+        FMbcDecodedOpcode decoded = DecodeMbcOpcode(code, offset);
+        uint32 length = std::max<uint32>(decoded.Length, 1);
+        std::string text = Hex(offset) + " " + decoded.Mnemonic + RenderOperands(decoded);
+        result.push_back({offset, offset + Mbc::CodeFileOffset, code[offset], decoded.Mnemonic, std::move(text), decoded});
+        offset += length;
+        if (decoded.Terminal) { break; }
+    }
+    return result;
+}
+std::vector<FMbcInstruction> FMbcDisassembler::DisassembleProgram(const FMbcModule& module, const FMbcProgram& program, size_t maxInstructions) const {
+    std::vector<FMbcInstruction> result;
+    uint32 offset = program.Start;
+    const FByteArray& code = module.Code();
+    while (offset < code.size() && result.size() < maxInstructions) {
+        FMbcDecodedOpcode decoded = DecodeMbcOpcode(code, offset);
+        uint32 length = std::max<uint32>(decoded.Length, 1);
+        std::string text = Hex(offset) + " " + decoded.Mnemonic + RenderOperands(decoded);
+        result.push_back({offset, offset + Mbc::CodeFileOffset, code[offset], decoded.Mnemonic, std::move(text), decoded});
+        offset += length;
+        if (decoded.Terminal || offset > program.End) { break; }
     }
     return result;
 }

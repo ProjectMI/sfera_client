@@ -3,7 +3,14 @@
 #include <unordered_map>
 
 namespace Sfera {
-struct FConfigEntry { std::string Key; std::string Value; std::string Scope; size_t Line = 0; };
+struct FConfigEntry {
+    std::string Key;
+    std::string Value;
+    std::string Scope;
+    std::string TypeTag;
+    std::string RawLine;
+    size_t Line = 0;
+};
 
 class FConfigDocument {
 public:

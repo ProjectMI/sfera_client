@@ -1,13 +1,17 @@
 #pragma once
 #include "Core/Types.h"
+#include "MBC/MbcTypes.h"
 #include <functional>
 #include <unordered_map>
 
 namespace Sfera {
-using FMbcNative = std::function<FStatus(const std::vector<int64>&)>;
+class FMbcVirtualMachine;
+struct FMbcNativeContext { FMbcVirtualMachine* Vm = nullptr; const FByteArray* Data = nullptr; std::string Name; std::vector<FMbcValue> Args; std::optional<FMbcValue> ReturnValue; std::string Commentary; };
+using FMbcNative = std::function<FStatus(FMbcNativeContext&)>;
 class FMbcNativeRegistry {
 public:
     void Register(std::string name, FMbcNative function);
+    void RegisterNoOp(std::string name, bool pushesValue = false);
     const FMbcNative* Find(std::string_view name) const;
     std::vector<std::string> Names() const;
 private:

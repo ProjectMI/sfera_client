@@ -12,6 +12,10 @@ public:
     void Close();
     bool IsConnected() const { return Socket.IsConnected(); }
 private:
+    static std::vector<std::string> TokenizeEndpointLine(std::string_view text);
+    static bool LooksLikeHost(std::string_view token);
+    static bool TryParsePort(std::string_view token, uint16& outPort);
+    static std::optional<FEndpoint> EndpointFromTokens(const std::vector<std::string>& tokens);
     const FConfigService& Config;
     FTcpSocket Socket;
     FPacketBuffer Packets;

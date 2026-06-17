@@ -2,7 +2,7 @@
 #include "Core/Types.h"
 
 namespace Sfera {
-enum class ECompressionMethod { Raw, LegacyLzss, Unsupported };
+enum class ECompressionMethod { Raw, LegacyLzss, ZlibDeflate, LegacySphr, Unsupported };
 struct FCompressionProbe { ECompressionMethod Method = ECompressionMethod::Raw; size_t HeaderSize = 0; size_t ExpectedSize = 0; std::string Commentary; };
 
 class FCompressionService {

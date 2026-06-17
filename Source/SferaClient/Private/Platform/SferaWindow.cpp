@@ -1,4 +1,5 @@
 #include "SferaWindow.h"
+#include "SferaInterfaceResourceManager.h"
 #include <algorithm>
 
 std::string_view SferaWindow::GetClassName()
@@ -90,6 +91,15 @@ bool SferaWindow::Create(HINSTANCE Instance, const SferaSize2D& DesiredClientSiz
     return true;
 }
 
+void SferaWindow::SetInterfaceResources(const SferaInterfaceResourceManager* Resources)
+{
+    InterfaceResources = Resources;
+    if (WindowHandle && InterfaceResources)
+    {
+        SetWindowTextA(WindowHandle, InterfaceResources->GetStartupTitle().c_str());
+    }
+}
+
 void SferaWindow::Destroy()
 {
     if (WindowHandle)
@@ -133,6 +143,13 @@ LRESULT SferaWindow::WndProc(HWND Hwnd, UINT Message, WPARAM WParam, LPARAM LPar
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+    case WM_PAINT:
+    {
+        PAINTSTRUCT Paint = {};
+        BeginPaint(Hwnd, &Paint);
+        EndPaint(Hwnd, &Paint);
+        return 0;
+    }
     case WM_SETCURSOR:
         SetCursor(LoadCursorA(nullptr, IDC_ARROW));
         return TRUE;

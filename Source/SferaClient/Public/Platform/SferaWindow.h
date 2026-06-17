@@ -1,6 +1,8 @@
 #pragma once
 #include "SferaBase.h"
 
+class SferaInterfaceResourceManager;
+
 class SferaWindow
 {
 public:
@@ -9,6 +11,7 @@ public:
     void Destroy();
 
     HWND GetHandle() const { return WindowHandle; }
+    void SetInterfaceResources(const SferaInterfaceResourceManager* Resources);
     bool IsValid() const { return WindowHandle != nullptr; }
 
     static std::string_view GetClassName();
@@ -20,4 +23,5 @@ private:
 
 private:
     HWND WindowHandle = nullptr;
+    const SferaInterfaceResourceManager* InterfaceResources = nullptr;
 };

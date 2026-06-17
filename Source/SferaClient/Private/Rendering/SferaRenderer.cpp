@@ -1,11 +1,13 @@
 #include "SferaRenderer.h"
 #include "SferaResourceManager.h"
+#include "SferaInterfaceResourceManager.h"
 #include <cstdio>
 
-bool SferaRenderer::Initialize(HWND InWindowHandle, const SferaResourceManager* InResources)
+bool SferaRenderer::Initialize(HWND InWindowHandle, const SferaResourceManager* InResources, const SferaInterfaceResourceManager* InInterfaceResources)
 {
     WindowHandle = InWindowHandle;
     ResourceManager = InResources;
+    InterfaceResources = InInterfaceResources;
     if (!WindowHandle)
     {
         return false;
@@ -21,6 +23,7 @@ void SferaRenderer::Shutdown()
     D3D11Renderer.Shutdown();
     bHardwareRendererActive = false;
     ResourceManager = nullptr;
+    InterfaceResources = nullptr;
     WindowHandle = nullptr;
 }
 
@@ -34,25 +37,21 @@ void SferaRenderer::Tick()
     if (bHardwareRendererActive && D3D11Renderer.BeginFrame(0.0f, 0.0f, 0.0f, 1.0f))
     {
         D3D11Renderer.Present();
-        DrawGdiOverlayOnly();
         return;
     }
 
-    DrawGdiOverlayOnly();
+    DrawGdiFallbackFrame();
 }
 
-void SferaRenderer::DrawGdiOverlayOnly()
+void SferaRenderer::DrawGdiFallbackFrame()
 {
     HDC Dc = GetDC(WindowHandle);
     if (Dc)
     {
         RECT Rect = {};
         GetClientRect(WindowHandle, &Rect);
-        if (!bHardwareRendererActive)
-        {
-            HBRUSH Brush = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-            FillRect(Dc, &Rect, Brush);
-        }
+        HBRUSH Brush = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+        FillRect(Dc, &Rect, Brush);
         DrawBootstrapOverlay(Dc, Rect);
         ReleaseDC(WindowHandle, Dc);
     }
@@ -75,7 +74,7 @@ void SferaRenderer::DrawBootstrapOverlay(HDC Dc, const RECT& Rect)
             "SferaClientSnapshot S0003 x64\n"
             "renderer: %s | sound: NoOp\n"
             "resources: %d files | cfg %d | scripts %d | ui %d | tex %d | sound indexed %d | model %d | landscape %d | shaders %d\n"
-            "root: %s",
+            "root: %s%s%s",
             bHardwareRendererActive ? "D3D11" : "GDI fallback",
             Stats.TotalFiles,
             Stats.ConfigFiles,
@@ -86,7 +85,9 @@ void SferaRenderer::DrawBootstrapOverlay(HDC Dc, const RECT& Rect)
             Stats.ModelFiles,
             Stats.LandscapeFiles,
             Stats.ShaderFiles,
-            ResourceManager->GetRootDirectory().c_str());
+            ResourceManager->GetRootDirectory().c_str(),
+            InterfaceResources ? "\n" : "",
+            InterfaceResources ? InterfaceResources->GetStartupStatusText().c_str() : "");
     }
     else
     {

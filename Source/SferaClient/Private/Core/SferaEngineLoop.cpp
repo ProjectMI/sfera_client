@@ -18,7 +18,7 @@ bool SferaEngineLoop::Initialize(SferaAppContext& Context)
     InterfaceResources.Initialize(ResourceManager);
     CursorManager.Initialize(ResourceManager, Context.Config.UseHardwareCursor());
     InputSystem.Initialize(Context.MainWindow);
-    Renderer.Initialize(Context.MainWindow, &ResourceManager);
+    Renderer.Initialize(Context.MainWindow, &ResourceManager, &InterfaceResources);
     SoundSystem.Initialize(ResourceManager);
     NetworkClient.Initialize();
     ScriptRuntime.Initialize(ResourceManager);
@@ -55,7 +55,6 @@ int SferaEngineLoop::Run()
         InputSystem.Tick();
         NetworkClient.Tick();
         ScriptRuntime.Tick();
-        InvalidateRect(AppContext->MainWindow, nullptr, FALSE);
         Renderer.Tick();
         Sleep(1);
     }

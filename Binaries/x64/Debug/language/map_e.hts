@@ -1,6 +1,0 @@
-MAP (map.hts)
-hypertext
-{
-<tab><cl=F0F010>MAP<cl=A2A2A2><br><br>
-<tab>If your character has a map of the locality, you can open it and increase/reduce its transparency by clicking the buttons "+" or "-" respectively, and see where you are (a little figure on the map). If your character has an inkpot, you can put on the map a number of objects such as monsters, houses, castles, cities, bridges, caves, ruins etc. To do this, click the "continent"  button (next to the "-" button). A window opens with icons of various objects. Click on the desired icon (it will "stick" to the pointer), then click on the map where you want that object. You can also put a note on the map beside the object. To do that, just click the object so that it starts flashing, enter the text in the text box and then click anywhere on the map.<br>
-} 

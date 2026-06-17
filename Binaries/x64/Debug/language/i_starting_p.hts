@@ -1,8 +1,0 @@
-COMEÇANDO (i_starting_p.hts)
-hypertext
-{
-<tab><cl=F0F010>COMEÇANDO<cl=A2A2A2><br><br>
-<tab>Primeiro, você deve entender <l="hts:\\language\i_mainp_p.hts">os controles do jogo<\l>, aprenda como mover, mudar entre modo clássico e de batalha, segurar vários objetos, colocar dentro de <l="hts:\\language\inventory_p.hts">inventário<\l>, e se comunicar com outros jogadores.<br>
-<tab>Então você deve acertar sua <l="hts:\\language\i_charact_p.hts">caracteristica<\l> e decidir qual caminho seguir: de soldado ou de mago. Se decidir seguir o caminho de soldado, deverá encontrar modos de obter armas e armaduras, aprender os mantras apropriados, cuidar de sua saúde, desenvolver características físicas e pegar missões apropriadas para seu titulo. E se sua decisão for da magia, terá que estudar e praticar alquimia, buscar por receitas para novos compostos mágicos, aprender mantras de magos, pegar missões que elevem seu grau e sua particularidade especial.<br>
-}
-

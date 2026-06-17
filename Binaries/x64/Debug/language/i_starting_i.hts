@@ -1,8 +1,0 @@
-PARTENZA (i_starting.hts)
-hypertext
-{
-<tab><cl=F0F010>PARTENZA<cl=A2A2A2><br><br>
-<tab>Prima di tutto c'è da capire i <l="hts:\\language\i_mainp.hts">controlli del gioco<\l>, capire come muoversi, cambiare tra modalità standard e battaglia, impratichirsi con gli oggetti mettendoli nell'<l="hts:\\language\inventory.hts">inventario<\l>, e comunicare con gli altri giocatori.<br>
-<tab>Quindi si devono assegnare le proprie <l="hts:\\language\i_charact.hts">caratteristiche<\l> e decidere quale via intraprendere: il soldato o il mago. Se si decide per la via del soldato, bisogna capire come ottenere nuove armi e armature, imparare i giusti mantra, stare attenti alla salute, aumentare le proprie caratteristiche fisiche e prendere missioni che facciano salire di titolo. Se si decide per la via del mago si deve studiare e fare pratica di alchimia cercando e inventando formule per nuovi composti magici, imparare i mantra dei maghi, accettare missioni che alzano i gradi e riguardino al propria specializzazione.<br>
-}
-

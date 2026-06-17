@@ -1,8 +1,0 @@
-STARTING (i_starting.hts)
-hypertext
-{
-<tab><cl=F0F010>STARTING<cl=A2A2A2><br><br>
-<tab>First, you must understand <l="hts:\\language\i_mainp.hts">game control<\l>, i.e. learn how to move, switch between ordinary and battle modes, handle various objects, put them into <l="hts:\\language\inventory.hts">inventory<\l>, and communicate with other players.<br>
-<tab>Then you must assess your current <l="hts:\\language\i_charact.hts">characteristics<\l> and decide which path suits you better: that of soldier or mage. If you decide to follow the path of soldier, you will have to find out how to obtain new weapons and armor, learn appropriate mantras, take good care of your health, develop your physical characteristics and take missions designed to develop title. And if you decide to become a mage, you'll have to study and practice alchemy, search for and invent recipes for new magic compounds, learn mage's mantras, take missions, which increase degree and develop in your particular speciality.<br>
-}
-

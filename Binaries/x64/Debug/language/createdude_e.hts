@@ -1,7 +1,0 @@
-CREATE NEW CHARACTER WINDOW (createdude.hts)
-hypertext
-{
-<tab><cl=F0F010>CREATE NEW CHARATER<cl=A2A2A2><br><br>
-<tab>Select the appearance of your future character by pressing the arrows by the <cl=FFFFFF>Face<cl=B0B0B0>, <cl=FFFFFF>Hair style<cl=B0B0B0>, <cl=FFFFFF>Hair<cl=B0B0B0>, and <cl=FFFFFF>Tattoo<cl=B0B0B0> fields. To change the sex of the character to female click the “Male” button (character sex by default). The name of the character cannot exceed 15 symbols.<br>
-}
-

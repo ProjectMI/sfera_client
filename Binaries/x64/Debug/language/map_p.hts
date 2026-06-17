@@ -1,6 +1,0 @@
-MAPA (map_p.hts)
-hypertext
-{
-<tab><cl=F0F010>MAPA<cl=A2A2A2><br><br>
-<tab>Se seu personagem tiver um mapa do local, você pode abrir e aumentar ou diminuir sua transparência nos botões "+" ou "-" respectivamente, e ver onde você está no momento (pequena figura no mapa). Se seu personagem tem um tinteiro, você pode colocar no mapa anotações como monstros, casas, castelos, cidades, pontes, cavernas, etc. Para fazer isso, Aperte o botão "continente"  (próximo ao botão "-"). Uma janela abre com ícones de vários objetos. Clique no objeto desejado (ficará apontado no ponteiro), então selecione no mapa onde vai querer aquele objeto. Você também pode botar uma nota ao lado do objeto. Para fazer isso, clique no objeto até ele ficar piscando, digite o texto então selecione o local no mapa.<br>
-} 

@@ -1,7 +1,0 @@
-DIARIO (journal.hts)
-hypertext
-{
-<tab><cl=F0F010>DIARIO<cl=A2A2A2><br><br>
-<tab>Il diario contiene importanti note sul proprio personaggio.
-Se il personaggio possiede un calamaio, si potranno creare note personali nel Diario. Per farlo selezionare: <cl=FFFFFF>Nuova nota<cl=B0B0B0>. Per leggere una nota premere il rispettivo bottone o doppio click. Per cancellare una nota cliccarla col tasto sinistro e premere: <cl=FFFFFF>Cancellare note<cl=B0B0B0>. Non ci sarà conferma per la cancellazione della nota.<br>
-}

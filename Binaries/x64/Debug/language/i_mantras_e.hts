@@ -1,6 +1,0 @@
-MANTRAS(i_mantras.hts)
-hypertext
-{
-<tab><cl=F0F010>MANTRAS<cl=A2A2A2><br><br>
-<tab>A Mantra is a sheet with a magic spell. A spell "pronounced" by your character will lead to a certain magic effect, that changes the parameters of the characters or enhances him with certain additional capabilities. Some mantras will only work at a certain level of your character’s <l="hts:\\language\i_charact.hts">karma</l>. Mantras can be found or bought. To use a mantra for multiple times it has to be "memorized" with the help of the <l="hts:\\language\mantrabook.hts">Book of Mantras</l>.<br>
-}

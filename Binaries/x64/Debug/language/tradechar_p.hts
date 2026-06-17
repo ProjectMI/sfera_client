@@ -1,8 +1,0 @@
-JANELA DE TROCA(VENDENDO) (tradechar_p.hts)
-hypertext
-{
-<tab><cl=F0F010>VENDENDO<cl=A2A2A2><br><br>
-Usando esta janela você pode vender mercadorias. Para colocar um objeto a venda, somente arraste de seu <l="hts:\\language\inventory_p.hts"> inventário<\l> ou <l="hts:\\language\puppet_p.hts">janela de personagem<\l> para alguma célula ocupada desta janela. Na segunda coluna você pode colocar seu preço. Até você ajustar o preço, outros personagens não poderão comprar, apesar de poderem ver o que você está vendendo em suas <l="hts:\\language\trade_p.hts">janela de compra<\l>. Eles podem oferecer seu próprio que você verá na terceira coluna. Você pode aceitar ou rejeitar a oferta usando os botões na Quarta coluna.<br>
-<tab>Os objetos colocados a venda permanecem nesta janela até você morrer ou sair do jogo. Quando um objeto é colocado a venda e o preço é ajustado, poderá ser comprado à qualquer momento por qualquer um que se aproxime de você.<br>
-}
-

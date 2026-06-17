@@ -1,6 +1,0 @@
-MANTRA(i_mantras.hts)
-hypertext
-{
-<tab><cl=F0F010>MANTRA<cl=A2A2A2><br><br>
-<tab>Un Mantra è un foglio con un incantesimo magico. Un incantesimo "pronunciato" dal personaggio porterà un determinato effetto magico, questo cambia i parametri del personaggio o lo potenzia con particolari capacità aggiuntive. Alcuni mantra funzionano solamente a un determinato livello del <l="hts:\\language\i_charact.hts">karma</l> del personaggio. I mantra si possono trovare o comprare. Per usare un mantra per più volte c'è bisogno di memorizzarlo con l'aiuto del <l="hts:\\language\mantrabook.hts">Libro dei mantra</l>.<br>
-}

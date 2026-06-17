@@ -1,7 +1,0 @@
-LOG (journal_p.hts)
-hypertext
-{
-<tab><cl=F0F010>LOG <cl=A2A2A2><br><br>
-<tab>O log contem notas importantes no seu personagem.
-Se ele tiver um tinteiro, você poderá fazer anotações no log. Para fazer isso selecione: <cl=FFFFFF>Nova entrada<cl=B0B0B0>. Para ler uma anotação pressione o botão correspondente ou dê um duplo clique. Para apagar uma anotação clique com botão esquerdo para selecionar e pressione: <cl=FFFFFF>Apagar entrada<cl=B0B0B0>. Nenhuma confirmação será pedida para apagar.<br>
-}

@@ -1,7 +1,0 @@
-LOG (journal.hts)
-hypertext
-{
-<tab><cl=F0F010>LOG <cl=A2A2A2><br><br>
-<tab>The log contains important notes on your character.
-If your character has an inkpot, you can make notes in the log yourself. To do that select: <cl=FFFFFF>New entry<cl=B0B0B0>. To read a note press the respective button or double-click. To delete an entry left-click on it to select and press: <cl=FFFFFF>Delete entry<cl=B0B0B0>. No confirmation will be requested for deletion.<br>
-}

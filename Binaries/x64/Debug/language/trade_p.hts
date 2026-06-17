@@ -1,9 +1,0 @@
-JANELA DE TROCAS (BUYING) (trade_p.hts)
-hypertext
-{
-<tab><cl=F0F010>COMPRAS<cl=A2A2A2><br><br>
-Nesta janela você pode comprar itens de habitantes de Sphere e outros personagens. Na coluna da esquerda tem ícones de itens para venda. VocÊ pode ler sobre um certo item usando <cl=FFFFFF>olhar<cl=B0B0B0> função. Na próxima coluna estão preços e então existe um campo pelo seu preço de oferta. Você deve clicar neste campo e colocar sua própria oferta.<br>
-<tab>Você pode comprar um artigo clicando no botão "compra" ou arrastando seu dinheiro até o ícone do item desejado. Se não tiver dinheiro suficiente o botão ficará com menor intensidade de brilho.<br>
-<tab>Você tambem poderá vender itens. Para fazer isso <cl=FFFFFF>junto com a janela de compra<cl=B0B0B0> você deve abrir <l="hts:\\language\tradechar_p.hts"> janela de venda <\l> pressionando a tecla "T".<br>
-}
-

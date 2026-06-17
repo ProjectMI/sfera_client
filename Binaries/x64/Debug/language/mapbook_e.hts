@@ -1,7 +1,0 @@
-MAP BOOK (mapbook.hts)
-hypertext
-{
-<tab><cl=F0F010>MAP BOOK<cl=A2A2A2><br><br>
-<tab>You keep all your maps in this book. To open a map, just double-click its name using the left mouse button.<br>
-<tab>The "M" key (default key) opens the map of the location where you are now. If there are several such maps, the one at the top of the list opens.<br>
-} 

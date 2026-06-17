@@ -1,6 +1,0 @@
-CONTAINER (container.hts)
-hypertext
-{
-<tab><cl=F0F010>CONTAINER<cl=A2A2A2><br><br>
-<tab><cl=FFFFFF>A container<cl=B0B0B0> is a bag, sack, chest - or any other vessel that can hold other objects. To open or close a container use left mouse click. Each container has a weight of its own, as well as maximum allowable weight (together with the objects it holds). To find out these weights <l="hts:\\language\i_mainp.hts">"look"<\l> at the container. You will not be able to place an object into the container, if the maximum allowable weight is exceeded.<br>In some containers there are special cells for certain objects - for example, in hotel room trunks some last cells are made for achemy ingredients and magical powders.<br>
-}

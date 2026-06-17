@@ -1,5 +1,4 @@
 #include "SferaWindow.h"
-#include "SferaInterfaceResourceManager.h"
 #include <algorithm>
 
 std::string_view SferaWindow::GetClassName()
@@ -91,16 +90,6 @@ bool SferaWindow::Create(HINSTANCE Instance, const SferaSize2D& DesiredClientSiz
     return true;
 }
 
-void SferaWindow::SetInterfaceResources(const SferaInterfaceResourceManager* Resources)
-{
-    InterfaceResources = Resources;
-    if (WindowHandle && InterfaceResources)
-    {
-        SetWindowTextA(WindowHandle, InterfaceResources->GetStartupTitle().c_str());
-        InvalidateRect(WindowHandle, nullptr, TRUE);
-    }
-}
-
 void SferaWindow::Destroy()
 {
     if (WindowHandle)
@@ -144,52 +133,10 @@ LRESULT SferaWindow::WndProc(HWND Hwnd, UINT Message, WPARAM WParam, LPARAM LPar
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
-    case WM_PAINT:
-        PaintStartupUi(Hwnd);
-        return 0;
     case WM_SETCURSOR:
         SetCursor(LoadCursorA(nullptr, IDC_ARROW));
         return TRUE;
     default:
         return DefWindowProcA(Hwnd, Message, WParam, LParam);
     }
-}
-
-void SferaWindow::PaintStartupUi(HWND Hwnd)
-{
-    PAINTSTRUCT Paint = {};
-    HDC DeviceContext = BeginPaint(Hwnd, &Paint);
-    if (!DeviceContext)
-    {
-        return;
-    }
-
-    RECT ClientRect = {};
-    GetClientRect(Hwnd, &ClientRect);
-    HBRUSH Background = CreateSolidBrush(RGB(10, 12, 18));
-    FillRect(DeviceContext, &ClientRect, Background);
-    DeleteObject(Background);
-
-    SetBkMode(DeviceContext, TRANSPARENT);
-    SetTextColor(DeviceContext, RGB(210, 220, 235));
-    RECT TextRect = { 24, 24, ClientRect.right - 24, ClientRect.bottom - 24 };
-    const char* Header = InterfaceResources ? InterfaceResources->GetStartupStatusText().c_str() : "Interface resources are not attached";
-    DrawTextA(DeviceContext, Header, -1, &TextRect, DT_LEFT | DT_TOP | DT_SINGLELINE);
-
-    if (InterfaceResources)
-    {
-        int Y = 56;
-        for (const SferaResourceRecord* Record : InterfaceResources->GetStartupUiFiles())
-        {
-            if (!Record)
-            {
-                continue;
-            }
-            RECT RowRect = { 40, Y, ClientRect.right - 40, Y + 22 };
-            DrawTextA(DeviceContext, Record->LogicalPath.c_str(), -1, &RowRect, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_END_ELLIPSIS);
-            Y += 24;
-        }
-    }
-
-    EndPaint(Hwnd, &Paint);
 }

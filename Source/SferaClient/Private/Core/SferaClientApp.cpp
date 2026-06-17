@@ -28,7 +28,6 @@ bool SferaClientApp::Initialize(HINSTANCE Instance, const std::string& CommandLi
         return false;
     }
 
-    MainWindow.SetInterfaceResources(EngineLoop.GetInterfaceResources());
     return true;
 }
 
@@ -47,7 +46,6 @@ int SferaClientApp::Run(HINSTANCE Instance, HINSTANCE, const std::string& Comman
 
 void SferaClientApp::Shutdown()
 {
-    MainWindow.SetInterfaceResources(nullptr);
     EngineLoop.Shutdown();
     MainWindow.Destroy();
     Context.MainWindow = nullptr;

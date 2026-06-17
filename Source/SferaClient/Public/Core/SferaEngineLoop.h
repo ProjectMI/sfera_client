@@ -18,7 +18,6 @@ public:
     bool Initialize(SferaAppContext& Context);
     int Run();
     void Shutdown();
-    const SferaInterfaceResourceManager* GetInterfaceResources() const { return &InterfaceResources; }
 
 private:
     SferaAppContext* AppContext = nullptr;

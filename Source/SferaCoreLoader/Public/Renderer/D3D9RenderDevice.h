@@ -3,6 +3,7 @@
 #include "Core/Types.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiResourceDocument.h"
+#include "UI/FontCatalog.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -52,7 +53,7 @@ private:
     bool DrawSprite(FUiDrawContext& ctx, const FUiWindow& window, std::string_view spriteName, const FDrawRect& dst, float alpha = 1.0f);
     bool DrawWindow(FUiDrawContext& ctx, const FUiWindow& window, const FDrawRect& overrideRect, bool forceConnectionTitle);
     void DrawControl(FUiDrawContext& ctx, const FUiWindow& window, const FUiControl& control, const FDrawRect& windowRect);
-    void DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center);
+    void DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId = -1);
     void DrawSolidRect(float x, float y, float w, float h, unsigned long color);
     void DrawTextureSlice(IDirect3DTexture9* texture, const FUiTextureSlice& slice, const FDrawRect& spriteRect, int textureWidth, int textureHeight, float alpha);
     void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color);
@@ -63,6 +64,7 @@ private:
     HINSTANCE__* D3DXModule = nullptr;
     FD3DXCreateTextureFromFileInMemoryExPtr D3DXCreateTextureFromFileInMemoryExFn = nullptr;
     std::unordered_map<std::string, FD3D9TextureEntry> TextureCache;
+    FUiFontCatalog FontCatalog;
     bool ReportedD3DXMissing = false;
 };
 }

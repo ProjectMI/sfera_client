@@ -201,6 +201,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp">
       <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\FontCatalog.cpp">
+      <Filter>Source\SferaCoreLoader\Private\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\UI\LoadingScreen.cpp">
       <Filter>Source\SferaCoreLoader\Private\UI</Filter>
     </ClCompile>
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h">
       <Filter>Source\SferaCoreLoader\Public\ResourceLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\FontCatalog.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\LoadingScreen.h">
       <Filter>Source\SferaCoreLoader\Public\UI</Filter>

@@ -316,8 +316,7 @@ bool FD3D9RenderDevice::DrawSprite(FUiDrawContext& ctx, const FUiWindow& window,
     return true;
 }
 
-void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center) {
-    (void)ctx;
+void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId) {
     if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return; }
     int w = std::max(2, static_cast<int>(std::ceil(rect.W)));
     int h = std::max(2, static_cast<int>(std::ceil(rect.H)));
@@ -343,7 +342,20 @@ void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect,
     SetBkMode(memdc, TRANSPARENT);
     SetTextColor(memdc, RGB(ColorR(color), ColorG(color), ColorB(color)));
     int fontHeight = -std::max(8, std::min(18, static_cast<int>(rect.H * 0.72f)));
-    HFONT font = CreateFontW(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Arial");
+    const FUiFontFace* uiFont = ctx.Resources.Catalog().Count() > 0 ? FontCatalog.Find(fontId) : nullptr;
+    const wchar_t* faceName = L"Arial";
+    if (uiFont) {
+        switch (uiFont->Index) {
+        case 0: faceName = L"Tahoma"; break;
+        case 6: faceName = L"Consolas"; break;
+        case 7: faceName = L"Garamond"; break;
+        case 8: faceName = L"Georgia"; break;
+        case 10: faceName = L"Times New Roman"; break;
+        case 11: faceName = L"Verdana"; break;
+        default: break;
+        }
+    }
+    HFONT font = CreateFontW(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, faceName);
     HGDIOBJ oldFont = SelectObject(memdc, font);
     RECT textRect{0, 0, w, h};
     std::wstring wide = Utf8ToWide(text);
@@ -413,7 +425,7 @@ void FD3D9RenderDevice::DrawControl(FUiDrawContext& ctx, const FUiWindow& window
         if (sprite.empty()) { sprite = control.DrawSprite; }
         if (!sprite.empty()) { DrawSprite(ctx, window, sprite, r); }
         std::string text = ControlText(control);
-        if (!text.empty()) { DrawTextRect(ctx, r, text, hovered ? Argb(255, 255, 239, 212) : ParseTextColor(control, Argb(255, 255, 255, 255)), true); }
+        if (!text.empty()) { DrawTextRect(ctx, r, text, hovered ? Argb(255, 255, 239, 212) : ParseTextColor(control, Argb(255, 255, 255, 255)), true, control.Font); }
         return;
     }
     if (EqualsNoCase(control.ClassId, "CHECKBOX")) {
@@ -436,10 +448,10 @@ void FD3D9RenderDevice::DrawControl(FUiDrawContext& ctx, const FUiWindow& window
             if (control.Id == 7) { text = ctx.Interaction->LoginText; }
             else if (control.Id == 8) { text.assign(ctx.Interaction->PasswordText.size(), '*'); }
         }
-        if (!text.empty()) { DrawTextRect(ctx, r, text, ParseTextColor(control, Argb(255, 237, 208, 161)), IsCentered(control)); }
+        if (!text.empty()) { DrawTextRect(ctx, r, text, ParseTextColor(control, Argb(255, 237, 208, 161)), IsCentered(control), control.Font); }
         return;
     }
-    if (EqualsNoCase(control.ClassId, "TEXT")) { DrawTextRect(ctx, r, ControlText(control), ParseTextColor(control, Argb(255, 255, 255, 255)), IsCentered(control)); return; }
+    if (EqualsNoCase(control.ClassId, "TEXT")) { DrawTextRect(ctx, r, ControlText(control), ParseTextColor(control, Argb(255, 255, 255, 255)), IsCentered(control), control.Font); return; }
 }
 
 bool FD3D9RenderDevice::DrawWindow(FUiDrawContext& ctx, const FUiWindow& window, const FDrawRect& overrideRect, bool forceConnectionTitle) {
@@ -460,7 +472,7 @@ bool FD3D9RenderDevice::DrawWindow(FUiDrawContext& ctx, const FUiWindow& window,
             NumericParse::TryParseInt32Strict(prop->Values[3], y2);
             tr = {wr.X + static_cast<float>(x1) * ctx.Scale, wr.Y + static_cast<float>(y1) * ctx.Scale, std::max(1.0f, std::min(static_cast<float>(x2 - x1) * ctx.Scale, wr.W - static_cast<float>(x1) * ctx.Scale)), std::max(1.0f, static_cast<float>(y2 - y1) * ctx.Scale)};
         }
-        DrawTextRect(ctx, tr, title, Argb(255, 237, 208, 161), false);
+        DrawTextRect(ctx, tr, title, Argb(255, 237, 208, 161), false, window.Font);
     }
     for (const auto& control : window.Controls) { DrawControl(ctx, window, control, wr); }
     return true;
@@ -468,6 +480,10 @@ bool FD3D9RenderDevice::DrawWindow(FUiDrawContext& ctx, const FUiWindow& window,
 
 
 void FD3D9RenderDevice::PreloadLoadingScreenTextures(const FResourceManager& resources, const FLoadingScreenModel& model, FLogger* logger) {
+    FontCatalog.Load(resources, logger);
+    for (const auto& face : FontCatalog.Faces()) {
+        if (!face.TextureResource.empty()) { LoadTextureByName(resources, face.TextureResource, logger); }
+    }
     auto preloadWindow = [&](const FUiWindow* window) {
         if (!window) { return; }
         for (const auto& sprite : window->Sprites) {
@@ -483,6 +499,7 @@ void FD3D9RenderDevice::PreloadLoadingScreenTextures(const FResourceManager& res
 
 FStatus FD3D9RenderDevice::RenderLoadingScreen(const FResourceManager& resources, const FLoadingScreenModel& model, const tagRECT& rect, FLogger* logger) {
     if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
+    FontCatalog.Load(resources, logger);
     const FUiWindow* loadscreen = model.LayoutWindow();
     if (!loadscreen) { return FStatus::Error(EStatusCode::RuntimeError, "loadscreen UI is not parsed"); }
     float clientW = static_cast<float>(rect.right - rect.left);

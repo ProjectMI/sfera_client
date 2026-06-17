@@ -87,6 +87,7 @@
     <ClInclude Include="Source\SferaClient\Public\Scripting\SferaScriptRuntime.h" />
     <ClInclude Include="Source\SferaClient\Public\UI\SferaCursorManager.h" />
     <ClInclude Include="Source\SferaClient\Public\UI\SferaInterfaceResourceManager.h" />
+    <ClInclude Include="Source\SferaClient\Public\UI\SferaUiControlCatalog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\SferaClient\Private\Audio\SferaSoundSystem.cpp" />
@@ -111,6 +112,7 @@
     <ClCompile Include="Source\SferaClient\Private\Scripting\SferaScriptRuntime.cpp" />
     <ClCompile Include="Source\SferaClient\Private\UI\SferaCursorManager.cpp" />
     <ClCompile Include="Source\SferaClient\Private\UI\SferaInterfaceResourceManager.cpp" />
+    <ClCompile Include="Source\SferaClient\Private\UI\SferaUiControlCatalog.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

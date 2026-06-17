@@ -1,6 +1,6 @@
 #include "Network/ClientSession.h"
-#include "Network/ClientProtocol.h"
-
+#include <iomanip>
+#include <sstream>
 namespace Sfera {
 FClientSession::FClientSession(FLogger* logger) : Log(logger) {}
 
@@ -35,7 +35,7 @@ FStatus FClientSession::StartProbe(uint32 timeoutMs) {
     FStatus status = Socket.Connect(*State.Endpoint, timeoutMs);
     if (!status.IsOk()) { State.LastError = status.Message(); SetStage(EClientSessionStage::Failed, State.LastError); return status; }
     Socket.SetNonBlocking(true);
-    SetStage(EClientSessionStage::Connected, "tcp connected; protocol probe only, no login packet sent");
+    SetStage(EClientSessionStage::Connected, "tcp connected; waiting for Sfera handshake");
     return FStatus::Ok();
 }
 
@@ -48,11 +48,29 @@ void FClientSession::Tick() {
     FClientProtocolProbe probe;
     auto probeResult = probe.Inspect(data.Value());
     if (Log) { Log->Info("ClientSession recv probe: " + FClientProtocolProbe::Describe(probeResult)); }
-    U16Frames.Append(data.Value().data(), data.Value().size());
-    FByteArray frame;
-    size_t frames = 0;
-    while (U16Frames.TryPopFrame(frame)) { ++frames; ++State.FramesReceived; }
-    SetStage(EClientSessionStage::ProbeReceiving, "received bytes=" + std::to_string(State.BytesReceived) + ", u16_frames=" + std::to_string(State.FramesReceived));
+    Protocol.Append(data.Value().data(), data.Value().size());
+    FSferaNetPacket packet;
+    size_t packets = 0;
+    while (Protocol.TryPopPacket(packet)) {
+        ++packets;
+        ++State.FramesReceived;
+        State.LastOpcode = packet.Opcode;
+        if (packet.Opcode == FSferaNetProtocol::ServerCreateConnection && packet.Payload.size() >= 2) {
+            State.ConnectionId = static_cast<uint16>(packet.Payload[0] | (packet.Payload[1] << 8));
+            if (packet.Payload.size() >= 4) { State.SessionToken = static_cast<uint16>(packet.Payload[2] | (packet.Payload[3] << 8)); }
+            FByteArray payload(4, 0);
+            FByteArray ack = Protocol.MakePacket(FSferaNetProtocol::ClientCreateConnectionAck, payload, State.SessionToken);
+            FStatus sendStatus = Socket.Send(ack);
+            if (sendStatus.IsOk()) { ++State.PacketsSent; }
+            else { State.LastError = sendStatus.Message(); if (Log) { Log->Warning("ClientSession handshake ack failed: " + State.LastError); } }
+        } else if (packet.Opcode == FSferaNetProtocol::ServerPing) {
+            FByteArray pong = Protocol.MakePacket(FSferaNetProtocol::ServerPing, {}, State.SessionToken);
+            if (Socket.Send(pong).IsOk()) { ++State.PacketsSent; }
+        }
+    }
+    std::ostringstream status;
+    status << "received bytes=" << State.BytesReceived << ", packets=" << State.FramesReceived << ", sent=" << State.PacketsSent << ", opcode=0x" << std::hex << std::uppercase << State.LastOpcode;
+    SetStage(EClientSessionStage::ProbeReceiving, status.str());
 }
 
 void FClientSession::Close() {

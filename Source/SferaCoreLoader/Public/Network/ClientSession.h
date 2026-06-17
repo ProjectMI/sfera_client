@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Logger.h"
-#include "Network/PacketBuffer.h"
+#include "Network/ClientProtocol.h"
 #include "Network/TcpSocket.h"
 #include <optional>
 #include <string>
@@ -14,6 +14,10 @@ struct FClientSessionSnapshot {
     std::optional<FEndpoint> Endpoint;
     size_t BytesReceived = 0;
     size_t FramesReceived = 0;
+    size_t PacketsSent = 0;
+    uint16 ConnectionId = 0;
+    uint16 SessionToken = 0;
+    uint16 LastOpcode = 0;
     std::string LastError;
 };
 
@@ -31,7 +35,7 @@ private:
     void SetStage(EClientSessionStage stage, std::string text);
     FLogger* Log = nullptr;
     FTcpSocket Socket;
-    FPacketBuffer U16Frames;
+    FSferaNetProtocol Protocol;
     FClientSessionSnapshot State;
 };
 }

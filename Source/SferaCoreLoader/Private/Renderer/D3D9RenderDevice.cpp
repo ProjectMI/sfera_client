@@ -117,6 +117,16 @@ int ColorR(unsigned long color) { return static_cast<int>((color >> 16) & 0xff);
 int ColorG(unsigned long color) { return static_cast<int>((color >> 8) & 0xff); }
 int ColorB(unsigned long color) { return static_cast<int>(color & 0xff); }
 int ColorA(unsigned long color) { return static_cast<int>((color >> 24) & 0xff); }
+
+std::string Utf8ToCp1251Bytes(std::string_view text) {
+    std::wstring wide = Utf8ToWide(text);
+    if (wide.empty()) { return {}; }
+    int count = WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), nullptr, 0, "?", nullptr);
+    if (count <= 0) { return std::string(text); }
+    std::string bytes(static_cast<size_t>(count), '\0');
+    WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), bytes.data(), count, "?", nullptr);
+    return bytes;
+}
 }
 
 struct FD3D9RenderDevice::FDrawRect {
@@ -297,6 +307,40 @@ void FD3D9RenderDevice::DrawTextureSlice(IDirect3DTexture9* texture, const FUiTe
     DrawTextureQuad(texture, dx, dy, dw, dh, u1, v1, u2, v2, color);
 }
 
+
+bool FD3D9RenderDevice::DrawBitmapFontText(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId) {
+    if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return false; }
+    const FUiFontFace* face = FontCatalog.Find(fontId);
+    if (!face || face->TextureResource.empty() || face->NativeHeight <= 0) { return false; }
+    FD3D9TextureEntry* atlas = LoadTextureByName(ctx.Resources, face->TextureResource, ctx.Logger);
+    if (!atlas || !atlas->Texture) { return false; }
+    std::string encoded = Utf8ToCp1251Bytes(text);
+    if (encoded.empty()) { return false; }
+    float scale = std::max(0.5f, rect.H / static_cast<float>(std::max(1, face->NativeHeight + 2)));
+    float width = 0.0f;
+    for (unsigned char ch : encoded) {
+        const FUiFontGlyph& glyph = face->Glyphs[ch];
+        if (glyph.Valid) { width += static_cast<float>(glyph.Advance) * scale; }
+    }
+    float x = rect.X + (center ? std::max(0.0f, (rect.W - width) * 0.5f) : 0.0f);
+    float baseline = rect.Y + (rect.H - static_cast<float>(face->NativeHeight) * scale) * 0.5f + static_cast<float>(face->Baseline) * scale;
+    unsigned long tint = Argb(static_cast<unsigned char>(ColorA(color)), static_cast<unsigned char>(ColorR(color)), static_cast<unsigned char>(ColorG(color)), static_cast<unsigned char>(ColorB(color)));
+    bool drew = false;
+    for (unsigned char ch : encoded) {
+        const FUiFontGlyph& glyph = face->Glyphs[ch];
+        if (!glyph.Valid) { continue; }
+        float gx = x + static_cast<float>(glyph.BearingX) * scale;
+        float gy = baseline - static_cast<float>(glyph.BearingY) * scale;
+        float gw = static_cast<float>(glyph.SourceW) * scale;
+        float gh = static_cast<float>(glyph.SourceH) * scale;
+        DrawTextureQuad(atlas->Texture, gx, gy, gw, gh, glyph.U1, glyph.V1, glyph.U2, glyph.V2, tint);
+        x += static_cast<float>(glyph.Advance) * scale;
+        drew = true;
+        if (x > rect.X + rect.W) { break; }
+    }
+    return drew;
+}
+
 bool FD3D9RenderDevice::DrawSprite(FUiDrawContext& ctx, const FUiWindow& window, std::string_view spriteName, const FDrawRect& dst, float alpha) {
     const FUiSprite* sprite = FindSprite(window, spriteName);
     if (!sprite) { return false; }
@@ -317,6 +361,7 @@ bool FD3D9RenderDevice::DrawSprite(FUiDrawContext& ctx, const FUiWindow& window,
 }
 
 void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId) {
+    if (DrawBitmapFontText(ctx, rect, text, color, center, fontId)) { return; }
     if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return; }
     int w = std::max(2, static_cast<int>(std::ceil(rect.W)));
     int h = std::max(2, static_cast<int>(std::ceil(rect.H)));

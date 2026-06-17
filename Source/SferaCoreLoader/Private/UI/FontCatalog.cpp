@@ -22,6 +22,20 @@ std::string ReadCString(const std::vector<uint8>& bytes, size_t& offset) {
     if (offset < bytes.size()) { ++offset; }
     return value;
 }
+int16 ReadInt16Le(const std::vector<uint8>& bytes, size_t offset) {
+    if (offset + 2 > bytes.size()) { return 0; }
+    uint16 value = static_cast<uint16>(bytes[offset]) | (static_cast<uint16>(bytes[offset + 1]) << 8);
+    return static_cast<int16>(value);
+}
+
+float ReadFloatLe(const std::vector<uint8>& bytes, size_t offset) {
+    if (offset + 4 > bytes.size()) { return 0.0f; }
+    uint32 value = static_cast<uint32>(bytes[offset]) | (static_cast<uint32>(bytes[offset + 1]) << 8) | (static_cast<uint32>(bytes[offset + 2]) << 16) | (static_cast<uint32>(bytes[offset + 3]) << 24);
+    float out = 0.0f;
+    std::memcpy(&out, &value, sizeof(out));
+    return out;
+}
+
 int ReadInt32Le(const std::vector<uint8>& bytes, size_t offset) {
     if (offset + 4 > bytes.size()) { return 0; }
     uint32 value = static_cast<uint32>(bytes[offset]) | (static_cast<uint32>(bytes[offset + 1]) << 8) | (static_cast<uint32>(bytes[offset + 2]) << 16) | (static_cast<uint32>(bytes[offset + 3]) << 24);
@@ -89,7 +103,28 @@ void FUiFontCatalog::ParseSfnt(FUiFontFace& face, const std::vector<uint8>& byte
     std::string textureName = ReadCString(bytes, offset);
     if (!internalName.empty()) { face.InternalName = internalName; }
     if (!textureName.empty()) { face.TextureName = textureName; }
-    if (offset + 8 <= bytes.size()) { face.NativeHeight = std::max(0, ReadInt32Le(bytes, offset + 4)); }
+    if (offset + 8 > bytes.size()) { return; }
+    face.NativeHeight = std::max(0, ReadInt32Le(bytes, offset));
+    face.Baseline = std::max(0, ReadInt32Le(bytes, offset + 4));
+    size_t glyphOffset = offset + 8;
+    constexpr size_t GlyphRecordSize = 28;
+    for (int code = 32; code < 256; ++code) {
+        if (glyphOffset + GlyphRecordSize > bytes.size()) { break; }
+        FUiFontGlyph glyph;
+        glyph.SourceW = ReadInt16Le(bytes, glyphOffset + 0);
+        glyph.SourceH = ReadInt16Le(bytes, glyphOffset + 2);
+        glyph.BearingX = ReadInt16Le(bytes, glyphOffset + 4);
+        glyph.BearingY = ReadInt16Le(bytes, glyphOffset + 6);
+        glyph.Advance = ReadInt16Le(bytes, glyphOffset + 8);
+        glyph.U1 = ReadFloatLe(bytes, glyphOffset + 12);
+        glyph.V1 = ReadFloatLe(bytes, glyphOffset + 16);
+        glyph.U2 = ReadFloatLe(bytes, glyphOffset + 20);
+        glyph.V2 = ReadFloatLe(bytes, glyphOffset + 24);
+        glyph.Valid = glyph.SourceW > 0 && glyph.SourceH > 0 && glyph.U2 > glyph.U1 && glyph.V2 > glyph.V1;
+        if (glyph.Advance <= 0) { glyph.Advance = std::max(1, glyph.SourceW + glyph.BearingX); }
+        face.Glyphs[code] = glyph;
+        glyphOffset += GlyphRecordSize;
+    }
 }
 
 namespace {
@@ -135,6 +170,7 @@ void FUiFontCatalog::Load(const FResourceManager& resources, FLogger* logger) {
             if (sfnt.IsOk()) { ParseSfnt(face, sfnt.Value().Bytes); }
         }
         face.TextureResource = ResolveResource(resources, face.TextureName.empty() ? face.Name : face.TextureName, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""});
+        if (face.TextureResource.empty()) { face.TextureResource = ResolveResource(resources, face.Name, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""}); }
         FontFaces.push_back(face);
         if (logger) { logger->Info("UI font attached: id=" + std::to_string(face.Index) + ", name=" + face.Name + ", internal=" + face.InternalName + ", system=" + face.SystemFace + ", descriptor=" + face.DescriptorResource + ", texture=" + face.TextureResource); }
     }

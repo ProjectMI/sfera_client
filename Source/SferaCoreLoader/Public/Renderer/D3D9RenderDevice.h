@@ -54,6 +54,7 @@ private:
     bool DrawWindow(FUiDrawContext& ctx, const FUiWindow& window, const FDrawRect& overrideRect, bool forceConnectionTitle);
     void DrawControl(FUiDrawContext& ctx, const FUiWindow& window, const FUiControl& control, const FDrawRect& windowRect);
     void DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId = -1);
+    bool DrawBitmapFontText(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int fontId);
     void DrawSolidRect(float x, float y, float w, float h, unsigned long color);
     void DrawTextureSlice(IDirect3DTexture9* texture, const FUiTextureSlice& slice, const FDrawRect& spriteRect, int textureWidth, int textureHeight, float alpha);
     void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color);

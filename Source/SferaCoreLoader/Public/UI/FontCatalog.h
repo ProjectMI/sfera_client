@@ -6,6 +6,19 @@
 #include <vector>
 
 namespace Sfera {
+struct FUiFontGlyph {
+    bool Valid = false;
+    int SourceW = 0;
+    int SourceH = 0;
+    int BearingX = 0;
+    int BearingY = 0;
+    int Advance = 0;
+    float U1 = 0.0f;
+    float V1 = 0.0f;
+    float U2 = 0.0f;
+    float V2 = 0.0f;
+};
+
 struct FUiFontFace {
     int Index = -1;
     std::string Name;
@@ -15,6 +28,8 @@ struct FUiFontFace {
     std::string TextureName;
     std::string TextureResource;
     int NativeHeight = 0;
+    int Baseline = 0;
+    FUiFontGlyph Glyphs[256];
 };
 
 class FUiFontCatalog {

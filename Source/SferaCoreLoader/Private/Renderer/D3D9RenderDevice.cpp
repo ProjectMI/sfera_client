@@ -316,21 +316,21 @@ bool FD3D9RenderDevice::DrawBitmapFontText(FUiDrawContext& ctx, const FDrawRect&
     if (!atlas || !atlas->Texture) { return false; }
     std::string encoded = Utf8ToCp1251Bytes(text);
     if (encoded.empty()) { return false; }
-    float scale = std::max(0.25f, ctx.Scale);
+    float scale = std::max(0.5f, rect.H / static_cast<float>(std::max(1, face->NativeHeight + 2)));
     float width = 0.0f;
     for (unsigned char ch : encoded) {
         const FUiFontGlyph& glyph = face->Glyphs[ch];
-        width += static_cast<float>(std::max(0, glyph.Advance)) * scale;
+        if (glyph.Valid) { width += static_cast<float>(glyph.Advance) * scale; }
     }
     float x = rect.X + (center ? std::max(0.0f, (rect.W - width) * 0.5f) : 0.0f);
-    float y = rect.Y;
+    float baseline = rect.Y + (rect.H - static_cast<float>(face->NativeHeight) * scale) * 0.5f + static_cast<float>(face->Baseline) * scale;
     unsigned long tint = Argb(static_cast<unsigned char>(ColorA(color)), static_cast<unsigned char>(ColorR(color)), static_cast<unsigned char>(ColorG(color)), static_cast<unsigned char>(ColorB(color)));
     bool drew = false;
     for (unsigned char ch : encoded) {
         const FUiFontGlyph& glyph = face->Glyphs[ch];
-        if (!glyph.Valid) { x += static_cast<float>(std::max(0, glyph.Advance)) * scale; continue; }
+        if (!glyph.Valid) { continue; }
         float gx = x + static_cast<float>(glyph.BearingX) * scale;
-        float gy = y - static_cast<float>(glyph.BearingY) * scale;
+        float gy = baseline - static_cast<float>(glyph.BearingY) * scale;
         float gw = static_cast<float>(glyph.SourceW) * scale;
         float gh = static_cast<float>(glyph.SourceH) * scale;
         DrawTextureQuad(atlas->Texture, gx, gy, gw, gh, glyph.U1, glyph.V1, glyph.U2, glyph.V2, tint);

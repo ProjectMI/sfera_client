@@ -114,7 +114,7 @@ void FUiFontCatalog::ParseSfnt(FUiFontFace& face, const std::vector<uint8>& byte
         glyph.SourceW = ReadInt16Le(bytes, glyphOffset + 0);
         glyph.SourceH = ReadInt16Le(bytes, glyphOffset + 2);
         glyph.BearingX = ReadInt16Le(bytes, glyphOffset + 4);
-        glyph.BearingY = ReadInt16Le(bytes, glyphOffset + 6) - face.Baseline;
+        glyph.BearingY = ReadInt16Le(bytes, glyphOffset + 6);
         glyph.Advance = ReadInt16Le(bytes, glyphOffset + 8);
         glyph.U1 = ReadFloatLe(bytes, glyphOffset + 12);
         glyph.V1 = ReadFloatLe(bytes, glyphOffset + 16);
@@ -169,8 +169,8 @@ void FUiFontCatalog::Load(const FResourceManager& resources, FLogger* logger) {
             auto sfnt = resources.Load(face.DescriptorResource);
             if (sfnt.IsOk()) { ParseSfnt(face, sfnt.Value().Bytes); }
         }
-        face.TextureResource = ResolveResource(resources, face.TextureName.empty() ? face.Name : face.TextureName, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""});
-        if (face.TextureResource.empty()) { face.TextureResource = ResolveResource(resources, face.Name, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""}); }
+        face.TextureResource = ResolveResource(resources, face.Name, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""});
+        if (face.TextureResource.empty() && !face.TextureName.empty()) { face.TextureResource = ResolveResource(resources, face.TextureName, {"xadd/", "effects/", "Effects/", "textures/", ""}, {".dds", ".tga", ".png", ""}); }
         FontFaces.push_back(face);
         if (logger) { logger->Info("UI font attached: id=" + std::to_string(face.Index) + ", name=" + face.Name + ", internal=" + face.InternalName + ", system=" + face.SystemFace + ", descriptor=" + face.DescriptorResource + ", texture=" + face.TextureResource); }
     }

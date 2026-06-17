@@ -44,6 +44,7 @@
     <ClInclude Include="Source\SferaClient\Public\Scripting\SferaScriptRuntime.h"><Filter>Source\Public\Scripting</Filter></ClInclude>
     <ClInclude Include="Source\SferaClient\Public\UI\SferaCursorManager.h"><Filter>Source\Public\UI</Filter></ClInclude>
     <ClInclude Include="Source\SferaClient\Public\UI\SferaInterfaceResourceManager.h"><Filter>Source\Public\UI</Filter></ClInclude>
+    <ClInclude Include="Source\SferaClient\Public\UI\SferaUiControlCatalog.h"><Filter>Source\Public\UI</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\SferaClient\Private\Audio\SferaSoundSystem.cpp"><Filter>Source\Private\Audio</Filter></ClCompile>
@@ -68,5 +69,6 @@
     <ClCompile Include="Source\SferaClient\Private\Scripting\SferaScriptRuntime.cpp"><Filter>Source\Private\Scripting</Filter></ClCompile>
     <ClCompile Include="Source\SferaClient\Private\UI\SferaCursorManager.cpp"><Filter>Source\Private\UI</Filter></ClCompile>
     <ClCompile Include="Source\SferaClient\Private\UI\SferaInterfaceResourceManager.cpp"><Filter>Source\Private\UI</Filter></ClCompile>
+    <ClCompile Include="Source\SferaClient\Private\UI\SferaUiControlCatalog.cpp"><Filter>Source\Private\UI</Filter></ClCompile>
   </ItemGroup>
 </Project>

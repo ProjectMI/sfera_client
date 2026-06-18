@@ -36,8 +36,10 @@ int FApplication::Run() {
             frontend.SetStage("building resource catalog", 0.20f);
             Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
             Resources->BuildCatalog(&Logger);
-            frontend.InitializeLoadingResources(*Resources);
-            frontend.InitializeD3D9(*Resources);
+            FStatus uiStatus = frontend.InitializeUiResources(*Resources);
+            if (!uiStatus.IsOk()) { throw std::runtime_error("UI runtime initialization failed: " + uiStatus.Message()); }
+            FStatus d3dStatus = frontend.InitializeD3D9(*Resources);
+            if (!d3dStatus.IsOk()) { throw std::runtime_error("D3D9 initialization failed: " + d3dStatus.Message()); }
 
             frontend.SetStage("loading game objects and world scene", 0.38f);
             LoadWorldAndObjects();

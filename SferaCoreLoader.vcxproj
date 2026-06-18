@@ -110,8 +110,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\UI\LoadingScreen.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiResourceDocument.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiRuntime.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
@@ -158,8 +157,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\UI\LoadingScreen.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiResourceDocument.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntime.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldTypes.h" />

@@ -4,10 +4,9 @@
 #include "Platform/Win32Window.h"
 #include "Renderer/D3D9RenderDevice.h"
 #include "ResourceLoader/ResourceManager.h"
-#include "UI/LoadingScreen.h"
-#include "UI/UiResourceDocument.h"
-#include <chrono>
+#include "UI/UiRuntime.h"
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -23,32 +22,27 @@ class FClientFrontendRuntime {
 public:
     explicit FClientFrontendRuntime(FLogger* logger = nullptr);
     ~FClientFrontendRuntime();
-
     FStatus CreateShell();
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
     bool PumpUi();
-    void InitializeLoadingResources(const FResourceManager& resources);
-    void InitializeD3D9(const FResourceManager& resources);
+    FStatus InitializeUiResources(const FResourceManager& resources);
+    FStatus InitializeD3D9(const FResourceManager& resources);
     void RenderFrame();
     void StartNetworkProbe(const FClientFrontendDesc& desc);
     FStatus RunEventLoop();
     void Shutdown();
     bool IsWindowOpen() const { return Window.IsOpen(); }
-
 private:
     void RequestRepaintThrottled();
     void UpdateStageFromSession();
-    bool HasD3D() const;
-
     FLogger* Log = nullptr;
     FWin32Window Window;
-    FLoadingScreenModel LoadingModel;
-    FUiResourceSystem UiResources;
+    FUiRuntime Ui;
     FD3D9RenderDevice RenderDevice;
     FClientSession Session;
     const FResourceManager* RenderResources = nullptr;
-    mutable std::recursive_mutex ModelMutex;
+    mutable std::recursive_mutex UiMutex;
     mutable std::mutex RenderMutex;
     mutable std::mutex SessionMutex;
     bool ShellCreated = false;

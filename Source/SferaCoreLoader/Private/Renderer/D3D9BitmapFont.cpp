@@ -23,7 +23,7 @@ bool HasRange(const FByteArray& bytes, size_t offset, size_t size) { return offs
 std::string StripLineComment(std::string_view line) { std::string out; bool quoted = false; for (size_t i = 0; i < line.size(); ++i) { char ch = line[i]; if (ch == '"') { quoted = !quoted; out.push_back(ch); continue; } if (!quoted && ch == '/' && i + 1 < line.size() && line[i + 1] == '/') { break; } out.push_back(ch); } return out; }
 std::vector<std::string> TokenizeConfigLine(std::string_view line) { std::vector<std::string> out; std::string cur; bool quoted = false; for (char ch : line) { if (quoted) { if (ch == '"') { out.push_back(cur); cur.clear(); quoted = false; } else { cur.push_back(ch); } continue; } if (ch == '"') { if (!cur.empty()) { out.push_back(cur); cur.clear(); } quoted = true; continue; } if (std::isspace(static_cast<unsigned char>(ch))) { if (!cur.empty()) { out.push_back(cur); cur.clear(); } continue; } cur.push_back(ch); } if (!cur.empty()) { out.push_back(cur); } return out; }
 std::string BytesToText(const FByteArray& bytes) { std::string text; text.reserve(bytes.size()); for (uint8 b : bytes) { if (b != 0) { text.push_back(static_cast<char>(b)); } } return text; }
-std::wstring Utf8ToWide(std::string_view text) { if (text.empty()) { return {}; } int count = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0); if (count <= 0) { std::wstring fallback; fallback.reserve(text.size()); for (unsigned char ch : text) { fallback.push_back(static_cast<wchar_t>(ch)); } return fallback; } std::wstring wide(static_cast<size_t>(count), L'\0'); MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), wide.data(), count); return wide; }
+std::wstring Utf8ToWide(std::string_view text) { if (text.empty()) { return {}; } int count = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0); if (count <= 0) { return {}; } std::wstring wide(static_cast<size_t>(count), L'\0'); MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), wide.data(), count); return wide; }
 std::string ResolveLogicalName(const FResourceManager& resources, const std::vector<std::string>& candidates) { for (const auto& candidate : candidates) { if (auto record = resources.Catalog().FindByLogicalName(candidate)) { return record->RelativePath.generic_string(); } } return {}; }
 std::string ResolveSfnName(const FResourceManager& resources, std::string_view fontName) { std::string name(fontName); return ResolveLogicalName(resources, {"effects/" + name + ".sfn", "Effects/" + name + ".sfn", name + ".sfn"}); }
 std::string ResolveDdsName(const FResourceManager& resources, std::string_view fontName) { std::string name(fontName); return ResolveLogicalName(resources, {"xadd/" + name + ".dds", "XAdd/" + name + ".dds", "xAdd/" + name + ".dds", name + ".dds"}); }
@@ -75,7 +75,6 @@ TResult<IDirect3DTexture9*> LoadFontDds(IDirect3DDevice9* device, const FByteArr
     }
     texture->UnlockRect(0); outWidth = width; outHeight = height; return texture;
 }
-std::vector<std::string> DefaultFontNames() { std::vector<std::string> names; for (int i = 0; i < 12; ++i) { names.push_back("fnt_sphere" + std::to_string(i)); } return names; }
 }
 
 FD3D9BitmapFont::FD3D9BitmapFont(FD3D9BitmapFont&& other) noexcept { *this = std::move(other); }
@@ -99,18 +98,18 @@ TResult<FD3D9BitmapFont> FD3D9BitmapFont::Load(IDirect3DDevice9* device, const F
 
 void FD3D9BitmapFontCatalog::Release() { LoadedFonts.clear(); FontNames.clear(); ConfigLoaded = false; }
 void FD3D9BitmapFontCatalog::LoadConfig(const FResourceManager& resources, FLogger* logger) {
-    FontNames = DefaultFontNames(); ConfigLoaded = true;
+    FontNames.clear(); ConfigLoaded = true;
     auto blob = resources.Load("fonts.cfg");
-    if (!blob.IsOk()) { if (logger) { logger->Warning("UI fonts.cfg not found; using fnt_sphere0..11 fallback names"); } return; }
+    if (!blob.IsOk()) { if (logger) { logger->Error("UI fonts.cfg is required: " + blob.Status().Message()); } return; }
     std::string text = BytesToText(blob.Value().Bytes); std::istringstream stream(text); std::string line; int32 declaredCount = -1; std::unordered_map<int32, std::string> indexed;
     while (std::getline(stream, line)) { auto tokens = TokenizeConfigLine(StripLineComment(line)); if (tokens.empty()) { continue; } std::string key = Lower(tokens[0]); if (key == "new_fonts_number" && tokens.size() >= 2) { NumericParse::TryParseInt32Strict(tokens[1], declaredCount); continue; } constexpr std::string_view prefix = "new_font_"; if (key.rfind(prefix.data(), 0) == 0 && tokens.size() >= 2) { int32 index = -1; if (NumericParse::TryParseInt32Strict(key.substr(prefix.size()), index) && index >= 0) { indexed[index] = tokens[1]; } } }
-    int32 count = declaredCount > 0 ? declaredCount : static_cast<int32>(indexed.size()); if (count > 0) { FontNames.assign(static_cast<size_t>(count), {}); for (int32 i = 0; i < count; ++i) { auto it = indexed.find(i); FontNames[static_cast<size_t>(i)] = it != indexed.end() && !it->second.empty() ? it->second : "fnt_sphere" + std::to_string(i); } }
+    int32 count = declaredCount > 0 ? declaredCount : static_cast<int32>(indexed.size()); if (count > 0) { FontNames.assign(static_cast<size_t>(count), {}); for (int32 i = 0; i < count; ++i) { auto it = indexed.find(i); if (it != indexed.end()) { FontNames[static_cast<size_t>(i)] = it->second; } } }
     if (logger) { logger->Info("UI font config loaded: fonts=" + std::to_string(FontNames.size())); }
 }
 void FD3D9BitmapFontCatalog::EnsureConfig(const FResourceManager& resources, FLogger* logger) { if (!ConfigLoaded) { LoadConfig(resources, logger); } }
 void FD3D9BitmapFontCatalog::Preload(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger) { EnsureConfig(resources, logger); for (int32 i = 0; i < static_cast<int32>(FontNames.size()); ++i) { const std::string& name = FontNames[static_cast<size_t>(i)]; std::string key = Lower(name); if (key.empty() || LoadedFonts.find(key) != LoadedFonts.end()) { continue; } auto loaded = FD3D9BitmapFont::Load(device, resources, name); if (!loaded.IsOk()) { if (logger) { logger->Warning("UI bitmap font preload failed: index=" + std::to_string(i) + " name=" + name + " - " + loaded.Status().Message()); } LoadedFonts.emplace(key, nullptr); continue; } LoadedFonts.emplace(key, std::make_unique<FD3D9BitmapFont>(std::move(loaded.Value()))); if (logger) { logger->Info("UI bitmap font loaded: index=" + std::to_string(i) + " name=" + name); } } if (logger) { logger->Info("D3D9 UI preload: bitmap_fonts=" + std::to_string(LoadedFonts.size())); } }
 const FD3D9BitmapFont* FD3D9BitmapFontCatalog::GetFont(IDirect3DDevice9* device, const FResourceManager& resources, int32 fontIndex, FLogger* logger) {
-    EnsureConfig(resources, logger); if (FontNames.empty()) { return nullptr; } int32 requestedIndex = fontIndex; int32 mappedIndex = fontIndex >= 2 ? fontIndex - 2 : fontIndex; if (mappedIndex < 0 || mappedIndex >= static_cast<int32>(FontNames.size())) { mappedIndex = 0; }
+    EnsureConfig(resources, logger); if (FontNames.empty()) { return nullptr; } int32 requestedIndex = fontIndex; int32 mappedIndex = fontIndex >= 2 ? fontIndex - 2 : fontIndex; if (mappedIndex < 0 || mappedIndex >= static_cast<int32>(FontNames.size())) { return nullptr; }
     const std::string& name = FontNames[static_cast<size_t>(mappedIndex)]; std::string key = Lower(name); if (key.empty()) { return nullptr; }
     auto existing = LoadedFonts.find(key); if (existing != LoadedFonts.end()) { return existing->second ? existing->second.get() : nullptr; }
     auto loaded = FD3D9BitmapFont::Load(device, resources, name);

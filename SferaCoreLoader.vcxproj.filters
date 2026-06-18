@@ -189,6 +189,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp">
       <Filter>Source\SferaCoreLoader\Private\Platform</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9BitmapFont.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp">
       <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
     </ClCompile>
@@ -319,6 +322,9 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h">
       <Filter>Source\SferaCoreLoader\Public\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h">
+      <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h">
       <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>

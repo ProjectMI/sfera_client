@@ -105,6 +105,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9BitmapFont.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\PacketBuffer.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />

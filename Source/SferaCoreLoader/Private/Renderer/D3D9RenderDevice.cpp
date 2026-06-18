@@ -117,6 +117,7 @@ int ColorR(unsigned long color) { return static_cast<int>((color >> 16) & 0xff);
 int ColorG(unsigned long color) { return static_cast<int>((color >> 8) & 0xff); }
 int ColorB(unsigned long color) { return static_cast<int>(color & 0xff); }
 int ColorA(unsigned long color) { return static_cast<int>((color >> 24) & 0xff); }
+unsigned long PremultiplyDiffuse(unsigned long color) { unsigned int a = static_cast<unsigned int>(ColorA(color)); return Argb(static_cast<unsigned char>(a), static_cast<unsigned char>((static_cast<unsigned int>(ColorR(color)) * a) / 255U), static_cast<unsigned char>((static_cast<unsigned int>(ColorG(color)) * a) / 255U), static_cast<unsigned char>((static_cast<unsigned int>(ColorB(color)) * a) / 255U)); }
 }
 
 struct FD3D9RenderDevice::FDrawRect {
@@ -161,6 +162,7 @@ FStatus FD3D9RenderDevice::Initialize(HWND__* hwnd, int width, int height, FLogg
 void FD3D9RenderDevice::ReleaseTextures() {
     for (auto& item : TextureCache) { if (item.second.Texture) { item.second.Texture->Release(); item.second.Texture = nullptr; } }
     TextureCache.clear();
+    FontCache.Release();
 }
 
 void FD3D9RenderDevice::Shutdown() {
@@ -316,7 +318,44 @@ bool FD3D9RenderDevice::DrawSprite(FUiDrawContext& ctx, const FUiWindow& window,
     return true;
 }
 
-void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center) {
+void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex) {
+    if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return; }
+    const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+    if (!font || !font->IsValid()) { DrawGdiTextRect(ctx, rect, text, color, center); return; }
+    std::vector<uint8> bytes = font->EncodeUtf8ToCp1251(text);
+    if (bytes.empty()) { return; }
+    float scale = std::max(0.5f, ctx.Scale);
+    float maxWidth = std::max(1.0f, rect.W);
+    int32 textWidth = font->MeasureCodepageText(bytes);
+    float x = rect.X;
+    if (center) { x += std::max(0.0f, (maxWidth - static_cast<float>(textWidth) * scale) * 0.5f); }
+    float lineHeight = static_cast<float>(font->LineHeight()) * scale;
+    float y = rect.Y + std::max(0.0f, (rect.H - lineHeight) * 0.5f);
+    unsigned long fontColor = PremultiplyDiffuse(color);
+    Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
+    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    for (uint8 ch : bytes) {
+        if (ch < 32) { continue; }
+        const FD3D9BitmapGlyph& glyph = font->Glyph(ch);
+        if (x > rect.X + rect.W) { break; }
+        if (glyph.SourceW > 0 && glyph.SourceH > 0 && ch != 32) {
+            float dx = x + static_cast<float>(glyph.XOffset) * scale;
+            float dy = y + static_cast<float>(font->Baseline() - glyph.YOffset) * scale;
+            float dw = static_cast<float>(glyph.SourceW) * scale;
+            float dh = static_cast<float>(glyph.SourceH) * scale;
+            float u1 = static_cast<float>(glyph.SourceX) / static_cast<float>(font->Width());
+            float v1 = static_cast<float>(glyph.SourceY) / static_cast<float>(font->Height());
+            float u2 = static_cast<float>(glyph.SourceX + glyph.SourceW) / static_cast<float>(font->Width());
+            float v2 = static_cast<float>(glyph.SourceY + glyph.SourceH) / static_cast<float>(font->Height());
+            DrawTextureQuad(font->AtlasTexture(), dx, dy, dw, dh, u1, v1, u2, v2, fontColor);
+        }
+        x += static_cast<float>(glyph.Advance) * scale;
+    }
+    Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+}
+
+void FD3D9RenderDevice::DrawGdiTextRect(FUiDrawContext& ctx, const FDrawRect& rect, const std::string& text, unsigned long color, bool center) {
     (void)ctx;
     if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return; }
     int w = std::max(2, static_cast<int>(std::ceil(rect.W)));
@@ -343,7 +382,7 @@ void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect,
     SetBkMode(memdc, TRANSPARENT);
     SetTextColor(memdc, RGB(ColorR(color), ColorG(color), ColorB(color)));
     int fontHeight = -std::max(8, std::min(18, static_cast<int>(rect.H * 0.72f)));
-    HFONT font = CreateFontW(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Arial");
+    HFONT font = CreateFontW(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
     HGDIOBJ oldFont = SelectObject(memdc, font);
     RECT textRect{0, 0, w, h};
     std::wstring wide = Utf8ToWide(text);
@@ -370,9 +409,7 @@ void FD3D9RenderDevice::DrawTextRect(FUiDrawContext& ctx, const FDrawRect& rect,
     if (SUCCEEDED(hr) && texture) {
         D3DLOCKED_RECT locked{};
         if (SUCCEEDED(texture->LockRect(0, &locked, nullptr, 0))) {
-            for (int y = 0; y < h; ++y) {
-                std::memcpy(static_cast<unsigned char*>(locked.pBits) + static_cast<size_t>(locked.Pitch) * static_cast<size_t>(y), pixels + static_cast<size_t>(w) * static_cast<size_t>(y), static_cast<size_t>(w) * 4);
-            }
+            for (int y = 0; y < h; ++y) { std::memcpy(static_cast<unsigned char*>(locked.pBits) + static_cast<size_t>(locked.Pitch) * static_cast<size_t>(y), pixels + static_cast<size_t>(w) * static_cast<size_t>(y), static_cast<size_t>(w) * 4); }
             texture->UnlockRect(0);
             DrawTextureQuad(texture, rect.X, rect.Y, static_cast<float>(w), static_cast<float>(h), 0.0f, 0.0f, 1.0f, 1.0f, Argb(255, 255, 255, 255));
         }
@@ -413,7 +450,7 @@ void FD3D9RenderDevice::DrawControl(FUiDrawContext& ctx, const FUiWindow& window
         if (sprite.empty()) { sprite = control.DrawSprite; }
         if (!sprite.empty()) { DrawSprite(ctx, window, sprite, r); }
         std::string text = ControlText(control);
-        if (!text.empty()) { DrawTextRect(ctx, r, text, hovered ? Argb(255, 255, 239, 212) : ParseTextColor(control, Argb(255, 255, 255, 255)), true); }
+        if (!text.empty()) { DrawTextRect(ctx, r, text, hovered ? Argb(255, 255, 239, 212) : ParseTextColor(control, Argb(255, 255, 255, 255)), true, control.Font >= 0 ? control.Font : window.Font); }
         return;
     }
     if (EqualsNoCase(control.ClassId, "CHECKBOX")) {
@@ -436,10 +473,10 @@ void FD3D9RenderDevice::DrawControl(FUiDrawContext& ctx, const FUiWindow& window
             if (control.Id == 7) { text = ctx.Interaction->LoginText; }
             else if (control.Id == 8) { text.assign(ctx.Interaction->PasswordText.size(), '*'); }
         }
-        if (!text.empty()) { DrawTextRect(ctx, r, text, ParseTextColor(control, Argb(255, 237, 208, 161)), IsCentered(control)); }
+        if (!text.empty()) { DrawTextRect(ctx, r, text, ParseTextColor(control, Argb(255, 237, 208, 161)), IsCentered(control), control.Font >= 0 ? control.Font : window.Font); }
         return;
     }
-    if (EqualsNoCase(control.ClassId, "TEXT")) { DrawTextRect(ctx, r, ControlText(control), ParseTextColor(control, Argb(255, 255, 255, 255)), IsCentered(control)); return; }
+    if (EqualsNoCase(control.ClassId, "TEXT")) { DrawTextRect(ctx, r, ControlText(control), ParseTextColor(control, Argb(255, 255, 255, 255)), IsCentered(control), control.Font >= 0 ? control.Font : window.Font); return; }
 }
 
 bool FD3D9RenderDevice::DrawWindow(FUiDrawContext& ctx, const FUiWindow& window, const FDrawRect& overrideRect, bool forceConnectionTitle) {
@@ -460,7 +497,7 @@ bool FD3D9RenderDevice::DrawWindow(FUiDrawContext& ctx, const FUiWindow& window,
             NumericParse::TryParseInt32Strict(prop->Values[3], y2);
             tr = {wr.X + static_cast<float>(x1) * ctx.Scale, wr.Y + static_cast<float>(y1) * ctx.Scale, std::max(1.0f, std::min(static_cast<float>(x2 - x1) * ctx.Scale, wr.W - static_cast<float>(x1) * ctx.Scale)), std::max(1.0f, static_cast<float>(y2 - y1) * ctx.Scale)};
         }
-        DrawTextRect(ctx, tr, title, Argb(255, 237, 208, 161), false);
+        DrawTextRect(ctx, tr, title, Argb(255, 237, 208, 161), false, window.Font);
     }
     for (const auto& control : window.Controls) { DrawControl(ctx, window, control, wr); }
     return true;
@@ -478,6 +515,7 @@ void FD3D9RenderDevice::PreloadLoadingScreenTextures(const FResourceManager& res
     };
     preloadWindow(model.LayoutWindow());
     preloadWindow(model.ConnectionWindow());
+    FontCache.Preload(Device, resources, logger);
     if (logger) { logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size())); }
 }
 

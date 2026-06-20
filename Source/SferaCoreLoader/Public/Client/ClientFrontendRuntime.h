@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 
 namespace Sfera {
 struct FClientFrontendDesc {
@@ -29,13 +30,15 @@ public:
     FStatus InitializeUiResources(const FResourceManager& resources);
     FStatus InitializeD3D9(const FResourceManager& resources);
     void RenderFrame();
-    void StartNetworkProbe(const FClientFrontendDesc& desc);
+    void ConfigureNetwork(const FClientFrontendDesc& desc);
+    void StartNetworkProbeAfterMenuOk();
     FStatus RunEventLoop();
     void Shutdown();
     bool IsWindowOpen() const { return Window.IsOpen(); }
 private:
     void RequestRepaintThrottled();
     void UpdateStageFromSession();
+    void HandleUiAction(const std::string& action);
     FLogger* Log = nullptr;
     FWin32Window Window;
     FUiRuntime Ui;
@@ -48,6 +51,11 @@ private:
     bool ShellCreated = false;
     std::atomic_bool D3DInitialized{false};
     bool RepaintDirty = true;
+    FClientFrontendDesc NetworkDesc;
+    bool NetworkConfigured = false;
+    bool NetworkProbeStarted = false;
+    std::atomic_bool NetworkConnectInFlight{false};
+    std::thread NetworkThread;
     EClientSessionStage LastSessionStage = EClientSessionStage::Idle;
     std::string LastUiAction;
     std::chrono::steady_clock::time_point LastPaint = std::chrono::steady_clock::now();

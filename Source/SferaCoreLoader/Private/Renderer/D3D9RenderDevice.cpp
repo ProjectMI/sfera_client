@@ -317,7 +317,17 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 BeginScene failed: hr=" + std::to_string(static_cast<long>(hr))); }
     Device->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
     const bool backgroundDrawn = DrawTextureResource(ctx, ui.LoginBackgroundTexture(), design);
-    DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect));
+    if (ui.IsConnectionPage()) {
+        DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect));
+    } else {
+        const bool connected = ui.Page() == EUiPage::ConnectedPage;
+        const unsigned long panelColor = connected ? Argb(145, 12, 40, 22) : Argb(145, 24, 24, 34);
+        FUiRectF panel{design.X + design.W * 0.25f, design.Y + design.H * 0.36f, design.W * 0.50f, design.H * 0.22f};
+        DrawSolidRect(panel.X, panel.Y, panel.W, panel.H, panelColor);
+        DrawSolidRect(panel.X, panel.Y, panel.W, 2.0f * ctx.Scale, Argb(230, 237, 208, 161));
+        DrawTextRect(ctx, FUiRectF{panel.X + 24.0f * ctx.Scale, panel.Y + 34.0f * ctx.Scale, panel.W - 48.0f * ctx.Scale, 28.0f * ctx.Scale}, connected ? "Сервер подключен" : "Подключение к серверу", Argb(240, 237, 208, 161), true, 0);
+        DrawTextRect(ctx, FUiRectF{panel.X + 24.0f * ctx.Scale, panel.Y + 78.0f * ctx.Scale, panel.W - 48.0f * ctx.Scale, 24.0f * ctx.Scale}, ui.Stage(), Argb(220, 255, 255, 255), true, 0);
+    }
     DrawStatusOverlay(ctx, ui, design);
     Device->EndScene();
     hr = Device->Present(nullptr, nullptr, nullptr, nullptr);

@@ -12,8 +12,9 @@ FClientFrontendRuntime::~FClientFrontendRuntime() { Shutdown(); }
 FStatus FClientFrontendRuntime::CreateShell() {
     if (ShellCreated) { return FStatus::Ok(); }
     FWindowDesc windowDesc;
-    windowDesc.Width = 1024;
-    windowDesc.Height = 768;
+    windowDesc.Windowed = false;
+    windowDesc.Width = GetSystemMetrics(SM_CXSCREEN);
+    windowDesc.Height = GetSystemMetrics(SM_CYSCREEN);
     FStatus status = Window.Create(windowDesc, Log);
     if (!status.IsOk()) { return status; }
     {
@@ -87,25 +88,40 @@ FStatus FClientFrontendRuntime::InitializeD3D9(const FResourceManager& resources
     return FStatus::Ok();
 }
 
-void FClientFrontendRuntime::StartNetworkProbe(const FClientFrontendDesc& desc) {
+void FClientFrontendRuntime::ConfigureNetwork(const FClientFrontendDesc& desc) {
+    NetworkDesc = desc;
+    NetworkConfigured = true;
+    NetworkProbeStarted = false;
     {
         std::lock_guard<std::mutex> lock(SessionMutex);
         Session.Configure(desc.Endpoint);
     }
-    if (!ShellCreated) { return; }
-    if (desc.TryNetworkProbe && desc.Endpoint) {
-        SetStage("connecting to " + desc.Endpoint->Host + ":" + std::to_string(desc.Endpoint->Port), 0.72f);
+    AddStatusLine(desc.Endpoint ? "network: endpoint ready; press OK to connect" : "network: endpoint missing; press OK will report error");
+}
+
+void FClientFrontendRuntime::StartNetworkProbeAfterMenuOk() {
+    if (NetworkProbeStarted) { return; }
+    NetworkProbeStarted = true;
+    if (!NetworkConfigured) { AddStatusLine("network: endpoint is not configured"); return; }
+    if (!NetworkDesc.TryNetworkProbe || !NetworkDesc.Endpoint) { AddStatusLine("network: probe skipped"); return; }
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.ShowNextPageLoading("connecting to " + NetworkDesc.Endpoint->Host + ":" + std::to_string(NetworkDesc.Endpoint->Port));
+    }
+    AddStatusLine("network: connecting after OK");
+    RepaintDirty = true;
+    NetworkConnectInFlight.store(true);
+    FClientFrontendDesc connectDesc = NetworkDesc;
+    NetworkThread = std::thread([this, connectDesc]() {
         FStatus connectStatus;
         {
             std::lock_guard<std::mutex> lock(SessionMutex);
-            connectStatus = Session.StartProbe(desc.NetworkConnectTimeoutMs);
+            connectStatus = Session.StartProbe(connectDesc.NetworkConnectTimeoutMs);
         }
         if (!connectStatus.IsOk()) { AddStatusLine("network: " + connectStatus.Message()); }
-        else { AddStatusLine("network: connected, protocol probe active"); }
-    } else {
-        AddStatusLine("network: probe skipped");
-    }
-    SetStage("waiting for server/menu transition", 0.78f);
+        else { AddStatusLine("network: connected, loading next page"); }
+        NetworkConnectInFlight.store(false);
+    });
 }
 
 void FClientFrontendRuntime::RenderFrame() {
@@ -134,7 +150,7 @@ FStatus FClientFrontendRuntime::RunEventLoop() {
             inputChanged = Ui.HandleInputFrame(input, client, Log);
             if (inputChanged) {
                 const std::string& action = Ui.ActionState().LastAction;
-                if (!action.empty() && action != LastUiAction) { LastUiAction = action; Ui.AddStatusLine("ui: " + action); }
+                if (!action.empty() && action != LastUiAction) { LastUiAction = action; Ui.AddStatusLine("ui: " + action); HandleUiAction(action); }
             }
         }
         if (LastUiAction == "quit_requested") { Shutdown(); break; }
@@ -154,6 +170,8 @@ FStatus FClientFrontendRuntime::RunEventLoop() {
 }
 
 void FClientFrontendRuntime::Shutdown() {
+    if (NetworkThread.joinable()) { NetworkThread.join(); }
+    NetworkConnectInFlight.store(false);
     {
         std::lock_guard<std::mutex> lock(SessionMutex);
         Session.Close();
@@ -174,6 +192,10 @@ void FClientFrontendRuntime::RequestRepaintThrottled() {
     if (RepaintDirty || now - LastPaint > std::chrono::milliseconds(50)) { Window.RequestRepaint(); LastPaint = now; }
 }
 
+void FClientFrontendRuntime::HandleUiAction(const std::string& action) {
+    if (action == "login_requested") { StartNetworkProbeAfterMenuOk(); }
+}
+
 void FClientFrontendRuntime::UpdateStageFromSession() {
     EClientSessionStage stage;
     std::string stageText;
@@ -186,8 +208,8 @@ void FClientFrontendRuntime::UpdateStageFromSession() {
     if (stage == LastSessionStage && stage != EClientSessionStage::ProbeReceiving) { return; }
     LastSessionStage = stage;
     std::lock_guard<std::recursive_mutex> lock(UiMutex);
-    if (stage == EClientSessionStage::ProbeReceiving) { Ui.SetStage(stageText, 0.86f); RepaintDirty = true; }
-    else if (stage == EClientSessionStage::Connected) { Ui.SetStage("connected; awaiting protocol", 0.80f); RepaintDirty = true; }
-    else if (stage == EClientSessionStage::Failed) { Ui.SetStage("network probe failed", 0.70f); RepaintDirty = true; }
+    if (stage == EClientSessionStage::ProbeReceiving) { Ui.ShowConnectedPage(stageText); RepaintDirty = true; }
+    else if (stage == EClientSessionStage::Connected) { Ui.ShowConnectedPage("server connected; loading next page"); RepaintDirty = true; }
+    else if (stage == EClientSessionStage::Failed) { Ui.ShowNextPageLoading("network probe failed: " + stageText); RepaintDirty = true; }
 }
 }

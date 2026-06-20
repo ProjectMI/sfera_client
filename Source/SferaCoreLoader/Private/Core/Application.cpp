@@ -57,7 +57,8 @@ int FApplication::Run() {
 
             FClientFrontendDesc frontendDesc;
             frontendDesc.Endpoint = endpoint;
-            frontend.StartNetworkProbe(frontendDesc);
+            frontend.ConfigureNetwork(frontendDesc);
+            frontend.SetStage("ready; press OK to connect", 1.0f);
             bootstrapOk.store(true);
         } catch (const std::exception& ex) {
             bootstrapOk.store(false);

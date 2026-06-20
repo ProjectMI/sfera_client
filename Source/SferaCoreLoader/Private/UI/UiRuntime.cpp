@@ -299,8 +299,18 @@ void FUiRuntime::ActivateControl(const FUiControlDef& control, FLogger* logger) 
     }
 }
 
+void FUiRuntime::ShowNextPageLoading(std::string stage) {
+    CurrentPage = EUiPage::NextPageLoading;
+    SetStage(std::move(stage), 1.0f);
+}
+
+void FUiRuntime::ShowConnectedPage(std::string stage) {
+    CurrentPage = EUiPage::ConnectedPage;
+    SetStage(std::move(stage), 1.0f);
+}
+
 bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const tagRECT& clientRect, FLogger* logger) {
-    if (!Ready) { return false; }
+    if (!Ready || !IsConnectionPage()) { return false; }
     bool changed = false;
     const FUiControlDef* hovered = HitTestConnection(input.MouseX, input.MouseY, clientRect);
     const int32 newHover = hovered ? hovered->Id : 0;

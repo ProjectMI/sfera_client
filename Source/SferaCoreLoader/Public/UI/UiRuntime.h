@@ -112,6 +112,8 @@ struct FUiWindowDef {
 
 using FUiStringTable = std::unordered_map<std::string, std::string>;
 
+enum class EUiPage { Connection, NextPageLoading, ConnectedPage };
+
 struct FUiActionState {
     int32 HoverControlId = 0;
     int32 PressedControlId = 0;
@@ -136,6 +138,11 @@ public:
     FStatus Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger = nullptr);
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
+    void ShowNextPageLoading(std::string stage);
+    void ShowConnectedPage(std::string stage);
+    EUiPage Page() const { return CurrentPage; }
+    bool IsConnectionPage() const { return CurrentPage == EUiPage::Connection; }
+    bool IsNextPageVisible() const { return CurrentPage == EUiPage::NextPageLoading || CurrentPage == EUiPage::ConnectedPage; }
     bool HandleInputFrame(const FInputSnapshot& input, const tagRECT& clientRect, FLogger* logger = nullptr);
     FUiRectF BuildDesignRect(const tagRECT& clientRect) const;
     FUiRectF BuildConnectionRect(const tagRECT& clientRect) const;
@@ -163,6 +170,7 @@ private:
     std::string CurrentStage = "bootstrap";
     float CurrentProgress = 0.0f;
     std::vector<std::string> Status;
+    EUiPage CurrentPage = EUiPage::Connection;
     bool Ready = false;
 };
 

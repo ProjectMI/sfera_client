@@ -244,6 +244,17 @@ FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBoots
     return FStatus::Ok();
 }
 
+
+FStatus FUiRuntime::LoadNextPageResources(const FResourceManager& resources, FLogger* logger) {
+    auto nextPage = LoadUiWindowFromResource(resources, Bootstrap.NextPageWindowResource);
+    if (!nextPage.IsOk()) { return nextPage.Status(); }
+    NextPage = std::move(nextPage.Value());
+    NextPageReady = true;
+    AddStatusLine("ui: next page loaded: " + NextPage.Name + ", controls=" + std::to_string(NextPage.Controls.size()) + ", sprites=" + std::to_string(NextPage.Sprites.size()));
+    if (logger) { logger->Info("UI next page initialized: resource=" + Bootstrap.NextPageWindowResource + ", window=" + NextPage.Name + ", controls=" + std::to_string(NextPage.Controls.size()) + ", sprites=" + std::to_string(NextPage.Sprites.size())); }
+    return FStatus::Ok();
+}
+
 void FUiRuntime::SetStage(std::string stage, float progress) { CurrentStage = std::move(stage); CurrentProgress = std::clamp(progress, 0.0f, 1.0f); }
 
 void FUiRuntime::AddStatusLine(std::string line) { Status.push_back(std::move(line)); if (Status.size() > 6) { Status.erase(Status.begin()); } }

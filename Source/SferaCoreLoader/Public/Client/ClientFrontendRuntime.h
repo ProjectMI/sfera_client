@@ -39,6 +39,7 @@ private:
     void RequestRepaintThrottled();
     void UpdateStageFromSession();
     void HandleUiAction(const std::string& action);
+    void LoadNextPageAfterConnection();
     FLogger* Log = nullptr;
     FWin32Window Window;
     FUiRuntime Ui;

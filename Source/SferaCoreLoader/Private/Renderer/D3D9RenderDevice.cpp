@@ -286,6 +286,7 @@ void FD3D9RenderDevice::DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& u
 void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger) {
     LoadTextureByName(resources, ui.LoginBackgroundTexture(), logger);
     for (const auto& [name, sprite] : ui.ConnectionWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    if (ui.IsNextPageReady()) { for (const auto& [name, sprite] : ui.NextPageWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } } }
     FontCache.Preload(Device, resources, logger);
     if (logger) { logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size())); }
 }
@@ -319,6 +320,12 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     const bool backgroundDrawn = DrawTextureResource(ctx, ui.LoginBackgroundTexture(), design);
     if (ui.IsConnectionPage()) {
         DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect));
+    } else if (ui.IsNextPageReady()) {
+        const FUiWindowDef& next = ui.NextPageWindow();
+        const float w = next.Rect.W > 0 ? static_cast<float>(next.Rect.W) * ctx.Scale : design.W;
+        const float h = next.Rect.H > 0 ? static_cast<float>(next.Rect.H) * ctx.Scale : design.H;
+        FUiRectF nextRect{std::floor(design.X + (design.W - w) * 0.5f), std::floor(design.Y + (design.H - h) * 0.5f), w, h};
+        DrawWindow(ctx, next, nextRect);
     } else {
         const bool connected = ui.Page() == EUiPage::ConnectedPage;
         const unsigned long panelColor = connected ? Argb(145, 12, 40, 22) : Argb(145, 24, 24, 34);

@@ -119,9 +119,31 @@ void FClientFrontendRuntime::StartNetworkProbeAfterMenuOk() {
             connectStatus = Session.StartProbe(connectDesc.NetworkConnectTimeoutMs);
         }
         if (!connectStatus.IsOk()) { AddStatusLine("network: " + connectStatus.Message()); }
-        else { AddStatusLine("network: connected, loading next page"); }
+        else {
+            AddStatusLine("network: connected, loading next page");
+            LoadNextPageAfterConnection();
+        }
         NetworkConnectInFlight.store(false);
     });
+}
+
+
+void FClientFrontendRuntime::LoadNextPageAfterConnection() {
+    if (!RenderResources) { AddStatusLine("next page: resources unavailable"); return; }
+    FStatus loadStatus;
+    {
+        std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
+        Ui.ShowConnectedPage("server connected; loading next page resources");
+        loadStatus = Ui.LoadNextPageResources(*RenderResources, Log);
+    }
+    if (!loadStatus.IsOk()) { AddStatusLine("next page: " + loadStatus.Message()); return; }
+    {
+        std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
+        std::lock_guard<std::mutex> renderLock(RenderMutex);
+        RenderDevice.PreloadUiTextures(*RenderResources, Ui, Log);
+        Ui.ShowConnectedPage("next page loaded");
+    }
+    RepaintDirty = true;
 }
 
 void FClientFrontendRuntime::RenderFrame() {
@@ -209,7 +231,7 @@ void FClientFrontendRuntime::UpdateStageFromSession() {
     LastSessionStage = stage;
     std::lock_guard<std::recursive_mutex> lock(UiMutex);
     if (stage == EClientSessionStage::ProbeReceiving) { Ui.ShowConnectedPage(stageText); RepaintDirty = true; }
-    else if (stage == EClientSessionStage::Connected) { Ui.ShowConnectedPage("server connected; loading next page"); RepaintDirty = true; }
+    else if (stage == EClientSessionStage::Connected) { if (!Ui.IsNextPageReady()) { Ui.ShowConnectedPage("server connected; waiting for next page resources"); } RepaintDirty = true; }
     else if (stage == EClientSessionStage::Failed) { Ui.ShowNextPageLoading("network probe failed: " + stageText); RepaintDirty = true; }
 }
 }

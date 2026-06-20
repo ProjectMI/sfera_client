@@ -129,6 +129,7 @@ struct FUiBootstrapDesc {
     std::string StringsResource = "language/strings.ui";
     std::string ConnectionWindowResource = "effects/connection.ui";
     std::string LoginBackgroundTexture = "xadd/login_rus_sp.dds";
+    std::string NextPageWindowResource = "effects/loadscreen.ui";
     int32 DesignWidth = 1024;
     int32 DesignHeight = 768;
 };
@@ -138,6 +139,7 @@ public:
     FStatus Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger = nullptr);
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
+    FStatus LoadNextPageResources(const FResourceManager& resources, FLogger* logger = nullptr);
     void ShowNextPageLoading(std::string stage);
     void ShowConnectedPage(std::string stage);
     EUiPage Page() const { return CurrentPage; }
@@ -148,6 +150,7 @@ public:
     FUiRectF BuildConnectionRect(const tagRECT& clientRect) const;
     const FUiStringTable& Strings() const { return StringTable; }
     const FUiWindowDef& ConnectionWindow() const { return Connection; }
+    const FUiWindowDef& NextPageWindow() const { return NextPage; }
     const FUiActionState& ActionState() const { return Actions; }
     const std::string& LoginBackgroundTexture() const { return Bootstrap.LoginBackgroundTexture; }
     const std::string& Stage() const { return CurrentStage; }
@@ -156,6 +159,7 @@ public:
     int32 DesignWidth() const { return Bootstrap.DesignWidth; }
     int32 DesignHeight() const { return Bootstrap.DesignHeight; }
     bool IsReady() const { return Ready; }
+    bool IsNextPageReady() const { return NextPageReady; }
     std::string ResolveText(std::string_view key) const;
 private:
     const FUiControlDef* HitTestConnection(int32 x, int32 y, const tagRECT& clientRect) const;
@@ -166,12 +170,14 @@ private:
     FUiBootstrapDesc Bootstrap;
     FUiStringTable StringTable;
     FUiWindowDef Connection;
+    FUiWindowDef NextPage;
     FUiActionState Actions;
     std::string CurrentStage = "bootstrap";
     float CurrentProgress = 0.0f;
     std::vector<std::string> Status;
     EUiPage CurrentPage = EUiPage::Connection;
     bool Ready = false;
+    bool NextPageReady = false;
 };
 
 TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& resources, std::string_view logicalName);

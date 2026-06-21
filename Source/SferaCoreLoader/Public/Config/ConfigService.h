@@ -11,6 +11,7 @@ public:
     FStatus LoadConfig(std::string logicalPath);
     const FConfigDocument* FindConfig(std::string_view logicalPath) const;
     std::optional<std::string> FindString(std::string_view key) const;
+    std::optional<int64> FindInt(std::string_view key) const;
     const std::unordered_map<std::string, FConfigDocument>& DocumentsByName() const { return Documents; }
 private:
     const FFileSystem& FileSystem;

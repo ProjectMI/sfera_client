@@ -107,6 +107,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9BitmapFont.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9CharacterScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
@@ -114,7 +115,14 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
-  </ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\ChrModel.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\MdlModel.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\ModelRepository.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\SklSkeleton.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\SphereEmuProtocol.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\PE\PeImports.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\DdsImage.cpp" />
+  <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientSettings.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Network\LoginClient.cpp" /></ItemGroup>
   <ItemGroup>
     </ItemGroup>
   <ItemGroup>
@@ -154,6 +162,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9CharacterScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
@@ -162,5 +171,13 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h" />
-  </ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\BinaryReader.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\ChrModel.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\MdlModel.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\ModelRepository.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\SklSkeleton.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\SphereEmuProtocol.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\PE\PeImports.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\DdsImage.h" />
+  <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientSettings.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Network\LoginClient.h" /></ItemGroup>
 </Project>

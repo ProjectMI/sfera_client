@@ -4,63 +4,92 @@
 #include <Windows.h>
 #include <windowsx.h>
 #include <sstream>
+#include <string>
 
 namespace Sfera {
+namespace {
+std::wstring Utf8ToWideLocal(const std::string& text) {
+    if (text.empty()) { return {}; }
+    const int required = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
+    if (required <= 0) { return std::wstring(text.begin(), text.end()); }
+    std::wstring out(static_cast<size_t>(required), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), out.data(), required);
+    return out;
+}
+
+void AppendWideCharAsUtf8(std::string& out, wchar_t ch) {
+    char buffer[8]{};
+    const int count = WideCharToMultiByte(CP_UTF8, 0, &ch, 1, buffer, static_cast<int>(sizeof(buffer)), nullptr, nullptr);
+    if (count > 0) { out.append(buffer, buffer + count); }
+}
+}
 FWin32Window::FWin32Window() = default;
 FWin32Window::~FWin32Window() { Destroy(); }
 
 FStatus FWin32Window::Create(const FWindowDesc& desc, FLogger* logger) {
     Desc = desc;
     Log = logger;
-    Desc.Width = Desc.Width < 800 ? 800 : Desc.Width;
-    Desc.Height = Desc.Height < 600 ? 600 : Desc.Height;
+    HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    MONITORINFO monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    if (GetMonitorInfoA(monitor, &monitorInfo)) {
+        Desc.Width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+        Desc.Height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+    } else {
+        Desc.Width = GetSystemMetrics(SM_CXSCREEN);
+        Desc.Height = GetSystemMetrics(SM_CYSCREEN);
+    }
     Instance = GetModuleHandleA(nullptr);
-    WNDCLASSEXA wc{};
+    WNDCLASSEXW wc{};
+    const std::wstring classNameW = Utf8ToWideLocal(Desc.ClassName);
+    const std::wstring titleW = Utf8ToWideLocal(Desc.Title);
     wc.cbSize = sizeof(wc);
-    wc.style = CS_OWNDC;
+    wc.style = CS_OWNDC | CS_DBLCLKS;
     wc.lpfnWndProc = &FWin32Window::StaticWndProc;
     wc.hInstance = Instance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     wc.hbrBackground = nullptr;
-    wc.lpszClassName = Desc.ClassName.c_str();
-    ATOM classAtom = RegisterClassExA(&wc);
+    wc.lpszClassName = classNameW.c_str();
+    ATOM classAtom = RegisterClassExW(&wc);
     if (!classAtom) {
         DWORD err = GetLastError();
         if (err != ERROR_CLASS_ALREADY_EXISTS) {
-            return FStatus::Error(EStatusCode::RuntimeError, "RegisterClassExA failed for Sphere frontend window, error=" + std::to_string(err));
+            return FStatus::Error(EStatusCode::RuntimeError, "RegisterClassExW failed for Sphere frontend window, error=" + std::to_string(err));
         }
     }
-    DWORD style = Desc.Windowed ? (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX) : WS_POPUP;
-    RECT rect{0, 0, Desc.Width, Desc.Height};
-    AdjustWindowRect(&rect, style, FALSE);
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-    int x = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
-    int y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
+    DWORD style = WS_POPUP;
+    DWORD exStyle = WS_EX_APPWINDOW;
+    int width = Desc.Width;
+    int height = Desc.Height;
+    int x = monitorInfo.rcMonitor.left;
+    int y = monitorInfo.rcMonitor.top;
     SetLastError(0);
-    Hwnd = CreateWindowExA(0, Desc.ClassName.c_str(), Desc.Title.c_str(), style, x, y, width, height, nullptr, nullptr, Instance, this);
+    Hwnd = CreateWindowExW(exStyle, classNameW.c_str(), titleW.c_str(), style, x, y, width, height, nullptr, nullptr, Instance, this);
     if (!Hwnd) {
         DWORD err = GetLastError();
-        return FStatus::Error(EStatusCode::RuntimeError, "CreateWindowExA failed for Sphere frontend window, error=" + std::to_string(err));
+        return FStatus::Error(EStatusCode::RuntimeError, "CreateWindowExW failed for Sphere frontend window, error=" + std::to_string(err));
     }
-    if (Log) { Log->Info("Window created: class=" + Desc.ClassName + ", title=" + Desc.Title + ", size=" + std::to_string(Desc.Width) + "x" + std::to_string(Desc.Height)); }
+    SetWindowLongPtrA(Hwnd, GWL_STYLE, static_cast<LONG_PTR>(style));
+    SetWindowLongPtrA(Hwnd, GWL_EXSTYLE, static_cast<LONG_PTR>(exStyle));
+    SetWindowPos(Hwnd, HWND_TOP, x, y, Desc.Width, Desc.Height, SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER);
+    if (Log) { Log->Info("Window created borderless: class=" + Desc.ClassName + ", title=" + Desc.Title + ", bounds=" + std::to_string(x) + "," + std::to_string(y) + " " + std::to_string(Desc.Width) + "x" + std::to_string(Desc.Height)); }
     return FStatus::Ok();
 }
 
 void FWin32Window::Show() {
     if (!Hwnd) { return; }
-    ShowWindow(Hwnd, SW_SHOWNORMAL);
+    ShowWindow(Hwnd, SW_SHOW);
     SetForegroundWindow(Hwnd);
     UpdateWindow(Hwnd);
 }
 
 bool FWin32Window::PumpMessages() {
     MSG msg{};
-    while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) { InputState.CloseRequested = true; return false; }
         TranslateMessage(&msg);
-        DispatchMessageA(&msg);
+        DispatchMessageW(&msg);
     }
     return !InputState.CloseRequested;
 }
@@ -72,6 +101,8 @@ void FWin32Window::RequestRepaint() {
 void FWin32Window::Destroy() {
     if (Hwnd) { DestroyWindow(Hwnd); Hwnd = nullptr; }
 }
+
+void FWin32Window::ClearCloseRequest() { InputState.CloseRequested = false; }
 
 void FWin32Window::SetPaintCallback(FPaintCallback callback) { PaintCallback = std::move(callback); }
 
@@ -88,7 +119,7 @@ FInputSnapshot FWin32Window::ConsumeInputFrame() {
 
 long long SFERA_WINAPI_CALL FWin32Window::StaticWndProc(HWND__* hwnd, unsigned int message, unsigned long long wparam, long long lparam) {
     if (message == WM_NCCREATE) {
-        auto* create = reinterpret_cast<CREATESTRUCTA*>(lparam);
+        auto* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
         auto* self = create ? static_cast<FWin32Window*>(create->lpCreateParams) : nullptr;
         if (!self) { return FALSE; }
         self->Hwnd = hwnd;
@@ -97,7 +128,7 @@ long long SFERA_WINAPI_CALL FWin32Window::StaticWndProc(HWND__* hwnd, unsigned i
     }
     auto* self = reinterpret_cast<FWin32Window*>(GetWindowLongPtrA(hwnd, GWLP_USERDATA));
     if (self) { return self->WndProc(hwnd, message, wparam, lparam); }
-    return DefWindowProcA(hwnd, message, wparam, lparam);
+    return DefWindowProcW(hwnd, message, wparam, lparam);
 }
 
 long long FWin32Window::WndProc(HWND__* hwnd, unsigned int message, unsigned long long wparam, long long lparam) {
@@ -142,7 +173,7 @@ long long FWin32Window::WndProc(HWND__* hwnd, unsigned int message, unsigned lon
         if (wparam == 8) { InputState.BackspacePressed = true; return 0; }
         if (wparam == 9) { InputState.TabPressed = true; return 0; }
         if (wparam == 13) { InputState.EnterPressed = true; return 0; }
-        if (wparam >= 32 && wparam < 127) { InputState.TypedText.push_back(static_cast<char>(wparam)); }
+        if (wparam >= 32 && wparam <= 0xffff) { AppendWideCharAsUtf8(InputState.TypedText, static_cast<wchar_t>(wparam)); }
         return 0;
     case WM_RBUTTONDOWN:
         InputState.RightButton = true;
@@ -160,7 +191,7 @@ long long FWin32Window::WndProc(HWND__* hwnd, unsigned int message, unsigned lon
         return 0;
     }
     default:
-        return DefWindowProcA(hwnd, message, wparam, lparam);
+        return DefWindowProcW(hwnd, message, wparam, lparam);
     }
 }
 }

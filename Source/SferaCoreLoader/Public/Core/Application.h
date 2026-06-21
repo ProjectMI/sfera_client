@@ -6,6 +6,7 @@
 #include "MBC/MbcNativeRegistry.h"
 #include "MBC/MbcProject.h"
 #include "MBC/MbcVirtualMachine.h"
+#include "Model/ModelRepository.h"
 #include "GameObjects/GameObjectService.h"
 #include "Network/ConnectManager.h"
 #include "WorldScene/WorldScene.h"
@@ -29,6 +30,7 @@ private:
     std::unique_ptr<FConfigService> Config;
     std::unique_ptr<FResourceManager> Resources;
     std::unique_ptr<FGameObjectService> GameObjects;
+    std::unique_ptr<FModelRepository> Models;
     std::unique_ptr<FWorldScene> WorldScene;
     std::unique_ptr<FConnectManager> Network;
     FMbcNativeRegistry MbcNatives;

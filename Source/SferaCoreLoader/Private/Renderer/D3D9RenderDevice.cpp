@@ -1,4 +1,5 @@
 #include "Renderer/D3D9RenderDevice.h"
+#include "Renderer/DdsImage.h"
 #include "FileSystem/PathUtils.h"
 #include "ResourceLoader/ResourceTypes.h"
 #define NOMINMAX
@@ -9,6 +10,8 @@
 #include <cmath>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
 namespace Sfera {
 namespace {
@@ -45,7 +48,19 @@ std::string SelectButtonSprite(const FUiControlDef& control, const FUiActionStat
     return control.DrawSpriteName;
 }
 
-std::string TextForControl(const FUiRuntime& ui, const FUiControlDef& control) { return control.TextKey.empty() ? std::string{} : ui.ResolveText(control.TextKey); }
+std::string SelectSubButtonSprite(const FUiSubButtonDef& button, bool disabled, bool hot, bool pressed, std::string_view normalFallback, std::string_view focusFallback, std::string_view pressedFallback, std::string_view disabledFallback) {
+    if (disabled) { return !button.DisabledImage.empty() ? button.DisabledImage : std::string(disabledFallback); }
+    if (pressed) { return !button.CheckedImage.empty() ? button.CheckedImage : std::string(pressedFallback); }
+    if (hot) { return !button.FocusedImage.empty() ? button.FocusedImage : std::string(focusFallback); }
+    return !button.UncheckedImage.empty() ? button.UncheckedImage : std::string(normalFallback);
+}
+
+    bool IsTextLikeControl(const FUiControlDef& control) { return EqualsNoCase(control.ClassId, "TEXT") || EqualsNoCase(control.ClassId, "TEXTLIST") || EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
+    std::string TextForControl(const FUiRuntime& ui, const FUiWindowDef& window, const FUiControlDef& control) {
+        if (ui.Mode() == EUiRuntimeMode::CharacterSelect && EqualsNoCase(window.Name, "pick_person")) { return ui.CharacterControlText(control); }
+        if (ui.HasModalDialog() && EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.ModalControlText(control); }
+        return control.TextKey.empty() ? std::string{} : ui.ResolveText(control.TextKey);
+    }
 }
 
 struct FD3D9RenderDevice::FDrawContext {
@@ -62,19 +77,28 @@ FStatus FD3D9RenderDevice::Initialize(HWND__* hwnd, int32 width, int32 height, F
     Shutdown();
     D3D = Direct3DCreate9(D3D_SDK_VERSION);
     if (!D3D) { return FStatus::Error(EStatusCode::RuntimeError, "Direct3DCreate9 failed"); }
+    DeviceWindow = hwnd;
+    BackBufferWidth = std::max<int32>(1, width);
+    BackBufferHeight = std::max<int32>(1, height);
     D3DPRESENT_PARAMETERS pp{};
     pp.Windowed = TRUE;
+    pp.hDeviceWindow = hwnd;
     pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
     pp.BackBufferFormat = D3DFMT_UNKNOWN;
-    pp.BackBufferWidth = static_cast<UINT>(width);
-    pp.BackBufferHeight = static_cast<UINT>(height);
-    pp.EnableAutoDepthStencil = FALSE;
-    pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    pp.BackBufferWidth = static_cast<UINT>(BackBufferWidth);
+    pp.BackBufferHeight = static_cast<UINT>(BackBufferHeight);
+    pp.BackBufferCount = 1;
+    pp.EnableAutoDepthStencil = TRUE;
+    pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+    pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
     HRESULT hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device);
+    if (FAILED(hr)) { pp.AutoDepthStencilFormat = D3DFMT_D16; hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device); }
     if (FAILED(hr)) { hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device); }
     if (FAILED(hr)) { Shutdown(); return FStatus::Error(EStatusCode::RuntimeError, "IDirect3D9::CreateDevice failed: hr=" + std::to_string(static_cast<long>(hr))); }
-    if (logger) { logger->Info("D3D9 device initialized: backbuffer=" + std::to_string(width) + "x" + std::to_string(height)); }
-    return EnsureD3DX(logger);
+    if (logger) { logger->Info("D3D9 device initialized borderless windowed: backbuffer=" + std::to_string(BackBufferWidth) + "x" + std::to_string(BackBufferHeight)); }
+    FStatus d3dx = EnsureD3DX(logger);
+    if (!d3dx.IsOk() && logger) { logger->Warning("D3D9 texture path will use built-in DDS decoder where possible: " + d3dx.Message()); }
+    return FStatus::Ok();
 }
 
 void FD3D9RenderDevice::ReleaseTextures() {
@@ -84,9 +108,13 @@ void FD3D9RenderDevice::ReleaseTextures() {
 }
 
 void FD3D9RenderDevice::Shutdown() {
+    CharacterScene.Shutdown();
     ReleaseTextures();
     if (Device) { Device->Release(); Device = nullptr; }
     if (D3D) { D3D->Release(); D3D = nullptr; }
+    DeviceWindow = nullptr;
+    BackBufferWidth = 0;
+    BackBufferHeight = 0;
     if (D3DXModule) { FreeLibrary(D3DXModule); D3DXModule = nullptr; }
     D3DXCreateTextureFromFileInMemoryExFn = nullptr;
     ReportedD3DXMissing = false;
@@ -103,7 +131,7 @@ FStatus FD3D9RenderDevice::EnsureD3DX(FLogger* logger) {
         FreeLibrary(D3DXModule);
         D3DXModule = nullptr;
     }
-    if (!ReportedD3DXMissing && logger) { logger->Error("D3D9 texture loader unavailable: d3dx9_xx.dll is required"); ReportedD3DXMissing = true; }
+    if (!ReportedD3DXMissing && logger) { logger->Warning("D3D9 texture loader unavailable: d3dx9_xx.dll is required for non-DDS textures"); ReportedD3DXMissing = true; }
     return FStatus::Error(EStatusCode::RuntimeError, "D3DXCreateTextureFromFileInMemoryEx unavailable");
 }
 
@@ -119,6 +147,22 @@ std::string FD3D9RenderDevice::ResolveTextureResourceName(const FResourceManager
     return {};
 }
 
+IDirect3DTexture9* FD3D9RenderDevice::CreateTextureFromDdsImage(const FDdsImage& image, FLogger* logger) {
+    if (!Device || !image) { return nullptr; }
+    IDirect3DTexture9* texture = nullptr;
+    HRESULT hr = Device->CreateTexture(static_cast<UINT>(image.Width), static_cast<UINT>(image.Height), 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &texture, nullptr);
+    if (FAILED(hr) || !texture) { if (logger) { logger->Warning("D3D9 DDS texture allocation failed: hr=" + std::to_string(static_cast<long>(hr))); } return nullptr; }
+    D3DLOCKED_RECT locked{};
+    hr = texture->LockRect(0, &locked, nullptr, 0);
+    if (FAILED(hr)) { if (logger) { logger->Warning("D3D9 DDS texture lock failed: hr=" + std::to_string(static_cast<long>(hr))); } texture->Release(); return nullptr; }
+    const auto* src = image.BgraPixels.data();
+    auto* dst = static_cast<uint8*>(locked.pBits);
+    const size_t copyStride = static_cast<size_t>(image.Width) * 4;
+    for (int32 y = 0; y < image.Height; ++y) { std::memcpy(dst + static_cast<size_t>(y) * static_cast<size_t>(locked.Pitch), src + static_cast<size_t>(y) * static_cast<size_t>(image.Stride), copyStride); }
+    texture->UnlockRect(0);
+    return texture;
+}
+
 FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& resources, std::string_view textureName, FLogger* logger) {
     std::string key = Lower(std::string(textureName));
     if (key.empty()) { return nullptr; }
@@ -127,15 +171,21 @@ FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& 
     FD3D9TextureEntry entry;
     entry.Tried = true;
     if (!Device) { entry.Error = "device not initialized"; TextureCache.emplace(key, entry); return nullptr; }
-    FStatus d3dx = EnsureD3DX(logger);
-    if (!d3dx.IsOk()) { entry.Error = d3dx.Message(); TextureCache.emplace(key, entry); return nullptr; }
     std::string logical = ResolveTextureResourceName(resources, textureName);
     if (logical.empty()) { entry.Error = "resource not found"; TextureCache.emplace(key, entry); if (logger) { logger->Warning("UI texture not found: " + std::string(textureName)); } return nullptr; }
     auto blob = resources.Load(logical);
     if (!blob.IsOk()) { entry.Error = blob.Status().Message(); TextureCache.emplace(key, entry); if (logger) { logger->Warning("UI texture load failed: " + logical + " - " + entry.Error); } return nullptr; }
     IDirect3DTexture9* texture = nullptr;
-    HRESULT hr = D3DXCreateTextureFromFileInMemoryExFn(Device, blob.Value().Bytes.data(), static_cast<unsigned int>(blob.Value().Bytes.size()), D3DX_DEFAULT_VALUE, D3DX_DEFAULT_VALUE, 1, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_NONE_VALUE, D3DX_FILTER_NONE_VALUE, 0, nullptr, nullptr, &texture);
-    if (FAILED(hr) || !texture) { entry.Error = "D3DX load failed hr=" + std::to_string(static_cast<long>(hr)); TextureCache.emplace(key, entry); if (logger) { logger->Warning("UI texture decode failed: " + logical + " - " + entry.Error); } return nullptr; }
+    if (EnsureD3DX(nullptr).IsOk()) {
+        HRESULT hr = D3DXCreateTextureFromFileInMemoryExFn(Device, blob.Value().Bytes.data(), static_cast<unsigned int>(blob.Value().Bytes.size()), D3DX_DEFAULT_VALUE, D3DX_DEFAULT_VALUE, 1, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_NONE_VALUE, D3DX_FILTER_NONE_VALUE, 0, nullptr, nullptr, &texture);
+        if (FAILED(hr) || !texture) { entry.Error = "D3DX load failed hr=" + std::to_string(static_cast<long>(hr)); }
+    }
+    if (!texture && Lower(FPath(logical).extension().string()) == ".dds") {
+        auto dds = DecodeDdsRgbImageFromBytes(blob.Value().Bytes, logical);
+        if (dds.IsOk()) { texture = CreateTextureFromDdsImage(dds.Value(), logger); }
+        else if (entry.Error.empty()) { entry.Error = dds.Status().Message(); }
+    }
+    if (!texture) { if (entry.Error.empty()) { entry.Error = "texture decode failed"; } TextureCache.emplace(key, entry); if (logger) { logger->Warning("UI texture decode failed: " + logical + " - " + entry.Error); } return nullptr; }
     D3DSURFACE_DESC desc{};
     texture->GetLevelDesc(0, &desc);
     entry.Texture = texture;
@@ -178,22 +228,24 @@ void FD3D9RenderDevice::DrawTextureQuadUv(IDirect3DTexture9* texture, float x, f
     Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(FUiVertex));
 }
 
-void FD3D9RenderDevice::DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, float alpha) {
+void FD3D9RenderDevice::DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, unsigned long color) {
     if (!Device || !texture || textureWidth <= 0 || textureHeight <= 0) { return; }
-    float dx = spriteRect.X + static_cast<float>(piece.DstLeft) * spriteRect.W;
-    float dy = spriteRect.Y + static_cast<float>(piece.DstTop) * spriteRect.H;
-    float dw = static_cast<float>(piece.DstRight - piece.DstLeft) * spriteRect.W;
-    float dh = static_cast<float>(piece.DstBottom - piece.DstTop) * spriteRect.H;
-    if (dw < 0.0f) { dx += dw; dw = -dw; }
-    if (dh < 0.0f) { dy += dh; dh = -dh; }
+    const float dx = spriteRect.X + static_cast<float>(std::min(piece.DstLeft, piece.DstRight)) * spriteRect.W;
+    const float dy = spriteRect.Y + static_cast<float>(std::min(piece.DstTop, piece.DstBottom)) * spriteRect.H;
+    const float dw = static_cast<float>(std::abs(piece.DstRight - piece.DstLeft)) * spriteRect.W;
+    const float dh = static_cast<float>(std::abs(piece.DstBottom - piece.DstTop)) * spriteRect.H;
     if (dw <= 0.0f || dh <= 0.0f) { return; }
-    unsigned char a = static_cast<unsigned char>(std::clamp(alpha, 0.0f, 1.0f) * 255.0f);
-    unsigned long color = Argb(a, 255, 255, 255);
     if (piece.HasTexCoords) { DrawTextureQuadUv(texture, dx, dy, dw, dh, piece.TexCoords.data(), textureWidth, textureHeight, color); return; }
-    float u1 = static_cast<float>(piece.SrcLeft) / static_cast<float>(textureWidth);
-    float v1 = static_cast<float>(piece.SrcTop) / static_cast<float>(textureHeight);
-    float u2 = static_cast<float>(piece.SrcRight) / static_cast<float>(textureWidth);
-    float v2 = static_cast<float>(piece.SrcBottom) / static_cast<float>(textureHeight);
+    int32 srcLeft = piece.SrcLeft;
+    int32 srcTop = piece.SrcTop;
+    int32 srcRight = piece.SrcRight;
+    int32 srcBottom = piece.SrcBottom;
+    if (piece.DstRight < piece.DstLeft) { std::swap(srcLeft, srcRight); }
+    if (piece.DstBottom < piece.DstTop) { std::swap(srcTop, srcBottom); }
+    float u1 = static_cast<float>(srcLeft) / static_cast<float>(textureWidth);
+    float v1 = static_cast<float>(srcTop) / static_cast<float>(textureHeight);
+    float u2 = static_cast<float>(srcRight) / static_cast<float>(textureWidth);
+    float v2 = static_cast<float>(srcBottom) / static_cast<float>(textureHeight);
     DrawTextureQuad(texture, dx, dy, dw, dh, u1, v1, u2, v2, color);
 }
 
@@ -212,13 +264,18 @@ bool FD3D9RenderDevice::DrawTextureResource(FDrawContext& ctx, std::string_view 
 }
 
 bool FD3D9RenderDevice::DrawSprite(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, float alpha) {
+    const unsigned char a = static_cast<unsigned char>(std::clamp(alpha, 0.0f, 1.0f) * 255.0f);
+    return DrawSpriteTinted(ctx, window, spriteName, dst, Argb(a, 255, 255, 255));
+}
+
+bool FD3D9RenderDevice::DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, unsigned long color) {
     const FUiSpriteDef* sprite = FindSprite(window, spriteName);
     if (!sprite) { return false; }
     const float sx = dst.W / static_cast<float>(std::max(1, sprite->Width));
     const float sy = dst.H / static_cast<float>(std::max(1, sprite->Height));
     FUiRectF spriteRect{dst.X, dst.Y, sx, sy};
     bool drew = false;
-    for (const auto& piece : sprite->Pieces) { FD3D9TextureEntry* texture = LoadTextureByName(ctx.Resources, piece.TextureName, ctx.Logger); if (!texture || !texture->Texture) { continue; } DrawTexturePiece(texture->Texture, piece, spriteRect, texture->Width, texture->Height, alpha); drew = true; }
+    for (const auto& piece : sprite->Pieces) { FD3D9TextureEntry* texture = LoadTextureByName(ctx.Resources, piece.TextureName, ctx.Logger); if (!texture || !texture->Texture) { continue; } DrawTexturePiece(texture->Texture, piece, spriteRect, texture->Width, texture->Height, color); drew = true; }
     return drew;
 }
 
@@ -253,10 +310,28 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
     const FUiActionState& state = ctx.Ui.ActionState();
     FUiRectF r{windowRect.X + control.Rect.X * ctx.Scale, windowRect.Y + control.Rect.Y * ctx.Scale, control.Rect.W * ctx.Scale, control.Rect.H * ctx.Scale};
     if (EqualsNoCase(control.ClassId, "IMAGE")) { if (!EqualsNoCase(control.ImageName, "black") && !control.ImageName.empty()) { DrawSprite(ctx, window, control.ImageName, r.W > 0.0f && r.H > 0.0f ? r : windowRect); } return; }
-    if (EqualsNoCase(control.ClassId, "BUTTON")) { std::string sprite = SelectButtonSprite(control, state); if (!sprite.empty()) { DrawSprite(ctx, window, sprite, r); } std::string text = TextForControl(ctx.Ui, control); if (!text.empty()) { DrawTextRect(ctx, r, text, state.HoverControlId == control.Id ? ColorToArgb(control.FocusColor) : ColorToArgb(control.TextColor), true, control.Font >= 0 ? control.Font : window.Font); } return; }
+    if (EqualsNoCase(control.ClassId, "BUTTON")) { const bool modalDisabled = ctx.Ui.HasModalDialog() && EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.IsModalActionAllowed(control); std::string sprite = SelectButtonSprite(control, state); if (!sprite.empty()) { DrawSprite(ctx, window, sprite, r); } std::string text = TextForControl(ctx.Ui, window, control); if (!text.empty()) { unsigned long color = ColorToArgb((control.Disabled || modalDisabled) ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor)); DrawTextRect(ctx, r, text, color, true, control.Font >= 0 ? control.Font : window.Font); } return; }
     if (EqualsNoCase(control.ClassId, "CHECKBOX")) { std::string sprite; if (state.SaveLogin && !control.CheckedImage.empty()) { sprite = control.CheckedImage; } else if (state.HoverControlId == control.Id && !control.FocusedImage.empty()) { sprite = control.FocusedImage; } else { sprite = control.UncheckedImage; } if (!sprite.empty()) { DrawSprite(ctx, window, sprite, r); } return; }
-    if (EqualsNoCase(control.ClassId, "EDIT")) { std::string text; if (control.Id == 7) { text = state.LoginText; } else if (control.Id == 8 || control.Password) { text.assign(state.PasswordText.size(), '*'); } if (!text.empty()) { DrawTextRect(ctx, r, text, ColorToArgb(control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font); } if (state.FocusedControlId == control.Id) { DrawSolidRect(r.X, r.Y + r.H - 1.0f, r.W, 1.0f, Argb(190, 237, 208, 161)); } return; }
-    if (EqualsNoCase(control.ClassId, "TEXT")) { std::string text = TextForControl(ctx.Ui, control); if (!text.empty()) { DrawTextRect(ctx, r, text, ColorToArgb(control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font); } return; }
+    if (EqualsNoCase(control.ClassId, "RADIOBUTTON")) { std::string sprite = ctx.Ui.SelectedCharacterSlot() == control.Id - 63 ? control.CheckedImage : control.UncheckedImage; if (!sprite.empty()) { DrawSprite(ctx, window, sprite, FUiRectF{r.X + static_cast<float>(control.ImageOffset.X) * ctx.Scale, r.Y + static_cast<float>(control.ImageOffset.Y) * ctx.Scale, r.W, r.H}); } std::string text = TextForControl(ctx.Ui, window, control); if (!text.empty()) { unsigned long color = ColorToArgb(control.Disabled ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor)); DrawTextRect(ctx, r, text, color, false, control.Font >= 0 ? control.Font : window.Font); } return; }
+    if (EqualsNoCase(control.ClassId, "SPINBUTTON")) {
+        FUiSubButtonDef leftButton = control.RightButton;
+        FUiSubButtonDef rightButton = control.LeftButton;
+        if (leftButton.W <= 0 || leftButton.H <= 0) { leftButton.X = 1; leftButton.Y = 4; leftButton.W = 18; leftButton.H = 18; }
+        if (rightButton.W <= 0 || rightButton.H <= 0) { rightButton.X = 19; rightButton.Y = 4; rightButton.W = 18; rightButton.H = 18; }
+        const FUiRectF left{r.X + static_cast<float>(leftButton.X) * ctx.Scale, r.Y + static_cast<float>(leftButton.Y) * ctx.Scale, static_cast<float>(leftButton.W) * ctx.Scale, static_cast<float>(leftButton.H) * ctx.Scale};
+        const FUiRectF right{r.X + static_cast<float>(rightButton.X) * ctx.Scale, r.Y + static_cast<float>(rightButton.Y) * ctx.Scale, static_cast<float>(rightButton.W) * ctx.Scale, static_cast<float>(rightButton.H) * ctx.Scale};
+        const bool hotLeft = state.HoverControlId == control.Id && state.SpinHoverDirection < 0;
+        const bool hotRight = state.HoverControlId == control.Id && state.SpinHoverDirection > 0;
+        const bool pressedLeft = state.PressedControlId == control.Id && state.SpinPressedDirection < 0;
+        const bool pressedRight = state.PressedControlId == control.Id && state.SpinPressedDirection > 0;
+        DrawSprite(ctx, window, SelectSubButtonSprite(leftButton, control.Disabled, hotLeft, pressedLeft, "sl_normal", "sl_focus", "sl_push", "sl_disabled"), left);
+        DrawSprite(ctx, window, SelectSubButtonSprite(rightButton, control.Disabled, hotRight, pressedRight, "sr_normal", "sr_focus", "sr_push", "sr_disabled"), right);
+        return;
+    }
+    if (EqualsNoCase(control.ClassId, "SLOT")) { const std::string fill = !control.SlotFullImage.empty() ? control.SlotFullImage : control.SlotEmptyImage; if (!fill.empty()) { DrawSpriteTinted(ctx, window, fill, r, Argb(128, 0x14, 0x14, 0x14)); } if (!control.SlotBorderImage.empty()) { DrawSpriteTinted(ctx, window, control.SlotBorderImage, r, Argb(255, 0x9e, 0x7c, 0x6a)); } return; }
+    if (EqualsNoCase(control.ClassId, "PROGRESS_BAR") || EqualsNoCase(control.ClassId, "PROGRESSBAR")) { unsigned long color = control.Id == 42 || control.Id == 46 ? Argb(210, 48, 109, 210) : control.Id == 47 ? Argb(210, 210, 190, 45) : Argb(210, 70, 170, 60); if (EqualsNoCase(control.DrawSpriteName, "blue")) { color = Argb(210, 48, 109, 210); } else if (EqualsNoCase(control.DrawSpriteName, "yellow")) { color = Argb(210, 210, 190, 45); } else if (EqualsNoCase(control.DrawSpriteName, "green")) { color = Argb(210, 70, 170, 60); } const float ratio = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.CharacterProgressRatio(control.Id) : 1.0f; DrawSolidRect(r.X, r.Y, r.W, r.H, Argb(210, 30, 28, 24)); DrawSolidRect(r.X, r.Y, r.W * std::clamp(ratio, 0.0f, 1.0f), r.H, color); std::string status = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.CharacterProgressText(control) : std::string{}; if (!status.empty() && !control.StatusShow.empty()) { FUiRectF sr{r.X + static_cast<float>(control.StatusPos.X) * ctx.Scale, r.Y + static_cast<float>(control.StatusPos.Y) * ctx.Scale, std::max(44.0f * ctx.Scale, r.W), 12.0f * ctx.Scale}; DrawTextRect(ctx, sr, status, ColorToArgb(control.TextColor), (control.Id == 41 || control.Id == 42) ? true : control.TextCenter, control.Font >= 0 ? control.Font : window.Font); } return; }
+    if (EqualsNoCase(control.ClassId, "EDIT")) { std::string text; if (ctx.Ui.HasModalDialog() && EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name)) { text = TextForControl(ctx.Ui, window, control); } else if (ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect) { text = TextForControl(ctx.Ui, window, control); } else if (control.Id == 7) { text = state.LoginText; } else if (control.Id == 8 || control.Password) { text.assign(state.PasswordText.size(), '*'); } if (!text.empty()) { DrawTextRect(ctx, r, text, ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font); } if (state.FocusedControlId == control.Id) { DrawSolidRect(r.X, r.Y + r.H - 1.0f, r.W, 1.0f, Argb(190, 237, 208, 161)); } return; }
+    if (IsTextLikeControl(control)) { std::string text = TextForControl(ctx.Ui, window, control); if (!text.empty()) { DrawTextRect(ctx, r, text, ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font); } return; }
 }
 
 bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst) {
@@ -271,6 +346,18 @@ bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window
     return true;
 }
 
+void FD3D9RenderDevice::DrawModalDialog(FDrawContext& ctx, const tagRECT& rect) {
+    if (!ctx.Ui.HasModalDialog()) { return; }
+    const int width = std::max(1, static_cast<int>(rect.right - rect.left));
+    const int height = std::max(1, static_cast<int>(rect.bottom - rect.top));
+    DrawSolidRect(static_cast<float>(rect.left), static_cast<float>(rect.top), static_cast<float>(width), static_cast<float>(height), Argb(120, 0, 0, 0));
+    const FUiWindowDef& window = ctx.Ui.ActiveModalWindow();
+    if (window.Name.empty()) { return; }
+    FUiRectF wr = ctx.Ui.BuildWindowRect(window, rect);
+    DrawWindow(ctx, window, wr);
+    if (!ctx.Ui.ModalMessage().empty() && window.Controls.empty()) { DrawTextRect(ctx, FUiRectF{wr.X + 18.0f * ctx.Scale, wr.Y + wr.H * 0.38f, wr.W - 36.0f * ctx.Scale, 44.0f * ctx.Scale}, ctx.Ui.ModalMessage(), Argb(235, 237, 208, 161), true, window.Font); }
+}
+
 void FD3D9RenderDevice::DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& ui, const FUiRectF& designRect) {
     const float margin = 18.0f * ctx.Scale;
     const float rowH = 18.0f * ctx.Scale;
@@ -283,23 +370,42 @@ void FD3D9RenderDevice::DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& u
     for (const auto& line : ui.StatusLines()) { DrawTextRect(ctx, FUiRectF{panel.X + margin, y, panel.W - margin * 2.0f, rowH}, line, Argb(210, 255, 255, 255), false, 0); y += rowH; }
 }
 
-void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger) {
-    LoadTextureByName(resources, ui.LoginBackgroundTexture(), logger);
-    for (const auto& [name, sprite] : ui.ConnectionWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
-    FontCache.Preload(Device, resources, logger);
-    if (logger) { logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size())); }
+bool FD3D9RenderDevice::EnsureDeviceReady(int32 width, int32 height, FLogger* logger) {
+    if (!Device) { return false; }
+    const HRESULT cooperative = Device->TestCooperativeLevel();
+    if (cooperative == D3DERR_DEVICELOST) { return false; }
+    const bool sizeChanged = width > 0 && height > 0 && (width != BackBufferWidth || height != BackBufferHeight);
+    if (cooperative == D3DERR_DEVICENOTRESET || sizeChanged) {
+        D3DPRESENT_PARAMETERS pp{};
+        pp.Windowed = TRUE;
+        pp.hDeviceWindow = DeviceWindow;
+        pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+        pp.BackBufferFormat = D3DFMT_UNKNOWN;
+        pp.BackBufferWidth = static_cast<UINT>(std::max<int32>(1, width));
+        pp.BackBufferHeight = static_cast<UINT>(std::max<int32>(1, height));
+        pp.BackBufferCount = 1;
+        pp.EnableAutoDepthStencil = TRUE;
+        pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+        pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+        HRESULT hr = Device->Reset(&pp);
+        if (FAILED(hr)) { pp.AutoDepthStencilFormat = D3DFMT_D16; hr = Device->Reset(&pp); }
+        if (FAILED(hr)) { if (logger) { logger->Warning("D3D9 reset failed: hr=" + std::to_string(static_cast<long>(hr))); } return false; }
+        BackBufferWidth = std::max<int32>(1, width);
+        BackBufferHeight = std::max<int32>(1, height);
+        if (logger) { logger->Info("D3D9 borderless backbuffer reset: " + std::to_string(BackBufferWidth) + "x" + std::to_string(BackBufferHeight)); }
+    }
+    return true;
 }
 
-FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const tagRECT& rect, FLogger* logger) {
-    if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
-    if (!ui.IsReady()) { return FStatus::Error(EStatusCode::RuntimeError, "UI runtime is not initialized"); }
-    const FUiRectF design = ui.BuildDesignRect(rect);
-    const float scale = design.W / static_cast<float>(std::max(1, ui.DesignWidth()));
-    FDrawContext ctx{resources, ui, logger, scale};
+void FD3D9RenderDevice::ConfigureUiRenderState() {
+    if (!Device) { return; }
+    Device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+    Device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
     Device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
     Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
     Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
     Device->SetRenderState(D3DRS_LIGHTING, FALSE);
+    Device->SetRenderState(D3DRS_FOGENABLE, FALSE);
     Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
     Device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
     Device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
@@ -307,24 +413,54 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     Device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
     Device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
     Device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+    Device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
     Device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
     Device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
     Device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
     Device->SetFVF(FVF_UI);
+}
+
+void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger) {
+    LoadTextureByName(resources, ui.LoginBackgroundTexture(), logger);
+    for (const auto& [name, sprite] : ui.ConnectionWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    for (const auto& [name, sprite] : ui.PickPersonWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    for (const auto& [name, sprite] : ui.CreatePersonWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    for (const auto& [name, sprite] : ui.DeleteCharacterWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    for (const auto& [name, sprite] : ui.ConnectMessageWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    for (const auto& [name, sprite] : ui.MessageWindow().Sprites) { (void)name; for (const auto& piece : sprite.Pieces) { LoadTextureByName(resources, piece.TextureName, logger); } }
+    FontCache.Preload(Device, resources, logger);
+    if (logger) { logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size())); }
+}
+
+FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const tagRECT& rect, FLogger* logger) {
+    if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
+    if (!ui.IsReady()) { return FStatus::Error(EStatusCode::RuntimeError, "UI runtime is not initialized"); }
+    const int width = std::max(1, static_cast<int>(rect.right - rect.left));
+    const int height = std::max(1, static_cast<int>(rect.bottom - rect.top));
+    if (!EnsureDeviceReady(width, height, logger)) { return FStatus::Ok(); }
+    const FUiRectF design = ui.BuildDesignRect(rect);
+    const float scale = design.W / static_cast<float>(std::max(1, ui.DesignWidth()));
+    FDrawContext ctx{resources, ui, logger, scale};
     HRESULT hr = Device->BeginScene();
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 BeginScene failed: hr=" + std::to_string(static_cast<long>(hr))); }
-    Device->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-    const bool backgroundDrawn = DrawTextureResource(ctx, ui.LoginBackgroundTexture(), design);
-    DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect));
-    DrawStatusOverlay(ctx, ui, design);
+    Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+    bool backgroundDrawn = true;
+    if (ui.Mode() == EUiRuntimeMode::CharacterSelect) { CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, logger); }
+    ConfigureUiRenderState();
+    if (ui.Mode() == EUiRuntimeMode::Login) { backgroundDrawn = DrawTextureResource(ctx, ui.LoginBackgroundTexture(), design); DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect)); }
+    else if (ui.Mode() == EUiRuntimeMode::CharacterSelect) { if (!ui.PickPersonWindow().Name.empty()) { DrawWindow(ctx, ui.PickPersonWindow(), ui.BuildWindowRect(ui.PickPersonWindow(), rect)); } }
+    else { DrawTextRect(ctx, FUiRectF{design.X + 24.0f, design.Y + 24.0f, design.W - 48.0f, 30.0f}, "game session active", Argb(230, 237, 208, 161), false, 0); DrawSolidRect(design.X + 24.0f, design.Y + design.H - 54.0f, design.W - 48.0f, 30.0f, Argb(150, 0, 0, 0)); DrawTextRect(ctx, FUiRectF{design.X + 34.0f, design.Y + design.H - 50.0f, design.W - 68.0f, 22.0f}, ctx.Ui.GameChatDraft().empty() ? std::string("_") : ctx.Ui.GameChatDraft() + "_", Argb(230, 237, 208, 161), false, 0); }
+    DrawModalDialog(ctx, rect);
     Device->EndScene();
     hr = Device->Present(nullptr, nullptr, nullptr, nullptr);
+    if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) { return FStatus::Ok(); }
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 Present failed: hr=" + std::to_string(static_cast<long>(hr))); }
     if (!backgroundDrawn) { return FStatus::Error(EStatusCode::NotFound, "login background texture was not rendered: " + ui.LoginBackgroundTexture()); }
     return FStatus::Ok();
 }
+
 
 FD3D9ShaderInventory FD3D9RenderDevice::InspectShaderResources(const FResourceManager& resources, FLogger* logger) const {
     FD3D9ShaderInventory inventory;

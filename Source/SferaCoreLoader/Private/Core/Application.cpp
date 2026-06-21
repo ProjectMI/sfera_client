@@ -1,13 +1,13 @@
 #include "Core/Application.h"
 #include "Client/ClientFrontendRuntime.h"
+#include "Client/ClientSettings.h"
 #include "FileSystem/PathUtils.h"
 #include "MBC/MbcDisassembler.h"
 #include "MBC/MbcEngineBridge.h"
+#include "Model/ModelRepository.h"
 #include <algorithm>
 #include <memory>
 #include <cstdlib>
-#include <atomic>
-#include <thread>
 #include <exception>
 
 namespace Sfera {
@@ -16,74 +16,78 @@ FApplication::FApplication() : ExecutableRoot(PathUtils::GetExecutableDirectory(
 int FApplication::Run() {
     Logger.Info("SferaCoreLoader x64 bootstrap");
     Logger.Info("executable resource root: " + ExecutableRoot.string());
-
     FClientFrontendRuntime frontend(&Logger);
-    FStatus frontendStatus = frontend.CreateShell();
-    if (!frontendStatus.IsOk()) {
-        Logger.Error("frontend shell creation failed: " + frontendStatus.Message());
+    FClientSettings clientSettings;
+    FStatus frontendStatus = frontend.CreateShell(clientSettings);
+    if (!frontendStatus.IsOk()) { Logger.Error("frontend shell creation failed: " + frontendStatus.Message()); return 1; }
+    frontend.ShowShell();
+    auto stage = [&frontend](const std::string& text, float progress) { frontend.SetStage(text, progress); frontend.PumpUi(); };
+    try {
+        stage("cataloging files", 0.04f);
+        Logger.Info("cataloging files");
+        FileSystem.BuildCatalog(&Logger);
+        stage("loading configs", 0.10f);
+        Logger.Info("loading configs");
+        Config = std::make_unique<FConfigService>(FileSystem);
+        Config->LoadKnownConfigs(&Logger);
+        clientSettings = LoadClientSettings(*Config);
+        Logger.Info("client settings: forced fullscreen; config XRES/YRES are kept only as UI/runtime hints");
+        stage("building resource catalog", 0.18f);
+        Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
+        Resources->BuildCatalog(&Logger);
+        stage("loading game objects and model catalog", 0.32f);
+        Logger.Info("loading game objects and world scene");
+        LoadWorldAndObjects();
+        stage("registering script natives", 0.48f);
+        Logger.Info("registering script natives");
+        RegisterRecoveredNatives();
+        stage("loading script modules", 0.60f);
+        Logger.Info("loading script modules");
+        ProbeMbcModules();
+        stage("linking script runtime", 0.74f);
+        Logger.Info("linking script runtime");
+        BuildMbcRuntime();
+        stage("preparing network endpoint", 0.82f);
+        Network = std::make_unique<FConnectManager>(*Config);
+        auto endpoint = Network->ReadEndpointFromConfig();
+        if (endpoint) { Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port)); }
+        else { Logger.Warning("network endpoint not found; login button will report configuration error"); }
+        if (!clientSettings.Endpoint && endpoint) { clientSettings.Endpoint = endpoint; clientSettings.Title = "Sphere - " + endpoint->Host + ":" + std::to_string(endpoint->Port); }
+        stage("loading UI resources", 0.88f);
+        FUiBootstrapDesc uiDesc = MakeUiBootstrapDesc(clientSettings);
+        frontendStatus = frontend.InitializeUiResources(*Resources, uiDesc);
+        if (!frontendStatus.IsOk()) { Logger.Error("UI runtime initialization failed: " + frontendStatus.Message()); return 1; }
+        stage("initializing renderer", 0.94f);
+        frontendStatus = frontend.InitializeD3D9(*Resources);
+        if (!frontendStatus.IsOk()) { Logger.Error("D3D9 initialization failed: " + frontendStatus.Message()); return 1; }
+        FClientFrontendDesc frontendDesc;
+        frontendDesc.Settings = clientSettings;
+        frontendDesc.Endpoint = clientSettings.Endpoint ? clientSettings.Endpoint : endpoint;
+        frontendDesc.TryNetworkProbe = false;
+        frontend.ConfigureNetwork(frontendDesc);
+        frontend.SetStage("login screen ready", 1.0f);
+        frontendStatus = frontend.RunEventLoop();
+        if (!frontendStatus.IsOk()) { Logger.Error("frontend event loop failed: " + frontendStatus.Message()); }
+        Logger.Info("core-loader finished frontend loop");
+        return frontendStatus.IsOk() ? 0 : 1;
+    } catch (const std::exception& ex) {
+        Logger.Error(std::string("application bootstrap failed: ") + ex.what());
+        frontend.AddStatusLine(std::string("fatal: ") + ex.what());
+        return 1;
+    } catch (...) {
+        Logger.Error("application bootstrap failed: unknown exception");
+        frontend.AddStatusLine("fatal: unknown exception");
         return 1;
     }
-
-    std::atomic_bool bootstrapDone{false};
-    std::atomic_bool bootstrapOk{true};
-    std::thread bootstrapThread([&]() {
-        try {
-            frontend.SetStage("cataloging files", 0.05f);
-            FileSystem.BuildCatalog(&Logger);
-            frontend.SetStage("loading configs", 0.12f);
-            Config = std::make_unique<FConfigService>(FileSystem);
-            Config->LoadKnownConfigs(&Logger);
-            frontend.SetStage("building resource catalog", 0.20f);
-            Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
-            Resources->BuildCatalog(&Logger);
-            FStatus uiStatus = frontend.InitializeUiResources(*Resources);
-            if (!uiStatus.IsOk()) { throw std::runtime_error("UI runtime initialization failed: " + uiStatus.Message()); }
-            FStatus d3dStatus = frontend.InitializeD3D9(*Resources);
-            if (!d3dStatus.IsOk()) { throw std::runtime_error("D3D9 initialization failed: " + d3dStatus.Message()); }
-
-            frontend.SetStage("loading game objects and world scene", 0.38f);
-            LoadWorldAndObjects();
-            frontend.SetStage("registering script natives", 0.52f);
-            RegisterRecoveredNatives();
-            frontend.SetStage("loading script modules", 0.60f);
-            ProbeMbcModules();
-            frontend.SetStage("linking script runtime", 0.68f);
-            BuildMbcRuntime();
-
-            Network = std::make_unique<FConnectManager>(*Config);
-            auto endpoint = Network->ReadEndpointFromConfig();
-            if (endpoint) { Logger.Info("network endpoint recovered from cfg: " + endpoint->Host + ":" + std::to_string(endpoint->Port)); }
-            else { Logger.Warning("network endpoint not found; connect manager initialized but not connected"); }
-
-            FClientFrontendDesc frontendDesc;
-            frontendDesc.Endpoint = endpoint;
-            frontend.StartNetworkProbe(frontendDesc);
-            bootstrapOk.store(true);
-        } catch (const std::exception& ex) {
-            bootstrapOk.store(false);
-            Logger.Error(std::string("frontend bootstrap worker failed: ") + ex.what());
-            frontend.AddStatusLine(std::string("bootstrap error: ") + ex.what());
-            frontend.SetStage("bootstrap failed", 1.0f);
-        } catch (...) {
-            bootstrapOk.store(false);
-            Logger.Error("frontend bootstrap worker failed: unknown exception");
-            frontend.AddStatusLine("bootstrap error: unknown exception");
-            frontend.SetStage("bootstrap failed", 1.0f);
-        }
-        bootstrapDone.store(true);
-    });
-
-    frontendStatus = frontend.RunEventLoop();
-    if (!frontendStatus.IsOk()) { Logger.Error("frontend event loop failed: " + frontendStatus.Message()); }
-    if (bootstrapThread.joinable()) { bootstrapThread.join(); }
-
-    Logger.Info("core-loader finished bootstrap");
-    return frontendStatus.IsOk() && bootstrapOk.load() ? 0 : 1;
 }
 
 void FApplication::LoadWorldAndObjects() {
     GameObjects = std::make_unique<FGameObjectService>(*Resources);
     GameObjects->Initialize(&Logger);
+    Models = std::make_unique<FModelRepository>(*Resources);
+    Models->BuildCatalog(&Logger);
+    const auto modelStats = Models->Stats();
+    Logger.Info("model runtime bootstrap: total=" + std::to_string(modelStats.TotalCount) + ", mdl=" + std::to_string(modelStats.MdlCount) + ", chr=" + std::to_string(modelStats.ChrCount) + ", skl=" + std::to_string(modelStats.SklCount));
     WorldScene = std::make_unique<FWorldScene>(*Resources, GameObjects->Registry());
     WorldScene->LoadBootstrapScene(&Logger);
 }

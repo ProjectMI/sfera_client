@@ -91,6 +91,18 @@
     <Filter Include="Source\SferaCoreLoader\Public\WorldScene">
       <UniqueIdentifier>{58864230-be51-5512-a706-65ee82c704a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Model">
+      <UniqueIdentifier>{7eb59ae2-905a-5950-86a4-4f11978cb3e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\PE">
+      <UniqueIdentifier>{d91026ea-fa70-5ed6-98b4-83fb5332f593}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Model">
+      <UniqueIdentifier>{d9a95ce3-8dd1-5173-a7d7-d57811fcac1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\PE">
+      <UniqueIdentifier>{dbafe2b3-9e94-51ee-b874-a423ac5e7d9c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientFrontendRuntime.cpp">
@@ -195,6 +207,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp">
       <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9CharacterScene.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp">
       <Filter>Source\SferaCoreLoader\Private\ResourceLoader</Filter>
     </ClCompile>
@@ -216,7 +231,28 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp">
       <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
     </ClCompile>
-  </ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\ChrModel.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\MdlModel.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\ModelRepository.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Model\SklSkeleton.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\SphereEmuProtocol.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\PE\PeImports.cpp">
+      <Filter>Source\SferaCoreLoader\Private\PE</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\DdsImage.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Renderer</Filter>
+    </ClCompile>
+  <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientSettings.cpp"><Filter>Source\SferaCoreLoader\Private\Client</Filter></ClCompile><ClCompile Include="Source\SferaCoreLoader\Private\Network\LoginClient.cpp"><Filter>Source\SferaCoreLoader\Private\Network</Filter></ClCompile></ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h">
       <Filter>Source\SferaCoreLoader\Public\Client</Filter>
@@ -326,6 +362,9 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h">
       <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9CharacterScene.h">
+      <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h">
       <Filter>Source\SferaCoreLoader\Public\ResourceLoader</Filter>
     </ClInclude>
@@ -350,5 +389,29 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h">
       <Filter>Source\SferaCoreLoader\Public\WorldScene</Filter>
     </ClInclude>
-  </ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\BinaryReader.h">
+      <Filter>Source\SferaCoreLoader\Public\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\ChrModel.h">
+      <Filter>Source\SferaCoreLoader\Public\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\MdlModel.h">
+      <Filter>Source\SferaCoreLoader\Public\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\ModelRepository.h">
+      <Filter>Source\SferaCoreLoader\Public\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Model\SklSkeleton.h">
+      <Filter>Source\SferaCoreLoader\Public\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\SphereEmuProtocol.h">
+      <Filter>Source\SferaCoreLoader\Public\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\PE\PeImports.h">
+      <Filter>Source\SferaCoreLoader\Public\PE</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\DdsImage.h">
+      <Filter>Source\SferaCoreLoader\Public\Renderer</Filter>
+    </ClInclude>
+  <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientSettings.h"><Filter>Source\SferaCoreLoader\Public\Client</Filter></ClInclude><ClInclude Include="Source\SferaCoreLoader\Public\Network\LoginClient.h"><Filter>Source\SferaCoreLoader\Public\Network</Filter></ClInclude></ItemGroup>
 </Project>

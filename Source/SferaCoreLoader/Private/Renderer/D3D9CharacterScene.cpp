@@ -1,0 +1,514 @@
+#include "Renderer/D3D9CharacterScene.h"
+#include "Core/BinaryReader.h"
+#include "Core/Logger.h"
+#include "Model/ChrModel.h"
+#include "Model/MdlModel.h"
+#include "Model/SklSkeleton.h"
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <d3d9.h>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cctype>
+#include <cstring>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <unordered_map>
+
+namespace Sfera {
+namespace {
+constexpr unsigned long FVF_SCENE = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+constexpr size_t CHARACTER_FREE_ACTION = 20;
+
+float Approach(float current, float target, float factor) { return current + (target - current) * factor; }
+
+template <typename T> void ReleaseCom(T*& value) { if (value) { value->Release(); value = nullptr; } }
+
+std::string LowerAscii(std::string value) { std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); }); return value; }
+
+float Dot(FD3D9CharacterScene::FVec3 a, FD3D9CharacterScene::FVec3 b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
+FD3D9CharacterScene::FVec3 Cross(FD3D9CharacterScene::FVec3 a, FD3D9CharacterScene::FVec3 b) { return {a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X}; }
+FD3D9CharacterScene::FVec3 NormalizeVec3(FD3D9CharacterScene::FVec3 value) { const float length = std::sqrt(Dot(value, value)); return length <= 0.00001f ? FD3D9CharacterScene::FVec3{0.0f, 0.0f, 1.0f} : FD3D9CharacterScene::FVec3{value.X / length, value.Y / length, value.Z / length}; }
+FD3D9CharacterScene::FQuat NormalizeQuat(FD3D9CharacterScene::FQuat value) { const float length = std::sqrt(value.W * value.W + value.X * value.X + value.Y * value.Y + value.Z * value.Z); return length <= 0.00001f ? FD3D9CharacterScene::FQuat{} : FD3D9CharacterScene::FQuat{value.W / length, value.X / length, value.Y / length, value.Z / length}; }
+FD3D9CharacterScene::FQuat Multiply(FD3D9CharacterScene::FQuat a, FD3D9CharacterScene::FQuat b) { return {a.W * b.W - a.X * b.X - a.Y * b.Y - a.Z * b.Z, a.W * b.X + a.X * b.W + a.Y * b.Z - a.Z * b.Y, a.W * b.Y - a.X * b.Z + a.Y * b.W + a.Z * b.X, a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W}; }
+FD3D9CharacterScene::FVec3 Rotate(FD3D9CharacterScene::FQuat rotation, FD3D9CharacterScene::FVec3 value) { const auto q = NormalizeQuat(rotation); const FD3D9CharacterScene::FVec3 u{q.X, q.Y, q.Z}; const float s = q.W; const auto uv = Cross(u, value); const auto uuv = Cross(u, uv); return {value.X + (uv.X * s + uuv.X) * 2.0f, value.Y + (uv.Y * s + uuv.Y) * 2.0f, value.Z + (uv.Z * s + uuv.Z) * 2.0f}; }
+
+D3DMATRIX IdentityMatrix() { D3DMATRIX matrix{}; matrix._11 = 1.0f; matrix._22 = 1.0f; matrix._33 = 1.0f; matrix._44 = 1.0f; return matrix; }
+D3DMATRIX RotationYMatrix(float radians) { D3DMATRIX matrix = IdentityMatrix(); const float c = std::cos(radians); const float s = std::sin(radians); matrix._11 = c; matrix._13 = -s; matrix._31 = s; matrix._33 = c; return matrix; }
+FD3D9CharacterScene::FMatrix4 Identity4() { FD3D9CharacterScene::FMatrix4 matrix{}; matrix.M[0] = 1.0f; matrix.M[5] = 1.0f; matrix.M[10] = 1.0f; matrix.M[15] = 1.0f; return matrix; }
+FD3D9CharacterScene::FMatrix4 MatrixFromSkl(const FSklTransform& transform) { float x = transform.QX; float y = transform.QY; float z = transform.QZ; float w = transform.QW; const float length = std::sqrt(x * x + y * y + z * z + w * w); if (length <= 0.00001f) { x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f; } else { x /= length; y /= length; z /= length; w /= length; } auto matrix = Identity4(); matrix.M[0] = 1.0f - 2.0f * y * y - 2.0f * z * z; matrix.M[1] = 2.0f * x * y + 2.0f * z * w; matrix.M[2] = 2.0f * x * z - 2.0f * y * w; matrix.M[4] = 2.0f * x * y - 2.0f * z * w; matrix.M[5] = 1.0f - 2.0f * x * x - 2.0f * z * z; matrix.M[6] = 2.0f * y * z + 2.0f * x * w; matrix.M[8] = 2.0f * x * z + 2.0f * y * w; matrix.M[9] = 2.0f * y * z - 2.0f * x * w; matrix.M[10] = 1.0f - 2.0f * x * x - 2.0f * y * y; matrix.M[12] = transform.TX; matrix.M[13] = transform.TY; matrix.M[14] = transform.TZ; return matrix; }
+FD3D9CharacterScene::FMatrix4 MatrixMultiply(FD3D9CharacterScene::FMatrix4 a, FD3D9CharacterScene::FMatrix4 b) { FD3D9CharacterScene::FMatrix4 out{}; for (int row = 0; row < 4; ++row) { for (int col = 0; col < 4; ++col) { out.M[row * 4 + col] = a.M[row * 4 + 0] * b.M[0 * 4 + col] + a.M[row * 4 + 1] * b.M[1 * 4 + col] + a.M[row * 4 + 2] * b.M[2 * 4 + col] + a.M[row * 4 + 3] * b.M[3 * 4 + col]; } } return out; }
+FD3D9CharacterScene::FVec3 TransformPoint(FD3D9CharacterScene::FMatrix4 matrix, FD3D9CharacterScene::FVec3 value) { return {value.X * matrix.M[0] + value.Y * matrix.M[4] + value.Z * matrix.M[8] + matrix.M[12], value.X * matrix.M[1] + value.Y * matrix.M[5] + value.Z * matrix.M[9] + matrix.M[13], value.X * matrix.M[2] + value.Y * matrix.M[6] + value.Z * matrix.M[10] + matrix.M[14]}; }
+FD3D9CharacterScene::FVec3 TransformVector(FD3D9CharacterScene::FMatrix4 matrix, FD3D9CharacterScene::FVec3 value) { return {value.X * matrix.M[0] + value.Y * matrix.M[4] + value.Z * matrix.M[8], value.X * matrix.M[1] + value.Y * matrix.M[5] + value.Z * matrix.M[9], value.X * matrix.M[2] + value.Y * matrix.M[6] + value.Z * matrix.M[10]}; }
+D3DMATRIX LookAtRh(FD3D9CharacterScene::FVec3 eye, FD3D9CharacterScene::FVec3 at, FD3D9CharacterScene::FVec3 up) { const FD3D9CharacterScene::FVec3 viewDirection{eye.X - at.X, eye.Y - at.Y, eye.Z - at.Z}; const FD3D9CharacterScene::FVec3 zaxis = NormalizeVec3(viewDirection); const FD3D9CharacterScene::FVec3 xaxis = NormalizeVec3(Cross(up, zaxis)); const FD3D9CharacterScene::FVec3 yaxis = Cross(zaxis, xaxis); D3DMATRIX matrix = IdentityMatrix(); matrix._11 = xaxis.X; matrix._12 = yaxis.X; matrix._13 = zaxis.X; matrix._21 = xaxis.Y; matrix._22 = yaxis.Y; matrix._23 = zaxis.Y; matrix._31 = xaxis.Z; matrix._32 = yaxis.Z; matrix._33 = zaxis.Z; matrix._41 = -Dot(xaxis, eye); matrix._42 = -Dot(yaxis, eye); matrix._43 = -Dot(zaxis, eye); return matrix; }
+D3DMATRIX PerspectiveFovRh(float fovY, float aspect, float zNear, float zFar) { const float yScale = 1.0f / std::tan(fovY * 0.5f); const float xScale = yScale / std::max(aspect, 0.001f); D3DMATRIX matrix{}; matrix._11 = xScale; matrix._22 = yScale; matrix._33 = zFar / (zNear - zFar); matrix._34 = -1.0f; matrix._43 = (zNear * zFar) / (zNear - zFar); return matrix; }
+
+size_t SkeletonAnimationFrameOffset(const FSklSkeleton& skeleton, size_t action) { if (action >= skeleton.AnimationFrameCounts.size()) { throw std::runtime_error("SKL has no requested animation action"); } size_t offset = 0; for (size_t i = 0; i < action; ++i) { offset += static_cast<size_t>(skeleton.AnimationFrameCounts[i]); } return offset; }
+size_t SkeletonBoneIndex(const FSklSkeleton& skeleton, const std::string& name) { const std::string wanted = LowerAscii(name); for (size_t i = 0; i < skeleton.BoneNames.size(); ++i) { if (LowerAscii(skeleton.BoneNames[i]) == wanted) { return i; } } throw std::runtime_error("SKL bone not found: " + name); }
+
+std::vector<std::string> QuotedStrings(const std::string& line) { std::vector<std::string> values; size_t cursor = 0; while (cursor < line.size()) { const size_t open = line.find('"', cursor); if (open == std::string::npos) { break; } const size_t close = line.find('"', open + 1); if (close == std::string::npos) { throw std::runtime_error("unterminated quoted string in subobjs.dat"); } values.push_back(line.substr(open + 1, close - open - 1)); cursor = close + 1; } return values; }
+std::unordered_map<std::string, FD3D9CharacterScene::FXaddSubobject> LoadXaddSubobjects(const FResourceManager& resources) { auto blob = resources.Load("xadd/subobjs.dat"); if (!blob.IsOk()) { throw std::runtime_error(blob.Status().Message()); } std::string text(reinterpret_cast<const char*>(blob.Value().Bytes.data()), blob.Value().Bytes.size()); std::unordered_map<std::string, FD3D9CharacterScene::FXaddSubobject> subobjects; bool inSubobjects = false; std::istringstream stream(text); std::string line; while (std::getline(stream, line)) { if (line.find("subobjs<as>") != std::string::npos) { inSubobjects = true; continue; } if (inSubobjects && line.find("lods<as>") != std::string::npos) { break; } if (!inSubobjects || line.find('{') == std::string::npos || line.find("s<t>=") == std::string::npos) { continue; } const auto values = QuotedStrings(line); if (values.size() < 3) { throw std::runtime_error("bad subobjs.dat entry: " + line); } FD3D9CharacterScene::FXaddSubobject entry; entry.Code = values[0]; entry.MeshName = values[1]; entry.TextureNames.assign(values.begin() + 2, values.end()); subobjects[entry.Code] = std::move(entry); } if (subobjects.empty()) { throw std::runtime_error("subobjs.dat has no subobjects"); } return subobjects; }
+const std::vector<std::string>& FaceCodes(bool female) { static const std::vector<std::string> male = {"mf0", "mf1", "mf2", "mf3", "mf4", "mf5", "mf6", "mf7", "mf8", "mf9", "mfa", "mfb", "mfc"}; static const std::vector<std::string> femaleCodes = {"wf0", "wf1", "wf2", "wf3", "wf4", "wf5", "wf6", "wf7", "wf8", "wf9", "wfa", "wfb"}; return female ? femaleCodes : male; }
+const std::vector<std::string>& HairCodes(bool female) { static const std::vector<std::string> male = {"mr0", "mr1", "mr2"}; static const std::vector<std::string> femaleCodes = {"wr0", "wr1", "wr2", "wr3", "wr4"}; return female ? femaleCodes : male; }
+size_t WrapIndex(int value, size_t count) { if (count == 0) { return 0; } int v = value % static_cast<int>(count); if (v < 0) { v += static_cast<int>(count); } return static_cast<size_t>(v); }
+std::vector<std::string> CharacterSubobjectCodes(bool female, int face, int hair) { const auto& faces = FaceCodes(female); const auto& hairs = HairCodes(female); if (female) { return {"wb0", "wt0", "wg0", "wc0", "we0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]}; } return {"mb0", "mt0", "mg0", "mc0", "me0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]}; }
+bool IsFaceCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'f') || (code[0] == 'w' && code[1] == 'f')); }
+bool IsHairCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'r') || (code[0] == 'w' && code[1] == 'r')); }
+size_t TextureIndexForSubobject(const FD3D9CharacterScene::FXaddSubobject& entry, int hairColor, int tattoo) { size_t textureIndex = 0; if (IsFaceCode(entry.Code)) { textureIndex = WrapIndex(tattoo, entry.TextureNames.size()); } else if (IsHairCode(entry.Code)) { textureIndex = WrapIndex(hairColor, entry.TextureNames.size()); } if (textureIndex >= entry.TextureNames.size()) { throw std::runtime_error("subobject texture index out of range: " + entry.Code); } return textureIndex; }
+std::string ModelTextureLogicalName(const std::string& materialName) { return "models/textures/" + LowerAscii(materialName) + ".dds"; }
+std::string FindLogicalOrStem(const FResourceManager& resources, const std::string& preferred) { if (resources.Catalog().FindByLogicalName(preferred)) { return preferred; } const std::string preferredLower = LowerAscii(FPath(preferred).filename().string()); const std::string preferredStem = LowerAscii(FPath(preferred).stem().string()); for (const auto& record : resources.Catalog().All()) { const std::string filename = LowerAscii(record.RelativePath.filename().string()); const std::string stem = LowerAscii(record.RelativePath.stem().string()); if (filename == preferredLower || stem == preferredStem) { return record.RelativePath.generic_string(); } } return preferred; }
+std::vector<uint8> ReadBytesOrThrow(const FResourceManager& resources, const std::string& logicalName) { auto blob = resources.Load(logicalName); if (!blob.IsOk()) { throw std::runtime_error(blob.Status().Message()); } return blob.Value().Bytes; }
+std::string HresultText(const char* action, HRESULT hr) { std::ostringstream out; out << action << " failed: 0x" << std::hex << static_cast<unsigned long>(hr); return out.str(); }
+bool SameAppearance(const FCharacterCreationAppearance& a, const FCharacterCreationAppearance& b) { return a.Female == b.Female && a.Face == b.Face && a.Hair == b.Hair && a.HairColor == b.HairColor && a.Tattoo == b.Tattoo; }
+}
+
+FD3D9CharacterScene::FD3D9CharacterScene() = default;
+FD3D9CharacterScene::~FD3D9CharacterScene() { Shutdown(); }
+
+void FD3D9CharacterScene::ReleaseBatches(std::vector<FSceneBatch>& batches) { for (auto& batch : batches) { ReleaseCom(batch.Texture); } }
+void FD3D9CharacterScene::ReleaseBuffers() { ReleaseCom(CharacterVertexBuffer); ReleaseCom(CharacterIndexBuffer); ReleaseCom(GroundVertexBuffer); ReleaseCom(GroundIndexBuffer); CharacterUploaded = false; GroundUploaded = false; }
+void FD3D9CharacterScene::ReleaseCharacterResources() { ReleaseBatches(CharacterBatches); ReleaseCom(CharacterVertexBuffer); ReleaseCom(CharacterIndexBuffer); CharacterUploaded = false; }
+void FD3D9CharacterScene::Shutdown() { ReleaseBatches(CharacterBatches); ReleaseBatches(GroundBatches); ReleaseBuffers(); CharacterVertices.clear(); CharacterIndices.clear(); CharacterBatches.clear(); CharacterSources.clear(); GroundVertices.clear(); GroundIndices.clear(); GroundBatches.clear(); SkeletonParents.clear(); SkeletonBoneNames.clear(); SkeletonTransforms.clear(); SkeletonAnimationFrameCounts.clear(); Initialized = false; }
+
+bool FD3D9CharacterScene::LoadGroundMesh(const FResourceManager& resources, std::string& error) {
+    auto meshResult = LoadMdlMeshFromResource(resources, "models/loadscene.mdl");
+    if (!meshResult.IsOk()) { error = meshResult.Status().Message(); return false; }
+    const FMdlMesh& mesh = meshResult.Value();
+    if (mesh.Vertices.empty() || mesh.Triangles.empty() || mesh.Info.Materials.empty()) { error = "loadscene.mdl has no renderable geometry"; return false; }
+    bool haveBounds = false;
+    float minX = 0.0f, maxX = 0.0f, minY = 0.0f, maxY = 0.0f, minZ = 0.0f, maxZ = 0.0f;
+    for (const auto& surface : mesh.Surfaces) {
+        if (surface.TextureIndex < mesh.Info.Materials.size() && mesh.Info.Materials[surface.TextureIndex] == "LOAD_SC02") { continue; }
+        if (surface.FirstVertexIndex < 0 || surface.VertexCount <= 0) { continue; }
+        const size_t firstVertex = static_cast<size_t>(surface.FirstVertexIndex);
+        const size_t vertexCount = static_cast<size_t>(surface.VertexCount);
+        if (firstVertex > mesh.Vertices.size() || vertexCount > mesh.Vertices.size() - firstVertex) { continue; }
+        for (size_t i = 0; i < vertexCount; ++i) { const auto& source = mesh.Vertices[firstVertex + i]; const float sceneX = source.Z; const float sceneY = -source.Y; const float sceneZ = source.X; if (!haveBounds) { minX = maxX = sceneX; minY = maxY = sceneY; minZ = maxZ = sceneZ; haveBounds = true; } else { minX = std::min(minX, sceneX); maxX = std::max(maxX, sceneX); minY = std::min(minY, sceneY); maxY = std::max(maxY, sceneY); minZ = std::min(minZ, sceneZ); maxZ = std::max(maxZ, sceneZ); } }
+    }
+    if (!haveBounds) { error = "loadscene.mdl has no non-sky bounds"; return false; }
+    const float centerX = (minX + maxX) * 0.5f;
+    const float centerZ = (minZ + maxZ) * 0.5f;
+    const float spanX = maxX - minX;
+    const float spanY = maxY - minY;
+    const float spanZ = maxZ - minZ;
+    const float scale = 8.8f / std::max({spanX, spanY, spanZ, 0.001f});
+    GroundVertices.clear();
+    GroundVertices.reserve(mesh.Vertices.size());
+    for (const auto& source : mesh.Vertices) { const FD3D9CharacterScene::FVec3 groundNormalSource{source.NZ, -source.NY, source.NX}; const auto normal = NormalizeVec3(groundNormalSource); FSceneVertex vertex; vertex.X = (source.Z - centerX) * scale; vertex.Y = ((-source.Y) - minY) * scale - 0.03f; vertex.Z = (source.X - centerZ) * scale; vertex.NX = normal.X; vertex.NY = normal.Y; vertex.NZ = normal.Z; vertex.Diffuse = D3DCOLOR_ARGB(255, 220, 214, 196); vertex.U = source.U; vertex.V = source.V; GroundVertices.push_back(vertex); }
+    std::vector<std::vector<uint16>> indicesByMaterial(mesh.Info.Materials.size());
+    for (const auto& surface : mesh.Surfaces) {
+        if (surface.TextureIndex >= mesh.Info.Materials.size() || surface.FirstTriangleIndex < 0 || surface.TriangleCount <= 0 || surface.FirstVertexIndex < 0 || surface.VertexCount <= 0) { continue; }
+        const size_t firstTriangle = static_cast<size_t>(surface.FirstTriangleIndex);
+        const size_t triangleCount = static_cast<size_t>(surface.TriangleCount);
+        const size_t firstVertex = static_cast<size_t>(surface.FirstVertexIndex);
+        const size_t vertexCount = static_cast<size_t>(surface.VertexCount);
+        if (firstTriangle > mesh.Triangles.size() || triangleCount > mesh.Triangles.size() - firstTriangle || firstVertex > mesh.Vertices.size() || vertexCount > mesh.Vertices.size() - firstVertex) { continue; }
+        auto& out = indicesByMaterial[surface.TextureIndex];
+        for (size_t i = 0; i < triangleCount; ++i) { const auto& t = mesh.Triangles[firstTriangle + i]; if (t.A >= vertexCount || t.B >= vertexCount || t.C >= vertexCount) { continue; } out.push_back(static_cast<uint16>(firstVertex + t.A)); out.push_back(static_cast<uint16>(firstVertex + t.B)); out.push_back(static_cast<uint16>(firstVertex + t.C)); }
+    }
+    GroundIndices.clear();
+    GroundBatches.clear();
+    for (size_t material = 0; material < indicesByMaterial.size(); ++material) {
+        auto& group = indicesByMaterial[material];
+        if (group.empty()) { continue; }
+        const uint32 start = static_cast<uint32>(GroundIndices.size());
+        GroundIndices.insert(GroundIndices.end(), group.begin(), group.end());
+        const std::string materialName = mesh.Info.Materials[material];
+        GroundBatches.push_back({start, static_cast<uint32>(group.size()), FindLogicalOrStem(resources, ModelTextureLogicalName(materialName)), nullptr, materialName == "LOAD_SC02", false});
+    }
+    if (GroundBatches.empty()) { error = "loadscene.mdl has no material batches"; return false; }
+    return true;
+}
+
+std::vector<FD3D9CharacterScene::FMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) const {
+    if (SkeletonBoneCount <= 0 || SkeletonFrameCount <= 0 || frame >= static_cast<size_t>(SkeletonFrameCount)) { throw std::runtime_error("SKL frame out of range"); }
+    const size_t boneCount = static_cast<size_t>(SkeletonBoneCount);
+    std::vector<FMatrix4> matrices(boneCount);
+    std::vector<uint8> states(boneCount, 0);
+    auto resolve = [&](auto&& self, size_t bone) -> FMatrix4 {
+        if (states[bone] == 2) { return matrices[bone]; }
+        if (states[bone] == 1) { throw std::runtime_error("SKL parent hierarchy cycle"); }
+        states[bone] = 1;
+        const size_t base = (frame * boneCount + bone) * 7;
+        FSklTransform transform; transform.QX = SkeletonTransforms[base + 0]; transform.QY = SkeletonTransforms[base + 1]; transform.QZ = SkeletonTransforms[base + 2]; transform.QW = SkeletonTransforms[base + 3]; transform.TX = SkeletonTransforms[base + 4]; transform.TY = SkeletonTransforms[base + 5]; transform.TZ = SkeletonTransforms[base + 6];
+        FMatrix4 matrix = MatrixFromSkl(transform);
+        const int32 parent = SkeletonParents[bone];
+        if (parent >= 0) { matrix = MatrixMultiply(matrix, self(self, static_cast<size_t>(parent))); }
+        matrices[bone] = matrix;
+        states[bone] = 2;
+        return matrix;
+    };
+    for (size_t i = 0; i < boneCount; ++i) { resolve(resolve, i); }
+    return matrices;
+}
+
+void FD3D9CharacterScene::UpdateCharacterVerticesForFrame(size_t frame) {
+    if (CharacterSources.empty()) { return; }
+    auto matrices = BuildSkeletonMatrices(frame);
+    if (CharacterRootBone >= matrices.size()) { throw std::runtime_error("character root bone out of range"); }
+    const FVec3 rootDelta{matrices[CharacterRootBone].M[12] - CharacterRootBindX, matrices[CharacterRootBone].M[13] - CharacterRootBindY, matrices[CharacterRootBone].M[14] - CharacterRootBindZ};
+    for (auto& matrix : matrices) { matrix.M[12] -= rootDelta.X; matrix.M[13] -= rootDelta.Y; matrix.M[14] -= rootDelta.Z; }
+    CharacterVertices.resize(CharacterSources.size());
+    for (size_t i = 0; i < CharacterSources.size(); ++i) {
+        const auto& source = CharacterSources[i];
+        if (source.Bone0 >= matrices.size() || source.Bone1 >= matrices.size()) { throw std::runtime_error("skinned source bone out of range"); }
+        const auto matrix0 = matrices[source.Bone0];
+        const auto matrix1 = matrices[source.Bone1];
+        const float weight0 = std::clamp(source.Blend, 0.0f, 1.0f);
+        const float weight1 = 1.0f - weight0;
+        const auto p0 = TransformPoint(matrix0, {source.X, source.Y, source.Z});
+        const auto p1 = TransformPoint(matrix1, {source.X, source.Y, source.Z});
+        const auto n0 = TransformVector(matrix0, {source.NX, source.NY, source.NZ});
+        const auto n1 = TransformVector(matrix1, {source.NX, source.NY, source.NZ});
+        const FVec3 skinnedPosition{p0.X * weight0 + p1.X * weight1, p0.Y * weight0 + p1.Y * weight1, p0.Z * weight0 + p1.Z * weight1};
+        const FVec3 skinnedNormalSource{n0.X * weight0 + n1.X * weight1, n0.Y * weight0 + n1.Y * weight1, n0.Z * weight0 + n1.Z * weight1}; const auto skinnedNormal = NormalizeVec3(skinnedNormalSource);
+        FSceneVertex vertex; vertex.X = (skinnedPosition.X - CharacterCenterX) * CharacterScale; vertex.Y = ((-skinnedPosition.Y) - CharacterMinY) * CharacterScale; vertex.Z = (skinnedPosition.Z - CharacterCenterZ) * CharacterScale; const FVec3 normalSource{skinnedNormal.X, -skinnedNormal.Y, skinnedNormal.Z}; const auto normal = NormalizeVec3(normalSource); vertex.NX = normal.X; vertex.NY = normal.Y; vertex.NZ = normal.Z; vertex.Diffuse = 0xfffffffful; vertex.U = source.U; vertex.V = source.V; CharacterVertices[i] = vertex;
+    }
+}
+
+bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, const FCharacterCreationAppearance& appearance, std::string& error) {
+    try {
+        const std::string skeletonLogical = appearance.Female ? "xadd/woman.skl" : "xadd/man.skl";
+        auto skeletonResult = LoadSklSkeletonFromResource(resources, skeletonLogical);
+        if (!skeletonResult.IsOk()) { error = skeletonResult.Status().Message(); return false; }
+        const auto& skeleton = skeletonResult.Value();
+        SkeletonBoneCount = skeleton.BoneCount;
+        SkeletonFrameCount = skeleton.FrameCount;
+        SkeletonParents = skeleton.Parents;
+        SkeletonBoneNames = skeleton.BoneNames;
+        SkeletonAnimationFrameCounts = skeleton.AnimationFrameCounts;
+        SkeletonTransforms.clear();
+        SkeletonTransforms.reserve(skeleton.Transforms.size() * 7);
+        for (const auto& transform : skeleton.Transforms) { SkeletonTransforms.push_back(transform.QX); SkeletonTransforms.push_back(transform.QY); SkeletonTransforms.push_back(transform.QZ); SkeletonTransforms.push_back(transform.QW); SkeletonTransforms.push_back(transform.TX); SkeletonTransforms.push_back(transform.TY); SkeletonTransforms.push_back(transform.TZ); }
+        CharacterAnimationStart = SkeletonAnimationFrameOffset(skeleton, CHARACTER_FREE_ACTION);
+        CharacterAnimationFrames = static_cast<size_t>(skeleton.AnimationFrameCounts[CHARACTER_FREE_ACTION]);
+        CharacterAnimationTick = GetTickCount();
+        const auto originMatrices = BuildSkeletonMatrices(CharacterAnimationStart);
+        CharacterRootBone = SkeletonBoneIndex(skeleton, "hips");
+        CharacterRootBindX = originMatrices[CharacterRootBone].M[12];
+        CharacterRootBindY = originMatrices[CharacterRootBone].M[13];
+        CharacterRootBindZ = originMatrices[CharacterRootBone].M[14];
+        const auto subobjects = LoadXaddSubobjects(resources);
+        const auto codes = CharacterSubobjectCodes(appearance.Female, appearance.Face, appearance.Hair);
+        std::set<std::string> headCodes;
+        if (codes.size() >= 2) { headCodes.insert(codes[codes.size() - 1]); headCodes.insert(codes[codes.size() - 2]); }
+        CharacterVertices.clear();
+        CharacterIndices.clear();
+        CharacterBatches.clear();
+        CharacterSources.clear();
+        bool haveBounds = false;
+        float minX = 0.0f, maxX = 0.0f, minY = 0.0f, maxY = 0.0f, minZ = 0.0f, maxZ = 0.0f;
+        std::unordered_map<std::string, uint8> skeletonBones;
+        for (size_t i = 0; i < skeleton.BoneNames.size(); ++i) { if (i <= 0xff) { skeletonBones[LowerAscii(skeleton.BoneNames[i])] = static_cast<uint8>(i); } }
+        for (const auto& code : codes) {
+            const auto entryIt = subobjects.find(code);
+            if (entryIt == subobjects.end()) { throw std::runtime_error("missing subobject code in subobjs.dat: " + code); }
+            const auto& entry = entryIt->second;
+            if (entry.TextureNames.empty()) { throw std::runtime_error("subobject has no textures: " + code); }
+            const size_t textureIndex = TextureIndexForSubobject(entry, appearance.HairColor, appearance.Tattoo);
+            const std::string chrLogical = FindLogicalOrStem(resources, "xadd/" + entry.MeshName + ".chr");
+            auto meshResult = LoadChrMeshFromResource(resources, chrLogical);
+            if (!meshResult.IsOk()) { throw std::runtime_error(meshResult.Status().Message()); }
+            const auto& mesh = meshResult.Value();
+            if (mesh.Vertices.empty() || mesh.Indices.empty()) { throw std::runtime_error("CHR mesh has no renderable triangles: " + chrLogical); }
+            std::vector<uint8> boneRemap;
+            boneRemap.reserve(mesh.Info.BoneNames.size());
+            for (const auto& name : mesh.Info.BoneNames) { const auto it = skeletonBones.find(LowerAscii(name)); if (it == skeletonBones.end()) { throw std::runtime_error("CHR bone not found in skeleton: " + name); } boneRemap.push_back(it->second); }
+            const std::string textureLogical = FindLogicalOrStem(resources, ModelTextureLogicalName(entry.TextureNames[textureIndex]));
+            const size_t vertexBase = CharacterSources.size();
+            if (vertexBase + mesh.Vertices.size() > 0xffff) { throw std::runtime_error("combined character mesh exceeds 16-bit index range"); }
+            for (const auto& source : mesh.Vertices) {
+                if (source.Bone0 >= boneRemap.size() || source.Bone1 >= boneRemap.size()) { throw std::runtime_error("CHR vertex bone index out of range: " + chrLogical); }
+                CharacterSources.push_back({source.X, source.Y, source.Z, source.NX, source.NY, source.NZ, source.U, source.V, boneRemap[source.Bone0], boneRemap[source.Bone1], source.Blend});
+                const float bx = source.X;
+                const float by = -source.Y;
+                const float bz = source.Z;
+                if (!haveBounds) { minX = maxX = bx; minY = maxY = by; minZ = maxZ = bz; haveBounds = true; } else { minX = std::min(minX, bx); maxX = std::max(maxX, bx); minY = std::min(minY, by); maxY = std::max(maxY, by); minZ = std::min(minZ, bz); maxZ = std::max(maxZ, bz); }
+            }
+            const uint32 start = static_cast<uint32>(CharacterIndices.size());
+            for (uint16 index : mesh.Indices) { CharacterIndices.push_back(static_cast<uint16>(vertexBase + index)); }
+            CharacterBatches.push_back({start, static_cast<uint32>(mesh.Indices.size()), textureLogical, nullptr, false, headCodes.count(code) != 0});
+        }
+        if (!haveBounds || CharacterIndices.empty()) { throw std::runtime_error("XADD character has no renderable geometry"); }
+        CharacterCenterX = (minX + maxX) * 0.5f;
+        CharacterCenterZ = (minZ + maxZ) * 0.5f;
+        CharacterMinY = minY;
+        CharacterScale = 2.05f / std::max(maxY - minY, 0.001f);
+        UpdateCharacterVerticesForFrame(CharacterAnimationStart);
+        CurrentAppearance = appearance;
+        return true;
+    } catch (const std::exception& ex) { error = ex.what(); return false; }
+}
+
+IDirect3DTexture9* FD3D9CharacterScene::LoadDdsTexture(IDirect3DDevice9* device, const FResourceManager& resources, const std::string& logicalName, FLogger* logger, std::string& error) {
+    if (!device) { error = "D3D device is absent"; return nullptr; }
+    try {
+        auto data = ReadBytesOrThrow(resources, logicalName);
+        if (data.size() < 128 || Binary::U32LE(data, 0) != 0x20534444) { throw std::runtime_error("bad DDS file: " + logicalName); }
+        if (Binary::U32LE(data, 4) != 124 || Binary::U32LE(data, 76) != 32) { throw std::runtime_error("bad DDS header: " + logicalName); }
+        const auto height = Binary::U32LE(data, 12);
+        const auto width = Binary::U32LE(data, 16);
+        const auto mipCountRaw = Binary::U32LE(data, 28);
+        const auto pfFlags = Binary::U32LE(data, 80);
+        const auto fourcc = Binary::U32LE(data, 84);
+        const auto rgbBitCount = Binary::U32LE(data, 88);
+        const auto rMask = Binary::U32LE(data, 92);
+        const auto gMask = Binary::U32LE(data, 96);
+        const auto bMask = Binary::U32LE(data, 100);
+        const auto aMask = Binary::U32LE(data, 104);
+        if (width == 0 || height == 0) { throw std::runtime_error("empty DDS texture: " + logicalName); }
+        D3DFORMAT format = D3DFMT_UNKNOWN;
+        uint32 blockBytes = 0;
+        if ((pfFlags & 0x4U) != 0) { if (fourcc == 0x31545844U) { format = D3DFMT_DXT1; blockBytes = 8; } else if (fourcc == 0x33545844U) { format = D3DFMT_DXT3; blockBytes = 16; } else if (fourcc == 0x35545844U) { format = D3DFMT_DXT5; blockBytes = 16; } }
+        else if ((pfFlags & 0x40U) != 0 && rgbBitCount == 32 && rMask == 0x00ff0000U && gMask == 0x0000ff00U && bMask == 0x000000ffU && ((pfFlags & 0x1U) == 0 || aMask == 0xff000000U)) { format = D3DFMT_A8R8G8B8; }
+        if (format == D3DFMT_UNKNOWN) { throw std::runtime_error("unsupported DDS texture format: " + logicalName); }
+        const UINT mipCount = static_cast<UINT>(std::max<uint32>(1, mipCountRaw));
+        IDirect3DTexture9* texture = nullptr;
+        HRESULT hr = device->CreateTexture(width, height, mipCount, 0, format, D3DPOOL_MANAGED, &texture, nullptr);
+        if (FAILED(hr)) { throw std::runtime_error(HresultText("CreateTexture", hr)); }
+        size_t cursor = 128;
+        uint32 levelWidth = width;
+        uint32 levelHeight = height;
+        for (UINT level = 0; level < mipCount; ++level) {
+            size_t sourcePitch = 0;
+            size_t sourceRows = 0;
+            if (blockBytes != 0) { const uint32 blockWidth = std::max<uint32>(1, (levelWidth + 3) / 4); const uint32 blockHeight = std::max<uint32>(1, (levelHeight + 3) / 4); sourcePitch = static_cast<size_t>(blockWidth) * blockBytes; sourceRows = blockHeight; }
+            else { sourcePitch = static_cast<size_t>(levelWidth) * 4; sourceRows = levelHeight; }
+            const size_t sourceBytes = sourcePitch * sourceRows;
+            Binary::RequireRange(data, cursor, sourceBytes, "DDS mip data");
+            D3DLOCKED_RECT locked{};
+            hr = texture->LockRect(level, &locked, nullptr, 0);
+            if (FAILED(hr)) { ReleaseCom(texture); throw std::runtime_error(HresultText("Texture::LockRect", hr)); }
+            const auto* source = data.data() + cursor;
+            auto* dest = static_cast<uint8*>(locked.pBits);
+            for (uint32 row = 0; row < sourceRows; ++row) { std::memcpy(dest + static_cast<size_t>(row) * locked.Pitch, source + row * sourcePitch, sourcePitch); }
+            texture->UnlockRect(level);
+            cursor += sourceBytes;
+            levelWidth = std::max<uint32>(1, levelWidth / 2);
+            levelHeight = std::max<uint32>(1, levelHeight / 2);
+        }
+        return texture;
+    } catch (const std::exception& ex) { error = ex.what(); if (logger) { logger->Warning("3D DDS texture load failed: " + logicalName + " - " + error); } return nullptr; }
+}
+
+bool FD3D9CharacterScene::UploadGroundBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error) {
+    if (!device || GroundVertices.empty() || GroundIndices.empty()) { error = "ground buffers have no source data"; return false; }
+    for (auto& batch : GroundBatches) { batch.Texture = LoadDdsTexture(device, resources, batch.TextureLogicalName, logger, error); if (!batch.Texture) { return false; } }
+    HRESULT hr = device->CreateVertexBuffer(static_cast<UINT>(GroundVertices.size() * sizeof(FSceneVertex)), 0, FVF_SCENE, D3DPOOL_MANAGED, &GroundVertexBuffer, nullptr);
+    if (FAILED(hr)) { error = HresultText("CreateVertexBuffer ground", hr); return false; }
+    void* vertexData = nullptr;
+    hr = GroundVertexBuffer->Lock(0, static_cast<UINT>(GroundVertices.size() * sizeof(FSceneVertex)), &vertexData, 0);
+    if (FAILED(hr)) { error = HresultText("GroundVertexBuffer::Lock", hr); return false; }
+    std::memcpy(vertexData, GroundVertices.data(), GroundVertices.size() * sizeof(FSceneVertex));
+    GroundVertexBuffer->Unlock();
+    hr = device->CreateIndexBuffer(static_cast<UINT>(GroundIndices.size() * sizeof(uint16)), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &GroundIndexBuffer, nullptr);
+    if (FAILED(hr)) { error = HresultText("CreateIndexBuffer ground", hr); return false; }
+    void* indexData = nullptr;
+    hr = GroundIndexBuffer->Lock(0, static_cast<UINT>(GroundIndices.size() * sizeof(uint16)), &indexData, 0);
+    if (FAILED(hr)) { error = HresultText("GroundIndexBuffer::Lock", hr); return false; }
+    std::memcpy(indexData, GroundIndices.data(), GroundIndices.size() * sizeof(uint16));
+    GroundIndexBuffer->Unlock();
+    GroundUploaded = true;
+    return true;
+}
+
+bool FD3D9CharacterScene::UploadCharacterBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error) {
+    if (!device || CharacterVertices.empty() || CharacterIndices.empty()) { error = "character buffers have no source data"; return false; }
+    for (auto& batch : CharacterBatches) { batch.Texture = LoadDdsTexture(device, resources, batch.TextureLogicalName, logger, error); if (!batch.Texture) { return false; } }
+    HRESULT hr = device->CreateVertexBuffer(static_cast<UINT>(CharacterVertices.size() * sizeof(FSceneVertex)), 0, FVF_SCENE, D3DPOOL_MANAGED, &CharacterVertexBuffer, nullptr);
+    if (FAILED(hr)) { error = HresultText("CreateVertexBuffer character", hr); return false; }
+    void* vertexData = nullptr;
+    hr = CharacterVertexBuffer->Lock(0, static_cast<UINT>(CharacterVertices.size() * sizeof(FSceneVertex)), &vertexData, 0);
+    if (FAILED(hr)) { error = HresultText("CharacterVertexBuffer::Lock", hr); return false; }
+    std::memcpy(vertexData, CharacterVertices.data(), CharacterVertices.size() * sizeof(FSceneVertex));
+    CharacterVertexBuffer->Unlock();
+    hr = device->CreateIndexBuffer(static_cast<UINT>(CharacterIndices.size() * sizeof(uint16)), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &CharacterIndexBuffer, nullptr);
+    if (FAILED(hr)) { error = HresultText("CreateIndexBuffer character", hr); return false; }
+    void* indexData = nullptr;
+    hr = CharacterIndexBuffer->Lock(0, static_cast<UINT>(CharacterIndices.size() * sizeof(uint16)), &indexData, 0);
+    if (FAILED(hr)) { error = HresultText("CharacterIndexBuffer::Lock", hr); return false; }
+    std::memcpy(indexData, CharacterIndices.data(), CharacterIndices.size() * sizeof(uint16));
+    CharacterIndexBuffer->Unlock();
+    CharacterUploaded = true;
+    return true;
+}
+
+bool FD3D9CharacterScene::UploadBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error) { return UploadGroundBuffers(device, resources, logger, error) && UploadCharacterBuffers(device, resources, logger, error); }
+
+bool FD3D9CharacterScene::EnsureInitialized(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger) {
+    if (Initialized) { return true; }
+    std::string error;
+    if (!LoadGroundMesh(resources, error)) { if (logger) { logger->Warning("3D create scene ground load failed: " + error); } return false; }
+    if (!LoadCharacterMesh(resources, CurrentAppearance, error)) { if (logger) { logger->Warning("3D create scene character load failed: " + error); } return false; }
+    if (!UploadBuffers(device, resources, logger, error)) { if (logger) { logger->Warning("3D create scene upload failed: " + error); } Shutdown(); return false; }
+    SetCameraFocus(0, true);
+    Initialized = true;
+    if (logger) { logger->Info("3D character creation scene initialized: vertices=" + std::to_string(CharacterVertices.size()) + ", ground=" + std::to_string(GroundVertices.size())); }
+    return true;
+}
+
+bool FD3D9CharacterScene::UpdateCharacterAppearance(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, FLogger* logger) {
+    if (SameAppearance(appearance, CurrentAppearance) && CharacterUploaded) { return true; }
+    ReleaseCharacterResources();
+    std::string error;
+    if (!LoadCharacterMesh(resources, appearance, error)) { if (logger) { logger->Warning("3D character appearance load failed: " + error); } return false; }
+    if (!UploadCharacterBuffers(device, resources, logger, error)) { if (logger) { logger->Warning("3D character appearance upload failed: " + error); } return false; }
+    return true;
+}
+
+void FD3D9CharacterScene::ConfigureRenderState(IDirect3DDevice9* device) {
+    device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
+    device->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+    device->SetRenderState(D3DRS_LIGHTING, TRUE);
+    device->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_XRGB(50, 44, 40));
+    device->SetRenderState(D3DRS_COLORVERTEX, TRUE);
+    device->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1);
+    device->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_COLOR1);
+    device->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
+    device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+    device->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
+    device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+    device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+    device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+    device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+    device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+    device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+    device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+    device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+    device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+    device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+    device->SetRenderState(D3DRS_FOGCOLOR, D3DCOLOR_XRGB(16, 17, 16));
+    device->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
+    const float fogStart = 7.0f;
+    const float fogEnd = 16.0f;
+    DWORD fogStartBits = 0;
+    DWORD fogEndBits = 0;
+    std::memcpy(&fogStartBits, &fogStart, sizeof(fogStart));
+    std::memcpy(&fogEndBits, &fogEnd, sizeof(fogEnd));
+    device->SetRenderState(D3DRS_FOGSTART, fogStartBits);
+    device->SetRenderState(D3DRS_FOGEND, fogEndBits);
+    D3DMATERIAL9 material{};
+    material.Diffuse.r = 1.0f; material.Diffuse.g = 1.0f; material.Diffuse.b = 1.0f; material.Diffuse.a = 1.0f;
+    material.Ambient = material.Diffuse;
+    device->SetMaterial(&material);
+    D3DLIGHT9 light{};
+    light.Type = D3DLIGHT_DIRECTIONAL;
+    light.Diffuse.r = 1.0f; light.Diffuse.g = 0.92f; light.Diffuse.b = 0.82f;
+    light.Ambient.r = 0.28f; light.Ambient.g = 0.25f; light.Ambient.b = 0.22f;
+    light.Direction.x = -0.35f; light.Direction.y = -0.55f; light.Direction.z = 0.75f;
+    device->SetLight(0, &light);
+    device->LightEnable(0, TRUE);
+}
+
+void FD3D9CharacterScene::SetCameraFocus(int32 focusId, bool snap) {
+    struct FProfile { bool Valid; float X; float Y; float Z; float Yaw; float Distance; float Pitch; float Fov; };
+    const FProfile body{true, -1.95f, 1.42f, -0.18f, -0.24f, 4.25f, 0.045f, 50.0f};
+    const FProfile face{true, 0.14f, 2.22f, -0.18f, 0.08f, 1.58f, 0.01f, 50.0f};
+    const FProfile hair{true, 0.12f, 2.38f, -0.18f, 0.08f, 1.42f, 0.0f, 50.0f};
+    const FProfile hairColor{true, 0.12f, 2.30f, -0.18f, 0.08f, 1.46f, 0.0f, 50.0f};
+    FProfile profile = body;
+    if (focusId == 13 || focusId == 16) { profile = face; }
+    else if (focusId == 14) { profile = hair; }
+    else if (focusId == 15) { profile = hairColor; }
+    else if (focusId == 12 || focusId == 0) { profile = body; }
+    else { return; }
+    CameraFocusId = focusId;
+    CameraFocusXTarget = profile.X;
+    CameraFocusYTarget = profile.Y;
+    CameraFocusZTarget = profile.Z;
+    CameraYawTarget = profile.Yaw;
+    CameraDistanceTarget = profile.Distance;
+    CameraPitchTarget = profile.Pitch;
+    CameraFovDegreesTarget = profile.Fov;
+    if (snap) { CameraFocusX = CameraFocusXTarget; CameraFocusY = CameraFocusYTarget; CameraFocusZ = CameraFocusZTarget; CameraYaw = CameraYawTarget; CameraDistance = CameraDistanceTarget; CameraPitch = CameraPitchTarget; CameraFovDegrees = CameraFovDegreesTarget; }
+}
+
+void FD3D9CharacterScene::UpdateCamera() {
+    CameraFocusX = Approach(CameraFocusX, CameraFocusXTarget, 0.12f);
+    CameraFocusY = Approach(CameraFocusY, CameraFocusYTarget, 0.12f);
+    CameraFocusZ = Approach(CameraFocusZ, CameraFocusZTarget, 0.12f);
+    CameraYaw = Approach(CameraYaw, CameraYawTarget, 0.12f);
+    CameraDistance = Approach(CameraDistance, CameraDistanceTarget, 0.12f);
+    CameraPitch = Approach(CameraPitch, CameraPitchTarget, 0.12f);
+    CameraFovDegrees = Approach(CameraFovDegrees, CameraFovDegreesTarget, 0.12f);
+}
+
+void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const tagRECT& clientRect) {
+    const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
+    const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
+    const float aspect = static_cast<float>(width) / static_cast<float>(height);
+    UpdateCamera();
+    const FVec3 target{CameraFocusX, CameraFocusY, CameraFocusZ};
+    const float cp = std::cos(CameraPitch);
+    const float sp = std::sin(CameraPitch);
+    const float sy = std::sin(CameraYaw);
+    const float cy = std::cos(CameraYaw);
+    const float horizontalDistance = cp * CameraDistance;
+    const FVec3 eye{target.X + sy * horizontalDistance, target.Y + sp * CameraDistance, target.Z - cy * horizontalDistance};
+    const FVec3 up{0.0f, 1.0f, 0.0f};
+    const D3DMATRIX view = LookAtRh(eye, target, up);
+    const D3DMATRIX projection = PerspectiveFovRh(CameraFovDegrees * 3.1415926535f / 180.0f, aspect, 0.05f, 100.0f);
+    device->SetTransform(D3DTS_VIEW, &view);
+    device->SetTransform(D3DTS_PROJECTION, &projection);
+}
+
+void FD3D9CharacterScene::UpdateCharacterAnimation(IDirect3DDevice9* device) {
+    if (!CharacterVertexBuffer || CharacterSources.empty() || CharacterAnimationFrames == 0) { return; }
+    const DWORD elapsed = GetTickCount() - CharacterAnimationTick;
+    const size_t frame = CharacterAnimationStart + (static_cast<size_t>(elapsed / 80) % CharacterAnimationFrames);
+    try { UpdateCharacterVerticesForFrame(frame); } catch (...) { return; }
+    const UINT bytes = static_cast<UINT>(CharacterVertices.size() * sizeof(FSceneVertex));
+    if (bytes == 0) { return; }
+    void* data = nullptr;
+    if (SUCCEEDED(CharacterVertexBuffer->Lock(0, bytes, &data, 0))) { std::memcpy(data, CharacterVertices.data(), bytes); CharacterVertexBuffer->Unlock(); }
+}
+
+void FD3D9CharacterScene::DrawGround(IDirect3DDevice9* device) {
+    if (!GroundVertexBuffer || !GroundIndexBuffer || GroundBatches.empty()) { return; }
+    const D3DMATRIX world = IdentityMatrix();
+    device->SetTransform(D3DTS_WORLD, &world);
+    device->SetFVF(FVF_SCENE);
+    device->SetStreamSource(0, GroundVertexBuffer, 0, sizeof(FSceneVertex));
+    device->SetIndices(GroundIndexBuffer);
+    device->SetRenderState(D3DRS_FOGENABLE, FALSE);
+    device->SetRenderState(D3DRS_LIGHTING, FALSE);
+    device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+    device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+    for (const auto& batch : GroundBatches) { if (batch.Sky && batch.Texture && batch.IndexCount >= 3) { device->SetTexture(0, batch.Texture); device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, static_cast<UINT>(GroundVertices.size()), batch.StartIndex, batch.IndexCount / 3); } }
+    ConfigureRenderState(device);
+    device->SetStreamSource(0, GroundVertexBuffer, 0, sizeof(FSceneVertex));
+    device->SetIndices(GroundIndexBuffer);
+    for (const auto& batch : GroundBatches) { if (!batch.Sky && batch.Texture && batch.IndexCount >= 3) { device->SetTexture(0, batch.Texture); device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, static_cast<UINT>(GroundVertices.size()), batch.StartIndex, batch.IndexCount / 3); } }
+}
+
+void FD3D9CharacterScene::DrawCharacter(IDirect3DDevice9* device) {
+    if (!CharacterVertexBuffer || !CharacterIndexBuffer || CharacterBatches.empty()) { return; }
+    D3DMATRIX world = RotationYMatrix(CharacterAngle);
+    world._42 = 0.56f;
+    world._43 = -0.18f;
+    device->SetTransform(D3DTS_WORLD, &world);
+    device->SetFVF(FVF_SCENE);
+    device->SetStreamSource(0, CharacterVertexBuffer, 0, sizeof(FSceneVertex));
+    device->SetIndices(CharacterIndexBuffer);
+    for (const auto& batch : CharacterBatches) { if (batch.Texture && batch.IndexCount >= 3) { device->SetTexture(0, batch.Texture); device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, static_cast<UINT>(CharacterVertices.size()), batch.StartIndex, batch.IndexCount / 3); } }
+}
+
+bool FD3D9CharacterScene::Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const tagRECT& clientRect, FLogger* logger) {
+    if (!EnsureInitialized(device, resources, logger)) { return false; }
+    if (!UpdateCharacterAppearance(device, resources, appearance, logger)) { return false; }
+    CharacterAngle = characterAngle;
+    if (CameraFocusId != cameraFocusId) { SetCameraFocus(cameraFocusId, false); }
+    ConfigureRenderState(device);
+    UpdateViewProjection(device, clientRect);
+    UpdateCharacterAnimation(device);
+    DrawGround(device);
+    DrawCharacter(device);
+    return true;
+}
+}

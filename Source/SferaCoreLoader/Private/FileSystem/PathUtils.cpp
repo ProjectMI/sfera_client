@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <algorithm>
 #include <cctype>
+#include <iterator>
 
 namespace Sfera::PathUtils {
 FPath GetExecutablePath() {

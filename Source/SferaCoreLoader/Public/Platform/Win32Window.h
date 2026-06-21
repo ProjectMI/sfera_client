@@ -22,7 +22,7 @@ struct FWindowDesc {
     std::string Title = "Sphere";
     int Width = 800;
     int Height = 600;
-    bool Windowed = true;
+    bool Borderless = true;
 };
 
 struct FInputSnapshot {
@@ -51,6 +51,7 @@ public:
     void RequestRepaint();
     void Destroy();
     void SetPaintCallback(FPaintCallback callback);
+    void ClearCloseRequest();
     HWND__* Handle() const { return Hwnd; }
     const FInputSnapshot& Input() const { return InputState; }
     FInputSnapshot ConsumeInputFrame();

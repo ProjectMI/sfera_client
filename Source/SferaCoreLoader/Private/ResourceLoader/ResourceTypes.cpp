@@ -14,7 +14,7 @@ EResourceKind GuessResourceKind(const FPath& path) {
     if (ext == ".mbc") { return EResourceKind::Mbc; }
     if (ext == ".ui") { return EResourceKind::Ui; }
     if (ext == ".dds" || ext == ".tga" || ext == ".bmp" || ext == ".png") { return EResourceKind::Texture; }
-    if (ext == ".mdl" || ext == ".ssm" || ext == ".msh") { return EResourceKind::Model; }
+    if (ext == ".mdl" || ext == ".chr" || ext == ".skl" || ext == ".ssm" || ext == ".msh") { return EResourceKind::Model; }
     if (ext == ".mtr" || ext == ".mtx") { return EResourceKind::Material; }
     std::string generic = path.generic_string();
     std::transform(generic.begin(), generic.end(), generic.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });

@@ -8,6 +8,10 @@ struct FProtocolProbeResult {
     size_t Bytes = 0;
     bool LooksLikeU16Frame = false;
     bool LooksLikeU32Frame = false;
+    bool LooksLikeCannotConnect = false;
+    bool LooksLikeCharacterSelectStart = false;
+    bool LooksLikeEmptyCharacterSlot = false;
+    bool LooksLikeCharacterSlot = false;
     std::string AsciiPreview;
 };
 

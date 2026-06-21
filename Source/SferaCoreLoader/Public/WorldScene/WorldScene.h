@@ -4,8 +4,8 @@
 #include "WorldScene/SpatialIndex.h"
 #include "WorldScene/ZoningManager.h"
 
-namespace Sfera {
-class FWorldScene {
+class FWorldScene 
+{
 public:
     FWorldScene(const FResourceManager& resources, FGameObjectRegistry& objectRegistry);
     FStatus LoadBootstrapScene(FLogger* logger = nullptr);
@@ -65,4 +65,3 @@ private:
     FWeatherProfile WeatherProfile;
     FSkyProfile SkyProfile;
 };
-}

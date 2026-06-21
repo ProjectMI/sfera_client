@@ -3,8 +3,8 @@
 #include "FileSystem/FileSystem.h"
 #include <unordered_map>
 
-namespace Sfera {
-class FConfigService {
+class FConfigService
+{
 public:
     explicit FConfigService(const FFileSystem& fileSystem);
     FStatus LoadKnownConfigs(FLogger* logger = nullptr);
@@ -17,4 +17,3 @@ private:
     const FFileSystem& FileSystem;
     std::unordered_map<std::string, FConfigDocument> Documents;
 };
-}

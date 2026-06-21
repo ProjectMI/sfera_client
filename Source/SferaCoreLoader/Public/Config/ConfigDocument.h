@@ -2,8 +2,8 @@
 #include "Core/Types.h"
 #include <unordered_map>
 
-namespace Sfera {
-struct FConfigEntry {
+struct FConfigEntry 
+{
     std::string Key;
     std::string Value;
     std::string Scope;
@@ -12,7 +12,8 @@ struct FConfigEntry {
     size_t Line = 0;
 };
 
-class FConfigDocument {
+class FConfigDocument
+{
 public:
     FStatus Parse(std::string text, std::string sourceName);
     std::optional<std::string> FindString(std::string_view key) const;
@@ -24,4 +25,3 @@ private:
     std::vector<FConfigEntry> ParsedEntries;
     std::unordered_map<std::string, size_t> Index;
 };
-}

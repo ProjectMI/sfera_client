@@ -2,12 +2,55 @@
 #include "MBC/MbcModule.h"
 #include <unordered_map>
 
-namespace Sfera {
-struct FMbcFunctionSignature { uint32 Arity = 0; bool Variadic = false; std::vector<uint8> ArgTypes; std::string Source = "unknown"; };
-struct FMbcFunctionSymbol { uint32 ModuleIndex = 0; uint32 FunctionIndex = 0; std::string ModuleName; std::string Name; std::string QualifiedName; uint32 CodeOffset = 0; int32 ProgramIndex = -1; uint32 FlagsOrModule = 0; bool IsImport = false; std::optional<uint32> ImportStubPayload; FMbcFunctionSignature Signature; };
-struct FMbcLinkPatch { std::string SourceModule; std::string SourceName; uint32 SourceFunctionIndex = 0; uint32 SourceOffset = 0; std::string TargetModule; std::string TargetName; uint32 TargetFunctionIndex = 0; uint32 TargetOffset = 0; int32 Rel32 = 0; bool Ambiguous = false; };
-struct FMbcNativeImport { std::string Name; std::string Layer; std::string Note; uint32 Arity = 0; bool Variadic = true; bool PushesValue = false; };
-class FMbcProjectLinker {
+struct FMbcFunctionSignature
+{ 
+    uint32 Arity = 0;
+    bool Variadic = false;
+    std::vector<uint8> ArgTypes; 
+    std::string Source = "unknown"; 
+};
+
+struct FMbcFunctionSymbol 
+{ 
+    uint32 ModuleIndex = 0; 
+    uint32 FunctionIndex = 0; 
+    std::string ModuleName; 
+    std::string Name;
+    std::string QualifiedName; 
+    uint32 CodeOffset = 0;
+    int32 ProgramIndex = -1; 
+    uint32 FlagsOrModule = 0;
+    bool IsImport = false;
+    std::optional<uint32> ImportStubPayload; 
+    FMbcFunctionSignature Signature; 
+};
+
+struct FMbcLinkPatch 
+{ 
+    std::string SourceModule;
+    std::string SourceName;
+    uint32 SourceFunctionIndex = 0; 
+    uint32 SourceOffset = 0;
+    std::string TargetModule; 
+    std::string TargetName;
+    uint32 TargetFunctionIndex = 0; 
+    uint32 TargetOffset = 0; 
+    int32 Rel32 = 0; 
+    bool Ambiguous = false; 
+};
+
+struct FMbcNativeImport 
+{
+    std::string Name; 
+    std::string Layer; 
+    std::string Note;
+    uint32 Arity = 0; 
+    bool Variadic = true; 
+    bool PushesValue = false; 
+};
+
+class FMbcProjectLinker 
+{
 public:
     void Build(const std::vector<FMbcModule>& modules);
     const std::vector<FMbcFunctionSymbol>& Symbols() const { return SymbolsFound; }
@@ -28,4 +71,3 @@ private:
     std::unordered_map<std::string, size_t> ProviderByName;
     std::unordered_map<std::string, size_t> NativeByName;
 };
-}

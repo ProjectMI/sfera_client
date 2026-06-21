@@ -3,9 +3,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace Sfera {
-struct FSpatialItem { uint32 Id = 0; FBox2 Bounds; std::string Tag; std::vector<int64> Cells; };
-class FSpatialIndex {
+struct FSpatialItem 
+{
+    uint32 Id = 0; 
+    FBox2 Bounds;
+    std::string Tag; std::vector<int64> Cells; 
+};
+
+class FSpatialIndex 
+{
 public:
     explicit FSpatialIndex(float cellSize = 256.0f) : CellSize(cellSize) {}
     void Clear();
@@ -23,4 +29,3 @@ private:
     std::unordered_map<uint32, FSpatialItem> Items;
     std::unordered_map<int64, std::vector<uint32>> Buckets;
 };
-}

@@ -2,12 +2,127 @@
 #include "Core/BinaryReader.h"
 #include <stdexcept>
 
-namespace Sfera {
-namespace {
-std::string ReadFixedName(const FByteArray& data, size_t offset, size_t size) { return Binary::ReadFixedString(data, offset, size); }
-FSklSkeleton ParseSkeleton(const FByteArray& data, std::string_view sourceName) { if (data.size() < 8) { throw std::runtime_error("bad SKL file: " + std::string(sourceName)); } FSklSkeleton skeleton; skeleton.SourcePath = FPath(std::string(sourceName)); skeleton.BoneCount = Binary::I32LE(data, 0); skeleton.FrameCount = Binary::I32LE(data, 4); if (skeleton.BoneCount <= 0 || skeleton.FrameCount <= 0) { throw std::runtime_error("bad SKL counts: " + std::string(sourceName)); } size_t cursor = 8; const size_t boneCount = static_cast<size_t>(skeleton.BoneCount); const size_t frameCount = static_cast<size_t>(skeleton.FrameCount); Binary::RequireRange(data, cursor, boneCount * 4, "SKL parent table"); skeleton.Parents.reserve(boneCount); for (size_t i = 0; i < boneCount; ++i) { const auto parent = Binary::I32LE(data, cursor + i * 4); if (parent < -1 || parent >= skeleton.BoneCount) { throw std::runtime_error("SKL parent index out of range: " + std::string(sourceName)); } skeleton.Parents.push_back(parent); } cursor += boneCount * 4; Binary::RequireRange(data, cursor, boneCount * 0x1e, "SKL bone names"); skeleton.BoneNames.reserve(boneCount); for (size_t i = 0; i < boneCount; ++i) { skeleton.BoneNames.push_back(ReadFixedName(data, cursor + i * 0x1e, 0x1e)); } cursor += boneCount * 0x1e; const size_t transformCount = boneCount * frameCount; Binary::RequireRange(data, cursor, transformCount * 0x1c, "SKL transform tracks"); skeleton.Transforms.reserve(transformCount); for (size_t i = 0; i < transformCount; ++i) { const size_t offset = cursor + i * 0x1c; FSklTransform transform; transform.QX = Binary::F32LE(data, offset + 0x00); transform.QY = Binary::F32LE(data, offset + 0x04); transform.QZ = Binary::F32LE(data, offset + 0x08); transform.QW = Binary::F32LE(data, offset + 0x0c); transform.TX = Binary::F32LE(data, offset + 0x10); transform.TY = Binary::F32LE(data, offset + 0x14); transform.TZ = Binary::F32LE(data, offset + 0x18); skeleton.Transforms.push_back(transform); } cursor += transformCount * 0x1c; Binary::RequireRange(data, cursor, 4, "SKL animation count"); const auto animationCount = Binary::I32LE(data, cursor); cursor += 4; if (animationCount <= 0) { throw std::runtime_error("bad SKL animation count: " + std::string(sourceName)); } Binary::RequireRange(data, cursor, static_cast<size_t>(animationCount) * 4, "SKL animation frame counts"); skeleton.AnimationFrameCounts.reserve(static_cast<size_t>(animationCount)); int32 totalAnimationFrames = 0; for (int32 i = 0; i < animationCount; ++i) { const auto frames = Binary::I32LE(data, cursor + static_cast<size_t>(i) * 4); if (frames <= 0) { throw std::runtime_error("bad SKL animation frame count: " + std::string(sourceName)); } totalAnimationFrames += frames; skeleton.AnimationFrameCounts.push_back(frames); } if (totalAnimationFrames > skeleton.FrameCount) { throw std::runtime_error("SKL animation frames exceed track table: " + std::string(sourceName)); } return skeleton; }
-FStatus ExceptionStatus(const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string("SKL parse failed: ") + e.what()); }
+namespace
+{
+    std::string ReadFixedName(const FByteArray& data, size_t offset, size_t size) { return Binary::ReadFixedString(data, offset, size); }
+    FSklSkeleton ParseSkeleton(const FByteArray& data, std::string_view sourceName)
+    {
+        if (data.size() < 8)
+        {
+            throw std::runtime_error("bad SKL file: " + std::string(sourceName));
+        }
+
+        FSklSkeleton skeleton;
+        skeleton.SourcePath = FPath(std::string(sourceName));
+        skeleton.BoneCount = Binary::I32LE(data, 0);
+        skeleton.FrameCount = Binary::I32LE(data, 4);
+
+        if (skeleton.BoneCount <= 0 || skeleton.FrameCount <= 0)
+        {
+            throw std::runtime_error("bad SKL counts: " + std::string(sourceName));
+        }
+
+        size_t cursor = 8;
+        const size_t boneCount = static_cast<size_t>(skeleton.BoneCount);
+        const size_t frameCount = static_cast<size_t>(skeleton.FrameCount);
+        Binary::RequireRange(data, cursor, boneCount * 4, "SKL parent table");
+        skeleton.Parents.reserve(boneCount);
+
+        for (size_t i = 0; i < boneCount; ++i)
+        {
+            const auto parent = Binary::I32LE(data, cursor + i * 4);
+
+            if (parent < -1 || parent >= skeleton.BoneCount)
+            {
+                throw std::runtime_error("SKL parent index out of range: " + std::string(sourceName));
+            }
+
+            skeleton.Parents.push_back(parent);
+        }
+
+        cursor += boneCount * 4;
+        Binary::RequireRange(data, cursor, boneCount * 0x1e, "SKL bone names");
+        skeleton.BoneNames.reserve(boneCount);
+
+        for (size_t i = 0; i < boneCount; ++i)
+        {
+            skeleton.BoneNames.push_back(ReadFixedName(data, cursor + i * 0x1e, 0x1e));
+        }
+
+        cursor += boneCount * 0x1e;
+        const size_t transformCount = boneCount * frameCount;
+        Binary::RequireRange(data, cursor, transformCount * 0x1c, "SKL transform tracks");
+        skeleton.Transforms.reserve(transformCount);
+
+        for (size_t i = 0; i < transformCount; ++i)
+        {
+            const size_t offset = cursor + i * 0x1c;
+            FSklTransform transform;
+            transform.QX = Binary::F32LE(data, offset + 0x00);
+            transform.QY = Binary::F32LE(data, offset + 0x04);
+            transform.QZ = Binary::F32LE(data, offset + 0x08);
+            transform.QW = Binary::F32LE(data, offset + 0x0c);
+            transform.TX = Binary::F32LE(data, offset + 0x10);
+            transform.TY = Binary::F32LE(data, offset + 0x14);
+            transform.TZ = Binary::F32LE(data, offset + 0x18);
+            skeleton.Transforms.push_back(transform);
+        }
+
+        cursor += transformCount * 0x1c;
+        Binary::RequireRange(data, cursor, 4, "SKL animation count");
+        const auto animationCount = Binary::I32LE(data, cursor);
+        cursor += 4;
+
+        if (animationCount <= 0)
+        {
+            throw std::runtime_error("bad SKL animation count: " + std::string(sourceName));
+        }
+
+        Binary::RequireRange(data, cursor, static_cast<size_t>(animationCount) * 4, "SKL animation frame counts");
+        skeleton.AnimationFrameCounts.reserve(static_cast<size_t>(animationCount));
+        int32 totalAnimationFrames = 0;
+
+        for (int32 i = 0; i < animationCount; ++i)
+        {
+            const auto frames = Binary::I32LE(data, cursor + static_cast<size_t>(i) * 4);
+
+            if (frames <= 0)
+            {
+                throw std::runtime_error("bad SKL animation frame count: " + std::string(sourceName));
+            }
+
+            totalAnimationFrames += frames;
+            skeleton.AnimationFrameCounts.push_back(frames);
+        }
+
+        if (totalAnimationFrames > skeleton.FrameCount)
+        {
+            throw std::runtime_error("SKL animation frames exceed track table: " + std::string(sourceName));
+        }
+
+        return skeleton;
+    }
+    FStatus ExceptionStatus(const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string("SKL parse failed: ") + e.what()); }
 }
-TResult<FSklSkeleton> LoadSklSkeletonFromBytes(const FByteArray& bytes, std::string_view sourceName) { try { return ParseSkeleton(bytes, sourceName); } catch (const std::exception& e) { return ExceptionStatus(e); } }
-TResult<FSklSkeleton> LoadSklSkeletonFromResource(const FResourceManager& resources, std::string_view logicalName) { auto blob = resources.Load(logicalName); if (!blob.IsOk()) { return blob.Status(); } return LoadSklSkeletonFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string()); }
+TResult<FSklSkeleton> LoadSklSkeletonFromBytes(const FByteArray& bytes, std::string_view sourceName)
+{
+    try
+    {
+        return ParseSkeleton(bytes, sourceName);
+    }
+    catch (const std::exception& e)
+    {
+        return ExceptionStatus(e);
+    }
+}
+TResult<FSklSkeleton> LoadSklSkeletonFromResource(const FResourceManager& resources, std::string_view logicalName)
+{
+    auto blob = resources.Load(logicalName);
+
+    if (!blob.IsOk())
+    {
+        return blob.Status();
+    }
+
+    return LoadSklSkeletonFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string());
 }

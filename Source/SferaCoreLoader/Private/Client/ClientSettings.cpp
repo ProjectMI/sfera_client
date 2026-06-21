@@ -2,16 +2,72 @@
 #include <algorithm>
 #include <cctype>
 
-namespace Sfera {
-namespace {
-std::string TrimSetting(std::string value) { auto ns = [](unsigned char ch) { return std::isspace(ch) == 0; }; value.erase(value.begin(), std::find_if(value.begin(), value.end(), ns)); value.erase(std::find_if(value.rbegin(), value.rend(), ns).base(), value.end()); return value; }
-int32 ReadIntSetting(const FConfigService& config, std::string_view key, int32 fallback) { auto value = config.FindInt(key); return value ? static_cast<int32>(*value) : fallback; }
-std::string ReadStringSetting(const FConfigService& config, std::string_view key, std::string fallback = {}) { auto value = config.FindString(key); return value ? TrimSetting(*value) : fallback; }
-std::optional<uint16> ReadPort(const FConfigService& config) { auto port = config.FindInt("PORT"); if (!port) { port = config.FindInt("SERVERPORT"); } if (!port) { port = config.FindInt("LOGINPORT"); } if (!port || *port <= 0 || *port > 65535) { return std::nullopt; } return static_cast<uint16>(*port); }
-std::optional<std::string> ReadHost(const FConfigService& config) { const char* keys[] = {"MAIN_URL", "SERVER", "HOST", "IP", "ADDRESS", "LAST_URL", "SRV00"}; for (const char* key : keys) { auto host = config.FindString(key); if (host && !TrimSetting(*host).empty()) { return TrimSetting(*host); } } return std::nullopt; }
+namespace
+{
+    std::string TrimSetting(std::string value)
+    {
+        auto ns = [](unsigned char ch)
+        {
+            return std::isspace(ch) == 0;
+        };
+        value.erase(value.begin(), std::find_if(value.begin(), value.end(), ns));
+        value.erase(std::find_if(value.rbegin(), value.rend(), ns).base(), value.end());
+        return value;
+    }
+    int32 ReadIntSetting(const FConfigService& config, std::string_view key, int32 fallback)
+    {
+        auto value = config.FindInt(key);
+        return value ? static_cast<int32>(*value) : fallback;
+    }
+    std::string ReadStringSetting(const FConfigService& config, std::string_view key, std::string fallback = {})
+    {
+        auto value = config.FindString(key);
+        return value ? TrimSetting(*value) : fallback;
+    }
+    std::optional<uint16> ReadPort(const FConfigService& config)
+    {
+        auto port = config.FindInt("PORT");
+
+        if (!port)
+        {
+            port = config.FindInt("SERVERPORT");
+        }
+
+        if (!port)
+        {
+            port = config.FindInt("LOGINPORT");
+        }
+
+        if (!port || *port <= 0 || *port > 65535)
+        {
+            return std::nullopt;
+        }
+
+        return static_cast<uint16>(*port);
+    }
+    std::optional<std::string> ReadHost(const FConfigService& config)
+    {
+        const char* keys[] =
+        {
+            "MAIN_URL", "SERVER", "HOST", "IP", "ADDRESS", "LAST_URL", "SRV00"
+        };
+
+        for (const char* key : keys)
+        {
+            auto host = config.FindString(key);
+
+            if (host && !TrimSetting(*host).empty())
+            {
+                return TrimSetting(*host);
+            }
+        }
+
+        return std::nullopt;
+    }
 }
 
-FClientSettings LoadClientSettings(const FConfigService& config) {
+FClientSettings LoadClientSettings(const FConfigService& config)
+{
     FClientSettings settings;
     settings.Width = std::clamp(ReadIntSetting(config, "XRES", settings.Width), 640, 8192);
     settings.Height = std::clamp(ReadIntSetting(config, "YRES", settings.Height), 480, 8192);
@@ -21,12 +77,21 @@ FClientSettings LoadClientSettings(const FConfigService& config) {
     settings.RegistrationUrl = ReadStringSetting(config, "REG_SRV");
     auto host = ReadHost(config);
     auto port = ReadPort(config);
-    if (host && port) { settings.Endpoint = FEndpoint{*host, *port}; }
+
+    if (host && port)
+    {
+        settings.Endpoint = FEndpoint
+        {
+            *host, *port
+        };
+    }
+
     settings.Title = settings.Endpoint ? "Sphere - " + settings.Endpoint->Host + ":" + std::to_string(settings.Endpoint->Port) : "Sphere";
     return settings;
 }
 
-FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings) {
+FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings)
+{
     FUiBootstrapDesc desc;
     desc.DesignWidth = 1024;
     desc.DesignHeight = 768;
@@ -38,5 +103,4 @@ FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings) {
     desc.ConnectionWindowResource = "effects/connection.ui";
     desc.PickPersonWindowResource = "effects/pickpers.ui";
     return desc;
-}
 }

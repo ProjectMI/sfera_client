@@ -16,16 +16,17 @@ struct IDirect3DTexture9;
 struct _D3DPRESENT_PARAMETERS_;
 struct HINSTANCE__;
 struct tagRECT;
-
-namespace Sfera {
 struct FDdsImage;
-struct FD3D9ShaderInventory {
+
+struct FD3D9ShaderInventory 
+{
     size_t VertexShaders = 0;
     size_t PixelShaders = 0;
     std::vector<std::string> Samples;
 };
 
-struct FD3D9TextureEntry {
+struct FD3D9TextureEntry 
+{
     IDirect3DTexture9* Texture = nullptr;
     int32 Width = 0;
     int32 Height = 0;
@@ -34,7 +35,8 @@ struct FD3D9TextureEntry {
     std::string Error;
 };
 
-class FD3D9RenderDevice {
+class FD3D9RenderDevice 
+{
 public:
     FD3D9RenderDevice();
     ~FD3D9RenderDevice();
@@ -78,4 +80,3 @@ private:
     HWND__* DeviceWindow = nullptr;
     bool ReportedD3DXMissing = false;
 };
-}

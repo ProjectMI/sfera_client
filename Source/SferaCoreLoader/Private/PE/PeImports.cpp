@@ -5,13 +5,179 @@
 #include <stdexcept>
 #include <utility>
 
-namespace Sfera {
-namespace {
-struct FRvaSize { uint32 Rva = 0; uint32 Size = 0; };
-std::string CStringAt(const FByteArray& buffer, size_t offset) { size_t cursor = offset; return Binary::ReadCString(buffer, cursor); }
-size_t RvaToFileOffset(const std::vector<FPeSection>& sections, uint32 rva) { for (const auto& section : sections) { const auto mappedSize = std::max(section.VirtualSize, section.RawSize); if (rva >= section.VirtualAddress && rva < section.VirtualAddress + mappedSize) { return section.RawOffset + (rva - section.VirtualAddress); } } throw std::runtime_error("RVA does not map to a section"); }
-std::string OrdinalName(uint16 ordinal) { std::ostringstream out; out << '#' << ordinal; return out.str(); }
-FPeImage Parse(const FByteArray& buffer, std::string_view sourceName) { if (buffer.size() < 0x40 || Binary::U16LE(buffer, 0) != 0x5A4D) { throw std::runtime_error(std::string(sourceName) + " is not an MZ executable"); } const auto peOffset = Binary::U32LE(buffer, 0x3C); Binary::RequireRange(buffer, peOffset, 4 + 20, "PE header"); if (Binary::U32LE(buffer, peOffset) != 0x00004550) { throw std::runtime_error(std::string(sourceName) + " is not a PE executable"); } const auto coff = peOffset + 4; FPeImage image; image.SourcePath = FPath(std::string(sourceName)); image.Machine = Binary::U16LE(buffer, coff); const auto sectionCount = Binary::U16LE(buffer, coff + 2); const auto optionalSize = Binary::U16LE(buffer, coff + 16); const auto optional = coff + 20; Binary::RequireRange(buffer, optional, optionalSize, "PE optional header"); const auto magic = Binary::U16LE(buffer, optional); image.Pe32Plus = magic == 0x20B; if (magic != 0x10B && magic != 0x20B) { throw std::runtime_error("unsupported PE optional header magic"); } image.EntryPointRva = Binary::U32LE(buffer, optional + 16); if (image.Pe32Plus) { image.ImageBase64 = static_cast<uint64>(Binary::U32LE(buffer, optional + 24)) | (static_cast<uint64>(Binary::U32LE(buffer, optional + 28)) << 32); } else { image.ImageBase32 = Binary::U32LE(buffer, optional + 28); } const auto numberOfRvaAndSizes = Binary::U32LE(buffer, optional + (image.Pe32Plus ? 108 : 92)); const auto dataDirectory = optional + (image.Pe32Plus ? 112 : 96); if (numberOfRvaAndSizes < 2) { return image; } const FRvaSize importDirectory{Binary::U32LE(buffer, dataDirectory + 8), Binary::U32LE(buffer, dataDirectory + 12)}; const auto sectionTable = optional + optionalSize; Binary::RequireRange(buffer, sectionTable, static_cast<size_t>(sectionCount) * 40, "PE section table"); image.Sections.reserve(sectionCount); for (uint16 i = 0; i < sectionCount; ++i) { const auto off = sectionTable + static_cast<uint32>(i) * 40; FPeSection section; section.Name = Binary::ReadFixedString(buffer, off, 8); section.VirtualSize = Binary::U32LE(buffer, off + 8); section.VirtualAddress = Binary::U32LE(buffer, off + 12); section.RawSize = Binary::U32LE(buffer, off + 16); section.RawOffset = Binary::U32LE(buffer, off + 20); image.Sections.push_back(std::move(section)); } if (importDirectory.Rva == 0 || importDirectory.Size == 0) { return image; } size_t descriptorOffset = RvaToFileOffset(image.Sections, importDirectory.Rva); while (true) { Binary::RequireRange(buffer, descriptorOffset, 20, "import descriptor"); const auto originalFirstThunk = Binary::U32LE(buffer, descriptorOffset); const auto nameRva = Binary::U32LE(buffer, descriptorOffset + 12); const auto firstThunk = Binary::U32LE(buffer, descriptorOffset + 16); if (originalFirstThunk == 0 && nameRva == 0 && firstThunk == 0) { break; } FPeImportLibrary library; library.Name = CStringAt(buffer, RvaToFileOffset(image.Sections, nameRva)); const auto thunkRva = originalFirstThunk != 0 ? originalFirstThunk : firstThunk; size_t thunkOffset = RvaToFileOffset(image.Sections, thunkRva); uint32 thunkIndex = 0; const uint32 thunkStride = image.Pe32Plus ? 8U : 4U; while (true) { const auto thunkValue = image.Pe32Plus ? Binary::U64LE(buffer, thunkOffset) : Binary::U32LE(buffer, thunkOffset); if (thunkValue == 0) { break; } FPeImportSymbol symbol; symbol.ThunkRva = firstThunk + thunkIndex * thunkStride; const auto ordinalMask = image.Pe32Plus ? 0x8000000000000000ULL : 0x80000000ULL; if ((thunkValue & ordinalMask) != 0) { const auto ordinal = static_cast<uint16>(thunkValue & 0xFFFFU); symbol.Ordinal = ordinal; symbol.Name = OrdinalName(ordinal); } else { const auto importByName = RvaToFileOffset(image.Sections, static_cast<uint32>(thunkValue)); symbol.Name = CStringAt(buffer, importByName + 2); } library.Symbols.push_back(std::move(symbol)); thunkOffset += thunkStride; ++thunkIndex; } image.Imports.push_back(std::move(library)); descriptorOffset += 20; } return image; }
+namespace
+{
+    struct FRvaSize
+    {
+        uint32 Rva = 0;
+        uint32 Size = 0;
+    };
+    std::string CStringAt(const FByteArray& buffer, size_t offset)
+    {
+        size_t cursor = offset;
+        return Binary::ReadCString(buffer, cursor);
+    }
+    size_t RvaToFileOffset(const std::vector<FPeSection>& sections, uint32 rva)
+    {
+        for (const auto& section : sections)
+        {
+            const auto mappedSize = std::max(section.VirtualSize, section.RawSize);
+
+            if (rva >= section.VirtualAddress && rva < section.VirtualAddress + mappedSize)
+            {
+                return section.RawOffset + (rva - section.VirtualAddress);
+            }
+        }
+
+        throw std::runtime_error("RVA does not map to a section");
+    }
+    std::string OrdinalName(uint16 ordinal)
+    {
+        std::ostringstream out;
+        out << '#' << ordinal;
+        return out.str();
+    }
+    FPeImage Parse(const FByteArray& buffer, std::string_view sourceName)
+    {
+        if (buffer.size() < 0x40 || Binary::U16LE(buffer, 0) != 0x5A4D)
+        {
+            throw std::runtime_error(std::string(sourceName) + " is not an MZ executable");
+        }
+
+        const auto peOffset = Binary::U32LE(buffer, 0x3C);
+        Binary::RequireRange(buffer, peOffset, 4 + 20, "PE header");
+
+        if (Binary::U32LE(buffer, peOffset) != 0x00004550)
+        {
+            throw std::runtime_error(std::string(sourceName) + " is not a PE executable");
+        }
+
+        const auto coff = peOffset + 4;
+        FPeImage image;
+        image.SourcePath = FPath(std::string(sourceName));
+        image.Machine = Binary::U16LE(buffer, coff);
+        const auto sectionCount = Binary::U16LE(buffer, coff + 2);
+        const auto optionalSize = Binary::U16LE(buffer, coff + 16);
+        const auto optional = coff + 20;
+        Binary::RequireRange(buffer, optional, optionalSize, "PE optional header");
+        const auto magic = Binary::U16LE(buffer, optional);
+        image.Pe32Plus = magic == 0x20B;
+
+        if (magic != 0x10B && magic != 0x20B)
+        {
+            throw std::runtime_error("unsupported PE optional header magic");
+        }
+
+        image.EntryPointRva = Binary::U32LE(buffer, optional + 16);
+
+        if (image.Pe32Plus)
+        {
+            image.ImageBase64 = static_cast<uint64>(Binary::U32LE(buffer, optional + 24)) | (static_cast<uint64>(Binary::U32LE(buffer, optional + 28)) << 32);
+        }
+        else
+        {
+            image.ImageBase32 = Binary::U32LE(buffer, optional + 28);
+        }
+
+        const auto numberOfRvaAndSizes = Binary::U32LE(buffer, optional + (image.Pe32Plus ? 108 : 92));
+        const auto dataDirectory = optional + (image.Pe32Plus ? 112 : 96);
+
+        if (numberOfRvaAndSizes < 2)
+        {
+            return image;
+        }
+
+        const FRvaSize importDirectory
+        {
+            Binary::U32LE(buffer, dataDirectory + 8), Binary::U32LE(buffer, dataDirectory + 12)
+        };
+        const auto sectionTable = optional + optionalSize;
+        Binary::RequireRange(buffer, sectionTable, static_cast<size_t>(sectionCount) * 40, "PE section table");
+        image.Sections.reserve(sectionCount);
+
+        for (uint16 i = 0; i < sectionCount; ++i)
+        {
+            const auto off = sectionTable + static_cast<uint32>(i) * 40;
+            FPeSection section;
+            section.Name = Binary::ReadFixedString(buffer, off, 8);
+            section.VirtualSize = Binary::U32LE(buffer, off + 8);
+            section.VirtualAddress = Binary::U32LE(buffer, off + 12);
+            section.RawSize = Binary::U32LE(buffer, off + 16);
+            section.RawOffset = Binary::U32LE(buffer, off + 20);
+            image.Sections.push_back(std::move(section));
+        }
+
+        if (importDirectory.Rva == 0 || importDirectory.Size == 0)
+        {
+            return image;
+        }
+
+        size_t descriptorOffset = RvaToFileOffset(image.Sections, importDirectory.Rva);
+
+        while (true)
+        {
+            Binary::RequireRange(buffer, descriptorOffset, 20, "import descriptor");
+            const auto originalFirstThunk = Binary::U32LE(buffer, descriptorOffset);
+            const auto nameRva = Binary::U32LE(buffer, descriptorOffset + 12);
+            const auto firstThunk = Binary::U32LE(buffer, descriptorOffset + 16);
+
+            if (originalFirstThunk == 0 && nameRva == 0 && firstThunk == 0)
+            {
+                break;
+            }
+
+            FPeImportLibrary library;
+            library.Name = CStringAt(buffer, RvaToFileOffset(image.Sections, nameRva));
+            const auto thunkRva = originalFirstThunk != 0 ? originalFirstThunk : firstThunk;
+            size_t thunkOffset = RvaToFileOffset(image.Sections, thunkRva);
+            uint32 thunkIndex = 0;
+            const uint32 thunkStride = image.Pe32Plus ? 8U : 4U;
+
+            while (true)
+            {
+                const auto thunkValue = image.Pe32Plus ? Binary::U64LE(buffer, thunkOffset) : Binary::U32LE(buffer, thunkOffset);
+
+                if (thunkValue == 0)
+                {
+                    break;
+                }
+
+                FPeImportSymbol symbol;
+                symbol.ThunkRva = firstThunk + thunkIndex * thunkStride;
+                const auto ordinalMask = image.Pe32Plus ? 0x8000000000000000ULL : 0x80000000ULL;
+
+                if ((thunkValue & ordinalMask) != 0)
+                {
+                    const auto ordinal = static_cast<uint16>(thunkValue & 0xFFFFU);
+                    symbol.Ordinal = ordinal;
+                    symbol.Name = OrdinalName(ordinal);
+                }
+                else
+                {
+                    const auto importByName = RvaToFileOffset(image.Sections, static_cast<uint32>(thunkValue));
+                    symbol.Name = CStringAt(buffer, importByName + 2);
+                }
+
+                library.Symbols.push_back(std::move(symbol));
+                thunkOffset += thunkStride;
+                ++thunkIndex;
+            }
+
+            image.Imports.push_back(std::move(library));
+            descriptorOffset += 20;
+        }
+
+        return image;
+    }
 }
-TResult<FPeImage> ParsePeImportsFromBytes(const FByteArray& bytes, std::string_view sourceName) { try { return Parse(bytes, sourceName); } catch (const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string("PE import parse failed: ") + e.what()); } }
+TResult<FPeImage> ParsePeImportsFromBytes(const FByteArray& bytes, std::string_view sourceName)
+{
+    try
+    {
+        return Parse(bytes, sourceName);
+    }
+    catch (const std::exception& e)
+    {
+        return FStatus::Error(EStatusCode::InvalidData, std::string("PE import parse failed: ") + e.what());
+    }
 }

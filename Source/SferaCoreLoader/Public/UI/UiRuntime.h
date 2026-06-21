@@ -12,21 +12,50 @@
 
 struct tagRECT;
 
-namespace Sfera {
-struct FUiPoint { int32 X = 0; int32 Y = 0; };
-struct FUiSize { int32 W = 0; int32 H = 0; };
-struct FUiRect { int32 X = 0; int32 Y = 0; int32 W = 0; int32 H = 0; };
-struct FUiRectF { float X = 0.0f; float Y = 0.0f; float W = 0.0f; float H = 0.0f; };
-struct FUiTexCoord { int32 U = 0; int32 V = 0; };
+struct FUiPoint 
+{ 
+    int32 X = 0;
+    int32 Y = 0; 
+};
 
-struct FUiColor {
+struct FUiSize 
+{ 
+    int32 W = 0;
+    int32 H = 0;
+};
+
+struct FUiRect 
+{ 
+    int32 X = 0;
+    int32 Y = 0;
+    int32 W = 0;
+    int32 H = 0; 
+};
+
+struct FUiRectF 
+{ 
+    float X = 0.0f; 
+    float Y = 0.0f; 
+    float W = 0.0f; 
+    float H = 0.0f; 
+};
+
+struct FUiTexCoord 
+{ 
+    int32 U = 0; 
+    int32 V = 0; 
+};
+
+struct FUiColor 
+{
     int32 R = 255;
     int32 G = 255;
     int32 B = 255;
     int32 A = 255;
 };
 
-struct FUiSpritePiece {
+struct FUiSpritePiece 
+{
     std::string TextureName;
     int32 SrcLeft = 0;
     int32 SrcTop = 0;
@@ -40,14 +69,16 @@ struct FUiSpritePiece {
     std::array<FUiTexCoord, 4> TexCoords{};
 };
 
-struct FUiSpriteDef {
+struct FUiSpriteDef
+{
     std::string Name;
     int32 Width = 0;
     int32 Height = 0;
     std::vector<FUiSpritePiece> Pieces;
 };
 
-struct FUiSubButtonDef {
+struct FUiSubButtonDef
+{
     int32 X = 0;
     int32 Y = 0;
     int32 W = 0;
@@ -58,7 +89,8 @@ struct FUiSubButtonDef {
     std::string UncheckedImage;
 };
 
-struct FUiControlDef {
+struct FUiControlDef
+{
     int32 Id = 0;
     std::string ClassId;
     FUiRect Rect;
@@ -101,7 +133,8 @@ struct FUiControlDef {
     int32 Group = 0;
 };
 
-struct FUiWindowDef {
+struct FUiWindowDef 
+{
     std::string Name;
     std::string TextKey;
     FUiRect Rect;
@@ -125,7 +158,8 @@ struct FUiWindowDef {
 
 using FUiStringTable = std::unordered_map<std::string, std::string>;
 
-struct FUiActionState {
+struct FUiActionState 
+{
     int32 HoverControlId = 0;
     int32 PressedControlId = 0;
     int32 FocusedControlId = 7;
@@ -138,10 +172,23 @@ struct FUiActionState {
     int32 SpinPressedDirection = 0;
 };
 
-enum class EUiRuntimeMode { Login, CharacterSelect, Game };
-enum class EUiModalDialog { None, CharacterExit, CharacterCreate, CharacterDelete };
+enum class EUiRuntimeMode 
+{
+    Login,
+    CharacterSelect,
+    Game 
+};
 
-struct FUiBootstrapDesc {
+enum class EUiModalDialog 
+{ 
+    None, 
+    CharacterExit, 
+    CharacterCreate,
+    CharacterDelete 
+};
+
+struct FUiBootstrapDesc
+{
     std::string StringsResource = "language/strings.ui";
     std::string ConnectionWindowResource = "effects/connection.ui";
     std::string PickPersonWindowResource = "effects/pickpers.ui";
@@ -155,7 +202,8 @@ struct FUiBootstrapDesc {
     int32 Lang = 0;
 };
 
-struct FCharacterUiAppearance {
+struct FCharacterUiAppearance 
+{
     int32 Gender = 0;
     int32 Face = 0;
     int32 Hair = 0;
@@ -171,7 +219,8 @@ struct FCharacterUiAppearance {
     int32 Air = 0;
 };
 
-class FUiRuntime {
+class FUiRuntime 
+{
 public:
     FStatus Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger = nullptr);
     void SetStage(std::string stage, float progress);
@@ -288,4 +337,3 @@ private:
 
 TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& resources, std::string_view logicalName);
 TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources, std::string_view logicalName);
-}

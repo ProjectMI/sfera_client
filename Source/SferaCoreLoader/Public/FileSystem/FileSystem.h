@@ -3,14 +3,15 @@
 #include "Core/Types.h"
 #include <unordered_map>
 
-namespace Sfera {
-struct FFileRecord {
+struct FFileRecord 
+{
     FPath AbsolutePath;
     FPath RelativePath;
     uint64 Size = 0;
 };
 
-class FFileSystem {
+class FFileSystem
+{
 public:
     explicit FFileSystem(FPath root = {});
     void SetRoot(FPath root);
@@ -25,4 +26,3 @@ private:
     std::vector<FFileRecord> Files;
     std::unordered_map<std::string, size_t> Lookup;
 };
-}

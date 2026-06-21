@@ -15,15 +15,16 @@
 #include <string>
 #include <thread>
 
-namespace Sfera {
-struct FClientFrontendDesc {
+struct FClientFrontendDesc 
+{
     FClientSettings Settings;
     std::optional<FEndpoint> Endpoint;
     bool TryNetworkProbe = false;
     uint32 NetworkConnectTimeoutMs = 2500;
 };
 
-class FClientFrontendRuntime {
+class FClientFrontendRuntime 
+{
 public:
     explicit FClientFrontendRuntime(FLogger* logger = nullptr);
     ~FClientFrontendRuntime();
@@ -88,4 +89,3 @@ private:
     EClientSessionStage LastSessionStage = EClientSessionStage::Idle;
     std::chrono::steady_clock::time_point LastPaint = std::chrono::steady_clock::now();
 };
-}

@@ -3,8 +3,8 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include <unordered_map>
 
-namespace Sfera {
-class FAssetCatalog {
+class FAssetCatalog 
+{
 public:
     void BuildFromFileSystem(const FFileSystem& fileSystem);
     std::vector<FFileRecord> FindByKind(EResourceKind kind) const;
@@ -15,4 +15,3 @@ private:
     std::vector<FFileRecord> Records;
     std::unordered_map<std::string, size_t> Lookup;
 };
-}

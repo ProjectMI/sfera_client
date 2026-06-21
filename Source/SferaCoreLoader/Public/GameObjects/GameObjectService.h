@@ -4,8 +4,8 @@
 #include "MBC/MbcNativeRegistry.h"
 #include "ResourceLoader/ResourceManager.h"
 
-namespace Sfera {
-class FGameObjectService {
+class FGameObjectService 
+{
 public:
     explicit FGameObjectService(const FResourceManager& resources);
     FStatus Initialize(FLogger* logger = nullptr);
@@ -26,4 +26,3 @@ private:
     FObjectParamManager ParamManager;
     FGameObjectRegistry ObjectRegistry;
 };
-}

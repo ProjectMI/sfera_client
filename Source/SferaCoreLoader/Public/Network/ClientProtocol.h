@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-namespace Sfera {
-struct FProtocolProbeResult {
+struct FProtocolProbeResult 
+{
     size_t Bytes = 0;
     bool LooksLikeU16Frame = false;
     bool LooksLikeU32Frame = false;
@@ -15,9 +15,9 @@ struct FProtocolProbeResult {
     std::string AsciiPreview;
 };
 
-class FClientProtocolProbe {
+class FClientProtocolProbe 
+{
 public:
     FProtocolProbeResult Inspect(const FByteArray& bytes) const;
     static std::string Describe(const FProtocolProbeResult& result);
 };
-}

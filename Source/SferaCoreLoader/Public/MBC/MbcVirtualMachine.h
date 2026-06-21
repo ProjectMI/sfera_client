@@ -3,11 +3,33 @@
 #include "MBC/MbcOpcode.h"
 #include "MBC/MbcProject.h"
 
-namespace Sfera {
-struct FMbcExecutionLimits { uint32 MaxInstructions = 100000; bool AllowNativeSideEffects = false; };
-struct FMbcExecutionResult { FStatus Status = FStatus::Ok(); uint32 Instructions = 0; bool Halted = false; std::vector<FMbcRuntimeEvent> Events; };
-struct FMbcRuntimeFrame { uint32 ModuleIndex = 0; uint32 ProgramIndex = 0; uint32 Pc = 0; std::vector<uint32> ReturnStack; std::vector<FMbcValue> Stack; FByteArray Data; bool Running = false; };
-class FMbcVirtualMachine {
+struct FMbcExecutionLimits
+{
+    uint32 MaxInstructions = 100000; 
+    bool AllowNativeSideEffects = false;
+};
+
+struct FMbcExecutionResult 
+{ 
+    FStatus Status = FStatus::Ok(); 
+    uint32 Instructions = 0;
+    bool Halted = false; 
+    std::vector<FMbcRuntimeEvent> Events; 
+};
+
+struct FMbcRuntimeFrame 
+{ 
+    uint32 ModuleIndex = 0;
+    uint32 ProgramIndex = 0;
+    uint32 Pc = 0;
+    std::vector<uint32> ReturnStack; 
+    std::vector<FMbcValue> Stack;
+    FByteArray Data;
+    bool Running = false;
+};
+
+class FMbcVirtualMachine 
+{
 public:
     explicit FMbcVirtualMachine(FMbcNativeRegistry& registry);
     FStatus LoadProject(const FMbcProject* project);
@@ -31,4 +53,3 @@ private:
     const FMbcModule* LoadedModule = nullptr;
     std::vector<FMbcRuntimeEvent> Events;
 };
-}

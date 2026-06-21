@@ -1,7 +1,17 @@
 #pragma once
 #include "Core/Types.h"
 
-namespace Sfera {
-struct FEndpoint { std::string Host; uint16 Port = 0; };
-enum class EConnectionState { Closed, Resolving, Connecting, Connected, Failed };
-}
+struct FEndpoint 
+{ 
+	std::string Host;
+	uint16 Port = 0; 
+};
+
+enum class EConnectionState 
+{ 
+	Closed, 
+	Resolving, 
+	Connecting, 
+	Connected, 
+	Failed 
+};

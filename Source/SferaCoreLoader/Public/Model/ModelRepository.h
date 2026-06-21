@@ -6,11 +6,32 @@
 #include "ResourceLoader/ResourceManager.h"
 #include <unordered_map>
 
-namespace Sfera {
-enum class EModelAssetKind { Unknown, Mdl, Chr, Skl };
-struct FModelAssetRecord { std::string LogicalName; FPath RelativePath; EModelAssetKind Kind = EModelAssetKind::Unknown; uint64 Size = 0; };
-struct FModelRepositoryStats { size_t MdlCount = 0; size_t ChrCount = 0; size_t SklCount = 0; size_t TotalCount = 0; };
-class FModelRepository {
+enum class EModelAssetKind
+{ 
+    Unknown,
+    Mdl, 
+    Chr, 
+    Skl 
+};
+
+struct FModelAssetRecord
+{ 
+    std::string LogicalName; 
+    FPath RelativePath; 
+    EModelAssetKind Kind = EModelAssetKind::Unknown; 
+    uint64 Size = 0; 
+};
+
+struct FModelRepositoryStats
+{ 
+    size_t MdlCount = 0; 
+    size_t ChrCount = 0; 
+    size_t SklCount = 0; 
+    size_t TotalCount = 0; 
+};
+
+class FModelRepository 
+{
 public:
     explicit FModelRepository(const FResourceManager& resources);
     void BuildCatalog(FLogger* logger = nullptr);
@@ -27,5 +48,5 @@ private:
     std::vector<FModelAssetRecord> Records;
     std::unordered_map<std::string, size_t> Lookup;
 };
+
 const char* ToString(EModelAssetKind kind);
-}

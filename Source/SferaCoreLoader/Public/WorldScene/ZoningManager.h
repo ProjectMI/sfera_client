@@ -3,9 +3,21 @@
 #include "ResourceLoader/ResourceManager.h"
 #include "WorldScene/WorldTypes.h"
 
-namespace Sfera {
-struct FZoningDocument { std::string Name; std::vector<FWorldZoneParams> Zones; std::vector<std::string> Warnings; std::vector<std::string> Notes; size_t RawEntryCount = 0; size_t ScopeCount = 0; size_t ZoneFieldCount = 0; size_t ContainerDeclarationCount = 0; std::vector<std::string> ScopeSamples; };
-class FZoningManager {
+struct FZoningDocument
+{
+    std::string Name;
+    std::vector<FWorldZoneParams> Zones;
+    std::vector<std::string> Warnings;
+    std::vector<std::string> Notes;
+    size_t RawEntryCount = 0;
+    size_t ScopeCount = 0;
+    size_t ZoneFieldCount = 0;
+    size_t ContainerDeclarationCount = 0;
+    std::vector<std::string> ScopeSamples;
+};
+
+class FZoningManager 
+{
 public:
     FStatus LoadDefault(const FResourceManager& resources, FLogger* logger = nullptr);
     FStatus LoadOne(const FResourceManager& resources, std::string_view logicalName, FLogger* logger = nullptr);
@@ -21,4 +33,3 @@ private:
     std::vector<FZoningDocument> LoadedDocuments;
     std::vector<FWorldZoneParams> FlattenedZones;
 };
-}

@@ -2,8 +2,8 @@
 #include "MBC/MbcLinker.h"
 #include "MBC/MbcModule.h"
 
-namespace Sfera {
-class FMbcProject {
+class FMbcProject 
+{
 public:
     FStatus AddModule(std::string name, FByteArray bytes);
     void BuildLinker();
@@ -18,4 +18,3 @@ private:
     std::vector<FMbcModule> ModulesLoaded;
     FMbcProjectLinker ProjectLinker;
 };
-}

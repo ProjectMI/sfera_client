@@ -3,8 +3,8 @@
 #include "Network/PacketBuffer.h"
 #include "Network/TcpSocket.h"
 
-namespace Sfera {
-class FConnectManager {
+class FConnectManager 
+{
 public:
     explicit FConnectManager(const FConfigService& config);
     std::optional<FEndpoint> ReadEndpointFromConfig() const;
@@ -20,4 +20,3 @@ private:
     FTcpSocket Socket;
     FPacketBuffer Packets;
 };
-}

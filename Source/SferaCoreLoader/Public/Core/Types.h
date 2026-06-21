@@ -10,7 +10,6 @@
 #include <string_view>
 #include <vector>
 
-namespace Sfera {
 using uint8 = std::uint8_t;
 using uint16 = std::uint16_t;
 using uint32 = std::uint32_t;
@@ -22,9 +21,19 @@ using int64 = std::int64_t;
 using FByteArray = std::vector<uint8>;
 using FPath = std::filesystem::path;
 
-enum class EStatusCode { Ok, NotFound, InvalidData, Unsupported, IoError, NetworkError, RuntimeError };
+enum class EStatusCode 
+{ 
+    Ok,
+    NotFound,
+    InvalidData,
+    Unsupported, 
+    IoError,
+    NetworkError, 
+    RuntimeError 
+};
 
-class FStatus {
+class FStatus 
+{
 public:
     FStatus() = default;
     FStatus(EStatusCode code, std::string message) : CodeValue(code), MessageValue(std::move(message)) {}
@@ -39,7 +48,8 @@ private:
 };
 
 template<class T>
-class TResult {
+class TResult 
+{
 public:
     TResult(T value) : ValueData(std::move(value)), StatusData(FStatus::Ok()) {}
     TResult(FStatus status) : StatusData(std::move(status)) {}
@@ -51,4 +61,3 @@ private:
     std::optional<T> ValueData;
     FStatus StatusData;
 };
-}

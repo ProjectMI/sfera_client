@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
-namespace Sfera {
 using FCharacterSlotInfo = FCharacterSlot;
+struct FLoginProbeResult;
 
-
-struct FCharacterActionResult {
+struct FCharacterActionResult 
+{
     bool Ok = false;
     bool Disconnected = false;
     int32 PacketCount = 0;
@@ -20,9 +20,8 @@ struct FCharacterActionResult {
     std::string Message;
 };
 
-struct FLoginProbeResult;
-
-class FServerSession {
+class FServerSession 
+{
 public:
     ~FServerSession();
     FServerSession(const FServerSession&) = delete;
@@ -43,7 +42,8 @@ private:
     friend FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring& login, const std::wstring& password, const FCharacterAppearanceRules& appearanceRules, int32 timeoutMs);
 };
 
-struct FLoginProbeResult {
+struct FLoginProbeResult 
+{
     bool Connected = false;
     bool LegacyHandshake = false;
     bool CharacterSelectReady = false;
@@ -60,4 +60,3 @@ struct FLoginProbeResult {
 };
 
 FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring& login, const std::wstring& password, const FCharacterAppearanceRules& appearanceRules, int32 timeoutMs = 2500);
-}

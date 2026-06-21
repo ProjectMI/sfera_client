@@ -3,10 +3,16 @@
 #include <fstream>
 #include <mutex>
 
-namespace Sfera {
-enum class ELogLevel { Trace, Info, Warning, Error };
+enum class ELogLevel 
+{ 
+    Trace, 
+    Info, 
+    Warning, 
+    Error 
+};
 
-class FLogger {
+class FLogger 
+{
 public:
     FLogger() = default;
     explicit FLogger(FPath logPath);
@@ -20,4 +26,3 @@ private:
     std::mutex Mutex;
     std::ofstream Stream;
 };
-}

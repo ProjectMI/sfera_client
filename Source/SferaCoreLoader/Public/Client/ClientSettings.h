@@ -5,8 +5,8 @@
 #include <optional>
 #include <string>
 
-namespace Sfera {
-struct FClientSettings {
+struct FClientSettings 
+{
     int32 Width = 1024;
     int32 Height = 768;
     int32 Lang = 0;
@@ -19,4 +19,3 @@ struct FClientSettings {
 
 FClientSettings LoadClientSettings(const FConfigService& config);
 FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings);
-}

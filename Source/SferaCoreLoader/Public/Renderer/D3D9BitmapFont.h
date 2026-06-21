@@ -12,8 +12,8 @@
 struct IDirect3DDevice9;
 struct IDirect3DTexture9;
 
-namespace Sfera {
-struct FD3D9BitmapGlyph {
+struct FD3D9BitmapGlyph 
+{
     int32 Advance = 0;
     int32 Height = 0;
     int32 XOffset = 0;
@@ -24,7 +24,8 @@ struct FD3D9BitmapGlyph {
     int32 SourceH = 0;
 };
 
-class FD3D9BitmapFont {
+class FD3D9BitmapFont 
+{
 public:
     FD3D9BitmapFont() = default;
     FD3D9BitmapFont(const FD3D9BitmapFont&) = delete;
@@ -52,7 +53,8 @@ private:
     std::array<FD3D9BitmapGlyph, 224> Glyphs{};
 };
 
-class FD3D9BitmapFontCatalog {
+class FD3D9BitmapFontCatalog 
+{
 public:
     void Release();
     void LoadConfig(const FResourceManager& resources, FLogger* logger);
@@ -64,4 +66,3 @@ private:
     std::unordered_map<std::string, std::unique_ptr<FD3D9BitmapFont>> LoadedFonts;
     bool ConfigLoaded = false;
 };
-}

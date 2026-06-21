@@ -5,10 +5,19 @@
 #include <optional>
 #include <string>
 
-namespace Sfera {
-enum class EClientSessionStage { Idle, EndpointResolved, Connecting, Connected, ProbeReceiving, Failed, Closed };
+enum class EClientSessionStage 
+{ 
+    Idle,
+    EndpointResolved,
+    Connecting, 
+    Connected, 
+    ProbeReceiving, 
+    Failed, 
+    Closed 
+};
 
-struct FClientSessionSnapshot {
+struct FClientSessionSnapshot 
+{
     EClientSessionStage Stage = EClientSessionStage::Idle;
     std::string StageText;
     std::optional<FEndpoint> Endpoint;
@@ -17,7 +26,8 @@ struct FClientSessionSnapshot {
     std::string LastError;
 };
 
-class FClientSession {
+class FClientSession 
+{
 public:
     explicit FClientSession(FLogger* logger = nullptr);
     void SetLogger(FLogger* logger) { Log = logger; }
@@ -34,4 +44,3 @@ private:
     FPacketBuffer U16Frames;
     FClientSessionSnapshot State;
 };
-}

@@ -3,8 +3,8 @@
 #include "FileSystem/FileSystem.h"
 #include "ResourceLoader/AssetCatalog.h"
 
-namespace Sfera {
-class FResourceManager {
+class FResourceManager 
+{
 public:
     FResourceManager(const FFileSystem& fileSystem, const FCompressionService& compression);
     void BuildCatalog(FLogger* logger = nullptr);
@@ -15,4 +15,3 @@ private:
     const FCompressionService& Compression;
     FAssetCatalog AssetCatalog;
 };
-}

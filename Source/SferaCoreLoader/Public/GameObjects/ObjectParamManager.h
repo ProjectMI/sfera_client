@@ -4,8 +4,8 @@
 #include "ResourceLoader/ResourceManager.h"
 #include <unordered_map>
 
-namespace Sfera {
-enum class EObjectParamSourceKind {
+enum class EObjectParamSourceKind 
+{
     None,
     ExplicitDocument,
     ModelParamTable,
@@ -13,7 +13,8 @@ enum class EObjectParamSourceKind {
     GroupTable
 };
 
-struct FObjectParamSource {
+struct FObjectParamSource 
+{
     std::string LogicalName;
     EObjectParamSourceKind Kind = EObjectParamSourceKind::None;
     size_t EntryCount = 0;
@@ -23,7 +24,8 @@ struct FObjectParamSource {
     bool Loaded = false;
 };
 
-class FObjectParamManager {
+class FObjectParamManager 
+{
 public:
     FStatus Open(const FResourceManager& resources, std::string_view logicalName, FLogger* logger = nullptr);
     FStatus OpenKnownConfigs(const FResourceManager& resources, FLogger* logger = nullptr);
@@ -54,4 +56,3 @@ private:
     std::vector<FObjectParamSource> LoadedSources;
     std::unordered_map<std::string, FGameObjectDescriptor> Objects;
 };
-}

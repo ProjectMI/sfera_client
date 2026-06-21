@@ -2,8 +2,8 @@
 #include "Network/NetworkTypes.h"
 #include <cstdint>
 
-namespace Sfera {
-class FTcpSocket {
+class FTcpSocket 
+{
 public:
     FTcpSocket();
     ~FTcpSocket();
@@ -19,4 +19,3 @@ private:
     EConnectionState State = EConnectionState::Closed;
     uintptr_t SocketHandle = ~uintptr_t(0);
 };
-}

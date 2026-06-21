@@ -13,8 +13,8 @@
 #include "ResourceLoader/ResourceManager.h"
 #include <memory>
 
-namespace Sfera {
-class FApplication {
+class FApplication 
+{
 public:
     FApplication();
     int Run();
@@ -36,4 +36,3 @@ private:
     FMbcNativeRegistry MbcNatives;
     FMbcProject MbcProject;
 };
-}

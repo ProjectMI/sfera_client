@@ -2,10 +2,23 @@
 #include "Core/Types.h"
 #include "MBC/MbcTypes.h"
 
-namespace Sfera {
-struct FMbcStringRef { uint32 Offset = 0; std::string Value; };
-struct FMbcHeaderProbe { bool HasKnownMagic = false; uint32 Version = 4; uint32 CodeOffset = Mbc::CodeFileOffset; uint32 CodeSize = 0; std::string Commentary; };
-class FMbcModule {
+struct FMbcStringRef
+{ 
+    uint32 Offset = 0; 
+    std::string Value; 
+};
+
+struct FMbcHeaderProbe 
+{ 
+    bool HasKnownMagic = false; 
+    uint32 Version = 4;
+    uint32 CodeOffset = Mbc::CodeFileOffset;
+    uint32 CodeSize = 0; 
+    std::string Commentary; 
+};
+
+class FMbcModule 
+{
 public:
     FStatus Load(std::string name, FByteArray bytes);
     const std::string& Name() const { return ModuleName; }
@@ -38,4 +51,3 @@ private:
     std::vector<FMbcStringRef> StringsFound;
     bool Valid = false;
 };
-}

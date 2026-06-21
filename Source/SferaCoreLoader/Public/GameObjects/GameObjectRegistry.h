@@ -2,8 +2,8 @@
 #include "GameObjects/GameObjectTypes.h"
 #include <unordered_map>
 
-namespace Sfera {
-class FGameObjectRegistry {
+class FGameObjectRegistry 
+{
 public:
     uint32 Create(FGameObjectState state);
     bool Destroy(uint32 handle);
@@ -15,4 +15,3 @@ private:
     uint32 NextHandle = 1;
     std::unordered_map<uint32, FGameObjectState> Objects;
 };
-}

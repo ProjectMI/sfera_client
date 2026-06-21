@@ -4,11 +4,22 @@
 #include <functional>
 #include <unordered_map>
 
-namespace Sfera {
 class FMbcVirtualMachine;
-struct FMbcNativeContext { FMbcVirtualMachine* Vm = nullptr; const FByteArray* Data = nullptr; std::string Name; std::vector<FMbcValue> Args; std::optional<FMbcValue> ReturnValue; std::string Commentary; };
+
+struct FMbcNativeContext
+{ 
+    FMbcVirtualMachine* Vm = nullptr; 
+    const FByteArray* Data = nullptr;
+    std::string Name;
+    std::vector<FMbcValue> Args;
+    std::optional<FMbcValue> ReturnValue;
+    std::string Commentary; 
+};
+
 using FMbcNative = std::function<FStatus(FMbcNativeContext&)>;
-class FMbcNativeRegistry {
+
+class FMbcNativeRegistry 
+{
 public:
     void Register(std::string name, FMbcNative function);
     void RegisterNoOp(std::string name, bool pushesValue = false);
@@ -17,4 +28,3 @@ public:
 private:
     std::unordered_map<std::string, FMbcNative> Functions;
 };
-}

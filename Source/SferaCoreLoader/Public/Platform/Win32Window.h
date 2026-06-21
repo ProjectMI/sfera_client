@@ -16,8 +16,8 @@ struct tagRECT;
 #define SFERA_WINAPI_CALL
 #endif
 
-namespace Sfera {
-struct FWindowDesc {
+struct FWindowDesc 
+{
     std::string ClassName = "SphereWclName";
     std::string Title = "Sphere";
     int Width = 800;
@@ -25,7 +25,8 @@ struct FWindowDesc {
     bool Borderless = true;
 };
 
-struct FInputSnapshot {
+struct FInputSnapshot 
+{
     int MouseX = 0;
     int MouseY = 0;
     bool LeftButton = false;
@@ -40,7 +41,8 @@ struct FInputSnapshot {
     std::string TypedText;
 };
 
-class FWin32Window {
+class FWin32Window 
+{
 public:
     using FPaintCallback = std::function<void(HDC__*, const tagRECT&)>;
     FWin32Window();
@@ -68,4 +70,3 @@ private:
     FPaintCallback PaintCallback;
     FInputSnapshot InputState;
 };
-}

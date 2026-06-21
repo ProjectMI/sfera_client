@@ -4,13 +4,21 @@
 #include <iostream>
 #include <sstream>
 
-namespace Sfera {
-static const char* ToText(ELogLevel level) {
-    switch (level) { case ELogLevel::Trace: return "trace"; case ELogLevel::Info: return "info"; case ELogLevel::Warning: return "warning"; case ELogLevel::Error: return "error"; }
+static const char* ToText(ELogLevel level)
+{
+    switch (level)
+    {
+    case ELogLevel::Trace: return "trace";
+    case ELogLevel::Info: return "info";
+    case ELogLevel::Warning: return "warning";
+    case ELogLevel::Error: return "error";
+    }
+
     return "unknown";
 }
 
-static std::string MakeTimestamp() {
+static std::string MakeTimestamp()
+{
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
@@ -20,18 +28,31 @@ static std::string MakeTimestamp() {
     return out.str();
 }
 
-FLogger::FLogger(FPath logPath) { Open(std::move(logPath)); }
+FLogger::FLogger(FPath logPath)
+{
+    Open(std::move(logPath));
+}
 
-void FLogger::Open(FPath logPath) {
+void FLogger::Open(FPath logPath)
+{
     std::lock_guard<std::mutex> lock(Mutex);
-    if (logPath.has_parent_path()) { std::filesystem::create_directories(logPath.parent_path()); }
+
+    if (logPath.has_parent_path())
+    {
+        std::filesystem::create_directories(logPath.parent_path());
+    }
+
     Stream.open(logPath, std::ios::out | std::ios::app);
 }
 
-void FLogger::Write(ELogLevel level, std::string_view message) {
+void FLogger::Write(ELogLevel level, std::string_view message)
+{
     std::lock_guard<std::mutex> lock(Mutex);
     std::string line = MakeTimestamp() + " [" + ToText(level) + "] " + std::string(message);
     std::cout << line << std::endl;
-    if (Stream.is_open()) { Stream << line << std::endl; }
-}
+
+    if (Stream.is_open())
+    {
+        Stream << line << std::endl;
+    }
 }

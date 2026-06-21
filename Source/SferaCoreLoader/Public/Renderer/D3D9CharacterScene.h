@@ -12,11 +12,75 @@ struct IDirect3DVertexBuffer9;
 struct IDirect3DIndexBuffer9;
 struct IDirect3DTexture9;
 struct tagRECT;
-
-namespace Sfera {
 class FLogger;
 
-class FD3D9CharacterScene {
+struct FSceneVertex 
+{ 
+    float X = 0.0f; 
+    float Y = 0.0f; 
+    float Z = 0.0f; 
+    float NX = 0.0f; 
+    float NY = 1.0f; 
+    float NZ = 0.0f; 
+    unsigned long Diffuse = 0xfffffffful; 
+    float U = 0.0f; 
+    float V = 0.0f; 
+};
+
+struct FSceneBatch 
+{ 
+    uint32 StartIndex = 0; 
+    uint32 IndexCount = 0; 
+    std::string TextureLogicalName; 
+    IDirect3DTexture9* Texture = nullptr; 
+    bool Sky = false;
+    bool Head = false; 
+};
+
+struct FSkinnedVertexSource 
+{
+    float X = 0.0f; 
+    float Y = 0.0f; 
+    float Z = 0.0f;
+    float NX = 0.0f;
+    float NY = 1.0f; 
+    float NZ = 0.0f; 
+    float U = 0.0f; 
+    float V = 0.0f; 
+    uint8 Bone0 = 0; 
+    uint8 Bone1 = 0; 
+    float Blend = 1.0f;
+};
+
+struct FVec3 
+{ 
+    float X = 0.0f;
+    float Y = 0.0f; 
+    float Z = 0.0f;
+};
+
+struct FQuat 
+{ 
+    float W = 1.0f;
+    float X = 0.0f;
+    float Y = 0.0f;
+    float Z = 0.0f;
+};
+
+struct FMatrix4 
+{ 
+    float M[16]{}; 
+};
+
+struct FXaddSubobject 
+{ 
+    std::string Code;
+    std::string MeshName;
+    std::vector<std::string> TextureNames;
+};
+
+class FD3D9CharacterScene 
+{
 public:
     FD3D9CharacterScene();
     ~FD3D9CharacterScene();
@@ -26,13 +90,7 @@ public:
     bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const tagRECT& clientRect, FLogger* logger);
     void Shutdown();
     bool IsReady() const { return Initialized; }
-    struct FSceneVertex { float X = 0.0f; float Y = 0.0f; float Z = 0.0f; float NX = 0.0f; float NY = 1.0f; float NZ = 0.0f; unsigned long Diffuse = 0xfffffffful; float U = 0.0f; float V = 0.0f; };
-    struct FSceneBatch { uint32 StartIndex = 0; uint32 IndexCount = 0; std::string TextureLogicalName; IDirect3DTexture9* Texture = nullptr; bool Sky = false; bool Head = false; };
-    struct FSkinnedVertexSource { float X = 0.0f; float Y = 0.0f; float Z = 0.0f; float NX = 0.0f; float NY = 1.0f; float NZ = 0.0f; float U = 0.0f; float V = 0.0f; uint8 Bone0 = 0; uint8 Bone1 = 0; float Blend = 1.0f; };
-    struct FVec3 { float X = 0.0f; float Y = 0.0f; float Z = 0.0f; };
-    struct FQuat { float W = 1.0f; float X = 0.0f; float Y = 0.0f; float Z = 0.0f; };
-    struct FMatrix4 { float M[16]{}; };
-    struct FXaddSubobject { std::string Code; std::string MeshName; std::vector<std::string> TextureNames; };
+
 private:
     void ReleaseBatches(std::vector<FSceneBatch>& batches);
     void ReleaseBuffers();
@@ -102,4 +160,3 @@ private:
     IDirect3DVertexBuffer9* GroundVertexBuffer = nullptr;
     IDirect3DIndexBuffer9* GroundIndexBuffer = nullptr;
 };
-}

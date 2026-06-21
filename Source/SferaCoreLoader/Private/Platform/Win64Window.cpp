@@ -1,8 +1,8 @@
-#include "Platform/Win32Window.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include "Platform/Win64Window.h"
 #include <windowsx.h>
+
+#include <array>
+#include <bit>
 #include <sstream>
 #include <string>
 
@@ -23,30 +23,32 @@ namespace
 
     void AppendWideCharAsUtf8(std::string& out, wchar_t ch)
     {
-        char buffer[8]{};
-        const int count = WideCharToMultiByte(CP_UTF8, 0, &ch, 1, buffer, static_cast<int>(sizeof(buffer)), nullptr, nullptr);
+        std::array<char, 8> buffer{};
+        const int count = WideCharToMultiByte(CP_UTF8, 0, &ch, 1, buffer.data(), static_cast<int>(buffer.size()), nullptr, nullptr);
 
         if (count > 0)
         {
-            out.append(buffer, buffer + count);
+            out.append(buffer.data(), buffer.data() + count);
         }
     }
 }
-FWin32Window::FWin32Window() = default;
-FWin32Window::~FWin32Window()
+
+FWin64Window::FWin64Window() = default;
+FWin64Window::~FWin64Window()
 {
     Destroy();
 }
 
-FStatus FWin32Window::Create(const FWindowDesc& desc, FLogger* logger)
+FStatus FWin64Window::Create(const FWindowDesc& desc, FLogger* logger)
 {
     Desc = desc;
     Log = logger;
+
     HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
     MONITORINFO monitorInfo{};
     monitorInfo.cbSize = sizeof(monitorInfo);
 
-    if (GetMonitorInfoA(monitor, &monitorInfo))
+    if (GetMonitorInfoW(monitor, &monitorInfo))
     {
         Desc.Width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
         Desc.Height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
@@ -57,23 +59,25 @@ FStatus FWin32Window::Create(const FWindowDesc& desc, FLogger* logger)
         Desc.Height = GetSystemMetrics(SM_CYSCREEN);
     }
 
-    Instance = GetModuleHandleA(nullptr);
+    Instance = GetModuleHandleW(nullptr);
     WNDCLASSEXW wc{};
     const std::wstring classNameW = Utf8ToWideLocal(Desc.ClassName);
     const std::wstring titleW = Utf8ToWideLocal(Desc.Title);
+
     wc.cbSize = sizeof(wc);
     wc.style = CS_OWNDC | CS_DBLCLKS;
-    wc.lpfnWndProc = &FWin32Window::StaticWndProc;
+    wc.lpfnWndProc = &FWin64Window::StaticWndProc;
     wc.hInstance = Instance;
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    wc.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
     wc.hbrBackground = nullptr;
     wc.lpszClassName = classNameW.c_str();
+
     ATOM classAtom = RegisterClassExW(&wc);
 
     if (!classAtom)
     {
-        DWORD err = GetLastError();
+        const DWORD err = GetLastError();
 
         if (err != ERROR_CLASS_ALREADY_EXISTS)
         {
@@ -81,23 +85,24 @@ FStatus FWin32Window::Create(const FWindowDesc& desc, FLogger* logger)
         }
     }
 
-    DWORD style = WS_POPUP;
-    DWORD exStyle = WS_EX_APPWINDOW;
-    int width = Desc.Width;
-    int height = Desc.Height;
-    int x = monitorInfo.rcMonitor.left;
-    int y = monitorInfo.rcMonitor.top;
+    const DWORD style = WS_POPUP;
+    const DWORD exStyle = WS_EX_APPWINDOW;
+    const int width = Desc.Width;
+    const int height = Desc.Height;
+    const int x = monitorInfo.rcMonitor.left;
+    const int y = monitorInfo.rcMonitor.top;
+
     SetLastError(0);
     Hwnd = CreateWindowExW(exStyle, classNameW.c_str(), titleW.c_str(), style, x, y, width, height, nullptr, nullptr, Instance, this);
 
     if (!Hwnd)
     {
-        DWORD err = GetLastError();
+        const DWORD err = GetLastError();
         return FStatus::Error(EStatusCode::RuntimeError, "CreateWindowExW failed for Sphere frontend window, error=" + std::to_string(err));
     }
 
-    SetWindowLongPtrA(Hwnd, GWL_STYLE, static_cast<LONG_PTR>(style));
-    SetWindowLongPtrA(Hwnd, GWL_EXSTYLE, static_cast<LONG_PTR>(exStyle));
+    SetWindowLongPtrW(Hwnd, GWL_STYLE, static_cast<LONG_PTR>(style));
+    SetWindowLongPtrW(Hwnd, GWL_EXSTYLE, static_cast<LONG_PTR>(exStyle));
     SetWindowPos(Hwnd, HWND_TOP, x, y, Desc.Width, Desc.Height, SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER);
 
     if (Log)
@@ -108,7 +113,7 @@ FStatus FWin32Window::Create(const FWindowDesc& desc, FLogger* logger)
     return FStatus::Ok();
 }
 
-void FWin32Window::Show()
+void FWin64Window::Show()
 {
     if (!Hwnd) { return; }
 
@@ -117,13 +122,17 @@ void FWin32Window::Show()
     UpdateWindow(Hwnd);
 }
 
-bool FWin32Window::PumpMessages()
+bool FWin64Window::PumpMessages()
 {
     MSG msg{};
 
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
     {
-        if (msg.message == WM_QUIT) { InputState.CloseRequested = true; return false; }
+        if (msg.message == WM_QUIT)
+        {
+            InputState.CloseRequested = true;
+            return false;
+        }
 
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
@@ -132,7 +141,7 @@ bool FWin32Window::PumpMessages()
     return !InputState.CloseRequested;
 }
 
-void FWin32Window::RequestRepaint()
+void FWin64Window::RequestRepaint()
 {
     if (Hwnd)
     {
@@ -140,7 +149,7 @@ void FWin32Window::RequestRepaint()
     }
 }
 
-void FWin32Window::Destroy()
+void FWin64Window::Destroy()
 {
     if (Hwnd)
     {
@@ -149,17 +158,17 @@ void FWin32Window::Destroy()
     }
 }
 
-void FWin32Window::ClearCloseRequest()
+void FWin64Window::ClearCloseRequest()
 {
     InputState.CloseRequested = false;
 }
 
-void FWin32Window::SetPaintCallback(FPaintCallback callback)
+void FWin64Window::SetPaintCallback(FPaintCallback callback)
 {
     PaintCallback = std::move(callback);
 }
 
-FInputSnapshot FWin32Window::ConsumeInputFrame()
+FInputSnapshot FWin64Window::ConsumeInputFrame()
 {
     FInputSnapshot snapshot = InputState;
     InputState.LeftPressed = false;
@@ -171,28 +180,28 @@ FInputSnapshot FWin32Window::ConsumeInputFrame()
     return snapshot;
 }
 
-long long SFERA_WINAPI_CALL FWin32Window::StaticWndProc(HWND__* hwnd, unsigned int message, unsigned long long wparam, long long lparam)
+LRESULT CALLBACK FWin64Window::StaticWndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
     if (message == WM_NCCREATE)
     {
-        auto* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
-        auto* self = create ? static_cast<FWin32Window*>(create->lpCreateParams) : nullptr;
+        const auto* create = std::bit_cast<const CREATESTRUCTW*>(lparam);
+        auto* self = create ? static_cast<FWin64Window*>(create->lpCreateParams) : nullptr;
 
         if (!self) { return FALSE; }
 
         self->Hwnd = hwnd;
-        SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, std::bit_cast<LONG_PTR>(self));
         return TRUE;
     }
 
-    auto* self = reinterpret_cast<FWin32Window*>(GetWindowLongPtrA(hwnd, GWLP_USERDATA));
+    auto* self = std::bit_cast<FWin64Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
     if (self) { return self->WndProc(hwnd, message, wparam, lparam); }
 
     return DefWindowProcW(hwnd, message, wparam, lparam);
 }
 
-long long FWin32Window::WndProc(HWND__* hwnd, unsigned int message, unsigned long long wparam, long long lparam)
+LRESULT FWin64Window::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
     switch (message)
     {

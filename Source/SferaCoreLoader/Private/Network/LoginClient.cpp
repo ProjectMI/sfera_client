@@ -1,16 +1,14 @@
 #include "Network/LoginClient.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
-#include <cstdlib>
-#include <cstring>
 #include <iterator>
 #include <memory>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -93,7 +91,7 @@ namespace
         data[offset + 1] = static_cast<uint8>((value >> 8) & 0xff);
     }
 
-    std::string WsaErrorText(const char* prefix)
+    std::string WsaErrorText(std::string_view prefix)
     {
         std::ostringstream out;
         out << prefix << " (WSA " << WSAGetLastError() << ")";
@@ -142,7 +140,7 @@ namespace
                 {
                     int socketError = 0;
                     int socketErrorSize = sizeof(socketError);
-                    getsockopt(socketHandle.Get(), SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&socketError), &socketErrorSize);
+                    getsockopt(socketHandle.Get(), SOL_SOCKET, SO_ERROR, std::bit_cast<char*>(&socketError), &socketErrorSize);
 
                     if (socketError == 0) { nonblocking = 0; ioctlsocket(socketHandle.Get(), FIONBIO, &nonblocking); connected = std::move(socketHandle); break; }
 
@@ -169,7 +167,7 @@ namespace
         {
             if (!WaitSocket(socket, false, timeoutMs)) { return false; }
 
-            const int rc = recv(socket, reinterpret_cast<char*>(out + total), size - total, 0);
+            const int rc = recv(socket, std::bit_cast<char*>(out + total), size - total, 0);
 
             if (rc <= 0) { return false; }
 
@@ -181,9 +179,9 @@ namespace
 
     bool RecvFrame(SOCKET socket, std::vector<uint8>& frame, int32 timeoutMs)
     {
-        uint8 header[2]{};
+        std::array<uint8, 2> header{};
 
-        if (!RecvExact(socket, header, 2, timeoutMs)) { return false; }
+        if (!RecvExact(socket, header.data(), static_cast<int>(header.size()), timeoutMs)) { return false; }
 
         const int32 length = header[0] | (header[1] << 8);
 
@@ -201,7 +199,7 @@ namespace
 
         while (sent < static_cast<int32>(data.size()))
         {
-            const int rc = send(socket, reinterpret_cast<const char*>(data.data() + sent), static_cast<int>(data.size()) - sent, 0);
+            const int rc = send(socket, std::bit_cast<const char*>(data.data() + sent), static_cast<int>(data.size()) - sent, 0);
 
             if (rc <= 0) { return false; }
 
@@ -220,7 +218,7 @@ namespace
 
         if (required > 0)
         {
-            WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), reinterpret_cast<char*>(out.data()), required, "?", nullptr);
+            WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), std::bit_cast<char*>(out.data()), required, "?", nullptr);
         }
 
         return out;
@@ -230,12 +228,12 @@ namespace
     {
         if (bytes.empty()) { return {}; }
 
-        const int required = MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
+        const int required = MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
         std::wstring out(static_cast<size_t>(required > 0 ? required : 0), L'\0');
 
         if (required > 0)
         {
-            MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), out.data(), required);
+            MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), out.data(), required);
         }
 
         return out;
@@ -256,7 +254,9 @@ namespace
     {
         const uint16 length = static_cast<uint16>(payload.size() + 8);
         std::vector<uint8> packet(length, 0);
-        sequence = static_cast<uint16>(sequence + static_cast<uint16>((std::rand() & 3) + 1));
+        static thread_local std::mt19937 rng{std::random_device{}()};
+        std::uniform_int_distribution<int> delta(1, 4);
+        sequence = static_cast<uint16>(sequence + static_cast<uint16>(delta(rng)));
         WriteU16Le(packet, 0, length);
         WriteU16Le(packet, 4, sequence);
         WriteU16Le(packet, 6, opcode);
@@ -303,7 +303,7 @@ namespace
 
     std::vector<uint8> EncodeClientPacketForSphereEmu(const std::vector<uint8>& decoded)
     {
-        constexpr uint8 encodingMask[] =
+        constexpr std::array<uint8, 9> encodingMask =
         {
             0x4B, 0x0D, 0xEF, 0x60, 0xC9, 0x9A, 0x70, 0x0E, 0x03
         };
@@ -653,9 +653,9 @@ namespace
 
             if (ioctlsocket(socket, FIONREAD, &available) != 0 || available < 2) { break; }
 
-            uint8 header[2]{};
+            std::array<uint8, 2> header{};
 
-            if (recv(socket, reinterpret_cast<char*>(header), 2, MSG_PEEK) != 2) { break; }
+            if (recv(socket, std::bit_cast<char*>(header.data()), static_cast<int>(header.size()), MSG_PEEK) != static_cast<int>(header.size())) { break; }
 
             const int32 length = header[0] | (header[1] << 8);
 
@@ -681,6 +681,15 @@ struct FServerSession::FImpl
 };
 
 FServerSession::FServerSession(std::unique_ptr<FImpl> impl) : Impl(std::move(impl)) {}
+std::shared_ptr<FServerSession> FServerSession::Create(std::unique_ptr<FImpl> impl)
+{
+    struct FServerSessionInstance : FServerSession
+    {
+        explicit FServerSessionInstance(std::unique_ptr<FImpl> impl) : FServerSession(std::move(impl)) {}
+    };
+
+    return std::make_shared<FServerSessionInstance>(std::move(impl));
+}
 FServerSession::~FServerSession() = default;
 bool FServerSession::Connected() const { return Impl && static_cast<bool>(Impl->Socket); }
 uint16 FServerSession::LocalId() const { return Impl ? Impl->LocalId : 0; }
@@ -860,7 +869,9 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
 
     result.LegacyHandshake = true;
     const uint16 xorKey = ReadU16Le(firstFrame, 8);
-    uint16 sequence = static_cast<uint16>((std::rand() % 1000) + 1);
+    static thread_local std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<int> sequenceSeed(1, 1000);
+    uint16 sequence = static_cast<uint16>(sequenceSeed(rng));
     const std::vector<uint8> connectionAck
     {
         3, 0, 0, 0
@@ -924,7 +935,7 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
                 result.CharacterSelectPackets = extraFrames;
                 result.CharacterSelectBytes = extraBytes;
                 impl->LocalId = localId;
-                result.Session = std::shared_ptr<FServerSession>(new FServerSession(std::move(impl)));
+                result.Session = FServerSession::Create(std::move(impl));
                 std::ostringstream out;
                 out << "Login OK; character select data received; localId=0x" << std::hex << localId << std::dec << "; packets=" << extraFrames << " bytes=" << extraBytes << "; slots=" << slotFrames;
                 result.Message = out.str();

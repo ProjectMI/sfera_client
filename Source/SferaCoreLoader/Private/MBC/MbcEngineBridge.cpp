@@ -1,6 +1,7 @@
 #include "MBC/MbcEngineBridge.h"
 #include <algorithm>
 #include <cctype>
+#include <utility>
 
 static std::string TrimBridge(std::string s)
 {
@@ -18,15 +19,15 @@ std::string FMbcEngineBridge::ReadSliceString(const FMbcNativeContext& ctx, cons
     if (!ctx.Data || slice.Offset >= ctx.Data->size()) { return {}; }
 
     size_t n = std::min<size_t>(slice.Length, ctx.Data->size() - slice.Offset);
-    const char* ptr = reinterpret_cast<const char*>(ctx.Data->data() + slice.Offset);
-    size_t end = 0;
+    std::string text;
+    text.reserve(n);
 
-    while (end < n && ptr[end] != '\0')
+    for (size_t i = 0; i < n && (*ctx.Data)[slice.Offset + i] != 0; ++i)
     {
-        ++end;
+        text.push_back(static_cast<char>((*ctx.Data)[slice.Offset + i]));
     }
 
-    return TrimBridge(std::string(ptr, ptr + end));
+    return TrimBridge(std::move(text));
 }
 
 std::string FMbcEngineBridge::BestStringArg(const FMbcNativeContext& ctx, std::string fallback)

@@ -1,8 +1,7 @@
 #include "Core/Application.h"
-
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <array>
+#include <bit>
 #include <exception>
 #include <cstdint>
 #include <filesystem>
@@ -15,12 +14,12 @@ namespace
 {
     std::filesystem::path GetExecutableDirectoryForCrashLog()
     {
-        wchar_t path[MAX_PATH]{};
-        DWORD len = GetModuleFileNameW(nullptr, path, MAX_PATH);
+        std::array<wchar_t, MAX_PATH> path{};
+        DWORD len = GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size()));
 
-        if (len == 0 || len >= MAX_PATH) { return std::filesystem::current_path(); }
+        if (len == 0 || len >= path.size()) { return std::filesystem::current_path(); }
 
-        return std::filesystem::path(path).parent_path();
+        return std::filesystem::path(path.data()).parent_path();
     }
 
     void WriteCrashLog(const std::string& message)
@@ -41,7 +40,7 @@ namespace
         if (info && info->ExceptionRecord)
         {
             out << ": code=0x" << std::hex << std::uppercase << info->ExceptionRecord->ExceptionCode;
-            out << ", address=0x" << reinterpret_cast<std::uintptr_t>(info->ExceptionRecord->ExceptionAddress);
+            out << ", address=0x" << std::bit_cast<std::uintptr_t>(info->ExceptionRecord->ExceptionAddress);
         }
 
         std::string message = out.str();

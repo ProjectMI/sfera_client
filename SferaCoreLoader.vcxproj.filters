@@ -198,7 +198,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp">
       <Filter>Source\SferaCoreLoader\Private\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win32Window.cpp">
+    <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win64Window.cpp">
       <Filter>Source\SferaCoreLoader\Private\Platform</Filter>
     </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9BitmapFont.cpp">
@@ -353,7 +353,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h">
       <Filter>Source\SferaCoreLoader\Public\Network</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win32Window.h">
+    <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win64Window.h">
       <Filter>Source\SferaCoreLoader\Public\Platform</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h">

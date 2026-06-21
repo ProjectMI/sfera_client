@@ -36,7 +36,7 @@ public:
     void Tick();
     void Close();
     const FClientSessionSnapshot& Snapshot() const { return State; }
-    static const char* StageName(EClientSessionStage stage);
+    static std::string_view StageName(EClientSessionStage stage);
 private:
     void SetStage(EClientSessionStage stage, std::string text);
     FLogger* Log = nullptr;

@@ -2,6 +2,7 @@
 #include "Core/Types.h"
 #include "Network/SphereEmuProtocol.h"
 #include "ResourceLoader/ResourceManager.h"
+#include <Windows.h>
 #include <cstddef>
 #include <string>
 #include <unordered_map>
@@ -11,7 +12,6 @@ struct IDirect3DDevice9;
 struct IDirect3DVertexBuffer9;
 struct IDirect3DIndexBuffer9;
 struct IDirect3DTexture9;
-struct tagRECT;
 class FLogger;
 
 struct FSceneVertex 
@@ -87,7 +87,7 @@ public:
     FD3D9CharacterScene(const FD3D9CharacterScene&) = delete;
     FD3D9CharacterScene& operator=(const FD3D9CharacterScene&) = delete;
     bool EnsureInitialized(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger);
-    bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const tagRECT& clientRect, FLogger* logger);
+    bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, FLogger* logger);
     void Shutdown();
     bool IsReady() const { return Initialized; }
 
@@ -105,7 +105,7 @@ private:
     void ConfigureRenderState(IDirect3DDevice9* device);
     void SetCameraFocus(int32 focusId, bool snap);
     void UpdateCamera();
-    void UpdateViewProjection(IDirect3DDevice9* device, const tagRECT& clientRect);
+    void UpdateViewProjection(IDirect3DDevice9* device, const RECT& clientRect);
     void DrawGround(IDirect3DDevice9* device);
     void DrawCharacter(IDirect3DDevice9* device);
     IDirect3DTexture9* LoadDdsTexture(IDirect3DDevice9* device, const FResourceManager& resources, const std::string& logicalName, FLogger* logger, std::string& error);

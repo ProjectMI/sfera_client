@@ -1,5 +1,6 @@
 #include "FileSystem/NativeFile.h"
 #include <fstream>
+#include <algorithm>
 
 TResult<FByteArray> FNativeFile::ReadAllBytes(const FPath& path)
 {
@@ -17,7 +18,12 @@ TResult<FByteArray> FNativeFile::ReadAllBytes(const FPath& path)
 
     if (!bytes.empty())
     {
-        file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+        std::string buffer(bytes.size(), '\0');
+        file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+        std::transform(buffer.begin(), buffer.end(), bytes.begin(), [](char value)
+        {
+            return static_cast<uint8>(value);
+        });
     }
 
     if (!file && !file.eof()) { return FStatus::Error(EStatusCode::IoError, "read failed: " + path.string()); }
@@ -33,7 +39,15 @@ TResult<std::string> FNativeFile::ReadAllText(const FPath& path)
 
     if (bytes.Value().empty()) { return std::string(); }
 
-    return std::string(reinterpret_cast<const char*>(bytes.Value().data()), bytes.Value().size());
+    std::string text;
+    text.reserve(bytes.Value().size());
+
+    for (uint8 value : bytes.Value())
+    {
+        text.push_back(static_cast<char>(value));
+    }
+
+    return text;
 }
 
 FStatus FNativeFile::WriteAllBytes(const FPath& path, const FByteArray& bytes)
@@ -45,7 +59,15 @@ FStatus FNativeFile::WriteAllBytes(const FPath& path, const FByteArray& bytes)
 
     if (!bytes.empty())
     {
-        file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+        std::string buffer;
+        buffer.reserve(bytes.size());
+
+        for (uint8 value : bytes)
+        {
+            buffer.push_back(static_cast<char>(value));
+        }
+
+        file.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
     }
 
     return file ? FStatus::Ok() : FStatus::Error(EStatusCode::IoError, "write failed: " + path.string());

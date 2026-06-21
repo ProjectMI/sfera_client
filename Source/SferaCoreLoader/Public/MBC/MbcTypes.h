@@ -1,12 +1,13 @@
 #pragma once
 #include "Core/Types.h"
+#include <array>
 #include <unordered_map>
 #include <variant>
 
 namespace Mbc 
 {
 inline constexpr uint32 CodeFileOffset = 0x20;
-inline constexpr char MagicText[16] = {'M','B','L',' ','s','c','r','i','p','t',' ','v','4','.','0','\0'};
+inline constexpr std::array<uint8, 16> MagicText = {'M','B','L',' ','s','c','r','i','p','t',' ','v','4','.','0','\0'};
 inline constexpr uint8 TypeChar = 0x00;
 inline constexpr uint8 TypeString = 0x01;
 inline constexpr uint8 TypeStringRef = 0x02;

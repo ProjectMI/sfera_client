@@ -1,14 +1,12 @@
 #include "Renderer/D3D9BitmapFont.h"
 #include "Core/NumericParse.h"
 #include "FileSystem/PathUtils.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <d3d9.h>
 #include <algorithm>
 #include <cmath>
 #include <cctype>
-#include <cstring>
+#include <bit>
 #include <sstream>
 #include <utility>
 
@@ -28,10 +26,7 @@ namespace
     float F32Le(const FByteArray& bytes, size_t offset)
     {
         uint32 raw = U32Le(bytes, offset);
-        float value = 0.0f;
-        static_assert(sizeof(value) == sizeof(raw));
-        std::memcpy(&value, &raw, sizeof(value));
-        return value;
+        return std::bit_cast<float>(raw);
     }
     bool HasRange(const FByteArray& bytes, size_t offset, size_t size) { return offset <= bytes.size() && size <= bytes.size() - offset; }
     std::string StripLineComment(std::string_view line)
@@ -265,7 +260,7 @@ namespace
         for (int32 y = 0; y < height; ++y)
         {
             const uint8* row = src + static_cast<size_t>(y) * sourceStride;
-            auto* dst = reinterpret_cast<uint32*>(static_cast<uint8*>(locked.pBits) + static_cast<size_t>(locked.Pitch) * static_cast<size_t>(y));
+            auto* dst = std::bit_cast<uint32*>(static_cast<uint8*>(locked.pBits) + static_cast<size_t>(locked.Pitch) * static_cast<size_t>(y));
 
             for (int32 x = 0; x < width; ++x)
             {
@@ -368,7 +363,7 @@ std::vector<uint8> FD3D9BitmapFont::EncodeUtf8ToCp1251(std::string_view text) co
 
     if (needed > 0)
     {
-        WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), reinterpret_cast<char*>(out.data()), needed, "?", nullptr);
+        WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), std::bit_cast<char*>(out.data()), needed, "?", nullptr);
     }
 
     return out;

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-static const char* ToText(ELogLevel level)
+static std::string_view ToText(ELogLevel level)
 {
     switch (level)
     {
@@ -22,7 +22,11 @@ static std::string MakeTimestamp()
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
+    #if defined(_MSC_VER)
     localtime_s(&tm, &time);
+#else
+    localtime_r(&time, &tm);
+#endif
     std::ostringstream out;
     out << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
     return out.str();
@@ -48,7 +52,7 @@ void FLogger::Open(FPath logPath)
 void FLogger::Write(ELogLevel level, std::string_view message)
 {
     std::lock_guard<std::mutex> lock(Mutex);
-    std::string line = MakeTimestamp() + " [" + ToText(level) + "] " + std::string(message);
+    std::string line = MakeTimestamp() + " [" + std::string(ToText(level)) + "] " + std::string(message);
     std::cout << line << std::endl;
 
     if (Stream.is_open())

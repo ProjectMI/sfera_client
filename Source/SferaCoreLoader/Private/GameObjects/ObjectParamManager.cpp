@@ -98,7 +98,7 @@ FStatus FObjectParamManager::OpenKnownConfigs(const FResourceManager& resources,
         {
             if (shown >= 12) { break; }
 
-            logger->Info("GameObjects source[" + std::to_string(shown) + "]: kind=" + SourceKindName(source.Kind) +
+            logger->Info("GameObjects source[" + std::to_string(shown) + "]: kind=" + std::string(SourceKindName(source.Kind)) +
             ", entries=" + std::to_string(source.EntryCount) +
             ", fields=" + std::to_string(source.IndexedFields) +
             ", objects_delta=" + std::to_string(source.IndexedObjectsAfter - source.IndexedObjectsBefore) +
@@ -236,7 +236,7 @@ EObjectParamSourceKind FObjectParamManager::ClassifySourcePath(std::string_view 
     return EObjectParamSourceKind::None;
 }
 
-const char* FObjectParamManager::SourceKindName(EObjectParamSourceKind kind)
+std::string_view FObjectParamManager::SourceKindName(EObjectParamSourceKind kind)
 {
     switch (kind)
     {

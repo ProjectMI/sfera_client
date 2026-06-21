@@ -1,7 +1,6 @@
 #include "UI/UiRuntime.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <bit>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -149,12 +148,12 @@ namespace
     {
         if (bytes.empty()) { return std::string{}; }
 
-        const int wideCount = MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
+        const int wideCount = MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
 
         if (wideCount <= 0) { return FStatus::Error(EStatusCode::InvalidData, "cp1251 decode failed"); }
 
         std::wstring wide(static_cast<size_t>(wideCount), L'\0');
-        MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), wide.data(), wideCount);
+        MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), wide.data(), wideCount);
         const int utf8Count = WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
 
         if (utf8Count <= 0) { return FStatus::Error(EStatusCode::InvalidData, "utf8 encode failed"); }
@@ -289,7 +288,7 @@ TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& re
 
     FUiStringTable strings;
 
-    for (auto line : LinesOf(text.Value()))
+    for (std::string line : LinesOf(text.Value()))
     {
         line = Trim(StripComment(std::move(line)));
 
@@ -328,7 +327,7 @@ TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources
     std::string activeControlSection;
     FUiControlDef control;
 
-    for (const auto& rawLine : LinesOf(text.Value()))
+    for (const std::string& rawLine : LinesOf(text.Value()))
     {
         std::string line = Trim(StripComment(rawLine));
 
@@ -400,7 +399,7 @@ TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources
                 {
                     auto& piece = sprite.Pieces[static_cast<size_t>(index)];
 
-                    for (auto& coord : piece.TexCoords)
+                    for (FUiTexCoord& coord : piece.TexCoords)
                     {
                         input >> coord.U >> coord.V;
                     }
@@ -990,7 +989,7 @@ void FUiRuntime::ApplyCharacterCreated(int32 slot, const std::wstring& name, con
     SyncCharacterSelectControls();
 }
 
-FUiRectF FUiRuntime::BuildDesignRect(const tagRECT& clientRect) const
+FUiRectF FUiRuntime::BuildDesignRect(const RECT& clientRect) const
 {
     const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
@@ -1004,7 +1003,7 @@ FUiRectF FUiRuntime::BuildDesignRect(const tagRECT& clientRect) const
     };
 }
 
-FUiRectF FUiRuntime::BuildConnectionRect(const tagRECT& clientRect) const
+FUiRectF FUiRuntime::BuildConnectionRect(const RECT& clientRect) const
 {
     FUiRectF design = BuildDesignRect(clientRect);
     const float w = static_cast<float>(Connection.Rect.W);
@@ -1015,7 +1014,7 @@ FUiRectF FUiRuntime::BuildConnectionRect(const tagRECT& clientRect) const
     };
 }
 
-FUiRectF FUiRuntime::BuildWindowRect(const FUiWindowDef& window, const tagRECT& clientRect) const
+FUiRectF FUiRuntime::BuildWindowRect(const FUiWindowDef& window, const RECT& clientRect) const
 {
     const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
@@ -1050,7 +1049,7 @@ FUiRectF FUiRuntime::BuildWindowRect(const FUiWindowDef& window, const tagRECT& 
     };
 }
 
-const FUiControlDef* FUiRuntime::HitTestConnection(int32 x, int32 y, const tagRECT& clientRect) const
+const FUiControlDef* FUiRuntime::HitTestConnection(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready) { return nullptr; }
 
@@ -1074,7 +1073,7 @@ const FUiControlDef* FUiRuntime::HitTestConnection(int32 x, int32 y, const tagRE
     return nullptr;
 }
 
-const FUiControlDef* FUiRuntime::HitTestCharacterSelect(int32 x, int32 y, const tagRECT& clientRect) const
+const FUiControlDef* FUiRuntime::HitTestCharacterSelect(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready || PickPerson.Name.empty()) { return nullptr; }
 
@@ -1103,7 +1102,7 @@ const FUiControlDef* FUiRuntime::HitTestCharacterSelect(int32 x, int32 y, const 
     return nullptr;
 }
 
-const FUiControlDef* FUiRuntime::HitTestModal(int32 x, int32 y, const tagRECT& clientRect) const
+const FUiControlDef* FUiRuntime::HitTestModal(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready || Modal == EUiModalDialog::None) { return nullptr; }
 
@@ -1143,7 +1142,7 @@ int32 FUiRuntime::CharacterFocusForControl(int32 controlId) const
     return 0;
 }
 
-bool FUiRuntime::PointInsidePickPersonWindow(int32 x, int32 y, const tagRECT& clientRect) const
+bool FUiRuntime::PointInsidePickPersonWindow(int32 x, int32 y, const RECT& clientRect) const
 {
     if (PickPerson.Name.empty()) { return false; }
 
@@ -1151,7 +1150,7 @@ bool FUiRuntime::PointInsidePickPersonWindow(int32 x, int32 y, const tagRECT& cl
     return static_cast<float>(x) >= wr.X && static_cast<float>(y) >= wr.Y && static_cast<float>(x) < wr.X + wr.W && static_cast<float>(y) < wr.Y + wr.H;
 }
 
-int32 FUiRuntime::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const tagRECT& clientRect) const
+int32 FUiRuntime::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const
 {
     FUiRectF wr = BuildWindowRect(PickPerson, clientRect);
     const float controlX = wr.X + static_cast<float>(control.Rect.X);
@@ -1370,7 +1369,7 @@ void FUiRuntime::ActivateModalControl(const FUiControlDef& control, FLogger* log
     }
 }
 
-bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const tagRECT& clientRect, FLogger* logger)
+bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clientRect, FLogger* logger)
 {
     if (!Ready) { return false; }
 
@@ -1735,7 +1734,7 @@ void FUiRuntime::SetCharacterActionLocked(bool locked)
 
 FUiControlDef* FUiRuntime::MutableCharacterControlById(int32 id)
 {
-    for (auto& control : PickPerson.Controls)
+    for (FUiControlDef& control : PickPerson.Controls)
     {
         if (control.Id == id)
         {
@@ -1748,7 +1747,7 @@ FUiControlDef* FUiRuntime::MutableCharacterControlById(int32 id)
 
 const FUiControlDef* FUiRuntime::CharacterControlById(int32 id) const
 {
-    for (const auto& control : PickPerson.Controls)
+    for (const FUiControlDef& control : PickPerson.Controls)
     {
         if (control.Id == id)
         {
@@ -1950,7 +1949,7 @@ std::string FUiRuntime::CharacterTitleText() const
 
     if (!slot.Present) { return {}; }
 
-    const char* name = nullptr;
+    std::string_view name;
 
     switch (slot.TitleId)
     {
@@ -1959,7 +1958,7 @@ std::string FUiRuntime::CharacterTitleText() const
     default: break;
     }
 
-    std::string title = name ? std::string(name) : (Bootstrap.Lang == 1 ? "title " + std::to_string(slot.TitleId) : "звание " + std::to_string(slot.TitleId));
+    std::string title = !name.empty() ? std::string(name) : (Bootstrap.Lang == 1 ? "title " + std::to_string(slot.TitleId) : "звание " + std::to_string(slot.TitleId));
     return title + " (" + std::to_string(std::max(1, slot.TitleLevel)) + ")";
 }
 
@@ -1969,7 +1968,7 @@ std::string FUiRuntime::CharacterDegreeText() const
 
     if (!slot.Present) { return {}; }
 
-    const char* name = nullptr;
+    std::string_view name;
 
     switch (slot.DegreeId)
     {
@@ -1978,7 +1977,7 @@ std::string FUiRuntime::CharacterDegreeText() const
     default: break;
     }
 
-    std::string degree = name ? std::string(name) : (Bootstrap.Lang == 1 ? "degree " + std::to_string(slot.DegreeId) : "ремесло " + std::to_string(slot.DegreeId));
+    std::string degree = !name.empty() ? std::string(name) : (Bootstrap.Lang == 1 ? "degree " + std::to_string(slot.DegreeId) : "ремесло " + std::to_string(slot.DegreeId));
     return degree + " (" + std::to_string(std::max(1, slot.DegreeLevel)) + ")";
 }
 

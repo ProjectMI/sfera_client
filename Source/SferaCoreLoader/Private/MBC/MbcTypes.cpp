@@ -1,5 +1,5 @@
 #include "MBC/MbcTypes.h"
-#include <cstring>
+#include <bit>
 #include <stdexcept>
 
 namespace Mbc
@@ -30,9 +30,7 @@ namespace Mbc
     int32 ReadI32(const FByteArray& bytes, uint32 offset) { return static_cast<int32>(ReadU32(bytes, offset)); }
     float FloatFromU32(uint32 value)
     {
-        float result = 0.0f;
-        std::memcpy(&result, &value, sizeof(result));
-        return result;
+        return std::bit_cast<float>(value);
     }
     std::string ReadCString(const FByteArray& bytes, uint32& offset)
     {
@@ -48,7 +46,13 @@ namespace Mbc
             throw std::runtime_error("unterminated MBC string");
         }
 
-        std::string result(reinterpret_cast<const char*>(bytes.data() + start), offset - start);
+        std::string result;
+        result.reserve(offset - start);
+
+        for (uint32 i = start; i < offset; ++i)
+        {
+            result.push_back(static_cast<char>(bytes[i]));
+        }
         ++offset;
         return result;
     }

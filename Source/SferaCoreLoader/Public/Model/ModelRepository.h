@@ -49,4 +49,4 @@ private:
     std::unordered_map<std::string, size_t> Lookup;
 };
 
-const char* ToString(EModelAssetKind kind);
+std::string_view ToString(EModelAssetKind kind);

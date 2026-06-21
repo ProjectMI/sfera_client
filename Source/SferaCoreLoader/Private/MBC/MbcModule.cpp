@@ -1,6 +1,6 @@
 #include "MBC/MbcModule.h"
 #include <algorithm>
-#include <cstring>
+#include <string_view>
 #include <stdexcept>
 
 FStatus FMbcModule::Load(std::string name, FByteArray bytes)
@@ -25,7 +25,7 @@ FStatus FMbcModule::ParseImage()
     {
         if (RawBytes.size() < Mbc::CodeFileOffset) { HeaderProbe.Commentary = "too small for MBC header"; return FStatus::Error(EStatusCode::InvalidData, HeaderProbe.Commentary); }
 
-        HeaderProbe.HasKnownMagic = std::memcmp(RawBytes.data(), Mbc::MagicText, 16) == 0;
+        HeaderProbe.HasKnownMagic = RawBytes.size() >= Mbc::MagicText.size() && std::equal(Mbc::MagicText.begin(), Mbc::MagicText.end(), RawBytes.begin(), RawBytes.begin() + Mbc::MagicText.size());
 
         if (!HeaderProbe.HasKnownMagic) { HeaderProbe.Commentary = "bad MBC magic; expected MBL script v4.0"; return FStatus::Error(EStatusCode::InvalidData, HeaderProbe.Commentary); }
 
@@ -124,7 +124,13 @@ void FMbcModule::ExtractStringsFromData()
 
         if (i < DataBytes.size() && DataBytes[i] == 0 && run >= 3)
         {
-            std::string s(reinterpret_cast<const char*>(DataBytes.data() + start), run);
+            std::string s;
+            s.reserve(run);
+
+            for (uint32 byteIndex = 0; byteIndex < run; ++byteIndex)
+            {
+                s.push_back(static_cast<char>(DataBytes[start + byteIndex]));
+            }
             StringsFound.push_back({start, std::move(s)});
         }
 

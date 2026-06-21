@@ -9,7 +9,7 @@ namespace
         return value.size() >= suffix.size() && value.substr(value.size() - suffix.size()) == suffix;
     }
 }
-const char* ToString(EModelAssetKind kind)
+std::string_view ToString(EModelAssetKind kind)
 {
     switch (kind)
     {

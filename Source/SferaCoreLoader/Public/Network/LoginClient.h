@@ -38,6 +38,7 @@ public:
 private:
     struct FImpl;
     explicit FServerSession(std::unique_ptr<FImpl> impl);
+    static std::shared_ptr<FServerSession> Create(std::unique_ptr<FImpl> impl);
     std::unique_ptr<FImpl> Impl;
     friend FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring& login, const std::wstring& password, const FCharacterAppearanceRules& appearanceRules, int32 timeoutMs);
 };

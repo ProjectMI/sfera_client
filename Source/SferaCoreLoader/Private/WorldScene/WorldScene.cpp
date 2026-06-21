@@ -2,7 +2,7 @@
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
-#include <cstring>
+#include <bit>
 #include <cmath>
 #include <regex>
 #include <sstream>
@@ -39,14 +39,12 @@ static uint32 ReadU32LE(const FByteArray& bytes, size_t offset)
 static int32 ReadI32LE(const FByteArray& bytes, size_t offset) { return static_cast<int32>(ReadU32LE(bytes, offset)); }
 static float ReadFloatLE(const FByteArray& bytes, size_t offset)
 {
-    float value = 0.0f;
-
-    if (offset + sizeof(float) <= bytes.size())
+    if (offset + sizeof(float) > bytes.size())
     {
-        std::memcpy(&value, bytes.data() + offset, sizeof(float));
+        return 0.0f;
     }
 
-    return value;
+    return std::bit_cast<float>(ReadU32LE(bytes, offset));
 }
 static int64 MakeCoordKey(int32 x, int32 z) { return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(z); }
 static bool ReasonableWorldFloat(float v) { return std::isfinite(v) && std::abs(v) < 10000000.0f; }
@@ -770,7 +768,7 @@ void FWorldScene::LoadSnowPath(FLogger* logger)
 
 void FWorldScene::LoadTextProfiles(FLogger* logger)
 {
-    auto loadProfile = [&](const char* logicalName, auto& profile)
+    auto loadWeatherProfile = [&](std::string_view logicalName)
     {
         auto blob = Resources.Load(logicalName);
 
@@ -779,20 +777,35 @@ void FWorldScene::LoadTextProfiles(FLogger* logger)
             return false;
         }
 
-        profile.SourceName = logicalName;
+        WeatherProfile.SourceName = std::string(logicalName);
         std::string text(blob.Value().Bytes.begin(), blob.Value().Bytes.end());
-        ParseKeyValueText(text, profile.Lines, profile.Values);
+        ParseKeyValueText(text, WeatherProfile.Lines, WeatherProfile.Values);
         return true;
     };
 
-    if (!loadProfile("landscape/weather.txt", WeatherProfile))
+    auto loadSkyProfile = [&](std::string_view logicalName)
     {
-        loadProfile("landscape_hr/weather_hr.txt", WeatherProfile);
+        auto blob = Resources.Load(logicalName);
+
+        if (!blob.IsOk())
+        {
+            return false;
+        }
+
+        SkyProfile.SourceName = std::string(logicalName);
+        std::string text(blob.Value().Bytes.begin(), blob.Value().Bytes.end());
+        ParseKeyValueText(text, SkyProfile.Lines, SkyProfile.Values);
+        return true;
+    };
+
+    if (!loadWeatherProfile("landscape/weather.txt"))
+    {
+        loadWeatherProfile("landscape_hr/weather_hr.txt");
     }
 
-    if (!loadProfile("sky.txt", SkyProfile))
+    if (!loadSkyProfile("sky.txt"))
     {
-        loadProfile("landscape_hr/sky_hr.txt", SkyProfile);
+        loadSkyProfile("landscape_hr/sky_hr.txt");
     }
 
     for (const auto& pair : SkyProfile.Values)

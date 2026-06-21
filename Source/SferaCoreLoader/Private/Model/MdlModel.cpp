@@ -1,25 +1,54 @@
 #include "Model/MdlModel.h"
 #include "Core/BinaryReader.h"
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
 namespace
 {
+    constexpr size_t MdlHeaderSize = 0x102;
+
+    size_t CheckedSectionByteSize(size_t count, size_t stride)
+    {
+        if (stride != 0 && count > std::numeric_limits<size_t>::max() / stride)
+        {
+            throw std::runtime_error("MDL section size overflow");
+        }
+
+        return count * stride;
+    }
+
+    size_t CheckedSectionEnd(size_t offset, size_t size)
+    {
+        if (offset > std::numeric_limits<size_t>::max() - size)
+        {
+            throw std::runtime_error("MDL section offset overflow");
+        }
+
+        return offset + size;
+    }
+
+    size_t CheckedRecordOffset(const FMdlSection& section, size_t index)
+    {
+        const size_t relative = CheckedSectionByteSize(index, section.Stride);
+        return CheckedSectionEnd(section.Offset, relative);
+    }
+
     void AddSection(FMdlInfo& info, std::string name, size_t& offset, size_t count, size_t stride)
     {
-        const size_t size = count * stride;
+        const size_t size = CheckedSectionByteSize(count, stride);
         info.Sections.push_back(FMdlSection{std::move(name), offset, count, stride, size});
-        offset += size;
+        offset = CheckedSectionEnd(offset, size);
     }
     void ReadMaterials(FMdlInfo& info, const FByteArray& data)
     {
-        constexpr size_t namesOffset = 0x102;
+        constexpr size_t namesOffset = MdlHeaderSize;
         Binary::RequireRange(data, namesOffset, info.MaterialNamesSize, "MDL material names");
         size_t cursor = namesOffset;
-        const size_t end = namesOffset + info.MaterialNamesSize;
+        const size_t end = CheckedSectionEnd(namesOffset, static_cast<size_t>(info.MaterialNamesSize));
 
-        for (uint8 i = 0; i < info.MaterialCount; ++i)
+        for (uint8 materialIndex = 0; materialIndex < info.MaterialCount; ++materialIndex)
         {
             if (cursor >= end)
             {
@@ -33,11 +62,19 @@ namespace
                 throw std::runtime_error("truncated MDL material name");
             }
 
-            info.Materials.emplace_back(reinterpret_cast<const char*>(data.data() + cursor), length);
+            std::string material;
+            material.reserve(length);
+
+            for (size_t charIndex = 0; charIndex < length; ++charIndex)
+            {
+                material.push_back(static_cast<char>(data[cursor + charIndex]));
+            }
+
+            info.Materials.push_back(std::move(material));
             cursor += length;
         }
     }
-    const FMdlSection& SectionByName(const FMdlInfo& info, const std::string& name)
+    const FMdlSection& SectionByName(const FMdlInfo& info, std::string_view name)
     {
         auto it = std::find_if(info.Sections.begin(), info.Sections.end(), [&](const FMdlSection& section)
         {
@@ -46,12 +83,12 @@ namespace
 
         if (it == info.Sections.end())
         {
-            throw std::runtime_error("missing MDL section: " + name);
+            throw std::runtime_error("missing MDL section: " + std::string(name));
         }
 
         return *it;
     }
-    const FMdlSection* FindSectionByName(const FMdlInfo& info, const std::string& name)
+    const FMdlSection* FindSectionByName(const FMdlInfo& info, std::string_view name)
     {
         auto it = std::find_if(info.Sections.begin(), info.Sections.end(), [&](const FMdlSection& section)
         {
@@ -68,7 +105,7 @@ namespace
     }
     FMdlInfo ParseInfo(const FByteArray& data, std::string_view sourceName)
     {
-        if (data.size() < 0x102 || data[0] != 'M' || data[1] != 'D' || data[2] != 'L' || data[3] != '!')
+        if (data.size() < MdlHeaderSize || data[0] != 'M' || data[1] != 'D' || data[2] != 'L' || data[3] != '!')
         {
             throw std::runtime_error("bad MDL file: " + std::string(sourceName));
         }
@@ -94,8 +131,8 @@ namespace
         info.ExtraBlockCount = Binary::I32LE(data, 0xfe);
         ValidateCounts(info);
         ReadMaterials(info, data);
-        info.Sections.push_back(FMdlSection{"material_names", 0x102, info.MaterialCount, 0, info.MaterialNamesSize});
-        size_t offset = 0x102 + info.MaterialNamesSize;
+        info.Sections.push_back(FMdlSection{"material_names", MdlHeaderSize, static_cast<size_t>(info.MaterialCount), 0, static_cast<size_t>(info.MaterialNamesSize)});
+        size_t offset = CheckedSectionEnd(MdlHeaderSize, static_cast<size_t>(info.MaterialNamesSize));
         AddSection(info, "vertices_0x20", offset, info.VertexCount, 0x20);
         AddSection(info, "indices_0x0a", offset, info.IndexCount, 0x0a);
         AddSection(info, "triangle_groups_0x0f", offset, info.TriangleGroupCount, 0x0f);
@@ -142,7 +179,7 @@ namespace
 
         for (size_t i = 0; i < section.Count; ++i)
         {
-            size_t offset = section.Offset + i * section.Stride;
+            size_t offset = CheckedRecordOffset(section, i);
             FMdlVertex vertex;
             vertex.X = Binary::F32LE(data, offset + 0x00);
             vertex.Y = Binary::F32LE(data, offset + 0x04);
@@ -163,7 +200,7 @@ namespace
 
         for (size_t i = 0; i < section.Count; ++i)
         {
-            size_t offset = section.Offset + i * section.Stride;
+            size_t offset = CheckedRecordOffset(section, i);
             FMdlTriangle triangle;
             triangle.A = Binary::U16LE(data, offset + 0x00);
             triangle.B = Binary::U16LE(data, offset + 0x02);
@@ -181,7 +218,7 @@ namespace
 
         for (size_t i = 0; i < section.Count; ++i)
         {
-            size_t offset = section.Offset + i * section.Stride;
+            size_t offset = CheckedRecordOffset(section, i);
             FMdlSurface surface;
             surface.ObjectIndex = Binary::U8(data, offset + 0x00);
             surface.TextureIndex = Binary::U8(data, offset + 0x01);
@@ -206,7 +243,7 @@ namespace
 
         for (size_t i = 0; i < section->Count; ++i)
         {
-            size_t offset = section->Offset + i * section->Stride;
+            size_t offset = CheckedRecordOffset(*section, i);
             FMdlObject object;
             object.Name = Binary::ReadFixedString(data, offset, 32);
             object.BoneType = Binary::U8(data, offset + 0x20);
@@ -228,7 +265,8 @@ namespace
         }
 
         Binary::RequireRange(data, section->Offset, section->Size, "MDL object indices");
-        mesh.ObjectIndices.assign(data.begin() + static_cast<std::ptrdiff_t>(section->Offset), data.begin() + static_cast<std::ptrdiff_t>(section->Offset + section->Size));
+        const size_t endOffset = CheckedSectionEnd(section->Offset, section->Size);
+        mesh.ObjectIndices.assign(data.begin() + static_cast<std::ptrdiff_t>(section->Offset), data.begin() + static_cast<std::ptrdiff_t>(endOffset));
     }
     void ReadTransformKeys(FMdlMesh& mesh, const FByteArray& data)
     {
@@ -244,7 +282,7 @@ namespace
 
         for (size_t i = 0; i < section->Count; ++i)
         {
-            size_t offset = section->Offset + i * section->Stride;
+            size_t offset = CheckedRecordOffset(*section, i);
             FMdlTransformKey key;
             key.X = Binary::F32LE(data, offset + 0x00);
             key.Y = Binary::F32LE(data, offset + 0x04);
@@ -270,7 +308,8 @@ namespace
 
         for (size_t i = 0; i < section->Count; ++i)
         {
-            mesh.Actions.push_back(Binary::U16LE(data, section->Offset + i * section->Stride));
+            const size_t offset = CheckedRecordOffset(*section, i);
+            mesh.Actions.push_back(Binary::U16LE(data, offset));
         }
     }
     FMdlBounds ComputeBounds(const std::vector<FMdlVertex>& vertices)

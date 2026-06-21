@@ -1,3 +1,5 @@
+#include <string_view>
+#include <array>
 #include "Config/ConfigService.h"
 #include "Compression/CompressionService.h"
 #include "FileSystem/PathUtils.h"
@@ -6,18 +8,17 @@ FConfigService::FConfigService(const FFileSystem& fileSystem) : FileSystem(fileS
 
 FStatus FConfigService::LoadKnownConfigs(FLogger* logger)
 {
-    const char* names[] =
-    {
+    constexpr std::array<std::string_view, 13> names = {
         "config.cfg", "connect.cfg", "connectn.cfg", "servers.cfg", "debug.cfg", "control.cfg", "fonts.cfg", "Models/Materials.cfg", "materials.cfg", "Landscape/zoning.cfg", "Landscape/zoningHaron.cfg", "zoning.cfg", "zoningharon.cfg"
     };
 
-    for (const char* name : names)
+    for (std::string_view name : names)
     {
-        FStatus status = LoadConfig(name);
+        FStatus status = LoadConfig(std::string(name));
 
         if (logger && status.IsOk())
         {
-            logger->Info(std::string("loaded cfg: ") + name);
+            logger->Info(std::string("loaded cfg: ") + std::string(name));
         }
     }
 

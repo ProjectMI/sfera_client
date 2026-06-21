@@ -823,7 +823,7 @@ FMbcDecodedOpcode DecodeMbcOpcode(const FByteArray& code, uint32 off)
         case EMbcOperandFormat::Trap: out.Length = 1;
             out.Terminal = true;
             out.Known = false;
-            out.Edges.push_back({"trap", std::nullopt, spec->Semantic});
+            out.Edges.push_back({"trap", std::nullopt, std::string(spec->Semantic)});
             break;
         case EMbcOperandFormat::U8: if (!have(2))
             {
@@ -1008,7 +1008,7 @@ FMbcDecodedOpcode DecodeMbcOpcode(const FByteArray& code, uint32 off)
             out.Length = 5;
             out.Terminal = true;
             out.Operands["payload_u32"] = U(Mbc::ReadU32(code, off + 1));
-            out.Edges.push_back({"import_stub", std::nullopt, spec->Semantic});
+            out.Edges.push_back({"import_stub", std::nullopt, std::string(spec->Semantic)});
             break;
         case EMbcOperandFormat::InlineSpan: if (!have(7))
             {
@@ -1162,13 +1162,13 @@ FMbcDecodedOpcode DecodeMbcOpcode(const FByteArray& code, uint32 off)
     if (opcode == 0x72 || opcode == 0x74)
     {
         out.Terminal = true;
-        out.Edges.push_back({"return", std::nullopt, spec->Semantic});
+        out.Edges.push_back({"return", std::nullopt, std::string(spec->Semantic)});
     }
 
     if (opcode == 0x48)
     {
         out.Terminal = true;
-        out.Edges.push_back({"halt", std::nullopt, spec->Semantic});
+        out.Edges.push_back({"halt", std::nullopt, std::string(spec->Semantic)});
     }
 
     return out;

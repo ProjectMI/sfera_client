@@ -1,7 +1,6 @@
 #include "MBC/MbcVirtualMachine.h"
 #include "Core/NumericParse.h"
 #include <cmath>
-#include <cstring>
 
 FMbcVirtualMachine::FMbcVirtualMachine(FMbcNativeRegistry& registry) : Registry(registry) {}
 FStatus FMbcVirtualMachine::LoadProject(const FMbcProject* project)
@@ -115,14 +114,14 @@ FMbcExecutionResult FMbcVirtualMachine::RunFrame(FMbcRuntimeFrame& frame, FMbcEx
 FStatus FMbcVirtualMachine::ExecuteDecoded(FMbcRuntimeFrame& frame, const FMbcDecodedOpcode& decoded)
 {
     const std::string& m = decoded.Mnemonic;
-    auto iop = [&](const char* key) -> int32
+    auto iop = [&](std::string_view key) -> int32
     {
-        auto it = decoded.Operands.find(key);
+        auto it = decoded.Operands.find(std::string(key));
         return it == decoded.Operands.end() ? 0 : NumericParse::Int32Or(it->second);
     };
-    auto uop = [&](const char* key) -> uint32
+    auto uop = [&](std::string_view key) -> uint32
     {
-        auto it = decoded.Operands.find(key);
+        auto it = decoded.Operands.find(std::string(key));
         return it == decoded.Operands.end() ? 0u : NumericParse::UInt32Or(it->second);
     };
 
@@ -340,7 +339,7 @@ FStatus FMbcVirtualMachine::ExecuteBuiltin(FMbcRuntimeFrame& frame, const FMbcDe
     }
 
     const FMbcBuiltinSpec* builtin = decoded.Builtin ? decoded.Builtin : FindMbcBuiltin(static_cast<uint8>(sub));
-    std::string name = builtin ? builtin->Mnemonic : "builtin_unknown";
+    std::string name = builtin ? std::string(builtin->Mnemonic) : "builtin_unknown";
 
     switch (sub)
     {
@@ -483,7 +482,7 @@ FStatus FMbcVirtualMachine::ExecuteBuiltin(FMbcRuntimeFrame& frame, const FMbcDe
                 Push(frame, FMbcValue::Int(0));
             }
 
-            AddEvent("builtin_stub", name, frame, builtin ? builtin->Semantic : "unrecovered builtin");
+            AddEvent("builtin_stub", name, frame, builtin ? std::string(builtin->Semantic) : "unrecovered builtin");
             return FStatus::Ok();
         }
     }

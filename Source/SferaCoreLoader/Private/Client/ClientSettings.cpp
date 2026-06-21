@@ -1,3 +1,5 @@
+#include <string_view>
+#include <array>
 #include "Client/ClientSettings.h"
 #include <algorithm>
 #include <cctype>
@@ -47,12 +49,11 @@ namespace
     }
     std::optional<std::string> ReadHost(const FConfigService& config)
     {
-        const char* keys[] =
-        {
+        constexpr std::array<std::string_view, 7> keys = {
             "MAIN_URL", "SERVER", "HOST", "IP", "ADDRESS", "LAST_URL", "SRV00"
         };
 
-        for (const char* key : keys)
+        for (std::string_view key : keys)
         {
             auto host = config.FindString(key);
 

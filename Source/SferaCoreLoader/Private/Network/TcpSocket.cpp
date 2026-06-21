@@ -1,8 +1,29 @@
 #include "Network/TcpSocket.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
+#include <bit>
+#include <memory>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+
+
+struct FNativeTcpSocket
+{
+    SOCKET Handle = INVALID_SOCKET;
+
+    ~FNativeTcpSocket()
+    {
+        Reset();
+    }
+
+    void Reset(SOCKET next = INVALID_SOCKET)
+    {
+        if (Handle != INVALID_SOCKET)
+        {
+            closesocket(Handle);
+        }
+
+        Handle = next;
+    }
+};
 
 static FStatus EnsureWinsock()
 {
@@ -19,7 +40,7 @@ static FStatus EnsureWinsock()
     return FStatus::Ok();
 }
 
-FTcpSocket::FTcpSocket() = default;
+FTcpSocket::FTcpSocket() : Native(std::make_unique<FNativeTcpSocket>()) {}
 FTcpSocket::~FTcpSocket()
 {
     Close();
@@ -76,7 +97,7 @@ FStatus FTcpSocket::Connect(const FEndpoint& endpoint, uint32 timeoutMs)
 
         int soError = 0;
         int soLen = sizeof(soError);
-        getsockopt(socketHandle, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&soError), &soLen);
+        getsockopt(socketHandle, SOL_SOCKET, SO_ERROR, std::bit_cast<char*>(&soError), &soLen);
 
         if (soError != 0) { closesocket(socketHandle); freeaddrinfo(result); State = EConnectionState::Failed; return FStatus::Error(EStatusCode::NetworkError, "connect failed: " + std::to_string(soError)); }
     }
@@ -89,7 +110,7 @@ FStatus FTcpSocket::Connect(const FEndpoint& endpoint, uint32 timeoutMs)
         ioctlsocket(socketHandle, FIONBIO, &disabled);
     }
 
-    SocketHandle = static_cast<uintptr_t>(socketHandle);
+    Native->Reset(socketHandle);
     State = EConnectionState::Connected;
     return FStatus::Ok();
 }
@@ -99,7 +120,7 @@ FStatus FTcpSocket::SetNonBlocking(bool enabled)
     if (!IsConnected()) { return FStatus::Error(EStatusCode::NetworkError, "nonblocking mode on closed socket"); }
 
     u_long value = enabled ? 1UL : 0UL;
-    int rc = ioctlsocket(static_cast<SOCKET>(SocketHandle), FIONBIO, &value);
+    int rc = ioctlsocket(Native->Handle, FIONBIO, &value);
     return rc == 0 ? FStatus::Ok() : FStatus::Error(EStatusCode::NetworkError, "ioctlsocket(FIONBIO) failed: " + std::to_string(WSAGetLastError()));
 }
 
@@ -111,7 +132,7 @@ FStatus FTcpSocket::Send(const FByteArray& bytes)
 
     while (offset < bytes.size())
     {
-        int sent = send(static_cast<SOCKET>(SocketHandle), reinterpret_cast<const char*>(bytes.data() + offset), static_cast<int>(bytes.size() - offset), 0);
+        int sent = send(Native->Handle, std::bit_cast<const char*>(bytes.data() + offset), static_cast<int>(bytes.size() - offset), 0);
 
         if (sent <= 0) { return FStatus::Error(EStatusCode::NetworkError, "send failed: " + std::to_string(WSAGetLastError())); }
 
@@ -126,7 +147,7 @@ TResult<FByteArray> FTcpSocket::Receive(size_t maxBytes)
     if (!IsConnected()) { return FStatus::Error(EStatusCode::NetworkError, "receive on closed socket"); }
 
     FByteArray bytes(maxBytes);
-    int received = recv(static_cast<SOCKET>(SocketHandle), reinterpret_cast<char*>(bytes.data()), static_cast<int>(bytes.size()), 0);
+    int received = recv(Native->Handle, std::bit_cast<char*>(bytes.data()), static_cast<int>(bytes.size()), 0);
 
     if (received <= 0) { return FStatus::Error(EStatusCode::NetworkError, "receive failed or closed: " + std::to_string(WSAGetLastError())); }
 
@@ -139,7 +160,7 @@ TResult<FByteArray> FTcpSocket::ReceiveAvailable(size_t maxBytes)
     if (!IsConnected()) { return FStatus::Error(EStatusCode::NetworkError, "receive on closed socket"); }
 
     FByteArray bytes(maxBytes);
-    int received = recv(static_cast<SOCKET>(SocketHandle), reinterpret_cast<char*>(bytes.data()), static_cast<int>(bytes.size()), 0);
+    int received = recv(Native->Handle, std::bit_cast<char*>(bytes.data()), static_cast<int>(bytes.size()), 0);
 
     if (received == SOCKET_ERROR)
     {
@@ -158,10 +179,9 @@ TResult<FByteArray> FTcpSocket::ReceiveAvailable(size_t maxBytes)
 
 void FTcpSocket::Close()
 {
-    if (SocketHandle != ~uintptr_t(0))
+    if (Native)
     {
-        closesocket(static_cast<SOCKET>(SocketHandle));
-        SocketHandle = ~uintptr_t(0);
+        Native->Reset();
     }
 
     State = EConnectionState::Closed;

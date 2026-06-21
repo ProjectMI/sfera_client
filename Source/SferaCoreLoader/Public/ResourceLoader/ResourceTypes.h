@@ -30,5 +30,5 @@ struct FResourceBlob
 	bool WasCompressed = false; 
 };
 
-const char* ToString(EResourceKind kind);
+std::string_view ToString(EResourceKind kind);
 EResourceKind GuessResourceKind(const FPath& path);

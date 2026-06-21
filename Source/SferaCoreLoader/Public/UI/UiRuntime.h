@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Logger.h"
 #include "Core/Types.h"
-#include "Platform/Win32Window.h"
+#include "Platform/Win64Window.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "Network/LoginClient.h"
 #include <array>
@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-struct tagRECT;
 
 struct FUiPoint 
 { 
@@ -225,10 +224,10 @@ public:
     FStatus Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger = nullptr);
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
-    bool HandleInputFrame(const FInputSnapshot& input, const tagRECT& clientRect, FLogger* logger = nullptr);
-    FUiRectF BuildDesignRect(const tagRECT& clientRect) const;
-    FUiRectF BuildConnectionRect(const tagRECT& clientRect) const;
-    FUiRectF BuildWindowRect(const FUiWindowDef& window, const tagRECT& clientRect) const;
+    bool HandleInputFrame(const FInputSnapshot& input, const RECT& clientRect, FLogger* logger = nullptr);
+    FUiRectF BuildDesignRect(const RECT& clientRect) const;
+    FUiRectF BuildConnectionRect(const RECT& clientRect) const;
+    FUiRectF BuildWindowRect(const FUiWindowDef& window, const RECT& clientRect) const;
     const FUiStringTable& Strings() const { return StringTable; }
     const FUiWindowDef& ConnectionWindow() const { return Connection; }
     const FUiWindowDef& PickPersonWindow() const { return PickPerson; }
@@ -278,9 +277,9 @@ public:
     bool IsReady() const { return Ready; }
     std::string ResolveText(std::string_view key) const;
 private:
-    const FUiControlDef* HitTestConnection(int32 x, int32 y, const tagRECT& clientRect) const;
-    const FUiControlDef* HitTestCharacterSelect(int32 x, int32 y, const tagRECT& clientRect) const;
-    const FUiControlDef* HitTestModal(int32 x, int32 y, const tagRECT& clientRect) const;
+    const FUiControlDef* HitTestConnection(int32 x, int32 y, const RECT& clientRect) const;
+    const FUiControlDef* HitTestCharacterSelect(int32 x, int32 y, const RECT& clientRect) const;
+    const FUiControlDef* HitTestModal(int32 x, int32 y, const RECT& clientRect) const;
     bool IsEditControl(const FUiControlDef& control) const;
     bool IsCheckControl(const FUiControlDef& control) const;
     bool IsButtonControl(const FUiControlDef& control) const;
@@ -293,8 +292,8 @@ private:
     void ClampCharacterAppearance();
     int32 CharacterAppearanceOptionCount(int32 controlId) const;
     int32 CharacterFocusForControl(int32 controlId) const;
-    int32 CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const tagRECT& clientRect) const;
-    bool PointInsidePickPersonWindow(int32 x, int32 y, const tagRECT& clientRect) const;
+    int32 CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const;
+    bool PointInsidePickPersonWindow(int32 x, int32 y, const RECT& clientRect) const;
     std::wstring DefaultCharacterNameForSlot(int32 slot) const;
     std::string EmptyCharacterSlotText() const;
     std::string CharacterGenderText(bool female) const;

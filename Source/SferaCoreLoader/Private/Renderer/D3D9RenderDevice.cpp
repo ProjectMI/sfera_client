@@ -1,17 +1,16 @@
+#include <string_view>
+#include <array>
 #include "Renderer/D3D9RenderDevice.h"
 #include "Renderer/DdsImage.h"
 #include "FileSystem/PathUtils.h"
 #include "ResourceLoader/ResourceTypes.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <d3d9.h>
 #include <algorithm>
 #include <cmath>
 #include <cctype>
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
+#include <bit>
 
 namespace
 {
@@ -45,6 +44,7 @@ namespace
     int ColorG(unsigned long color) { return static_cast<int>((color >> 8) & 0xff); }
     int ColorB(unsigned long color) { return static_cast<int>(color & 0xff); }
     int ColorA(unsigned long color) { return static_cast<int>((color >> 24) & 0xff); }
+    int AbsInt(int value) { return value < 0 ? -value : value; }
     unsigned long PremultiplyDiffuse(unsigned long color)
     {
         unsigned int a = static_cast<unsigned int>(ColorA(color));
@@ -112,7 +112,7 @@ FD3D9RenderDevice::~FD3D9RenderDevice()
     Shutdown();
 }
 
-FStatus FD3D9RenderDevice::Initialize(HWND__* hwnd, int32 width, int32 height, FLogger* logger)
+FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLogger* logger)
 {
     Shutdown();
     D3D = Direct3DCreate9(D3D_SDK_VERSION);
@@ -213,18 +213,17 @@ FStatus FD3D9RenderDevice::EnsureD3DX(FLogger* logger)
 {
     if (D3DXCreateTextureFromFileInMemoryExFn) { return FStatus::Ok(); }
 
-    const char* dlls[] =
-    {
+    constexpr std::array<std::string_view, 8> dlls = {
         "d3dx9_43.dll", "d3dx9_42.dll", "d3dx9_41.dll", "d3dx9_40.dll", "d3dx9_39.dll", "d3dx9_38.dll", "d3dx9_37.dll", "d3dx9_36.dll"
     };
 
-    for (const char* dll : dlls)
+    for (std::string_view dll : dlls)
     {
-        D3DXModule = LoadLibraryA(dll);
+        D3DXModule = LoadLibraryA(std::string(dll).c_str());
 
         if (!D3DXModule) { continue; }
 
-        auto* proc = reinterpret_cast<FD3DXCreateTextureFromFileInMemoryExPtr>(GetProcAddress(D3DXModule, "D3DXCreateTextureFromFileInMemoryEx"));
+        auto* proc = std::bit_cast<FD3DXCreateTextureFromFileInMemoryExPtr>(GetProcAddress(D3DXModule, "D3DXCreateTextureFromFileInMemoryEx"));
 
         if (proc)
         {
@@ -232,7 +231,9 @@ FStatus FD3D9RenderDevice::EnsureD3DX(FLogger* logger)
 
             if (logger)
             {
-                logger->Info(std::string("D3D9 texture loader: ") + dll);
+                std::string message = "D3D9 texture loader: ";
+                message.append(dll);
+                logger->Info(message);
             }
 
             return FStatus::Ok();
@@ -338,7 +339,7 @@ IDirect3DTexture9* FD3D9RenderDevice::CreateTextureFromDdsImage(const FDdsImage&
 
     for (int32 y = 0; y < image.Height; ++y)
     {
-        std::memcpy(dst + static_cast<size_t>(y) * static_cast<size_t>(locked.Pitch), src + static_cast<size_t>(y) * static_cast<size_t>(image.Stride), copyStride);
+        std::copy_n(src + static_cast<size_t>(y) * static_cast<size_t>(image.Stride), copyStride, dst + static_cast<size_t>(y) * static_cast<size_t>(locked.Pitch));
     }
 
     texture->UnlockRect(0);
@@ -540,8 +541,8 @@ void FD3D9RenderDevice::DrawTexturePiece(IDirect3DTexture9* texture, const FUiSp
 
     const float dx = spriteRect.X + static_cast<float>(std::min(piece.DstLeft, piece.DstRight)) * spriteRect.W;
     const float dy = spriteRect.Y + static_cast<float>(std::min(piece.DstTop, piece.DstBottom)) * spriteRect.H;
-    const float dw = static_cast<float>(std::abs(piece.DstRight - piece.DstLeft)) * spriteRect.W;
-    const float dh = static_cast<float>(std::abs(piece.DstBottom - piece.DstTop)) * spriteRect.H;
+    const float dw = static_cast<float>(AbsInt(piece.DstRight - piece.DstLeft)) * spriteRect.W;
+    const float dh = static_cast<float>(AbsInt(piece.DstBottom - piece.DstTop)) * spriteRect.H;
 
     if (dw <= 0.0f || dh <= 0.0f) { return; }
 
@@ -934,7 +935,7 @@ bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window
     return true;
 }
 
-void FD3D9RenderDevice::DrawModalDialog(FDrawContext& ctx, const tagRECT& rect)
+void FD3D9RenderDevice::DrawModalDialog(FDrawContext& ctx, const RECT& rect)
 {
     if (!ctx.Ui.HasModalDialog()) { return; }
 
@@ -1127,7 +1128,7 @@ void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, con
     }
 }
 
-FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const tagRECT& rect, FLogger* logger)
+FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const RECT& rect, FLogger* logger)
 {
     if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
 

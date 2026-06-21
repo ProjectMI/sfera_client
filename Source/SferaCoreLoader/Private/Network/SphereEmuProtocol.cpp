@@ -1,10 +1,9 @@
 #include "Network/SphereEmuProtocol.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <algorithm>
+#include <bit>
 #include <cmath>
-#include <cstdlib>
+#include <random>
 
 namespace
 {
@@ -196,7 +195,7 @@ FByteArray FSphereEmuProtocol::ToCp1251(const std::wstring& text)
 
     if (required > 0)
     {
-        WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), reinterpret_cast<char*>(out.data()), required, "?", nullptr);
+        WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), std::bit_cast<char*>(out.data()), required, "?", nullptr);
     }
 
     return out;
@@ -208,12 +207,12 @@ std::wstring FSphereEmuProtocol::FromCp1251(const FByteArray& bytes)
         return {};
     }
 
-    const int required = MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
+    const int required = MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
     std::wstring out(static_cast<size_t>(required > 0 ? required : 0), L'\0');
 
     if (required > 0)
     {
-        MultiByteToWideChar(1251, 0, reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), out.data(), required);
+        MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), out.data(), required);
     }
 
     return out;
@@ -222,7 +221,9 @@ FByteArray FSphereEmuProtocol::BuildLegacyPacket(uint16 opcode, const FByteArray
 {
     const uint16 length = static_cast<uint16>(payload.size() + 8);
     FByteArray packet(length, 0);
-    sequence = static_cast<uint16>(sequence + static_cast<uint16>((std::rand() & 3) + 1));
+    static thread_local std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<int> delta(1, 4);
+    sequence = static_cast<uint16>(sequence + static_cast<uint16>(delta(rng)));
     WriteU16LE(packet, 0, length);
     WriteU16LE(packet, 4, sequence);
     WriteU16LE(packet, 6, opcode);
@@ -419,7 +420,7 @@ FByteArray FSphereEmuProtocol::BuildPositionPacket(uint16 localId, uint8 sequenc
 }
 FByteArray FSphereEmuProtocol::EncodeClientPacket(const FByteArray& decoded)
 {
-    constexpr uint8 encodingMask[] =
+    constexpr std::array<uint8, 9> encodingMask =
     {
         0x4B, 0x0D, 0xEF, 0x60, 0xC9, 0x9A, 0x70, 0x0E, 0x03
     };
@@ -436,7 +437,7 @@ FByteArray FSphereEmuProtocol::EncodeClientPacket(const FByteArray& decoded)
     for (size_t i = 0; i + start < decoded.size(); ++i)
     {
         const uint8 current = decoded[i + start];
-        encoded[i + start] = static_cast<uint8>(current ^ encodingMask[i % (sizeof(encodingMask) / sizeof(encodingMask[0]))] ^ mask3);
+        encoded[i + start] = static_cast<uint8>(current ^ encodingMask[i % encodingMask.size()] ^ mask3);
         mask3 = static_cast<uint8>(current * i + 2 * mask3);
     }
 

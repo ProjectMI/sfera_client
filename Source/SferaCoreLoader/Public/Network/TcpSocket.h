@@ -1,12 +1,15 @@
 #pragma once
 #include "Network/NetworkTypes.h"
-#include <cstdint>
+#include <memory>
 
-class FTcpSocket 
+struct FNativeTcpSocket;
+
+class FTcpSocket
 {
 public:
     FTcpSocket();
     ~FTcpSocket();
+
     FStatus Connect(const FEndpoint& endpoint);
     FStatus Connect(const FEndpoint& endpoint, uint32 timeoutMs);
     FStatus SetNonBlocking(bool enabled);
@@ -15,7 +18,8 @@ public:
     TResult<FByteArray> ReceiveAvailable(size_t maxBytes);
     void Close();
     bool IsConnected() const { return State == EConnectionState::Connected; }
+
 private:
     EConnectionState State = EConnectionState::Closed;
-    uintptr_t SocketHandle = ~uintptr_t(0);
+    std::unique_ptr<FNativeTcpSocket> Native;
 };

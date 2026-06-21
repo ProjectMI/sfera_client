@@ -3,7 +3,7 @@
 
 FClientSession::FClientSession(FLogger* logger) : Log(logger) {}
 
-const char* FClientSession::StageName(EClientSessionStage stage)
+std::string_view FClientSession::StageName(EClientSessionStage stage)
 {
     switch (stage)
     {

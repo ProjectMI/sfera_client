@@ -7,7 +7,6 @@
 #include "Model/ModelRepository.h"
 #include <algorithm>
 #include <memory>
-#include <cstdlib>
 #include <exception>
 
 FApplication::FApplication() : ExecutableRoot(PathUtils::GetExecutableDirectory()), Logger(ExecutableRoot / "core_loader.log"), FileSystem(ExecutableRoot) {}

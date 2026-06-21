@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cctype>
 
-const char* ToString(EResourceKind kind)
+std::string_view ToString(EResourceKind kind)
 {
     switch (kind)
     {

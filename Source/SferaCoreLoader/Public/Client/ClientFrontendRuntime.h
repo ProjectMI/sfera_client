@@ -3,7 +3,7 @@
 #include "Core/Logger.h"
 #include "Network/ClientSession.h"
 #include "Network/LoginClient.h"
-#include "Platform/Win32Window.h"
+#include "Platform/Win64Window.h"
 #include "Renderer/D3D9RenderDevice.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
@@ -51,14 +51,14 @@ private:
     void BeginCharacterCreateRequest();
     void BeginCharacterDeleteRequest();
     void PollCharacterResult();
-    void DrawLoadingFrame(HDC__* dc, const tagRECT& rect);
+    void DrawLoadingFrame(HDC dc, const RECT& rect);
     void LoadSavedLogin();
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
     FLoginProbeResult RefreshCharacterSelectSession(const std::wstring& login, const std::wstring& password, int32 timeoutMs);
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
-    FWin32Window Window;
+    FWin64Window Window;
     FUiRuntime Ui;
     FD3D9RenderDevice RenderDevice;
     FClientSession Session;

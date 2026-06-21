@@ -4,15 +4,14 @@
 #include "Model/ChrModel.h"
 #include "Model/MdlModel.h"
 #include "Model/SklSkeleton.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <d3d9.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cctype>
-#include <cstring>
+#include <bit>
+#include <functional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -69,11 +68,17 @@ namespace
     FVec3 Rotate(FQuat rotation, FVec3 value)
     {
         const auto q = NormalizeQuat(rotation);
-        const FVec3 u { q.X, q.Y, q.Z };
+        const FVec3 u
+        {
+            q.X, q.Y, q.Z
+        };
         const float s = q.W;
         const auto uv = Cross(u, value);
         const auto uuv = Cross(u, uv);
-        return { value.X + (uv.X * s + uuv.X) * 2.0f, value.Y + (uv.Y * s + uuv.Y) * 2.0f, value.Z + (uv.Z * s + uuv.Z) * 2.0f };
+        return
+        {
+            value.X + (uv.X * s + uuv.X) * 2.0f, value.Y + (uv.Y * s + uuv.Y) * 2.0f, value.Z + (uv.Z * s + uuv.Z) * 2.0f
+        };
     }
 
     D3DMATRIX IdentityMatrix()
@@ -161,7 +166,10 @@ namespace
     FVec3 TransformVector(FMatrix4 matrix, FVec3 value) { return {value.X * matrix.M[0] + value.Y * matrix.M[4] + value.Z * matrix.M[8], value.X * matrix.M[1] + value.Y * matrix.M[5] + value.Z * matrix.M[9], value.X * matrix.M[2] + value.Y * matrix.M[6] + value.Z * matrix.M[10]}; }
     D3DMATRIX LookAtRh(FVec3 eye, FVec3 at, FVec3 up)
     {
-        const FVec3 viewDirection { eye.X - at.X, eye.Y - at.Y, eye.Z - at.Z };
+        const FVec3 viewDirection
+        {
+            eye.X - at.X, eye.Y - at.Y, eye.Z - at.Z
+        };
         const FVec3 zaxis = NormalizeVec3(viewDirection);
         const FVec3 xaxis = NormalizeVec3(Cross(up, zaxis));
         const FVec3 yaxis = Cross(zaxis, xaxis);
@@ -260,7 +268,13 @@ namespace
             throw std::runtime_error(blob.Status().Message());
         }
 
-        std::string text(reinterpret_cast<const char*>(blob.Value().Bytes.data()), blob.Value().Bytes.size());
+        std::string text;
+        text.reserve(blob.Value().Bytes.size());
+
+        for (uint8 value : blob.Value().Bytes)
+        {
+            text.push_back(static_cast<char>(value));
+        }
         std::unordered_map<std::string, FXaddSubobject> subobjects;
         bool inSubobjects = false;
         std::istringstream stream(text);
@@ -420,7 +434,7 @@ namespace
 
         return blob.Value().Bytes;
     }
-    std::string HresultText(const char* action, HRESULT hr)
+    std::string HresultText(std::string_view action, HRESULT hr)
     {
         std::ostringstream out;
         out << action << " failed: 0x" << std::hex << static_cast<unsigned long>(hr);
@@ -615,7 +629,7 @@ std::vector<FMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) c
     const size_t boneCount = static_cast<size_t>(SkeletonBoneCount);
     std::vector<FMatrix4> matrices(boneCount);
     std::vector<uint8> states(boneCount, 0);
-    auto resolve = [&](auto&& self, size_t bone) -> FMatrix4
+    std::function<FMatrix4(size_t)> resolve = [&](size_t bone) -> FMatrix4
     {
         if (states[bone] == 2) { return matrices[bone]; }
 
@@ -636,7 +650,7 @@ std::vector<FMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) c
 
         if (parent >= 0)
         {
-            matrix = MatrixMultiply(matrix, self(self, static_cast<size_t>(parent)));
+            matrix = MatrixMultiply(matrix, resolve(static_cast<size_t>(parent)));
         }
 
         matrices[bone] = matrix;
@@ -646,7 +660,7 @@ std::vector<FMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) c
 
     for (size_t i = 0; i < boneCount; ++i)
     {
-        resolve(resolve, i);
+        resolve(i);
     }
 
     return matrices;
@@ -966,7 +980,7 @@ IDirect3DTexture9* FD3D9CharacterScene::LoadDdsTexture(IDirect3DDevice9* device,
 
             for (uint32 row = 0; row < sourceRows; ++row)
             {
-                std::memcpy(dest + static_cast<size_t>(row) * locked.Pitch, source + row * sourcePitch, sourcePitch);
+                std::copy_n(source + row * sourcePitch, sourcePitch, dest + static_cast<size_t>(row) * locked.Pitch);
             }
 
             texture->UnlockRect(level);
@@ -1013,7 +1027,7 @@ bool FD3D9CharacterScene::UploadGroundBuffers(IDirect3DDevice9* device, const FR
 
     if (FAILED(hr)) { error = HresultText("GroundVertexBuffer::Lock", hr); return false; }
 
-    std::memcpy(vertexData, GroundVertices.data(), GroundVertices.size() * sizeof(FSceneVertex));
+    std::copy(GroundVertices.begin(), GroundVertices.end(), static_cast<FSceneVertex*>(vertexData));
     GroundVertexBuffer->Unlock();
     hr = device->CreateIndexBuffer(static_cast<UINT>(GroundIndices.size() * sizeof(uint16)), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &GroundIndexBuffer, nullptr);
 
@@ -1024,7 +1038,7 @@ bool FD3D9CharacterScene::UploadGroundBuffers(IDirect3DDevice9* device, const FR
 
     if (FAILED(hr)) { error = HresultText("GroundIndexBuffer::Lock", hr); return false; }
 
-    std::memcpy(indexData, GroundIndices.data(), GroundIndices.size() * sizeof(uint16));
+    std::copy(GroundIndices.begin(), GroundIndices.end(), static_cast<uint16*>(indexData));
     GroundIndexBuffer->Unlock();
     GroundUploaded = true;
     return true;
@@ -1053,7 +1067,7 @@ bool FD3D9CharacterScene::UploadCharacterBuffers(IDirect3DDevice9* device, const
 
     if (FAILED(hr)) { error = HresultText("CharacterVertexBuffer::Lock", hr); return false; }
 
-    std::memcpy(vertexData, CharacterVertices.data(), CharacterVertices.size() * sizeof(FSceneVertex));
+    std::copy(CharacterVertices.begin(), CharacterVertices.end(), static_cast<FSceneVertex*>(vertexData));
     CharacterVertexBuffer->Unlock();
     hr = device->CreateIndexBuffer(static_cast<UINT>(CharacterIndices.size() * sizeof(uint16)), 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &CharacterIndexBuffer, nullptr);
 
@@ -1064,7 +1078,7 @@ bool FD3D9CharacterScene::UploadCharacterBuffers(IDirect3DDevice9* device, const
 
     if (FAILED(hr)) { error = HresultText("CharacterIndexBuffer::Lock", hr); return false; }
 
-    std::memcpy(indexData, CharacterIndices.data(), CharacterIndices.size() * sizeof(uint16));
+    std::copy(CharacterIndices.begin(), CharacterIndices.end(), static_cast<uint16*>(indexData));
     CharacterIndexBuffer->Unlock();
     CharacterUploaded = true;
     return true;
@@ -1181,8 +1195,8 @@ void FD3D9CharacterScene::ConfigureRenderState(IDirect3DDevice9* device)
     const float fogEnd = 16.0f;
     DWORD fogStartBits = 0;
     DWORD fogEndBits = 0;
-    std::memcpy(&fogStartBits, &fogStart, sizeof(fogStart));
-    std::memcpy(&fogEndBits, &fogEnd, sizeof(fogEnd));
+    fogStartBits = static_cast<DWORD>(std::bit_cast<uint32>(fogStart));
+    fogEndBits = static_cast<DWORD>(std::bit_cast<uint32>(fogEnd));
     device->SetRenderState(D3DRS_FOGSTART, fogStartBits);
     device->SetRenderState(D3DRS_FOGEND, fogEndBits);
     D3DMATERIAL9 material{};
@@ -1291,7 +1305,7 @@ void FD3D9CharacterScene::UpdateCamera()
     CameraFovDegrees = Approach(CameraFovDegrees, CameraFovDegreesTarget, 0.12f);
 }
 
-void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const tagRECT& clientRect)
+void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const RECT& clientRect)
 {
     const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
@@ -1320,7 +1334,7 @@ void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const t
     device->SetTransform(D3DTS_PROJECTION, &projection);
 }
 
-void FD3D9CharacterScene::UpdateCharacterAnimation(IDirect3DDevice9* device)
+void FD3D9CharacterScene::UpdateCharacterAnimation(IDirect3DDevice9*)
 {
     if (!CharacterVertexBuffer || CharacterSources.empty() || CharacterAnimationFrames == 0) { return; }
 
@@ -1344,7 +1358,7 @@ void FD3D9CharacterScene::UpdateCharacterAnimation(IDirect3DDevice9* device)
 
     if (SUCCEEDED(CharacterVertexBuffer->Lock(0, bytes, &data, 0)))
     {
-        std::memcpy(data, CharacterVertices.data(), bytes);
+        std::copy(CharacterVertices.begin(), CharacterVertices.end(), static_cast<FSceneVertex*>(data));
         CharacterVertexBuffer->Unlock();
     }
 }
@@ -1408,7 +1422,7 @@ void FD3D9CharacterScene::DrawCharacter(IDirect3DDevice9* device)
     }
 }
 
-bool FD3D9CharacterScene::Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const tagRECT& clientRect, FLogger* logger)
+bool FD3D9CharacterScene::Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, FLogger* logger)
 {
     if (!EnsureInitialized(device, resources, logger)) { return false; }
 

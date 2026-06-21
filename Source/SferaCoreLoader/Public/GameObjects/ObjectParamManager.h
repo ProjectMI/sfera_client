@@ -45,7 +45,7 @@ private:
     static bool IsModelParamTable(std::string_view normalizedPath);
     static bool IsGroupTable(std::string_view normalizedPath);
     static EObjectParamSourceKind ClassifySourcePath(std::string_view normalizedPath);
-    static const char* SourceKindName(EObjectParamSourceKind kind);
+    static std::string_view SourceKindName(EObjectParamSourceKind kind);
     static std::string BaseNameWithoutExtension(std::string_view path);
     static std::string ObjectKeyForEntry(const FConfigEntry& entry);
     static FObjectParamValue ParseValue(std::string value);

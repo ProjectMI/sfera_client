@@ -1,8 +1,7 @@
 #include "Client/ClientFrontendRuntime.h"
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -34,14 +33,14 @@ namespace
 {
     std::filesystem::path SavedLoginPath()
     {
-        wchar_t buffer[MAX_PATH]{};
-        DWORD count = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
-        std::filesystem::path root = count > 0 ? std::filesystem::path(buffer).parent_path() : std::filesystem::current_path();
+        std::array<wchar_t, MAX_PATH> buffer{};
+        DWORD count = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+        std::filesystem::path root = count > 0 ? std::filesystem::path(buffer.data()).parent_path() : std::filesystem::current_path();
         return root / "sfera_login.cache";
     }
 }
 
-void FClientFrontendRuntime::DrawLoadingFrame(HDC__* dc, const tagRECT& rect)
+void FClientFrontendRuntime::DrawLoadingFrame(HDC dc, const RECT& rect)
 {
     if (!dc) { return; }
 
@@ -202,7 +201,7 @@ FStatus FClientFrontendRuntime::CreateShell(const FClientSettings& settings)
 
     if (!status.IsOk()) { return status; }
 
-    Window.SetPaintCallback([this](HDC__* dc, const tagRECT& rect)
+    Window.SetPaintCallback([this](HDC dc, const RECT& rect)
     {
         DrawLoadingFrame(dc, rect);
     });

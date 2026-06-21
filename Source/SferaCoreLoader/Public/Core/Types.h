@@ -1,6 +1,6 @@
 #pragma once
-#if !defined(_WIN64)
-#error SferaCoreLoader is Win64-only. Build the project as x64 under MSVC.
+#if !defined(_WIN64) && !defined(_M_X64) && !defined(__x86_64__)
+#error SferaCoreLoader is Win64-only. Build the project as x64.
 #endif
 
 #include <cstdint>

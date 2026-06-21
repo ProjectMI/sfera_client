@@ -5,17 +5,15 @@
 #include "Renderer/D3D9CharacterScene.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
+#include <Windows.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-struct HWND__;
 struct IDirect3D9;
 struct IDirect3DDevice9;
 struct IDirect3DTexture9;
 struct _D3DPRESENT_PARAMETERS_;
-struct HINSTANCE__;
-struct tagRECT;
 struct FDdsImage;
 
 struct FD3D9ShaderInventory 
@@ -40,11 +38,11 @@ class FD3D9RenderDevice
 public:
     FD3D9RenderDevice();
     ~FD3D9RenderDevice();
-    FStatus Initialize(HWND__* hwnd, int32 width, int32 height, FLogger* logger);
+    FStatus Initialize(HWND hwnd, int32 width, int32 height, FLogger* logger);
     void Shutdown();
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
-    FStatus RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const tagRECT& rect, FLogger* logger);
+    FStatus RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const RECT& rect, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
 private:
     struct FDrawContext;
@@ -60,7 +58,7 @@ private:
     bool DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, unsigned long color);
     bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst);
     void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect);
-    void DrawModalDialog(FDrawContext& ctx, const tagRECT& rect);
+    void DrawModalDialog(FDrawContext& ctx, const RECT& rect);
     void DrawTextRect(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex);
     void DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& ui, const FUiRectF& designRect);
     void DrawSolidRect(float x, float y, float w, float h, unsigned long color);
@@ -70,13 +68,13 @@ private:
     void ReleaseTextures();
     IDirect3D9* D3D = nullptr;
     IDirect3DDevice9* Device = nullptr;
-    HINSTANCE__* D3DXModule = nullptr;
+    HINSTANCE D3DXModule = nullptr;
     FD3DXCreateTextureFromFileInMemoryExPtr D3DXCreateTextureFromFileInMemoryExFn = nullptr;
     std::unordered_map<std::string, FD3D9TextureEntry> TextureCache;
     FD3D9BitmapFontCatalog FontCache;
     FD3D9CharacterScene CharacterScene;
     int32 BackBufferWidth = 0;
     int32 BackBufferHeight = 0;
-    HWND__* DeviceWindow = nullptr;
+    HWND DeviceWindow = nullptr;
     bool ReportedD3DXMissing = false;
 };

@@ -1,27 +1,44 @@
 #include "Compression/SphrCodec.h"
 #include "Compression/ZlibInflate.h"
-#include <cstring>
+#include <algorithm>
+#include <array>
+#include <string_view>
+
+namespace
+{
+    bool StartsWithBytes(const FByteArray& bytes, std::string_view marker)
+    {
+        if (bytes.size() < marker.size()) { return false; }
+
+        return std::equal(marker.begin(), marker.end(), bytes.begin(), bytes.begin() + marker.size(), [](char expected, uint8 value)
+        {
+            return static_cast<uint8>(expected) == value;
+        });
+    }
+}
 
 FSphrProbe FSphrCodec::Probe(const FByteArray& bytes)
 {
     FSphrProbe p;
 
-    if (bytes.size() < 14 || std::memcmp(bytes.data(), "SPHR", 4) != 0) { return p; }
+    if (bytes.size() < 14 || !StartsWithBytes(bytes, "SPHR")) { return p; }
 
     p.IsSphr = true;
     p.HeaderXorKey = bytes.size() > 8 ? bytes[8] : 0;
     p.SizeXorKey = bytes[14];
-    uint8 decoded[4] =
-    {
-        0,0,0,0
-    };
 
-    for (size_t i = 0; i < 4; ++i)
+    std::array<uint8, 4> decoded{};
+
+    for (size_t i = 0; i < decoded.size(); ++i)
     {
         decoded[i] = static_cast<uint8>(bytes[4 + i] ^ p.SizeXorKey);
     }
 
-    p.ExpectedSize = uint32(decoded[0]) | (uint32(decoded[1]) << 8) | (uint32(decoded[2]) << 16) | (uint32(decoded[3]) << 24);
+    p.ExpectedSize = static_cast<uint32>(decoded[0])
+        | (static_cast<uint32>(decoded[1]) << 8)
+        | (static_cast<uint32>(decoded[2]) << 16)
+        | (static_cast<uint32>(decoded[3]) << 24);
+
     return p;
 }
 

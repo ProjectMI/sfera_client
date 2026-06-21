@@ -1,5 +1,6 @@
 #pragma once
 #include "MBC/MbcTypes.h"
+#include <string_view>
 #include <unordered_map>
 
 enum class EMbcOperandFormat 
@@ -38,10 +39,10 @@ struct FMbcOpcodeSpec
 	uint8 Char = 0;
 	uint32 TableEa = 0; 
 	uint32 HandlerEa = 0; 
-	const char* HandlerName = ""; 
-	const char* Mnemonic = "";
+	std::string_view HandlerName; 
+	std::string_view Mnemonic;
 	EMbcOperandFormat Format = EMbcOperandFormat::None; 
-	const char* Semantic = ""; 
+	std::string_view Semantic; 
 };
 
 struct FMbcBuiltinSpec 
@@ -49,10 +50,10 @@ struct FMbcBuiltinSpec
 	uint8 SubOpcode = 0; 
 	uint32 TableEa = 0; 
 	uint32 TargetEa = 0;
-	const char* TargetName = ""; 
-	const char* Mnemonic = "";
-	const char* Semantic = "";
-	const char* Confidence = "unverified"; 
+	std::string_view TargetName; 
+	std::string_view Mnemonic;
+	std::string_view Semantic;
+	std::string_view Confidence = "unverified"; 
 };
 
 struct FMbcDecodedEdge 

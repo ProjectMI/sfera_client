@@ -2,7 +2,6 @@
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
-#include <cstdlib>
 #include <sstream>
 #include <unordered_map>
 #include <set>
@@ -487,7 +486,7 @@ bool FZoningManager::SetKnownField(FWorldZoneParams& zone, const FConfigEntry& e
 
     if (k == "fogfar") { zone.Lighting.FogFar = ToFloat(entry.Value); return true; }
 
-    auto colorSet = [&](auto& colors, const std::string& prefix) -> bool
+    auto colorSet = [&](std::array<FColor3, 8>& colors, const std::string& prefix) -> bool
     {
         size_t p = q.find(prefix);
 

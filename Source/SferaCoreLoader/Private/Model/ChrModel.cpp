@@ -16,7 +16,13 @@ namespace
             throw std::runtime_error("truncated CHR bone name");
         }
 
-        std::string name(reinterpret_cast<const char*>(data.data() + cursor), length);
+        std::string name;
+        name.reserve(length);
+
+        for (size_t i = 0; i < length; ++i)
+        {
+            name.push_back(static_cast<char>(data[cursor + i]));
+        }
         cursor += length;
 
         while (!name.empty() && name.back() == '\0')

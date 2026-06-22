@@ -1,4 +1,5 @@
 #include "ResourceLoader/ResourceTypes.h"
+#include "Common/StringUtils.h"
 #include <algorithm>
 #include <cctype>
 
@@ -22,11 +23,7 @@ std::string_view ToString(EResourceKind kind)
 
 EResourceKind GuessResourceKind(const FPath& path)
 {
-    std::string ext = path.extension().string();
-    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
+    std::string ext = Common::ToLower(path.extension().string());
 
     if (ext == ".cfg") { return EResourceKind::Config; }
 
@@ -40,11 +37,7 @@ EResourceKind GuessResourceKind(const FPath& path)
 
     if (ext == ".mtr" || ext == ".mtx") { return EResourceKind::Material; }
 
-    std::string generic = path.generic_string();
-    std::transform(generic.begin(), generic.end(), generic.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
+    std::string generic = Common::ToLowerPath(path);
 
     if (ext == ".siz" || ext == ".map" || ext == ".lnd" || (ext == ".bin" && (generic.find("landscape") != std::string::npos || generic.find("xadd/snowpath") != std::string::npos)) || (ext == ".txt" && generic.find("landscape") != std::string::npos)) { return EResourceKind::Landscape; }
 

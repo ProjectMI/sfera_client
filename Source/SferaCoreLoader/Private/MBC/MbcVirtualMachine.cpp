@@ -306,7 +306,7 @@ FStatus FMbcVirtualMachine::ExecuteDecoded(FMbcRuntimeFrame& frame, const FMbcDe
                     Push(frame, FMbcValue::Int(0));
                 }
 
-                AddEvent("native_stub", sym->Name, frame, nativeSpec->Note);
+                AddEvent("native_boundary", sym->Name, frame, nativeSpec->Note);
                 return FStatus::Ok();
             }
 
@@ -482,7 +482,7 @@ FStatus FMbcVirtualMachine::ExecuteBuiltin(FMbcRuntimeFrame& frame, const FMbcDe
                 Push(frame, FMbcValue::Int(0));
             }
 
-            AddEvent("builtin_stub", name, frame, builtin ? std::string(builtin->Semantic) : "unrecovered builtin");
+            AddEvent("builtin_boundary", name, frame, builtin ? std::string(builtin->Semantic) : "unrecovered builtin");
             return FStatus::Ok();
         }
     }

@@ -1,27 +1,13 @@
 #include "Compression/SphrCodec.h"
+#include "Common/BinaryData.h"
 #include "Compression/ZlibInflate.h"
-#include <algorithm>
 #include <array>
-#include <string_view>
-
-namespace
-{
-    bool StartsWithBytes(const FByteArray& bytes, std::string_view marker)
-    {
-        if (bytes.size() < marker.size()) { return false; }
-
-        return std::equal(marker.begin(), marker.end(), bytes.begin(), bytes.begin() + marker.size(), [](char expected, uint8 value)
-        {
-            return static_cast<uint8>(expected) == value;
-        });
-    }
-}
 
 FSphrProbe FSphrCodec::Probe(const FByteArray& bytes)
 {
     FSphrProbe p;
 
-    if (bytes.size() < 14 || !StartsWithBytes(bytes, "SPHR")) { return p; }
+    if (bytes.size() < 14 || !Common::StartsWithBytes(bytes, "SPHR")) { return p; }
 
     p.IsSphr = true;
     p.HeaderXorKey = bytes.size() > 8 ? bytes[8] : 0;

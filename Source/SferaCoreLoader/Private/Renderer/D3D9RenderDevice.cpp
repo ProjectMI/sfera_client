@@ -1,6 +1,8 @@
 #include <string_view>
 #include <array>
 #include "Renderer/D3D9RenderDevice.h"
+#include "D3D9Utils.h"
+#include "Common/StringUtils.h"
 #include "Renderer/DdsImage.h"
 #include "FileSystem/PathUtils.h"
 #include "ResourceLoader/ResourceTypes.h"
@@ -29,15 +31,7 @@ namespace
     };
     constexpr unsigned long FVF_UI = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
 
-    std::string Lower(std::string value)
-    {
-        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
-        {
-            return static_cast<char>(std::tolower(ch));
-        });
-        return value;
-    }
-    std::string StemLower(const FPath& path) { return Lower(path.stem().string()); }
+    std::string StemLower(const FPath& path) { return Common::ToLower(path.stem().string()); }
     unsigned long Argb(unsigned char a, unsigned char r, unsigned char g, unsigned char b) { return (static_cast<unsigned long>(a) << 24) | (static_cast<unsigned long>(r) << 16) | (static_cast<unsigned long>(g) << 8) | static_cast<unsigned long>(b); }
     unsigned long ColorToArgb(const FUiColor& color) { return Argb(static_cast<unsigned char>(std::clamp(color.A, 0, 255)), static_cast<unsigned char>(std::clamp(color.R, 0, 255)), static_cast<unsigned char>(std::clamp(color.G, 0, 255)), static_cast<unsigned char>(std::clamp(color.B, 0, 255))); }
     int ColorR(unsigned long color) { return static_cast<int>((color >> 16) & 0xff); }
@@ -52,11 +46,9 @@ namespace
     }
     float SnapPixel(float v) { return std::floor(v + 0.5f) - 0.5f; }
     float SnapSize(float v) { return std::max(1.0f, std::floor(v + 0.5f)); }
-    bool EqualsNoCase(std::string_view a, std::string_view b) { return Lower(std::string(a)) == Lower(std::string(b)); }
-
     const FUiSpriteDef* FindSprite(const FUiWindowDef& window, std::string_view name)
     {
-        auto it = window.Sprites.find(Lower(std::string(name)));
+        auto it = window.Sprites.find(Common::ToLower(std::string(name)));
 
         if (it == window.Sprites.end()) { return nullptr; }
 
@@ -87,12 +79,12 @@ namespace
         return !button.UncheckedImage.empty() ? button.UncheckedImage : std::string(normalFallback);
     }
 
-    bool IsTextLikeControl(const FUiControlDef& control) { return EqualsNoCase(control.ClassId, "TEXT") || EqualsNoCase(control.ClassId, "TEXTLIST") || EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
+    bool IsTextLikeControl(const FUiControlDef& control) { return Common::EqualsNoCase(control.ClassId, "TEXT") || Common::EqualsNoCase(control.ClassId, "TEXTLIST") || Common::EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
     std::string TextForControl(const FUiRuntime& ui, const FUiWindowDef& window, const FUiControlDef& control)
     {
-        if (ui.Mode() == EUiRuntimeMode::CharacterSelect && EqualsNoCase(window.Name, "pick_person")) { return ui.CharacterControlText(control); }
+        if (ui.Mode() == EUiRuntimeMode::CharacterSelect && Common::EqualsNoCase(window.Name, "pick_person")) { return ui.CharacterControlText(control); }
 
-        if (ui.HasModalDialog() && EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.ModalControlText(control); }
+        if (ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.ModalControlText(control); }
 
         return control.TextKey.empty() ? std::string{} : ui.ResolveText(control.TextKey);
     }
@@ -167,11 +159,7 @@ void FD3D9RenderDevice::ReleaseTextures()
 {
     for (auto& item : TextureCache)
     {
-        if (item.second.Texture)
-        {
-            item.second.Texture->Release();
-            item.second.Texture = nullptr;
-        }
+        SafeRelease(item.second.Texture);
     }
 
     TextureCache.clear();
@@ -183,17 +171,8 @@ void FD3D9RenderDevice::Shutdown()
     CharacterScene.Shutdown();
     ReleaseTextures();
 
-    if (Device)
-    {
-        Device->Release();
-        Device = nullptr;
-    }
-
-    if (D3D)
-    {
-        D3D->Release();
-        D3D = nullptr;
-    }
+    SafeRelease(Device);
+    SafeRelease(D3D);
 
     DeviceWindow = nullptr;
     BackBufferWidth = 0;
@@ -258,7 +237,7 @@ std::string FD3D9RenderDevice::ResolveTextureResourceName(const FResourceManager
 
     if (name.empty()) { return {}; }
 
-    std::string lower = Lower(name);
+    std::string lower = Common::ToLower(name);
     bool hasExt = lower.find('.') != std::string::npos;
     std::vector<std::string> bases =
     {
@@ -288,12 +267,12 @@ std::string FD3D9RenderDevice::ResolveTextureResourceName(const FResourceManager
     {
         EResourceKind kind = GuessResourceKind(record.RelativePath);
 
-        if (kind != EResourceKind::Texture && Lower(record.RelativePath.extension().string()) != ".dds")
+        if (kind != EResourceKind::Texture && Common::ToLower(record.RelativePath.extension().string()) != ".dds")
         {
             continue;
         }
 
-        if (StemLower(record.RelativePath) == lower || Lower(record.RelativePath.filename().string()) == lower)
+        if (StemLower(record.RelativePath) == lower || Common::ToLower(record.RelativePath.filename().string()) == lower)
         {
             return record.RelativePath.generic_string();
         }
@@ -329,7 +308,7 @@ IDirect3DTexture9* FD3D9RenderDevice::CreateTextureFromDdsImage(const FDdsImage&
             logger->Warning("D3D9 DDS texture lock failed: hr=" + std::to_string(static_cast<long>(hr)));
         }
 
-        texture->Release();
+        SafeRelease(texture);
         return nullptr;
     }
 
@@ -348,7 +327,7 @@ IDirect3DTexture9* FD3D9RenderDevice::CreateTextureFromDdsImage(const FDdsImage&
 
 FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& resources, std::string_view textureName, FLogger* logger)
 {
-    std::string key = Lower(std::string(textureName));
+    std::string key = Common::ToLower(std::string(textureName));
 
     if (key.empty()) { return nullptr; }
 
@@ -403,7 +382,7 @@ FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& 
         }
     }
 
-    if (!texture && Lower(FPath(logical).extension().string()) == ".dds")
+    if (!texture && Common::ToLower(FPath(logical).extension().string()) == ".dds")
     {
         auto dds = DecodeDdsRgbImageFromBytes(blob.Value().Bytes, logical);
 
@@ -688,9 +667,9 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         windowRect.X + control.Rect.X * ctx.Scale, windowRect.Y + control.Rect.Y * ctx.Scale, control.Rect.W * ctx.Scale, control.Rect.H * ctx.Scale
     };
 
-    if (EqualsNoCase(control.ClassId, "IMAGE"))
+    if (Common::EqualsNoCase(control.ClassId, "IMAGE"))
     {
-        if (!EqualsNoCase(control.ImageName, "black") && !control.ImageName.empty())
+        if (!Common::EqualsNoCase(control.ImageName, "black") && !control.ImageName.empty())
         {
             DrawSprite(ctx, window, control.ImageName, r.W > 0.0f && r.H > 0.0f ? r : windowRect);
         }
@@ -698,9 +677,9 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "BUTTON"))
+    if (Common::EqualsNoCase(control.ClassId, "BUTTON"))
     {
-        const bool modalDisabled = ctx.Ui.HasModalDialog() && EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.IsModalActionAllowed(control);
+        const bool modalDisabled = ctx.Ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.IsModalActionAllowed(control);
         std::string sprite = SelectButtonSprite(control, state);
 
         if (!sprite.empty())
@@ -719,7 +698,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "CHECKBOX"))
+    if (Common::EqualsNoCase(control.ClassId, "CHECKBOX"))
     {
         std::string sprite;
 
@@ -744,7 +723,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "RADIOBUTTON"))
+    if (Common::EqualsNoCase(control.ClassId, "RADIOBUTTON"))
     {
         std::string sprite = ctx.Ui.SelectedCharacterSlot() == control.Id - 63 ? control.CheckedImage : control.UncheckedImage;
 
@@ -764,7 +743,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "SPINBUTTON"))
+    if (Common::EqualsNoCase(control.ClassId, "SPINBUTTON"))
     {
         FUiSubButtonDef leftButton = control.RightButton;
         FUiSubButtonDef rightButton = control.LeftButton;
@@ -802,7 +781,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "SLOT"))
+    if (Common::EqualsNoCase(control.ClassId, "SLOT"))
     {
         const std::string fill = !control.SlotFullImage.empty() ? control.SlotFullImage : control.SlotEmptyImage;
 
@@ -819,19 +798,19 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "PROGRESS_BAR") || EqualsNoCase(control.ClassId, "PROGRESSBAR"))
+    if (Common::EqualsNoCase(control.ClassId, "PROGRESS_BAR") || Common::EqualsNoCase(control.ClassId, "PROGRESSBAR"))
     {
         unsigned long color = control.Id == 42 || control.Id == 46 ? Argb(210, 48, 109, 210) : control.Id == 47 ? Argb(210, 210, 190, 45) : Argb(210, 70, 170, 60);
 
-        if (EqualsNoCase(control.DrawSpriteName, "blue"))
+        if (Common::EqualsNoCase(control.DrawSpriteName, "blue"))
         {
             color = Argb(210, 48, 109, 210);
         }
-        else if (EqualsNoCase(control.DrawSpriteName, "yellow"))
+        else if (Common::EqualsNoCase(control.DrawSpriteName, "yellow"))
         {
             color = Argb(210, 210, 190, 45);
         }
-        else if (EqualsNoCase(control.DrawSpriteName, "green"))
+        else if (Common::EqualsNoCase(control.DrawSpriteName, "green"))
         {
             color = Argb(210, 70, 170, 60);
         }
@@ -853,11 +832,11 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (EqualsNoCase(control.ClassId, "EDIT"))
+    if (Common::EqualsNoCase(control.ClassId, "EDIT"))
     {
         std::string text;
 
-        if (ctx.Ui.HasModalDialog() && EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name))
+        if (ctx.Ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name))
         {
             text = TextForControl(ctx.Ui, window, control);
         }
@@ -1198,7 +1177,7 @@ FD3D9ShaderInventory FD3D9RenderDevice::InspectShaderResources(const FResourceMa
     for (const auto& record : resources.Catalog().All())
     {
         std::string path = record.RelativePath.generic_string();
-        std::string lower = Lower(path);
+        std::string lower = Common::ToLower(path);
         bool isShader = lower.find("shader") != std::string::npos || lower.find("shaders/") != std::string::npos || lower.find("shaders\\") != std::string::npos;
 
         if (!isShader) { continue; }

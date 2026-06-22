@@ -1,47 +1,26 @@
 #include "Compression/CompressionService.h"
+#include "Common/BinaryData.h"
 #include "Compression/LzssCodec.h"
 #include "Compression/SphrCodec.h"
 #include "Compression/ZlibInflate.h"
-#include <algorithm>
-#include <string_view>
 
-namespace
-{
-    bool StartsWithBytes(const FByteArray& bytes, std::string_view marker)
-    {
-        if (bytes.size() < marker.size()) { return false; }
-
-        return std::equal(marker.begin(), marker.end(), bytes.begin(), bytes.begin() + marker.size(), [](char expected, uint8 value)
-        {
-            return static_cast<uint8>(expected) == value;
-        });
-    }
-
-    uint32 ReadLe32(const FByteArray& bytes, size_t offset)
-    {
-        return static_cast<uint32>(bytes[offset])
-            | (static_cast<uint32>(bytes[offset + 1]) << 8)
-            | (static_cast<uint32>(bytes[offset + 2]) << 16)
-            | (static_cast<uint32>(bytes[offset + 3]) << 24);
-    }
-}
 
 FCompressionProbe FCompressionService::Probe(const FByteArray& bytes) const
 {
-    if (bytes.size() >= 14 && StartsWithBytes(bytes, "SPHR"))
+    if (bytes.size() >= 14 && Common::StartsWithBytes(bytes, "SPHR"))
     {
         auto p = FSphrCodec::Probe(bytes);
         return {ECompressionMethod::LegacySphr, 0, p.ExpectedSize, "legacy SPHR zlib config wrapper"};
     }
 
-    if (bytes.size() >= 12 && StartsWithBytes(bytes, "LZSS"))
+    if (bytes.size() >= 12 && Common::StartsWithBytes(bytes, "LZSS"))
     {
-        return {ECompressionMethod::LegacyLzss, 8, ReadLe32(bytes, 4), "explicit LZSS marker"};
+        return {ECompressionMethod::LegacyLzss, 8, Common::U32LEUnchecked(bytes, 4), "explicit LZSS marker"};
     }
 
-    if (bytes.size() >= 12 && StartsWithBytes(bytes, "LZ77"))
+    if (bytes.size() >= 12 && Common::StartsWithBytes(bytes, "LZ77"))
     {
-        return {ECompressionMethod::LegacyLzss, 8, ReadLe32(bytes, 4), "explicit LZ77 marker mapped to legacy LZSS"};
+        return {ECompressionMethod::LegacyLzss, 8, Common::U32LEUnchecked(bytes, 4), "explicit LZ77 marker mapped to legacy LZSS"};
     }
 
     if (bytes.size() >= 2 && bytes[0] == 0x78) { return {ECompressionMethod::ZlibDeflate, 0, 0, "zlib/deflate stream"}; }

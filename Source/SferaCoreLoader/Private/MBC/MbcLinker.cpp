@@ -1,15 +1,9 @@
 #include "MBC/MbcLinker.h"
+#include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include "MBC/MbcOpcode.h"
 #include <algorithm>
 
-static std::string StemLike(const std::string& path)
-{
-    size_t slash = path.find_last_of("/\\");
-    std::string name = slash == std::string::npos ? path : path.substr(slash + 1);
-    size_t dot = name.find_last_of('.');
-    return dot == std::string::npos ? name : name.substr(0, dot);
-}
 static bool HasImportStubPayload(const FMbcModule& module, uint32 codeOffset, uint32& payload)
 {
     const auto& code = module.Code();
@@ -50,7 +44,7 @@ void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
     for (uint32 moduleIndex = 0; moduleIndex < modules.size(); ++moduleIndex)
     {
         const FMbcModule& module = modules[moduleIndex];
-        std::string moduleName = StemLike(module.Name());
+        std::string moduleName = Common::BaseNameWithoutExtension(module.Name());
 
         for (const auto& fn : module.Functions())
         {

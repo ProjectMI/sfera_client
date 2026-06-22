@@ -1,4 +1,5 @@
 #include "FileSystem/PathUtils.h"
+#include "Common/StringUtils.h"
 #include <Windows.h>
 #include <algorithm>
 #include <array>
@@ -23,13 +24,5 @@ namespace PathUtils
         return exePath.has_parent_path() ? exePath.parent_path() : std::filesystem::current_path();
     }
 
-    std::string NormalizeForLookup(const FPath& path)
-    {
-        std::string value = path.generic_string();
-        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
-        {
-            return static_cast<char>(std::tolower(ch));
-        });
-        return value;
-    }
+    std::string NormalizeForLookup(const FPath& path) { return Common::ToLowerPath(path); }
 }

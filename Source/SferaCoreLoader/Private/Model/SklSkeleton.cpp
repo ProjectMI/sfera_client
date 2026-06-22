@@ -1,10 +1,12 @@
 #include "Model/SklSkeleton.h"
 #include "Core/BinaryReader.h"
+#include "Core/StatusUtils.h"
+#include "ModelParseUtils.h"
+#include "ResourceLoader/ResourceLoadHelpers.h"
 #include <stdexcept>
 
 namespace
 {
-    std::string ReadFixedName(const FByteArray& data, size_t offset, size_t size) { return Binary::ReadFixedString(data, offset, size); }
     FSklSkeleton ParseSkeleton(const FByteArray& data, std::string_view sourceName)
     {
         if (data.size() < 8)
@@ -46,7 +48,7 @@ namespace
 
         for (size_t i = 0; i < boneCount; ++i)
         {
-            skeleton.BoneNames.push_back(ReadFixedName(data, cursor + i * 0x1e, 0x1e));
+            skeleton.BoneNames.push_back(Binary::ReadFixedString(data, cursor + i * 0x1e, 0x1e));
         }
 
         cursor += boneCount * 0x1e;
@@ -102,7 +104,6 @@ namespace
 
         return skeleton;
     }
-    FStatus ExceptionStatus(const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string("SKL parse failed: ") + e.what()); }
 }
 TResult<FSklSkeleton> LoadSklSkeletonFromBytes(const FByteArray& bytes, std::string_view sourceName)
 {
@@ -112,17 +113,10 @@ TResult<FSklSkeleton> LoadSklSkeletonFromBytes(const FByteArray& bytes, std::str
     }
     catch (const std::exception& e)
     {
-        return ExceptionStatus(e);
+        return StatusUtils::InvalidDataFromException("SKL parse failed: ", e);
     }
 }
 TResult<FSklSkeleton> LoadSklSkeletonFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
-    auto blob = resources.Load(logicalName);
-
-    if (!blob.IsOk())
-    {
-        return blob.Status();
-    }
-
-    return LoadSklSkeletonFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string());
+    return ResourceLoader::DecodeResource<FSklSkeleton>(resources, logicalName, LoadSklSkeletonFromBytes);
 }

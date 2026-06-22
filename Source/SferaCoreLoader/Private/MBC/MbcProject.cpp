@@ -1,12 +1,6 @@
 #include "MBC/MbcProject.h"
+#include "Common/StringUtils.h"
 
-static std::string StemLikeProject(const std::string& path)
-{
-    size_t slash = path.find_last_of("/\\");
-    std::string name = slash == std::string::npos ? path : path.substr(slash + 1);
-    size_t dot = name.find_last_of('.');
-    return dot == std::string::npos ? name : name.substr(0, dot);
-}
 FStatus FMbcProject::AddModule(std::string name, FByteArray bytes)
 {
     FMbcModule module;
@@ -30,7 +24,7 @@ const FMbcModule* FMbcProject::FindModule(std::string_view moduleName) const
 
     for (const auto& module : ModulesLoaded)
     {
-        if (module.Name() == wanted || StemLikeProject(module.Name()) == wanted)
+        if (module.Name() == wanted || Common::BaseNameWithoutExtension(module.Name()) == wanted)
         {
             return &module;
         }

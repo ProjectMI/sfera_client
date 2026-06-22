@@ -1,18 +1,8 @@
 #include "MBC/MbcEngineBridge.h"
+#include "Common/StringUtils.h"
 #include <algorithm>
 #include <cctype>
 #include <utility>
-
-static std::string TrimBridge(std::string s)
-{
-    auto ns = [](unsigned char c)
-    {
-        return !std::isspace(c) && c != '\0';
-    };
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), ns));
-    s.erase(std::find_if(s.rbegin(), s.rend(), ns).base(), s.end());
-    return s;
-}
 
 std::string FMbcEngineBridge::ReadSliceString(const FMbcNativeContext& ctx, const FMbcSlice& slice)
 {
@@ -27,7 +17,7 @@ std::string FMbcEngineBridge::ReadSliceString(const FMbcNativeContext& ctx, cons
         text.push_back(static_cast<char>((*ctx.Data)[slice.Offset + i]));
     }
 
-    return TrimBridge(std::move(text));
+    return Common::Trim(std::move(text));
 }
 
 std::string FMbcEngineBridge::BestStringArg(const FMbcNativeContext& ctx, std::string fallback)
@@ -268,16 +258,8 @@ void FMbcEngineBridge::Register(FMbcNativeRegistry& registry, FGameObjectService
 
             for (const auto& record : resources->Catalog().All())
             {
-                std::string p = record.RelativePath.generic_string();
-                std::transform(p.begin(), p.end(), p.begin(), [](unsigned char c)
-                {
-                    return static_cast<char>(std::tolower(c));
-                });
-                std::string q = prefix;
-                std::transform(q.begin(), q.end(), q.begin(), [](unsigned char c)
-                {
-                    return static_cast<char>(std::tolower(c));
-                });
+                std::string p = Common::ToLowerPath(record.RelativePath);
+                std::string q = Common::ToLower(prefix);
 
                 if (p.find(q) == 0)
                 {

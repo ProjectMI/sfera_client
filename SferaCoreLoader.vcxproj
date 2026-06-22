@@ -114,6 +114,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\ResourceTypes.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiRuntime.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiDocumentParser.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiRuntimeInput.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\UI\UiRuntimeCharacter.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\SpatialIndex.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\WorldScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp" />
@@ -124,7 +127,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\SphereEmuProtocol.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\PE\PeImports.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\DdsImage.cpp" />
-  <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientSettings.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Network\LoginClient.cpp" /></ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientSettings.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Network\LoginClient.cpp" />
+  </ItemGroup>
   <ItemGroup>
     </ItemGroup>
   <ItemGroup>
@@ -138,6 +143,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Application.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Logger.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\NumericParse.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\StatusUtils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Types.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\FileSystem\FileSystem.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\FileSystem\NativeFile.h" />
@@ -162,18 +168,23 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\PacketBuffer.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win64Window.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Private\Renderer\D3D9Utils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9CharacterScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceLoadHelpers.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Private\UI\UiRuntimeInternals.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntime.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiConstants.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\ZoningManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\BinaryReader.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Private\Model\ModelParseUtils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Model\ChrModel.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Model\MdlModel.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Model\ModelRepository.h" />
@@ -181,5 +192,12 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\SphereEmuProtocol.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\PE\PeImports.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\DdsImage.h" />
-  <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientSettings.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Network\LoginClient.h" /></ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientSettings.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Network\LoginClient.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Common\BinaryData.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Common\SferaGameConstants.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Common\StringUtils.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Common\TextEncoding.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Common\ValueUtils.h" />
+  </ItemGroup>
 </Project>

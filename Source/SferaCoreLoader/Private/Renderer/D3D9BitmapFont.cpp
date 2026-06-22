@@ -1,4 +1,8 @@
 #include "Renderer/D3D9BitmapFont.h"
+#include "D3D9Utils.h"
+#include "Common/BinaryData.h"
+#include "Common/StringUtils.h"
+#include "Common/TextEncoding.h"
 #include "Core/NumericParse.h"
 #include "FileSystem/PathUtils.h"
 #include <Windows.h>
@@ -12,161 +16,6 @@
 
 namespace
 {
-    std::string Lower(std::string s)
-    {
-        std::transform(s.begin(), s.end(), s.begin(), [](unsigned char ch)
-        {
-            return static_cast<char>(std::tolower(ch));
-        });
-        return s;
-    }
-    uint16 U16Le(const FByteArray& bytes, size_t offset) { return static_cast<uint16>(bytes[offset] | (static_cast<uint16>(bytes[offset + 1]) << 8)); }
-    int16 I16Le(const FByteArray& bytes, size_t offset) { return static_cast<int16>(U16Le(bytes, offset)); }
-    uint32 U32Le(const FByteArray& bytes, size_t offset) { return static_cast<uint32>(bytes[offset]) | (static_cast<uint32>(bytes[offset + 1]) << 8) | (static_cast<uint32>(bytes[offset + 2]) << 16) | (static_cast<uint32>(bytes[offset + 3]) << 24); }
-    float F32Le(const FByteArray& bytes, size_t offset)
-    {
-        uint32 raw = U32Le(bytes, offset);
-        return std::bit_cast<float>(raw);
-    }
-    bool HasRange(const FByteArray& bytes, size_t offset, size_t size) { return offset <= bytes.size() && size <= bytes.size() - offset; }
-    std::string StripLineComment(std::string_view line)
-    {
-        std::string out;
-        bool quoted = false;
-
-        for (size_t i = 0; i < line.size(); ++i)
-        {
-            char ch = line[i];
-
-            if (ch == '"')
-            {
-                quoted = !quoted;
-                out.push_back(ch);
-                continue;
-            }
-
-            if (!quoted && ch == '/' && i + 1 < line.size() && line[i + 1] == '/')
-            {
-                break;
-            }
-
-            out.push_back(ch);
-        }
-
-        return out;
-    }
-    std::vector<std::string> TokenizeConfigLine(std::string_view line)
-    {
-        std::vector<std::string> out;
-        std::string cur;
-        bool quoted = false;
-
-        for (char ch : line)
-        {
-            if (quoted)
-            {
-                if (ch == '"')
-                {
-                    out.push_back(cur);
-                    cur.clear();
-                    quoted = false;
-                }
-                else
-                {
-                    cur.push_back(ch);
-                }
-
-                continue;
-            }
-
-            if (ch == '"')
-            {
-                if (!cur.empty())
-                {
-                    out.push_back(cur);
-                    cur.clear();
-                }
-
-                quoted = true;
-                continue;
-            }
-
-            if (std::isspace(static_cast<unsigned char>(ch)))
-            {
-                if (!cur.empty())
-                {
-                    out.push_back(cur);
-                    cur.clear();
-                }
-
-                continue;
-            }
-
-            cur.push_back(ch);
-        }
-
-        if (!cur.empty())
-        {
-            out.push_back(cur);
-        }
-
-        return out;
-    }
-    std::string BytesToText(const FByteArray& bytes)
-    {
-        std::string text;
-        text.reserve(bytes.size());
-
-        for (uint8 b : bytes)
-        {
-            if (b != 0)
-            {
-                text.push_back(static_cast<char>(b));
-            }
-        }
-
-        return text;
-    }
-    std::wstring Utf8ToWide(std::string_view text)
-    {
-        if (text.empty())
-        {
-            return {};
-        }
-
-        int count = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
-
-        if (count <= 0)
-        {
-            return {};
-        }
-
-        std::wstring wide(static_cast<size_t>(count), L'\0');
-        MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), wide.data(), count);
-        return wide;
-    }
-    std::string ResolveLogicalName(const FResourceManager& resources, const std::vector<std::string>& candidates)
-    {
-        for (const auto& candidate : candidates)
-        {
-            if (auto record = resources.Catalog().FindByLogicalName(candidate))
-            {
-                return record->RelativePath.generic_string();
-            }
-        }
-
-        return {};
-    }
-    std::string ResolveSfnName(const FResourceManager& resources, std::string_view fontName)
-    {
-        std::string name(fontName);
-        return ResolveLogicalName(resources, {"effects/" + name + ".sfn", "Effects/" + name + ".sfn", name + ".sfn"});
-    }
-    std::string ResolveDdsName(const FResourceManager& resources, std::string_view fontName)
-    {
-        std::string name(fontName);
-        return ResolveLogicalName(resources, {"xadd/" + name + ".dds", "XAdd/" + name + ".dds", "xAdd/" + name + ".dds", name + ".dds"});
-    }
     bool SkipCString(const FByteArray& bytes, size_t& offset)
     {
         while (offset < bytes.size())
@@ -179,34 +28,90 @@ namespace
 
         return false;
     }
+    std::string ResolveSfnName(const FResourceManager& resources, std::string_view fontName)
+    {
+        std::string name(fontName);
+        for (const std::string& candidate : {"effects/" + name + ".sfn", "Effects/" + name + ".sfn", name + ".sfn"})
+        {
+            if (auto record = resources.Catalog().FindByLogicalName(candidate))
+            {
+                return record->RelativePath.generic_string();
+            }
+        }
+
+        return {};
+    }
+
+    std::string ResolveDdsName(const FResourceManager& resources, std::string_view fontName)
+    {
+        std::string name(fontName);
+        for (const std::string& candidate : {"xadd/" + name + ".dds", "XAdd/" + name + ".dds", "xAdd/" + name + ".dds", name + ".dds"})
+        {
+            if (auto record = resources.Catalog().FindByLogicalName(candidate))
+            {
+                return record->RelativePath.generic_string();
+            }
+        }
+
+        return {};
+    }
+
+
+    std::vector<std::string> TokenizeConfigLine(std::string_view line)
+    {
+        std::vector<std::string> out;
+        std::string cur;
+        bool quoted = false;
+        for (char ch : line)
+        {
+            if (quoted)
+            {
+                if (ch == '"') { out.push_back(cur); cur.clear(); quoted = false; } else { cur.push_back(ch); }
+                continue;
+            }
+            if (ch == '"') { if (!cur.empty()) { out.push_back(cur); cur.clear(); } quoted = true; continue; }
+            if (std::isspace(static_cast<unsigned char>(ch)) || ch == ',' || ch == ';') { if (!cur.empty()) { out.push_back(cur); cur.clear(); } continue; }
+            cur.push_back(ch);
+        }
+        if (!cur.empty()) { out.push_back(cur); }
+        return out;
+    }
+
+    std::string BytesToText(const FByteArray& bytes)
+    {
+        std::string text;
+        text.reserve(bytes.size());
+        for (uint8 b : bytes) { if (b != 0) { text.push_back(static_cast<char>(b)); } }
+        return text;
+    }
     FStatus LoadSfnGlyphs(const FByteArray& bytes, const std::string& sourceName, int32& lineHeight, int32& baseline, std::array<FD3D9BitmapGlyph, 224>& glyphs, int32 textureWidth, int32 textureHeight)
     {
         if (bytes.size() < 40 || bytes[0] != 'S' || bytes[1] != 'F' || bytes[2] != 'N' || bytes[3] != 'T') { return FStatus::Error(EStatusCode::InvalidData, "bad SFN file: " + sourceName); }
 
         size_t offset = 4;
 
-        if (!SkipCString(bytes, offset) || !SkipCString(bytes, offset) || !HasRange(bytes, offset, 8)) { return FStatus::Error(EStatusCode::InvalidData, "truncated SFN header: " + sourceName); }
+        if (!SkipCString(bytes, offset) || !SkipCString(bytes, offset) || !Common::HasRange(bytes, offset, 8)) { return FStatus::Error(EStatusCode::InvalidData, "truncated SFN header: " + sourceName); }
 
-        lineHeight = static_cast<int32>(U32Le(bytes, offset));
-        baseline = static_cast<int32>(U32Le(bytes, offset + 4));
+        lineHeight = static_cast<int32>(Common::U32LEUnchecked(bytes, offset));
+        baseline = static_cast<int32>(Common::U32LEUnchecked(bytes, offset + 4));
         offset += 8;
 
-        if (!HasRange(bytes, offset, glyphs.size() * 28)) { return FStatus::Error(EStatusCode::InvalidData, "truncated SFN glyph table: " + sourceName); }
+        if (!Common::HasRange(bytes, offset, glyphs.size() * 28)) { return FStatus::Error(EStatusCode::InvalidData, "truncated SFN glyph table: " + sourceName); }
 
         for (size_t i = 0; i < glyphs.size(); ++i)
         {
             size_t rec = offset + i * 28;
             FD3D9BitmapGlyph glyph;
-            int32 cellWidth = static_cast<int32>(I16Le(bytes, rec));
-            int32 visibleWidth = static_cast<int32>(I16Le(bytes, rec + 8));
+            int32 cellWidth = static_cast<int32>(Common::I16LEUnchecked(bytes, rec));
+            int32 visibleWidth = static_cast<int32>(Common::I16LEUnchecked(bytes, rec + 8));
             glyph.Advance = visibleWidth > 0 ? visibleWidth : cellWidth;
-            glyph.Height = static_cast<int32>(I16Le(bytes, rec + 2));
-            glyph.XOffset = static_cast<int32>(I16Le(bytes, rec + 4));
-            glyph.YOffset = static_cast<int32>(I16Le(bytes, rec + 6));
-            float u1 = F32Le(bytes, rec + 12);
-            float v1 = F32Le(bytes, rec + 16);
-            float u2 = F32Le(bytes, rec + 20);
-            float v2 = F32Le(bytes, rec + 24);
+            glyph.Height = static_cast<int32>(Common::I16LEUnchecked(bytes, rec + 2));
+            glyph.XOffset = static_cast<int32>(Common::I16LEUnchecked(bytes, rec + 4));
+            glyph.YOffset = static_cast<int32>(Common::I16LEUnchecked(bytes, rec + 6));
+            float u1 = Common::F32LEUnchecked(bytes, rec + 12);
+            float v1 = Common::F32LEUnchecked(bytes, rec + 16);
+            float u2 = Common::F32LEUnchecked(bytes, rec + 20);
+            float v2 = Common::F32LEUnchecked(bytes, rec + 24);
             glyph.SourceX = static_cast<int32>(std::lround(u1 * textureWidth));
             glyph.SourceY = static_cast<int32>(std::lround(v1 * textureHeight));
             glyph.SourceW = static_cast<int32>(std::lround((u2 - u1) * textureWidth));
@@ -222,16 +127,16 @@ namespace
 
         if (bytes.size() < 128 || bytes[0] != 'D' || bytes[1] != 'D' || bytes[2] != 'S' || bytes[3] != ' ') { return FStatus::Error(EStatusCode::InvalidData, "not a DDS file: " + sourceName); }
 
-        uint32 headerSize = U32Le(bytes, 4);
-        int32 height = static_cast<int32>(U32Le(bytes, 12));
-        int32 width = static_cast<int32>(U32Le(bytes, 16));
-        uint32 pfSize = U32Le(bytes, 76);
-        uint32 pfFlags = U32Le(bytes, 80);
-        uint32 bits = U32Le(bytes, 88);
-        uint32 rMask = U32Le(bytes, 92);
-        uint32 gMask = U32Le(bytes, 96);
-        uint32 bMask = U32Le(bytes, 100);
-        uint32 aMask = U32Le(bytes, 104);
+        uint32 headerSize = Common::U32LEUnchecked(bytes, 4);
+        int32 height = static_cast<int32>(Common::U32LEUnchecked(bytes, 12));
+        int32 width = static_cast<int32>(Common::U32LEUnchecked(bytes, 16));
+        uint32 pfSize = Common::U32LEUnchecked(bytes, 76);
+        uint32 pfFlags = Common::U32LEUnchecked(bytes, 80);
+        uint32 bits = Common::U32LEUnchecked(bytes, 88);
+        uint32 rMask = Common::U32LEUnchecked(bytes, 92);
+        uint32 gMask = Common::U32LEUnchecked(bytes, 96);
+        uint32 bMask = Common::U32LEUnchecked(bytes, 100);
+        uint32 aMask = Common::U32LEUnchecked(bytes, 104);
 
         if (headerSize != 124 || pfSize != 32 || width <= 0 || height <= 0) { return FStatus::Error(EStatusCode::Unsupported, "unsupported DDS header: " + sourceName); }
 
@@ -244,7 +149,7 @@ namespace
         size_t sourceStride = static_cast<size_t>(width) * bpp;
         size_t imageSize = sourceStride * static_cast<size_t>(height);
 
-        if (!HasRange(bytes, 128, imageSize)) { return FStatus::Error(EStatusCode::InvalidData, "truncated DDS pixels: " + sourceName); }
+        if (!Common::HasRange(bytes, 128, imageSize)) { return FStatus::Error(EStatusCode::InvalidData, "truncated DDS pixels: " + sourceName); }
 
         IDirect3DTexture9* texture = nullptr;
         HRESULT hr = device->CreateTexture(static_cast<UINT>(width), static_cast<UINT>(height), 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &texture, nullptr);
@@ -253,7 +158,7 @@ namespace
 
         D3DLOCKED_RECT locked{};
 
-        if (FAILED(texture->LockRect(0, &locked, nullptr, 0))) { texture->Release(); return FStatus::Error(EStatusCode::RuntimeError, "LockRect failed for font DDS: " + sourceName); }
+        if (FAILED(texture->LockRect(0, &locked, nullptr, 0))) { SafeRelease(texture); return FStatus::Error(EStatusCode::RuntimeError, "LockRect failed for font DDS: " + sourceName); }
 
         const uint8* src = bytes.data() + 128;
 
@@ -325,8 +230,7 @@ void FD3D9BitmapFont::Release()
 {
     if (Texture)
     {
-        Texture->Release();
-        Texture = nullptr;
+        SafeRelease(Texture);
     }
 
     TextureWidth = 0;
@@ -351,22 +255,7 @@ int32 FD3D9BitmapFont::MeasureCodepageText(const std::vector<uint8>& text) const
 }
 std::vector<uint8> FD3D9BitmapFont::EncodeUtf8ToCp1251(std::string_view text) const
 {
-    std::wstring wide = Utf8ToWide(text);
-
-    if (wide.empty())
-    {
-        return {};
-    }
-
-    int needed = WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), nullptr, 0, "?", nullptr);
-    std::vector<uint8> out(static_cast<size_t>(std::max(0, needed)));
-
-    if (needed > 0)
-    {
-        WideCharToMultiByte(1251, 0, wide.c_str(), static_cast<int>(wide.size()), std::bit_cast<char*>(out.data()), needed, "?", nullptr);
-    }
-
-    return out;
+    return Common::WideToCp1251Bytes(Common::Utf8ToWide(text));
 }
 TResult<FD3D9BitmapFont> FD3D9BitmapFont::Load(IDirect3DDevice9* device, const FResourceManager& resources, std::string_view fontName)
 {
@@ -421,14 +310,14 @@ void FD3D9BitmapFontCatalog::LoadConfig(const FResourceManager& resources, FLogg
 
     while (std::getline(stream, line))
     {
-        auto tokens = TokenizeConfigLine(StripLineComment(line));
+        auto tokens = TokenizeConfigLine(Common::StripCppComment(line));
 
         if (tokens.empty())
         {
             continue;
         }
 
-        std::string key = Lower(tokens[0]);
+        std::string key = Common::ToLower(tokens[0]);
 
         if (key == "new_fonts_number" && tokens.size() >= 2)
         {
@@ -485,7 +374,7 @@ void FD3D9BitmapFontCatalog::Preload(IDirect3DDevice9* device, const FResourceMa
     for (int32 i = 0; i < static_cast<int32>(FontNames.size()); ++i)
     {
         const std::string& name = FontNames[static_cast<size_t>(i)];
-        std::string key = Lower(name);
+        std::string key = Common::ToLower(name);
 
         if (key.empty() || LoadedFonts.find(key) != LoadedFonts.end())
         {
@@ -535,7 +424,7 @@ const FD3D9BitmapFont* FD3D9BitmapFontCatalog::GetFont(IDirect3DDevice9* device,
         return nullptr;
     }
 
-    const std::string& name = FontNames[static_cast<size_t>(mappedIndex)]; std::string key = Lower(name); if (key.empty()) { return nullptr; }
+    const std::string& name = FontNames[static_cast<size_t>(mappedIndex)]; std::string key = Common::ToLower(name); if (key.empty()) { return nullptr; }
     auto existing = LoadedFonts.find(key); if (existing != LoadedFonts.end()) { return existing->second ? existing->second.get() : nullptr; }
     auto loaded = FD3D9BitmapFont::Load(device, resources, name);
 

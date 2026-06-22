@@ -115,11 +115,7 @@ void FGameObjectService::RegisterMbcNatives(FMbcNativeRegistry& registry, FLogge
 
         return FStatus::Ok();
     });
-    registry.Register("CountAnim", [](FMbcNativeContext& ctx)
-    {
-        ctx.ReturnValue = FMbcValue::Int(0);
-        return FStatus::Ok();
-    });
+    registry.RegisterRecoveredBoundary("CountAnim", EMbcNativeBoundaryReturn::IntZero);
     registry.Register("SpeedObj", [this](FMbcNativeContext& ctx)
     {
         uint32 handle = ctx.Args.empty() ? 0 : static_cast<uint32>(ctx.Args.front().IntValue);
@@ -132,8 +128,8 @@ void FGameObjectService::RegisterMbcNatives(FMbcNativeRegistry& registry, FLogge
         ctx.ReturnValue = FMbcValue::Int(GetDirectionCode(handle));
         return FStatus::Ok();
     });
-    registry.RegisterNoOp("CenterObj", false);
-    registry.RegisterNoOp("InitAI", false);
-    registry.RegisterNoOp("InvertAI", false);
-    registry.RegisterNoOp("SetRespRadius", false);
+    registry.RegisterRecoveredBoundary("CenterObj");
+    registry.RegisterRecoveredBoundary("InitAI");
+    registry.RegisterRecoveredBoundary("InvertAI");
+    registry.RegisterRecoveredBoundary("SetRespRadius");
 }

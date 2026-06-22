@@ -134,11 +134,11 @@ void FApplication::RegisterRecoveredNatives()
     }
 
     FMbcEngineBridge::Register(MbcNatives, GameObjects.get(), WorldScene.get(), Resources.get(), &Logger);
-    MbcNatives.RegisterNoOp("QueryShowWebShop", true);
-    MbcNatives.RegisterNoOp("WaitForAsk", true);
-    MbcNatives.RegisterNoOp("GetPictsPointer", true);
-    MbcNatives.RegisterNoOp("PutMoney", false);
-    MbcNatives.RegisterNoOp("GetMoney", true);
+    MbcNatives.RegisterRecoveredBoundary("QueryShowWebShop", EMbcNativeBoundaryReturn::IntZero);
+    MbcNatives.RegisterRecoveredBoundary("WaitForAsk", EMbcNativeBoundaryReturn::IntZero);
+    MbcNatives.RegisterRecoveredBoundary("GetPictsPointer", EMbcNativeBoundaryReturn::IntZero);
+    MbcNatives.RegisterRecoveredBoundary("PutMoney");
+    MbcNatives.RegisterRecoveredBoundary("GetMoney", EMbcNativeBoundaryReturn::IntZero);
     MbcNatives.Register("Log", [this](FMbcNativeContext& ctx)
     {
         Logger.Info("MBC native Log reached runtime boundary: " + ctx.Name);

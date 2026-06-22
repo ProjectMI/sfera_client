@@ -1,4 +1,5 @@
 #include "Client/ClientFrontendRuntime.h"
+#include "Common/TextEncoding.h"
 #include <Windows.h>
 #include <algorithm>
 #include <array>
@@ -18,15 +19,7 @@ FClientFrontendRuntime::~FClientFrontendRuntime()
 
 std::wstring FClientFrontendRuntime::Utf8ToWide(const std::string& text)
 {
-    if (text.empty()) { return {}; }
-
-    const int required = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), nullptr, 0);
-
-    if (required <= 0) { return {}; }
-
-    std::wstring out(static_cast<size_t>(required), L'\0');
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), static_cast<int>(text.size()), out.data(), required);
-    return out;
+    return Common::Utf8ToWide(text);
 }
 
 namespace

@@ -1,4 +1,6 @@
 #pragma once
+#include "Common/SferaGameConstants.h"
+#include "UI/UiConstants.h"
 #include "Core/Logger.h"
 #include "Core/Types.h"
 #include "Platform/Win64Window.h"
@@ -243,7 +245,7 @@ public:
     std::string ConsumeLastAction();
     void SetMode(EUiRuntimeMode mode);
     EUiRuntimeMode Mode() const { return CurrentMode; }
-    void SetCharacterSlots(const std::array<FCharacterSlotInfo, 3>& slots);
+    void SetCharacterSlots(const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& slots);
     void SetCharacterAppearanceRules(const FCharacterAppearanceRules& rules);
     void SetCharacterActionLocked(bool locked);
     void SetLoginCredentials(std::string login, std::string password, bool saveLogin);
@@ -253,7 +255,7 @@ public:
     void DismissModal();
     void ApplyCharacterDeleted(int32 slot);
     void ApplyCharacterCreated(int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance);
-    const std::array<FCharacterSlotInfo, 3>& CharacterSlots() const { return CharacterSlotState; }
+    const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& CharacterSlots() const { return CharacterSlotState; }
     int32 SelectedCharacterSlot() const { return SelectedSlot; }
     bool SelectedCharacterPresent() const;
     bool SelectedCharacterCanCreate() const;
@@ -290,6 +292,9 @@ private:
     const FUiControlDef* CharacterControlById(int32 id) const;
     void SyncCharacterSelectControls();
     void ClampCharacterAppearance();
+    int32 SelectedSlotIndex() const;
+    const FCharacterSlotInfo& SelectedSlotInfo() const;
+    FCharacterSlotInfo& MutableSelectedSlotInfo();
     int32 CharacterAppearanceOptionCount(int32 controlId) const;
     int32 CharacterFocusForControl(int32 controlId) const;
     int32 CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const;
@@ -315,16 +320,16 @@ private:
     EUiModalDialog Modal = EUiModalDialog::None;
     std::string ModalText;
     std::string ModalEditText;
-    std::array<FCharacterSlotInfo, 3> CharacterSlotState{};
+    std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount> CharacterSlotState{};
     int32 SelectedSlot = 0;
-    int32 ActiveCharacterEditId = 60;
+    int32 ActiveCharacterEditId = SferaUi::CharacterNameEditBaseId;
     int32 CharacterSpinDelta = 1;
     int32 SceneCameraFocusId = 0;
-    float SceneAngle = 3.1415926535f;
+    float SceneAngle = Sfera::InitialCharacterSceneAngle;
     bool SceneRotateDragActive = false;
     int32 SceneRotateLastX = 0;
     bool CharacterActionLocked = false;
-    std::array<std::wstring, 3> CharacterNameEdits{};
+    std::array<std::wstring, Sfera::CharacterSlotCount> CharacterNameEdits{};
     FCharacterAppearanceRules AppearanceRules;
     FCharacterUiAppearance Appearance;
     std::string CurrentStage = "bootstrap";

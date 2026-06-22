@@ -1,8 +1,49 @@
 #include "GameObjects/ObjectParamManager.h"
+#include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+
+namespace
+{
+bool StartsWith(std::string_view text, std::string_view prefix)
+{
+    return text.size() >= prefix.size() && text.substr(0, prefix.size()) == prefix;
+}
+
+bool IsAsciiDigit(char ch) { return ch >= '0' && ch <= '9'; }
+bool IsAsciiAlpha(char ch) { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }
+
+bool HasNumericSuffixAfterPrefix(std::string_view name, std::string_view prefix)
+{
+    if (name.size() <= prefix.size() || name.substr(0, prefix.size()) != prefix || !IsAsciiDigit(name[prefix.size()])) { return false; }
+    size_t i = prefix.size();
+    while (i < name.size() && IsAsciiDigit(name[i])) { ++i; }
+    return i == name.size() || name[i] == '_' || name[i] == '-' || IsAsciiAlpha(name[i]);
+}
+
+bool IsQuoted(std::string_view value)
+{
+    return value.size() >= 2 && ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''));
+}
+
+std::vector<std::string> TokenizeRow(std::string_view line)
+{
+    std::vector<std::string> out;
+    std::string cur;
+    bool quoted = false;
+    for (char ch : line)
+    {
+        if (ch == '"') { quoted = !quoted; cur.push_back(ch); continue; }
+        const bool separator = !quoted && (std::isspace(static_cast<unsigned char>(ch)) || ch == ',' || ch == ';');
+        if (separator) { if (!cur.empty()) { out.push_back(cur); cur.clear(); } continue; }
+        cur.push_back(ch);
+    }
+    if (!cur.empty()) { out.push_back(cur); }
+    return out;
+}
+}
 
 FStatus FObjectParamManager::Open(const FResourceManager& resources, std::string_view logicalName, FLogger* logger)
 {
@@ -137,72 +178,15 @@ std::optional<FGameObjectDescriptor> FObjectParamManager::GetDescriptor(std::str
     return it->second;
 }
 
-std::string FObjectParamManager::Normalize(std::string_view text)
-{
-    std::string out(text);
-    std::replace(out.begin(), out.end(), '\\', '/');
-    std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c)
-    {
-        return static_cast<char>(std::tolower(c));
-    });
-    return out;
-}
-
-std::string FObjectParamManager::Trim(std::string text)
-{
-    auto ns = [](unsigned char c)
-    {
-        return !std::isspace(c);
-    };
-    text.erase(text.begin(), std::find_if(text.begin(), text.end(), ns));
-    text.erase(std::find_if(text.rbegin(), text.rend(), ns).base(), text.end());
-    return text;
-}
-
-bool FObjectParamManager::EndsWith(std::string_view text, std::string_view suffix)
-{
-    return text.size() >= suffix.size() && text.substr(text.size() - suffix.size()) == suffix;
-}
-
-bool FObjectParamManager::StartsWith(std::string_view text, std::string_view prefix)
-{
-    return text.size() >= prefix.size() && text.substr(0, prefix.size()) == prefix;
-}
-
-bool FObjectParamManager::IsAsciiDigit(char c)
-{
-    return c >= '0' && c <= '9';
-}
-
-bool FObjectParamManager::HasNumericSuffixAfterPrefix(std::string_view name, std::string_view prefix)
-{
-    if (!StartsWith(name, prefix) || name.size() <= prefix.size()) { return false; }
-
-    size_t i = prefix.size();
-
-    if (!IsAsciiDigit(name[i])) { return false; }
-
-    while (i < name.size() && IsAsciiDigit(name[i]))
-    {
-        ++i;
-    }
-
-    if (i == name.size()) { return true; }
-
-    if (name[i] == '_' || name[i] == '-') { return true; }
-
-    if (std::isalpha(static_cast<unsigned char>(name[i]))) { return true; }
-
-    return false;
-}
+std::string FObjectParamManager::Normalize(std::string_view text) { return Common::NormalizePathKey(std::string(text)); }
 
 bool FObjectParamManager::IsEntityConfigPath(std::string_view normalizedPath)
 {
-    if (!EndsWith(normalizedPath, ".cfg") && !EndsWith(normalizedPath, ".txt")) { return false; }
+    if (!Common::EndsWith(normalizedPath, ".cfg") && !Common::EndsWith(normalizedPath, ".txt")) { return false; }
 
     if (normalizedPath.find("language/") == 0 || normalizedPath.find("landscape/") == 0 || normalizedPath.find("logs/") == 0) { return false; }
 
-    std::string name = BaseNameWithoutExtension(normalizedPath);
+    std::string name = Common::BaseNameWithoutExtension(normalizedPath);
     bool entityName = HasNumericSuffixAfterPrefix(name, "npc") || HasNumericSuffixAfterPrefix(name, "char") ||
     HasNumericSuffixAfterPrefix(name, "crt") || HasNumericSuffixAfterPrefix(name, "mob") ||
     HasNumericSuffixAfterPrefix(name, "item") || HasNumericSuffixAfterPrefix(name, "obj");
@@ -214,14 +198,14 @@ bool FObjectParamManager::IsEntityConfigPath(std::string_view normalizedPath)
 
 bool FObjectParamManager::IsModelParamTable(std::string_view normalizedPath)
 {
-    return normalizedPath == "models/mdlparam.txt" || BaseNameWithoutExtension(normalizedPath) == "mdlparam";
+    return normalizedPath == "models/mdlparam.txt" || Common::BaseNameWithoutExtension(normalizedPath) == "mdlparam";
 }
 
 bool FObjectParamManager::IsGroupTable(std::string_view normalizedPath)
 {
-    if (!EndsWith(normalizedPath, ".cfg") && !EndsWith(normalizedPath, ".txt")) { return false; }
+    if (!Common::EndsWith(normalizedPath, ".cfg") && !Common::EndsWith(normalizedPath, ".txt")) { return false; }
 
-    std::string name = BaseNameWithoutExtension(normalizedPath);
+    std::string name = Common::BaseNameWithoutExtension(normalizedPath);
     return StartsWith(name, "group_") || name == "randbox" || name == "grouppref";
 }
 
@@ -248,24 +232,9 @@ std::string_view FObjectParamManager::SourceKindName(EObjectParamSourceKind kind
     }
 }
 
-std::string FObjectParamManager::BaseNameWithoutExtension(std::string_view path)
-{
-    std::string p(path);
-    size_t slash = p.find_last_of('/');
-    std::string name = slash == std::string::npos ? p : p.substr(slash + 1);
-    size_t dot = name.find_last_of('.');
-
-    if (dot != std::string::npos)
-    {
-        name = name.substr(0, dot);
-    }
-
-    return name;
-}
-
 std::string FObjectParamManager::ObjectKeyForEntry(const FConfigEntry& entry)
 {
-    std::string scope = Trim(entry.Scope);
+    std::string scope = Common::Trim(entry.Scope);
 
     if (!scope.empty())
     {
@@ -275,7 +244,7 @@ std::string FObjectParamManager::ObjectKeyForEntry(const FConfigEntry& entry)
         if (!leaf.empty()) { return leaf; }
     }
 
-    std::string key = Trim(entry.Key);
+    std::string key = Common::Trim(entry.Key);
     size_t dot = key.find_first_of('.');
 
     if (dot != std::string::npos && dot > 0) { return key.substr(0, dot); }
@@ -289,11 +258,11 @@ std::string FObjectParamManager::ObjectKeyForEntry(const FConfigEntry& entry)
 
 FObjectParamValue FObjectParamManager::ParseValue(std::string value)
 {
-    std::string trimmed = Trim(std::move(value));
+    std::string trimmed = Common::Trim(std::move(value));
 
-    if (trimmed.size() >= 2 && ((trimmed.front() == '"' && trimmed.back() == '"') || (trimmed.front() == '\'' && trimmed.back() == '\'')))
+    if (IsQuoted(trimmed))
     {
-        return FObjectParamValue::String(trimmed.substr(1, trimmed.size() - 2));
+        return FObjectParamValue::String(Common::Unquote(std::move(trimmed)));
     }
 
     bool hasFloatMarker = trimmed.find('.') != std::string::npos || trimmed.find('e') != std::string::npos || trimmed.find('E') != std::string::npos;
@@ -313,40 +282,6 @@ FObjectParamValue FObjectParamManager::ParseValue(std::string value)
     if (NumericParse::TryParseInt32Strict(trimmed, parsedInt)) { return FObjectParamValue::Int(parsedInt); }
 
     return FObjectParamValue::String(trimmed);
-}
-
-std::vector<std::string> FObjectParamManager::TokenizeRow(std::string_view row)
-{
-    std::vector<std::string> tokens;
-    std::string current;
-    bool quoted = false;
-
-    for (char ch : row)
-    {
-        if (ch == '"') { quoted = !quoted; current.push_back(ch); continue; }
-
-        bool separator = !quoted && (std::isspace(static_cast<unsigned char>(ch)) || ch == ',' || ch == ';');
-
-        if (separator)
-        {
-            if (!current.empty())
-            {
-                tokens.push_back(current);
-                current.clear();
-            }
-
-            continue;
-        }
-
-        current.push_back(ch);
-    }
-
-    if (!current.empty())
-    {
-        tokens.push_back(current);
-    }
-
-    return tokens;
 }
 
 size_t FObjectParamManager::IndexFlatRow(FGameObjectDescriptor& descriptor, std::string_view row)
@@ -397,7 +332,7 @@ FObjectParamSource FObjectParamManager::IndexDocument(const FConfigDocument& doc
     {
         for (const auto& entry : doc.Entries())
         {
-            std::string name = Trim(entry.Key);
+            std::string name = Common::Trim(entry.Key);
 
             if (name.empty()) { continue; }
 
@@ -476,7 +411,7 @@ FObjectParamSource FObjectParamManager::IndexDocument(const FConfigDocument& doc
 
         if (kind == EObjectParamSourceKind::EntityParamFile)
         {
-            std::string objectName = BaseNameWithoutExtension(Normalize(doc.SourceName()));
+            std::string objectName = Common::BaseNameWithoutExtension(Normalize(doc.SourceName()));
             auto& descriptor = Objects[Normalize(objectName)];
 
             if (descriptor.Archetype.empty())

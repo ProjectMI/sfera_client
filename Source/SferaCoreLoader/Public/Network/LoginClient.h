@@ -56,7 +56,7 @@ struct FLoginProbeResult
     int32 CharacterSelectPackets = 0;
     int32 CharacterSelectBytes = 0;
     std::shared_ptr<FServerSession> Session;
-    std::array<FCharacterSlotInfo, 3> CharacterSlots{};
+    std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount> CharacterSlots{};
     std::string Message;
 };
 

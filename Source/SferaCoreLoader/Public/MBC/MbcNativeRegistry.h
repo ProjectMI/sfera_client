@@ -18,11 +18,17 @@ struct FMbcNativeContext
 
 using FMbcNative = std::function<FStatus(FMbcNativeContext&)>;
 
+enum class EMbcNativeBoundaryReturn
+{
+    None,
+    IntZero
+};
+
 class FMbcNativeRegistry 
 {
 public:
     void Register(std::string name, FMbcNative function);
-    void RegisterNoOp(std::string name, bool pushesValue = false);
+    void RegisterRecoveredBoundary(std::string name, EMbcNativeBoundaryReturn returnValue = EMbcNativeBoundaryReturn::None);
     const FMbcNative* Find(std::string_view name) const;
     std::vector<std::string> Names() const;
 private:

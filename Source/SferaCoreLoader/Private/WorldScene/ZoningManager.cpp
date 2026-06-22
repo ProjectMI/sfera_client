@@ -1,65 +1,25 @@
 #include "WorldScene/ZoningManager.h"
+#include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
-#include <sstream>
 #include <unordered_map>
 #include <set>
 
-static std::string LowerCopy(std::string s)
+static bool AllAsciiDigits(std::string_view text)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
-    {
-        return static_cast<char>(std::tolower(c));
-    });
-    return s;
+    return !text.empty() && std::all_of(text.begin(), text.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
 }
 
-static std::string TrimCopy(std::string s)
+static std::vector<float> ParseFloatList(std::string_view value)
 {
-    auto ns = [](unsigned char c)
-    {
-        return !std::isspace(c);
-    };
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), ns));
-    s.erase(std::find_if(s.rbegin(), s.rend(), ns).base(), s.end());
-    return s;
-}
-
-static float ToFloat(std::string_view text, float fallback = 0.0f) { return NumericParse::FloatOr(text, fallback); }
-static int32 ToInt(std::string_view text, int32 fallback = 0) { return NumericParse::Int32Or(text, fallback); }
-static std::string QualifiedKey(const FConfigEntry& entry) { return LowerCopy(entry.Scope.empty() ? entry.Key : entry.Scope + "." + entry.Key); }
-static bool IsDigits(std::string_view text)
-{
-    return !text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char c)
-    {
-        return std::isdigit(c);
-    });
-}
-static std::vector<float> FloatList(std::string_view value)
-{
-    std::string s(value);
-
-    for (char& ch : s)
-    {
-        if (ch == ',' || ch == ';' || ch == '\t')
-        {
-            ch = ' ';
-        }
-    }
-
-    std::istringstream input(s);
     std::vector<float> out;
-    float v = 0.0f;
-
-    while (input >> v)
-    {
-        out.push_back(v);
-    }
-
+    for (const std::string& token : Common::SplitTokens(value, ",;\t")) { out.push_back(NumericParse::FloatOr(token)); }
     return out;
 }
-
+static float ToFloat(std::string_view text, float fallback = 0.0f) { return NumericParse::FloatOr(text, fallback); }
+static int32 ToInt(std::string_view text, int32 fallback = 0) { return NumericParse::Int32Or(text, fallback); }
+static std::string QualifiedKey(const FConfigEntry& entry) { return Common::ToLower(entry.Scope.empty() ? entry.Key : entry.Scope + "." + entry.Key); }
 FStatus FZoningManager::LoadDefault(const FResourceManager& resources, FLogger* logger)
 {
     LoadedDocuments.clear();
@@ -191,14 +151,14 @@ FZoningDocument FZoningManager::BuildDocument(const FConfigDocument& cfg)
         }
 
         std::string q = QualifiedKey(entry);
-        std::string keyLower = LowerCopy(entry.Key);
+        std::string keyLower = Common::ToLower(entry.Key);
         bool beginsZoneBlock = keyLower == "zonesparams" || keyLower == "zone" || keyLower == "zones" || keyLower == "zoneparams";
 
         if (beginsZoneBlock)
         {
-            std::string v = TrimCopy(entry.Value);
+            std::string v = Common::Trim(entry.Value);
 
-            if (IsDigits(v))
+            if (AllAsciiDigits(v))
             {
                 currentZone = NumericParse::UInt32Or(v);
                 haveSequentialZone = true;
@@ -348,7 +308,7 @@ std::optional<uint32> FZoningManager::ExtractZoneIndex(const FConfigEntry& entry
         {
             std::string n = q.substr(bracket + 1, end - bracket - 1);
 
-            if (IsDigits(n))
+            if (AllAsciiDigits(n))
             {
                 return NumericParse::UInt32Or(n);
             }
@@ -381,20 +341,20 @@ std::optional<uint32> FZoningManager::ExtractZoneIndex(const FConfigEntry& entry
 
 bool FZoningManager::IsContainerDeclaration(const FConfigEntry& entry)
 {
-    std::string key = LowerCopy(entry.Key);
+    std::string key = Common::ToLower(entry.Key);
     bool arrayTag = !entry.TypeTag.empty() && entry.TypeTag.find('a') != std::string::npos;
 
     if (!arrayTag) { return false; }
 
-    if (!TrimCopy(entry.Value).empty()) { return false; }
+    if (!Common::Trim(entry.Value).empty()) { return false; }
 
     return key == "zonesparams" || key == "daycolors";
 }
 
 std::string FZoningManager::DescribeEntry(const FConfigEntry& entry, std::string_view reason)
 {
-    std::string value = TrimCopy(entry.Value);
-    std::string raw = TrimCopy(entry.RawLine);
+    std::string value = Common::Trim(entry.Value);
+    std::string raw = Common::Trim(entry.RawLine);
 
     if (value.size() > 80)
     {
@@ -425,9 +385,9 @@ std::string FZoningManager::DescribeEntry(const FConfigEntry& entry, std::string
 
 bool FZoningManager::SetKnownField(FWorldZoneParams& zone, const FConfigEntry& entry)
 {
-    std::string k = LowerCopy(entry.Key);
+    std::string k = Common::ToLower(entry.Key);
     std::string q = QualifiedKey(entry);
-    std::vector<float> nums = FloatList(entry.Value);
+    std::vector<float> nums = ParseFloatList(entry.Value);
     auto setVec3 = [&](FVector3& dst) -> bool
     {
         if (nums.size() >= 3)
@@ -503,7 +463,7 @@ bool FZoningManager::SetKnownField(FWorldZoneParams& zone, const FConfigEntry& e
             {
                 std::string n = q.substr(b + 1, e - b - 1);
 
-                if (IsDigits(n))
+                if (AllAsciiDigits(n))
                 {
                     idx = NumericParse::UInt32Or(n);
                 }

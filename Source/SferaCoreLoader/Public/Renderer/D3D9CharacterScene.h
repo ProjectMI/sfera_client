@@ -139,7 +139,7 @@ private:
     size_t CharacterAnimationStart = 0;
     size_t CharacterAnimationFrames = 1;
     unsigned long CharacterAnimationTick = 0;
-    float CharacterAngle = 3.1415926535f;
+    float CharacterAngle = Sfera::InitialCharacterSceneAngle;
     int32 CameraFocusId = -1;
     float CameraFocusX = 0.0f;
     float CameraFocusY = 1.34f;

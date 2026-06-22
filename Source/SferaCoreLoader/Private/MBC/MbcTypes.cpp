@@ -1,5 +1,5 @@
 #include "MBC/MbcTypes.h"
-#include <bit>
+#include "Common/BinaryData.h"
 #include <stdexcept>
 
 namespace Mbc
@@ -15,22 +15,22 @@ namespace Mbc
     int16 ReadI16(const FByteArray& bytes, uint32 offset)
     {
         Need(bytes, offset, 2);
-        return static_cast<int16>(uint16(bytes[offset]) | (uint16(bytes[offset + 1]) << 8));
+        return Common::I16LEUnchecked(bytes, offset);
     }
     uint16 ReadU16(const FByteArray& bytes, uint32 offset)
     {
         Need(bytes, offset, 2);
-        return uint16(bytes[offset]) | (uint16(bytes[offset + 1]) << 8);
+        return Common::U16LEUnchecked(bytes, offset);
     }
     uint32 ReadU32(const FByteArray& bytes, uint32 offset)
     {
         Need(bytes, offset, 4);
-        return uint32(bytes[offset]) | (uint32(bytes[offset + 1]) << 8) | (uint32(bytes[offset + 2]) << 16) | (uint32(bytes[offset + 3]) << 24);
+        return Common::U32LEUnchecked(bytes, offset);
     }
     int32 ReadI32(const FByteArray& bytes, uint32 offset) { return static_cast<int32>(ReadU32(bytes, offset)); }
     float FloatFromU32(uint32 value)
     {
-        return std::bit_cast<float>(value);
+        return Common::F32FromU32(value);
     }
     std::string ReadCString(const FByteArray& bytes, uint32& offset)
     {

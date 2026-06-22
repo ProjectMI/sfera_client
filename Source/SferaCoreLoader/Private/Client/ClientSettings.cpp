@@ -1,21 +1,12 @@
 #include <string_view>
 #include <array>
 #include "Client/ClientSettings.h"
+#include "Common/StringUtils.h"
 #include <algorithm>
 #include <cctype>
 
 namespace
 {
-    std::string TrimSetting(std::string value)
-    {
-        auto ns = [](unsigned char ch)
-        {
-            return std::isspace(ch) == 0;
-        };
-        value.erase(value.begin(), std::find_if(value.begin(), value.end(), ns));
-        value.erase(std::find_if(value.rbegin(), value.rend(), ns).base(), value.end());
-        return value;
-    }
     int32 ReadIntSetting(const FConfigService& config, std::string_view key, int32 fallback)
     {
         auto value = config.FindInt(key);
@@ -24,7 +15,7 @@ namespace
     std::string ReadStringSetting(const FConfigService& config, std::string_view key, std::string fallback = {})
     {
         auto value = config.FindString(key);
-        return value ? TrimSetting(*value) : fallback;
+        return value ? Common::Trim(*value) : fallback;
     }
     std::optional<uint16> ReadPort(const FConfigService& config)
     {
@@ -57,9 +48,9 @@ namespace
         {
             auto host = config.FindString(key);
 
-            if (host && !TrimSetting(*host).empty())
+            if (host && !Common::Trim(*host).empty())
             {
-                return TrimSetting(*host);
+                return Common::Trim(*host);
             }
         }
 

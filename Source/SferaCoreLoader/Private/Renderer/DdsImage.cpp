@@ -1,5 +1,7 @@
 #include "Renderer/DdsImage.h"
 #include "Core/BinaryReader.h"
+#include "Core/StatusUtils.h"
+#include "ResourceLoader/ResourceLoadHelpers.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -70,7 +72,6 @@ namespace
 
         return image;
     }
-    FStatus DdsError(const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string("DDS decode failed: ") + e.what()); }
 }
 TResult<FDdsImage> DecodeDdsRgbImageFromBytes(const FByteArray& bytes, std::string_view sourceName)
 {
@@ -80,17 +81,10 @@ TResult<FDdsImage> DecodeDdsRgbImageFromBytes(const FByteArray& bytes, std::stri
     }
     catch (const std::exception& e)
     {
-        return DdsError(e);
+        return StatusUtils::InvalidDataFromException("DDS decode failed: ", e);
     }
 }
 TResult<FDdsImage> DecodeDdsRgbImageFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
-    auto blob = resources.Load(logicalName);
-
-    if (!blob.IsOk())
-    {
-        return blob.Status();
-    }
-
-    return DecodeDdsRgbImageFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string());
+    return ResourceLoader::DecodeResource<FDdsImage>(resources, logicalName, DecodeDdsRgbImageFromBytes);
 }

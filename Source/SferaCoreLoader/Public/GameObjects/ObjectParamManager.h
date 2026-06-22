@@ -36,20 +36,13 @@ public:
     size_t ObjectCount() const { return Objects.size(); }
 private:
     static std::string Normalize(std::string_view text);
-    static std::string Trim(std::string text);
-    static bool EndsWith(std::string_view text, std::string_view suffix);
-    static bool StartsWith(std::string_view text, std::string_view prefix);
-    static bool IsAsciiDigit(char c);
-    static bool HasNumericSuffixAfterPrefix(std::string_view name, std::string_view prefix);
     static bool IsEntityConfigPath(std::string_view normalizedPath);
     static bool IsModelParamTable(std::string_view normalizedPath);
     static bool IsGroupTable(std::string_view normalizedPath);
     static EObjectParamSourceKind ClassifySourcePath(std::string_view normalizedPath);
     static std::string_view SourceKindName(EObjectParamSourceKind kind);
-    static std::string BaseNameWithoutExtension(std::string_view path);
     static std::string ObjectKeyForEntry(const FConfigEntry& entry);
     static FObjectParamValue ParseValue(std::string value);
-    static std::vector<std::string> TokenizeRow(std::string_view row);
     static size_t IndexFlatRow(FGameObjectDescriptor& descriptor, std::string_view row);
     FObjectParamSource IndexDocument(const FConfigDocument& doc, EObjectParamSourceKind kind, FLogger* logger);
     std::vector<FConfigDocument> Documents;

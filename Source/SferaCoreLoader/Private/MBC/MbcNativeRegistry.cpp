@@ -5,17 +5,12 @@ void FMbcNativeRegistry::Register(std::string name, FMbcNative function)
 {
     Functions[std::move(name)] = std::move(function);
 }
-void FMbcNativeRegistry::RegisterNoOp(std::string name, bool pushesValue)
+void FMbcNativeRegistry::RegisterRecoveredBoundary(std::string name, EMbcNativeBoundaryReturn returnValue)
 {
-    Register(std::move(name), [pushesValue](FMbcNativeContext& ctx)
+    Register(std::move(name), [returnValue](FMbcNativeContext& ctx)
     {
-        ctx.Commentary = "native boundary stub";
-
-        if (pushesValue)
-        {
-            ctx.ReturnValue = FMbcValue::Int(0);
-        }
-
+        ctx.Commentary = "native boundary reached without side effects";
+        if (returnValue == EMbcNativeBoundaryReturn::IntZero) { ctx.ReturnValue = FMbcValue::Int(0); }
         return FStatus::Ok();
     });
 }

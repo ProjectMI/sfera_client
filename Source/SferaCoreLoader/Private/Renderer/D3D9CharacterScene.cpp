@@ -1,9 +1,11 @@
 #include "Renderer/D3D9CharacterScene.h"
+#include "D3D9Utils.h"
 #include "Core/BinaryReader.h"
 #include "Core/Logger.h"
 #include "Model/ChrModel.h"
 #include "Model/MdlModel.h"
 #include "Model/SklSkeleton.h"
+#include "Common/StringUtils.h"
 #include <Windows.h>
 #include <d3d9.h>
 #include <algorithm>
@@ -24,23 +26,6 @@ namespace
 
     float Approach(float current, float target, float factor) { return current + (target - current) * factor; }
 
-    template <typename T> void ReleaseCom(T*& value)
-    {
-        if (value)
-        {
-            value->Release();
-            value = nullptr;
-        }
-    }
-
-    std::string LowerAscii(std::string value)
-    {
-        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
-        {
-            return static_cast<char>(std::tolower(ch));
-        });
-        return value;
-    }
 
     float Dot(FVec3 a, FVec3 b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
     FVec3 Cross(FVec3 a, FVec3 b) { return {a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X}; }
@@ -219,11 +204,11 @@ namespace
     }
     size_t SkeletonBoneIndex(const FSklSkeleton& skeleton, const std::string& name)
     {
-        const std::string wanted = LowerAscii(name);
+        const std::string wanted = Common::ToLower(name);
 
         for (size_t i = 0; i < skeleton.BoneNames.size(); ++i)
         {
-            if (LowerAscii(skeleton.BoneNames[i]) == wanted)
+            if (Common::ToLower(skeleton.BoneNames[i]) == wanted)
             {
                 return i;
             }
@@ -399,7 +384,7 @@ namespace
 
         return textureIndex;
     }
-    std::string ModelTextureLogicalName(const std::string& materialName) { return "models/textures/" + LowerAscii(materialName) + ".dds"; }
+    std::string ModelTextureLogicalName(const std::string& materialName) { return "models/textures/" + Common::ToLower(materialName) + ".dds"; }
     std::string FindLogicalOrStem(const FResourceManager& resources, const std::string& preferred)
     {
         if (resources.Catalog().FindByLogicalName(preferred))
@@ -407,13 +392,13 @@ namespace
             return preferred;
         }
 
-        const std::string preferredLower = LowerAscii(FPath(preferred).filename().string());
-        const std::string preferredStem = LowerAscii(FPath(preferred).stem().string());
+        const std::string preferredLower = Common::ToLower(FPath(preferred).filename().string());
+        const std::string preferredStem = Common::ToLower(FPath(preferred).stem().string());
 
         for (const auto& record : resources.Catalog().All())
         {
-            const std::string filename = LowerAscii(record.RelativePath.filename().string());
-            const std::string stem = LowerAscii(record.RelativePath.stem().string());
+            const std::string filename = Common::ToLower(record.RelativePath.filename().string());
+            const std::string stem = Common::ToLower(record.RelativePath.stem().string());
 
             if (filename == preferredLower || stem == preferredStem)
             {
@@ -453,23 +438,23 @@ void FD3D9CharacterScene::ReleaseBatches(std::vector<FSceneBatch>& batches)
 {
     for (auto& batch : batches)
     {
-        ReleaseCom(batch.Texture);
+        SafeRelease(batch.Texture);
     }
 }
 void FD3D9CharacterScene::ReleaseBuffers()
 {
-    ReleaseCom(CharacterVertexBuffer);
-    ReleaseCom(CharacterIndexBuffer);
-    ReleaseCom(GroundVertexBuffer);
-    ReleaseCom(GroundIndexBuffer);
+    SafeRelease(CharacterVertexBuffer);
+    SafeRelease(CharacterIndexBuffer);
+    SafeRelease(GroundVertexBuffer);
+    SafeRelease(GroundIndexBuffer);
     CharacterUploaded = false;
     GroundUploaded = false;
 }
 void FD3D9CharacterScene::ReleaseCharacterResources()
 {
     ReleaseBatches(CharacterBatches);
-    ReleaseCom(CharacterVertexBuffer);
-    ReleaseCom(CharacterIndexBuffer);
+    SafeRelease(CharacterVertexBuffer);
+    SafeRelease(CharacterIndexBuffer);
     CharacterUploaded = false;
 }
 void FD3D9CharacterScene::Shutdown()
@@ -789,7 +774,7 @@ bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, c
         {
             if (i <= 0xff)
             {
-                skeletonBones[LowerAscii(skeleton.BoneNames[i])] = static_cast<uint8>(i);
+                skeletonBones[Common::ToLower(skeleton.BoneNames[i])] = static_cast<uint8>(i);
             }
         }
 
@@ -818,7 +803,7 @@ bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, c
 
             for (const auto& name : mesh.Info.BoneNames)
             {
-                const auto it = skeletonBones.find(LowerAscii(name));
+                const auto it = skeletonBones.find(Common::ToLower(name));
 
                 if (it == skeletonBones.end())
                 {
@@ -973,7 +958,7 @@ IDirect3DTexture9* FD3D9CharacterScene::LoadDdsTexture(IDirect3DDevice9* device,
             D3DLOCKED_RECT locked{};
             hr = texture->LockRect(level, &locked, nullptr, 0);
 
-            if (FAILED(hr)) { ReleaseCom(texture); throw std::runtime_error(HresultText("Texture::LockRect", hr)); }
+            if (FAILED(hr)) { SafeRelease(texture); throw std::runtime_error(HresultText("Texture::LockRect", hr)); }
 
             const auto* source = data.data() + cursor;
             auto* dest = static_cast<uint8*>(locked.pBits);
@@ -1329,7 +1314,7 @@ void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const R
         0.0f, 1.0f, 0.0f
     };
     const D3DMATRIX view = LookAtRh(eye, target, up);
-    const D3DMATRIX projection = PerspectiveFovRh(CameraFovDegrees * 3.1415926535f / 180.0f, aspect, 0.05f, 100.0f);
+    const D3DMATRIX projection = PerspectiveFovRh(CameraFovDegrees * Sfera::InitialCharacterSceneAngle / 180.0f, aspect, 0.05f, 100.0f);
     device->SetTransform(D3DTS_VIEW, &view);
     device->SetTransform(D3DTS_PROJECTION, &projection);
 }

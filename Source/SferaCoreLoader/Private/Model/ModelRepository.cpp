@@ -1,14 +1,5 @@
 #include "Model/ModelRepository.h"
-#include <algorithm>
-#include <cctype>
-
-namespace
-{
-    bool EndsWith(std::string_view value, std::string_view suffix)
-    {
-        return value.size() >= suffix.size() && value.substr(value.size() - suffix.size()) == suffix;
-    }
-}
+#include "Common/StringUtils.h"
 std::string_view ToString(EModelAssetKind kind)
 {
     switch (kind)
@@ -22,35 +13,23 @@ std::string_view ToString(EModelAssetKind kind)
 FModelRepository::FModelRepository(const FResourceManager& resources) : Resources(resources) {}
 std::string FModelRepository::NormalizeKey(std::string_view key)
 {
-    std::string out(key);
-    std::replace(out.begin(), out.end(), '\\', '/');
-    std::transform(out.begin(), out.end(), out.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
-
-    while (!out.empty() && out.front() == '/')
-    {
-        out.erase(out.begin());
-    }
-
-    return out;
+    return Common::NormalizePathKey(std::string(key));
 }
 EModelAssetKind FModelRepository::GuessKind(const FPath& path)
 {
     std::string lower = NormalizeKey(path.generic_string());
 
-    if (EndsWith(lower, ".mdl"))
+    if (Common::EndsWith(lower, ".mdl"))
     {
         return EModelAssetKind::Mdl;
     }
 
-    if (EndsWith(lower, ".chr"))
+    if (Common::EndsWith(lower, ".chr"))
     {
         return EModelAssetKind::Chr;
     }
 
-    if (EndsWith(lower, ".skl"))
+    if (Common::EndsWith(lower, ".skl"))
     {
         return EModelAssetKind::Skl;
     }
@@ -123,13 +102,10 @@ const FModelAssetRecord* FModelRepository::Find(std::string_view logicalName) co
         return &Records[it->second];
     }
 
-    auto noExt = key;
-    size_t slash = noExt.find_last_of('/');
-    size_t dot = noExt.find_last_of('.');
+    auto noExt = Common::StripExtension(key);
 
-    if (dot != std::string::npos && (slash == std::string::npos || dot > slash))
+    if (noExt != key)
     {
-        noExt.erase(dot);
         it = Lookup.find(noExt);
 
         if (it != Lookup.end())

@@ -1,4 +1,5 @@
 #pragma once
+#include "Common/SferaGameConstants.h"
 #include "Core/Types.h"
 #include <array>
 #include <string>
@@ -42,13 +43,13 @@ struct FCharacterSlot
     int32 DegreeNextXp = 50;
     int32 TitleStats = 0; 
     int32 DegreeStats = 0;
-    int32 Karma = 3; 
+    int32 Karma = Sfera::DefaultKarma; 
 };
 
 struct FCharacterCreationAppearance
 {
     bool Female = false; 
-    int32 ModelBase = 0x30; 
+    int32 ModelBase = Sfera::CharacterModelBase; 
     int32 Face = 0; 
     int32 Hair = 0;
     int32 HairColor = 0;
@@ -57,7 +58,7 @@ struct FCharacterCreationAppearance
 
 struct FCharacterAppearanceRules 
 { 
-    int32 ModelBase = 0x30;
+    int32 ModelBase = Sfera::CharacterModelBase;
     int32 MaleFaceCount = 13; 
     int32 FemaleFaceCount = 12;
     int32 MaleHairCount = 3;

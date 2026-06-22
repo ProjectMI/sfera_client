@@ -1,4 +1,6 @@
 #include "WorldScene/WorldScene.h"
+#include "Common/BinaryData.h"
+#include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
@@ -9,44 +11,7 @@
 #include <set>
 #include <unordered_set>
 
-static std::string LowerPathString(FPath path)
-{
-    std::string s = path.generic_string();
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
-    {
-        return static_cast<char>(std::tolower(c));
-    });
-    return s;
-}
-static uint16 ReadU16LE(const FByteArray& bytes, size_t offset)
-{
-    if (offset + 2 > bytes.size())
-    {
-        return 0;
-    }
-
-    return static_cast<uint16>(bytes[offset] | (bytes[offset + 1] << 8));
-}
-static uint32 ReadU32LE(const FByteArray& bytes, size_t offset)
-{
-    if (offset + 4 > bytes.size())
-    {
-        return 0;
-    }
-
-    return static_cast<uint32>(bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24));
-}
-static int32 ReadI32LE(const FByteArray& bytes, size_t offset) { return static_cast<int32>(ReadU32LE(bytes, offset)); }
-static float ReadFloatLE(const FByteArray& bytes, size_t offset)
-{
-    if (offset + sizeof(float) > bytes.size())
-    {
-        return 0.0f;
-    }
-
-    return std::bit_cast<float>(ReadU32LE(bytes, offset));
-}
-static int64 MakeCoordKey(int32 x, int32 z) { return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(z); }
+static int64 MakeSignedPairKey(int32 x, int32 y) { return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(y); }
 static bool ReasonableWorldFloat(float v) { return std::isfinite(v) && std::abs(v) < 10000000.0f; }
 static void ExpandBounds(FBox2& box, FVector2 point, bool& initialized)
 {
@@ -63,45 +28,8 @@ static void ExpandBounds(FBox2& box, FVector2 point, bool& initialized)
     box.Max.X = std::max(box.Max.X, point.X);
     box.Max.Y = std::max(box.Max.Y, point.Y);
 }
-static std::string ReadFixedCString(const FByteArray& bytes, size_t offset, size_t maxLen)
-{
-    std::string out;
-
-    for (size_t i = 0; i < maxLen && offset + i < bytes.size(); ++i)
-    {
-        char c = static_cast<char>(bytes[offset + i]);
-
-        if (c == '\0')
-        {
-            break;
-        }
-
-        out.push_back(c);
-    }
-
-    while (!out.empty() && std::isspace(static_cast<unsigned char>(out.back())))
-    {
-        out.pop_back();
-    }
-
-    return out;
-}
-static bool HasExtension(std::string_view lowerPath, std::string_view ext) { return lowerPath.size() >= ext.size() && lowerPath.substr(lowerPath.size() - ext.size()) == ext; }
-static bool IsLandscapeMtxPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string::npos && HasExtension(lowerPath, ".mtx"); }
-static bool IsLandscapeSizPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string::npos && HasExtension(lowerPath, ".siz"); }
-static std::string StripKnownExtension(std::string s)
-{
-    size_t slash = s.find_last_of("/\\");
-    size_t dot = s.find_last_of('.');
-
-    if (dot != std::string::npos && (slash == std::string::npos || dot > slash))
-    {
-        s.erase(dot);
-    }
-
-    return s;
-}
-
+static bool IsLandscapeMtxPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string_view::npos && Common::EndsWith(lowerPath, ".mtx"); }
+static bool IsLandscapeSizPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string_view::npos && Common::EndsWith(lowerPath, ".siz"); }
 FWorldScene::FWorldScene(const FResourceManager& resources, FGameObjectRegistry& objectRegistry) : Resources(resources), Objects(objectRegistry), Spatial(256.0f) {}
 
 FStatus FWorldScene::LoadBootstrapScene(FLogger* logger)
@@ -175,24 +103,7 @@ FWorldSceneStats FWorldScene::Stats() const
 
 std::string FWorldScene::NormalizeResourceKey(std::string_view text)
 {
-    std::string s(text);
-    std::replace(s.begin(), s.end(), '\\', '/');
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
-    {
-        return static_cast<char>(std::tolower(c));
-    });
-
-    while (!s.empty() && (s.front() == '/' || std::isspace(static_cast<unsigned char>(s.front()))))
-    {
-        s.erase(s.begin());
-    }
-
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
-    {
-        s.pop_back();
-    }
-
-    return s;
+    return Common::NormalizePathKey(std::string(text));
 }
 
 void FWorldScene::BuildPatchLookup()
@@ -205,7 +116,7 @@ void FWorldScene::BuildPatchLookup()
         const auto& patch = PatchRecords[i];
         std::string nameKey = NormalizeResourceKey(patch.Name);
         std::string pathKey = NormalizeResourceKey(patch.RelativePath.generic_string());
-        std::string stemKey = NormalizeResourceKey(patch.StemName.empty() ? StripKnownExtension(patch.Name) : patch.StemName);
+        std::string stemKey = NormalizeResourceKey(patch.StemName.empty() ? Common::StripExtension(patch.Name) : patch.StemName);
         PatchByName[nameKey] = i;
         PatchByName[pathKey] = i;
 
@@ -215,7 +126,7 @@ void FWorldScene::BuildPatchLookup()
             PatchByName["landscape/" + stemKey] = i;
         }
 
-        std::string pathNoExt = StripKnownExtension(pathKey);
+        std::string pathNoExt = Common::StripExtension(pathKey);
 
         if (!pathNoExt.empty())
         {
@@ -224,7 +135,7 @@ void FWorldScene::BuildPatchLookup()
 
         if (patch.HasPatchCoords)
         {
-            PatchByCoord[MakeCoordKey(patch.PatchX, patch.PatchZ)] = i;
+            PatchByCoord[MakeSignedPairKey(patch.PatchX, patch.PatchZ)] = i;
         }
     }
 }
@@ -239,7 +150,7 @@ void FWorldScene::BuildTerrainLookup()
         const auto& record = TerrainRecords[i];
         std::string nameKey = NormalizeResourceKey(record.Name);
         std::string pathKey = NormalizeResourceKey(record.RelativePath.generic_string());
-        std::string stemKey = NormalizeResourceKey(record.StemName.empty() ? StripKnownExtension(record.Name) : record.StemName);
+        std::string stemKey = NormalizeResourceKey(record.StemName.empty() ? Common::StripExtension(record.Name) : record.StemName);
         TerrainByName[nameKey] = i;
         TerrainByName[pathKey] = i;
 
@@ -249,7 +160,7 @@ void FWorldScene::BuildTerrainLookup()
             TerrainByName["landscape/" + stemKey] = i;
         }
 
-        std::string pathNoExt = StripKnownExtension(pathKey);
+        std::string pathNoExt = Common::StripExtension(pathKey);
 
         if (!pathNoExt.empty())
         {
@@ -262,7 +173,7 @@ void FWorldScene::BuildTerrainLookup()
         const auto& record = MicrotextureRecords[i];
         std::string nameKey = NormalizeResourceKey(record.Name);
         std::string pathKey = NormalizeResourceKey(record.RelativePath.generic_string());
-        std::string stemKey = NormalizeResourceKey(record.StemName.empty() ? StripKnownExtension(record.Name) : record.StemName);
+        std::string stemKey = NormalizeResourceKey(record.StemName.empty() ? Common::StripExtension(record.Name) : record.StemName);
         MicrotextureByName[nameKey] = i;
         MicrotextureByName[pathKey] = i;
 
@@ -272,7 +183,7 @@ void FWorldScene::BuildTerrainLookup()
             MicrotextureByName["landscape/" + stemKey] = i;
         }
 
-        std::string pathNoExt = StripKnownExtension(pathKey);
+        std::string pathNoExt = Common::StripExtension(pathKey);
 
         if (!pathNoExt.empty())
         {
@@ -288,7 +199,7 @@ const FWorldPatchRecord* FWorldScene::FindPatchByName(std::string_view name) con
 
     if (it != PatchByName.end()) { return &PatchRecords[it->second]; }
 
-    std::string stem = StripKnownExtension(key);
+    std::string stem = Common::StripExtension(key);
 
     if (stem != key)
     {
@@ -324,7 +235,7 @@ const FWorldTerrainSizeRecord* FWorldScene::FindTerrainSizeByName(std::string_vi
 
     if (it != TerrainByName.end()) { return &TerrainRecords[it->second]; }
 
-    std::string stem = StripKnownExtension(key);
+    std::string stem = Common::StripExtension(key);
 
     if (stem != key)
     {
@@ -360,7 +271,7 @@ const FWorldMicrotextureRecord* FWorldScene::FindMicrotextureByName(std::string_
 
     if (it != MicrotextureByName.end()) { return &MicrotextureRecords[it->second]; }
 
-    std::string stem = StripKnownExtension(key);
+    std::string stem = Common::StripExtension(key);
 
     if (stem != key)
     {
@@ -391,7 +302,7 @@ const FWorldMicrotextureRecord* FWorldScene::FindMicrotextureByName(std::string_
 
 const FWorldPatchRecord* FWorldScene::FindPatchByCoord(int32 patchX, int32 patchZ) const
 {
-    auto it = PatchByCoord.find(MakeCoordKey(patchX, patchZ));
+    auto it = PatchByCoord.find(MakeSignedPairKey(patchX, patchZ));
 
     if (it == PatchByCoord.end())
     {
@@ -405,7 +316,7 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
 {
     for (const auto& item : Resources.Catalog().All())
     {
-        std::string lower = LowerPathString(item.RelativePath);
+        std::string lower = Common::ToLowerPath(item.RelativePath);
         bool landscape = lower.find("landscape") != std::string::npos || lower.find("xadd/snowpath") != std::string::npos;
 
         if (!landscape) { continue; }
@@ -447,8 +358,8 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
 
             if (blob.IsOk() && blob.Value().Bytes.size() >= 8)
             {
-                terrain.RawWidth = ReadU32LE(blob.Value().Bytes, 0);
-                terrain.RawHeight = ReadU32LE(blob.Value().Bytes, 4);
+                terrain.RawWidth = Common::U32LEOr(blob.Value().Bytes, 0);
+                terrain.RawHeight = Common::U32LEOr(blob.Value().Bytes, 4);
                 terrain.HasRawDimensions = true;
             }
 
@@ -499,7 +410,7 @@ void FWorldScene::LoadContours(FLogger* logger)
 
     if (bytes.size() < 4) { return; }
 
-    uint32 count = ReadU32LE(bytes, 0);
+    uint32 count = Common::U32LEOr(bytes, 0);
     uint64 expected = 4ull + static_cast<uint64>(count) * recordSize;
 
     if (count > 200000 || expected > bytes.size())
@@ -520,15 +431,15 @@ void FWorldScene::LoadContours(FLogger* logger)
 
         FWorldContourRecord rec;
         rec.Index = i;
-        rec.SortKey = ReadI32LE(bytes, base + 0);
-        rec.PointCount = std::clamp(ReadI32LE(bytes, base + 4), 0, 64);
+        rec.SortKey = Common::I32LEOr(bytes, base + 0);
+        rec.PointCount = std::clamp(Common::I32LEOr(bytes, base + 4), 0, 64);
         bool localInit = false;
         size_t pointBase = base + 0x18;
 
         for (int32 p = 0; p < rec.PointCount; ++p)
         {
-            float x = ReadFloatLE(bytes, pointBase + static_cast<size_t>(p) * 8);
-            float z = ReadFloatLE(bytes, pointBase + static_cast<size_t>(p) * 8 + 4);
+            float x = Common::F32LEOr(bytes, pointBase + static_cast<size_t>(p) * 8);
+            float z = Common::F32LEOr(bytes, pointBase + static_cast<size_t>(p) * 8 + 4);
 
             if (!ReasonableWorldFloat(x) || !ReasonableWorldFloat(z)) { continue; }
 
@@ -543,8 +454,8 @@ void FWorldScene::LoadContours(FLogger* logger)
 
         for (int32 p = 0; p < rec.PointCount; ++p)
         {
-            rec.ForwardLinks.push_back(ReadI32LE(bytes, base + 0x218 + static_cast<size_t>(p) * 4));
-            rec.BackLinks.push_back(ReadI32LE(bytes, base + 0x318 + static_cast<size_t>(p) * 4));
+            rec.ForwardLinks.push_back(Common::I32LEOr(bytes, base + 0x218 + static_cast<size_t>(p) * 4));
+            rec.BackLinks.push_back(Common::I32LEOr(bytes, base + 0x318 + static_cast<size_t>(p) * 4));
         }
 
         if (!localInit)
@@ -586,7 +497,7 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
     MapGrid.Cells.reserve(static_cast<size_t>(width) * height);
     std::set<std::string> uniqueNames;
     std::vector<std::string> unresolvedSamples;
-    std::vector<std::string> fallbackSamples;
+    std::vector<std::string> patchCatalogSamples;
 
     for (uint32 z = 0; z < height; ++z)
     {
@@ -596,8 +507,8 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
             FWorldMapCell cell;
             cell.X = static_cast<int32>(x);
             cell.Z = static_cast<int32>(z);
-            cell.TileName = ReadFixedCString(bytes, off, 20);
-            cell.Reserved = ReadU16LE(bytes, off + 20);
+            cell.TileName = Common::FixedCString(bytes, off, 20);
+            cell.Reserved = Common::U16LEOr(bytes, off + 20);
             cell.Present = !cell.TileName.empty();
 
             if (cell.Present)
@@ -613,17 +524,17 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
                     ++MapGrid.ResolvedCells;
                     ++MapGrid.ResolvedTerrainCells;
                 }
-                else if (const FWorldPatchRecord* fallback = FindPatchByName(cell.TileName))
+                else if (const FWorldPatchRecord* patchRecord = FindPatchByName(cell.TileName))
                 {
                     cell.TileResolved = true;
-                    cell.ResolvedByFallbackResource = true;
-                    cell.TileRecordIndex = static_cast<size_t>(fallback - PatchRecords.data());
+                    cell.ResolvedByPatchCatalog = true;
+                    cell.TileRecordIndex = static_cast<size_t>(patchRecord - PatchRecords.data());
                     ++MapGrid.ResolvedCells;
-                    ++MapGrid.FallbackResolvedCells;
+                    ++MapGrid.PatchCatalogResolvedCells;
 
-                    if (fallbackSamples.size() < 8)
+                    if (patchCatalogSamples.size() < 8)
                     {
-                        fallbackSamples.push_back(cell.TileName);
+                        patchCatalogSamples.push_back(cell.TileName);
                     }
                 }
                 else
@@ -645,41 +556,10 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
 
     if (logger)
     {
-        logger->Info("WorldScene map grid loaded: cells=" + std::to_string(MapGrid.Cells.size()) + ", present=" + std::to_string(MapGrid.PresentCells) + ", resolved=" + std::to_string(MapGrid.ResolvedCells) + ", terrain_resolved=" + std::to_string(MapGrid.ResolvedTerrainCells) + ", fallback_resolved=" + std::to_string(MapGrid.FallbackResolvedCells) + ", missing_tile_refs=" + std::to_string(MapGrid.MissingTileRefs) + ", unique_tiles=" + std::to_string(MapGrid.UniqueTileNames) + ", cell_stride=0x16");
+        logger->Info("WorldScene map grid loaded: cells=" + std::to_string(MapGrid.Cells.size()) + ", present=" + std::to_string(MapGrid.PresentCells) + ", resolved=" + std::to_string(MapGrid.ResolvedCells) + ", terrain_resolved=" + std::to_string(MapGrid.ResolvedTerrainCells) + ", patch_catalog_resolved=" + std::to_string(MapGrid.PatchCatalogResolvedCells) + ", missing_tile_refs=" + std::to_string(MapGrid.MissingTileRefs) + ", unique_tiles=" + std::to_string(MapGrid.UniqueTileNames) + ", cell_stride=0x16");
 
-        if (!fallbackSamples.empty())
-        {
-            std::string joined;
-
-            for (size_t i = 0; i < fallbackSamples.size(); ++i)
-            {
-                if (i)
-                {
-                    joined += ", ";
-                }
-
-                joined += fallbackSamples[i];
-            }
-
-            logger->Warning("WorldScene map tile fallback samples: " + joined);
-        }
-
-        if (!unresolvedSamples.empty())
-        {
-            std::string joined;
-
-            for (size_t i = 0; i < unresolvedSamples.size(); ++i)
-            {
-                if (i)
-                {
-                    joined += ", ";
-                }
-
-                joined += unresolvedSamples[i];
-            }
-
-            logger->Warning("WorldScene unresolved map tile samples: " + joined);
-        }
+        if (!patchCatalogSamples.empty()) { logger->Warning("WorldScene map tile patch-catalog samples: " + Common::Join(patchCatalogSamples, ", ")); }
+        if (!unresolvedSamples.empty()) { logger->Warning("WorldScene unresolved map tile samples: " + Common::Join(unresolvedSamples, ", ")); }
     }
 }
 
@@ -689,7 +569,7 @@ void FWorldScene::LoadGrassMaps(FLogger* logger)
 
     for (const auto& item : Resources.Catalog().All())
     {
-        std::string lower = LowerPathString(item.RelativePath);
+        std::string lower = Common::ToLowerPath(item.RelativePath);
 
         if (lower.find("grassmap") == std::string::npos || lower.find(".bin") == std::string::npos) { continue; }
 
@@ -746,8 +626,8 @@ void FWorldScene::LoadSnowPath(FLogger* logger)
 
         for (size_t i = 0; i + 8 <= bytes.size(); i += 8)
         {
-            float x = ReadFloatLE(bytes, i);
-            float z = ReadFloatLE(bytes, i + 4);
+            float x = Common::F32LEOr(bytes, i);
+            float z = Common::F32LEOr(bytes, i + 4);
 
             if (ReasonableWorldFloat(x) && ReasonableWorldFloat(z))
             {
@@ -870,8 +750,8 @@ FWorldBinaryBlobInfo FWorldScene::AnalyzeBinaryBlob(std::string logicalName, con
 
         for (size_t i = 0; i + 8 <= bytes.size() && i < 8 * 1024; i += 8)
         {
-            float x = ReadFloatLE(bytes, i);
-            float y = ReadFloatLE(bytes, i + 4);
+            float x = Common::F32LEOr(bytes, i);
+            float y = Common::F32LEOr(bytes, i + 4);
 
             if (!ReasonableWorldFloat(x) || !ReasonableWorldFloat(y))
             {

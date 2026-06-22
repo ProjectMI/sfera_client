@@ -110,7 +110,7 @@ struct FWorldMapCell
 	bool Present = false; 
 	bool TileResolved = false; 
 	bool ResolvedByTerrainSize = false; 
-	bool ResolvedByFallbackResource = false; 
+	bool ResolvedByPatchCatalog = false; 
 	size_t TileRecordIndex = static_cast<size_t>(-1); 
 	size_t TerrainSizeRecordIndex = static_cast<size_t>(-1); 
 };
@@ -125,7 +125,7 @@ struct FWorldMapGrid
 	size_t PresentCells = 0; 
 	size_t ResolvedCells = 0; 
 	size_t ResolvedTerrainCells = 0; 
-	size_t FallbackResolvedCells = 0; 
+	size_t PatchCatalogResolvedCells = 0; 
 	size_t MissingTileRefs = 0; 
 	size_t UniqueTileNames = 0; 
 	const FWorldMapCell* Find(int32 x, int32 z) const 

@@ -1,77 +1,40 @@
 #include "Config/ConfigDocument.h"
+#include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <unordered_map>
 
-static std::string Trim(std::string s)
-{
-    auto notSpace = [](unsigned char ch)
-    {
-        return !std::isspace(ch);
-    };
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), notSpace));
-    s.erase(std::find_if(s.rbegin(), s.rend(), notSpace).base(), s.end());
-    return s;
-}
 
-static std::string Lower(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
-    return s;
-}
 
-static std::string StripComment(std::string line)
+static std::string StripConfigComment(std::string line)
 {
     bool quoted = false;
-
     for (size_t i = 0; i < line.size(); ++i)
     {
-        if (line[i] == '"')
-        {
-            quoted = !quoted;
-        }
-
-        if (!quoted && line[i] == ';') { return line.substr(0, i); }
-
-        if (!quoted && line[i] == '#') { return line.substr(0, i); }
-
-        if (!quoted && i + 1 < line.size() && line[i] == '/' && line[i + 1] == '/') { return line.substr(0, i); }
+        if (line[i] == '"') { quoted = !quoted; }
+        if (!quoted && (line[i] == ';' || line[i] == '#')) { line.resize(i); break; }
+        if (!quoted && i + 1 < line.size() && line[i] == '/' && line[i + 1] == '/') { line.resize(i); break; }
     }
-
     return line;
 }
 
-static std::string ScopeText(const std::vector<std::string>& scope)
+static void TrimTrailingComma(std::string& value)
 {
-    std::string out;
-
-    for (size_t i = 0; i < scope.size(); ++i)
+    value = Common::Trim(std::move(value));
+    while (!value.empty() && value.back() == ',')
     {
-        out += (i ? "." : "") + scope[i];
-    }
-
-    return out;
-}
-
-static void StripTrailingComma(std::string& line)
-{
-    line = Trim(line);
-
-    while (!line.empty() && line.back() == ',')
-    {
-        line.pop_back();
-        line = Trim(line);
+        value.pop_back();
+        value = Common::Trim(std::move(value));
     }
 }
+
+static std::string ScopeText(const std::vector<std::string>& scope) { return Common::Join(scope, "."); }
 
 static std::pair<std::string, std::string> SplitTypeTag(std::string key)
 {
-    key = Trim(std::move(key));
+    key = Common::Trim(std::move(key));
     size_t begin = key.find('<');
     size_t end = begin == std::string::npos ? std::string::npos : key.find('>', begin + 1);
 
@@ -81,24 +44,16 @@ static std::pair<std::string, std::string> SplitTypeTag(std::string key)
         key.erase(begin, end - begin + 1);
         return
         {
-            Trim(std::move(key)), Trim(std::move(type))
+            Common::Trim(std::move(key)), Common::Trim(std::move(type))
         };
     }
 
     return
     {
-        Trim(std::move(key)), {}
+        Common::Trim(std::move(key)), {}
     };
 }
 
-static std::string Unquote(std::string value)
-{
-    value = Trim(std::move(value));
-
-    if (value.size() >= 2 && ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''))) { return value.substr(1, value.size() - 2); }
-
-    return value;
-}
 
 FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
 {
@@ -118,11 +73,11 @@ FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
         std::string scopeText = ScopeText(scope);
         FConfigEntry entry
         {
-            std::move(key), Unquote(std::move(value)), scopeText, std::move(typeTag), std::move(rawLine), lineNo
+            std::move(key), Common::Unquote(std::move(value)), scopeText, std::move(typeTag), std::move(rawLine), lineNo
         };
-        std::string lookup = Lower(scopeText.empty() ? entry.Key : scopeText + "." + entry.Key);
+        std::string lookup = Common::ToLower(scopeText.empty() ? entry.Key : scopeText + "." + entry.Key);
         Index[lookup] = ParsedEntries.size();
-        Index[Lower(entry.Key)] = ParsedEntries.size();
+        Index[Common::ToLower(entry.Key)] = ParsedEntries.size();
         ParsedEntries.push_back(std::move(entry));
     };
 
@@ -157,8 +112,8 @@ FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
     {
         ++lineNo;
         std::string rawLine = line;
-        line = Trim(StripComment(line));
-        StripTrailingComma(line);
+        line = Common::Trim(StripConfigComment(line));
+        TrimTrailingComma(line);
 
         if (line.empty()) { continue; }
 
@@ -175,15 +130,15 @@ FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
 
         if (line == "{") { openAnonymousBlock(); continue; }
 
-        if (line.front() == '[' && line.back() == ']') { scope.clear(); pendingArrayName.reset(); scope.push_back(Trim(line.substr(1, line.size() - 2))); continue; }
+        if (line.front() == '[' && line.back() == ']') { scope.clear(); pendingArrayName.reset(); scope.push_back(Common::Trim(line.substr(1, line.size() - 2))); continue; }
 
         bool opensBlock = false;
 
         if (!line.empty() && line.back() == '{')
         {
             opensBlock = true;
-            line = Trim(line.substr(0, line.size() - 1));
-            StripTrailingComma(line);
+            line = Common::Trim(line.substr(0, line.size() - 1));
+            TrimTrailingComma(line);
         }
 
         size_t split = line.find('=');
@@ -198,8 +153,8 @@ FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
             split = line.find_first_of(" \t");
         }
 
-        std::string keyPart = split == std::string::npos ? line : Trim(line.substr(0, split));
-        std::string value = split == std::string::npos ? std::string() : Trim(line.substr(split + 1));
+        std::string keyPart = split == std::string::npos ? line : Common::Trim(line.substr(0, split));
+        std::string value = split == std::string::npos ? std::string() : Common::Trim(line.substr(split + 1));
         auto [key, typeTag] = SplitTypeTag(std::move(keyPart));
 
         if (key.empty()) { continue; }
@@ -225,7 +180,7 @@ FStatus FConfigDocument::Parse(std::string text, std::string sourceName)
 
 std::optional<std::string> FConfigDocument::FindString(std::string_view key) const
 {
-    auto it = Index.find(Lower(std::string(key)));
+    auto it = Index.find(Common::ToLower(std::string(key)));
 
     if (it == Index.end()) { return std::nullopt; }
 

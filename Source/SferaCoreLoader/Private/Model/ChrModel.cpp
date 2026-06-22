@@ -1,37 +1,13 @@
 #include "Model/ChrModel.h"
 #include "Core/BinaryReader.h"
+#include "Core/StatusUtils.h"
+#include "ModelParseUtils.h"
+#include "ResourceLoader/ResourceLoadHelpers.h"
 #include <algorithm>
 #include <stdexcept>
 
 namespace
 {
-    std::string ReadLengthPrefixedName(const FByteArray& data, size_t& cursor, size_t end)
-    {
-        Binary::RequireRange(data, cursor, 1, "CHR bone name length");
-        const size_t length = Binary::U8(data, cursor);
-        ++cursor;
-
-        if (cursor > end || length > end - cursor)
-        {
-            throw std::runtime_error("truncated CHR bone name");
-        }
-
-        std::string name;
-        name.reserve(length);
-
-        for (size_t i = 0; i < length; ++i)
-        {
-            name.push_back(static_cast<char>(data[cursor + i]));
-        }
-        cursor += length;
-
-        while (!name.empty() && name.back() == '\0')
-        {
-            name.pop_back();
-        }
-
-        return name;
-    }
     void ReadBoneNames(FChrInfo& info, const FByteArray& data, const FChrChunk& chunk)
     {
         if (chunk.Size < 4)
@@ -54,7 +30,7 @@ namespace
 
         for (int32 i = 0; i < count; ++i)
         {
-            info.BoneNames.push_back(ReadLengthPrefixedName(data, cursor, end));
+            info.BoneNames.push_back(Binary::ReadLengthPrefixedString(data, cursor, end, "CHR bone name"));
         }
     }
     const FChrChunk* FindChunk(const FChrInfo& info, int32 type)
@@ -64,30 +40,6 @@ namespace
             return chunk.Type == type;
         });
         return it == info.Chunks.end() ? nullptr : &*it;
-    }
-    FChrBounds ComputeBounds(const std::vector<FChrVertex>& vertices)
-    {
-        if (vertices.empty())
-        {
-            return {};
-        }
-
-        FChrBounds bounds;
-        bounds.MinX = bounds.MaxX = vertices.front().X;
-        bounds.MinY = bounds.MaxY = vertices.front().Y;
-        bounds.MinZ = bounds.MaxZ = vertices.front().Z;
-
-        for (const auto& vertex : vertices)
-        {
-            bounds.MinX = std::min(bounds.MinX, vertex.X);
-            bounds.MinY = std::min(bounds.MinY, vertex.Y);
-            bounds.MinZ = std::min(bounds.MinZ, vertex.Z);
-            bounds.MaxX = std::max(bounds.MaxX, vertex.X);
-            bounds.MaxY = std::max(bounds.MaxY, vertex.Y);
-            bounds.MaxZ = std::max(bounds.MaxZ, vertex.Z);
-        }
-
-        return bounds;
     }
     FChrInfo ParseInfo(const FByteArray& data, std::string_view sourceName)
     {
@@ -186,10 +138,9 @@ namespace
             mesh.Indices.push_back(index);
         }
 
-        mesh.Bounds = ComputeBounds(mesh.Vertices);
+        mesh.Bounds = ModelParse::ComputeXYZBounds<FChrBounds>(mesh.Vertices);
         return mesh;
     }
-    FStatus ExceptionStatus(std::string_view prefix, const std::exception& e) { return FStatus::Error(EStatusCode::InvalidData, std::string(prefix) + e.what()); }
 }
 TResult<FChrInfo> LoadChrInfoFromBytes(const FByteArray& bytes, std::string_view sourceName)
 {
@@ -199,7 +150,7 @@ TResult<FChrInfo> LoadChrInfoFromBytes(const FByteArray& bytes, std::string_view
     }
     catch (const std::exception& e)
     {
-        return ExceptionStatus("CHR parse failed: ", e);
+        return StatusUtils::InvalidDataFromException("CHR parse failed: ", e);
     }
 }
 TResult<FChrMesh> LoadChrMeshFromBytes(const FByteArray& bytes, std::string_view sourceName)
@@ -210,28 +161,14 @@ TResult<FChrMesh> LoadChrMeshFromBytes(const FByteArray& bytes, std::string_view
     }
     catch (const std::exception& e)
     {
-        return ExceptionStatus("CHR mesh parse failed: ", e);
+        return StatusUtils::InvalidDataFromException("CHR mesh parse failed: ", e);
     }
 }
 TResult<FChrInfo> LoadChrInfoFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
-    auto blob = resources.Load(logicalName);
-
-    if (!blob.IsOk())
-    {
-        return blob.Status();
-    }
-
-    return LoadChrInfoFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string());
+    return ResourceLoader::DecodeResource<FChrInfo>(resources, logicalName, LoadChrInfoFromBytes);
 }
 TResult<FChrMesh> LoadChrMeshFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
-    auto blob = resources.Load(logicalName);
-
-    if (!blob.IsOk())
-    {
-        return blob.Status();
-    }
-
-    return LoadChrMeshFromBytes(blob.Value().Bytes, blob.Value().SourcePath.generic_string());
+    return ResourceLoader::DecodeResource<FChrMesh>(resources, logicalName, LoadChrMeshFromBytes);
 }

@@ -1,4 +1,7 @@
 #include "Network/SphereEmuProtocol.h"
+#include "Common/BinaryData.h"
+#include "Common/TextEncoding.h"
+#include "Common/ValueUtils.h"
 #include <Windows.h>
 #include <algorithm>
 #include <bit>
@@ -53,13 +56,13 @@ namespace
     FByteArray EncodeCharacterNameCheck(const std::wstring& name)
     {
         FByteArray bytes(name.size() + 1, 0);
-        const bool serverFirstLetterHack = name.size() > 1 && IsRussianNameSymbol(name[0]) && IsRussianNameSymbol(name[1]);
+        const bool needsServerCyrillicLeadCorrection = name.size() > 1 && IsRussianNameSymbol(name[0]) && IsRussianNameSymbol(name[1]);
 
         for (size_t i = 1; i <= name.size(); ++i)
         {
             auto code = static_cast<unsigned>(EncodeCharacterNameSymbol(name[i - 1]));
 
-            if (i == 1 && serverFirstLetterHack && (code & 1U) != 0)
+            if (i == 1 && needsServerCyrillicLeadCorrection && (code & 1U) != 0)
             {
                 --code;
             }
@@ -163,6 +166,13 @@ namespace
 
         return FSphereEmuProtocol::FromCp1251(bytes);
     }
+
+    bool MatchesServerFrame(const FByteArray& frame, size_t size, uint8 marker, std::optional<uint8> state = std::nullopt)
+    {
+        if (frame.size() != size || Common::U16LEOr(frame, 2) != SferaProtocol::ServerFrameOpcode) { return false; }
+        if (frame[9] != SferaProtocol::ServerChannelByte || frame[10] != SferaProtocol::ServerFamilyByte || frame[11] != marker) { return false; }
+        return !state || frame[12] == *state;
+    }
 }
 void FSphereEmuProtocol::WriteU16LE(FByteArray& data, size_t offset, uint16 value)
 {
@@ -181,41 +191,15 @@ uint16 FSphereEmuProtocol::ReadU16LE(const FByteArray& data, size_t offset)
         return 0;
     }
 
-    return static_cast<uint16>(data[offset] | (static_cast<uint16>(data[offset + 1]) << 8));
+    return Common::U16LEOr(data, offset);
 }
 FByteArray FSphereEmuProtocol::ToCp1251(const std::wstring& text)
 {
-    if (text.empty())
-    {
-        return {};
-    }
-
-    const int required = WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), nullptr, 0, "?", nullptr);
-    FByteArray out(static_cast<size_t>(required > 0 ? required : 0));
-
-    if (required > 0)
-    {
-        WideCharToMultiByte(1251, 0, text.c_str(), static_cast<int>(text.size()), std::bit_cast<char*>(out.data()), required, "?", nullptr);
-    }
-
-    return out;
+    return Common::WideToCp1251Bytes(text);
 }
 std::wstring FSphereEmuProtocol::FromCp1251(const FByteArray& bytes)
 {
-    if (bytes.empty())
-    {
-        return {};
-    }
-
-    const int required = MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), nullptr, 0);
-    std::wstring out(static_cast<size_t>(required > 0 ? required : 0), L'\0');
-
-    if (required > 0)
-    {
-        MultiByteToWideChar(1251, 0, std::bit_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()), out.data(), required);
-    }
-
-    return out;
+    return Common::Cp1251BytesToWide(bytes);
 }
 FByteArray FSphereEmuProtocol::BuildLegacyPacket(uint16 opcode, const FByteArray& payload, uint16& sequence, uint16 xorKey)
 {
@@ -249,7 +233,7 @@ FByteArray FSphereEmuProtocol::BuildLoginPacket(uint16 localId, const std::wstri
     const int packetLength = (stringBitOffset + static_cast<int>(strings.size()) * 8 + 7) / 8;
     FByteArray packet(static_cast<size_t>(packetLength), 0);
     WriteU16LE(packet, 0, static_cast<uint16>(packetLength));
-    WriteU16LE(packet, 2, 300);
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
     const auto major = static_cast<uint8>((localId >> 8) & 0xff);
     const auto minor = static_cast<uint8>(localId & 0xff);
     packet[7] = major;
@@ -338,13 +322,13 @@ FByteArray FSphereEmuProtocol::BuildCharacterSelectPacket(uint16 localId, int32 
     constexpr uint16 length = 0x15;
     FByteArray packet(length, 0);
     WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, 300);
-    packet[6] = 0x04;
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
     packet[7] = static_cast<uint8>((localId >> 8) & 0xff);
     packet[8] = static_cast<uint8>(localId & 0xff);
-    packet[9] = 0x08;
-    packet[10] = 0x40;
-    packet[17] = static_cast<uint8>((std::clamp(slot, 0, 2) + 1) * 4);
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
+    packet[17] = static_cast<uint8>((Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount) + 1) * SferaProtocol::SlotWireStride);
     return packet;
 }
 FByteArray FSphereEmuProtocol::BuildCreateCharacterPacket(uint16 localId, int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance)
@@ -353,17 +337,17 @@ FByteArray FSphereEmuProtocol::BuildCreateCharacterPacket(uint16 localId, int32 
     const auto length = static_cast<uint16>(25 + nameCheck.size());
     FByteArray packet(length, 0);
     WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, 300);
-    packet[6] = 0x04;
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
     packet[7] = static_cast<uint8>((localId >> 8) & 0xff);
     packet[8] = static_cast<uint8>(localId & 0xff);
-    packet[9] = 0x08;
-    packet[10] = 0x40;
-    packet[13] = 0x08;
-    packet[14] = 0x40;
-    packet[15] = 0x80;
-    packet[16] = 0x05;
-    packet[17] = static_cast<uint8>((std::clamp(slot, 0, 2) + 1) * 4);
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
+    packet[13] = SferaProtocol::ServerChannelByte;
+    packet[14] = SferaProtocol::ServerFamilyByte;
+    packet[15] = SferaProtocol::CharacterSelectMarker;
+    packet[16] = SferaProtocol::CreateCharacterAction;
+    packet[17] = static_cast<uint8>((Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount) + 1) * SferaProtocol::SlotWireStride);
     std::copy(nameCheck.begin(), nameCheck.end(), packet.begin() + 20);
     const auto charData = BuildCharacterCreationBytes(appearance);
     std::copy(charData.begin(), charData.end(), packet.end() - charData.size());
@@ -374,17 +358,17 @@ FByteArray FSphereEmuProtocol::BuildDeleteCharacterPacket(uint16 localId, int32 
     constexpr uint16 length = 0x2a;
     FByteArray packet(length, 0);
     WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, 300);
-    packet[6] = 0x04;
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
     packet[7] = static_cast<uint8>((localId >> 8) & 0xff);
     packet[8] = static_cast<uint8>(localId & 0xff);
-    packet[9] = 0x08;
-    packet[10] = 0x40;
-    packet[13] = 0x08;
-    packet[14] = 0x40;
-    packet[15] = 0x80;
-    packet[16] = 0x0d;
-    packet[17] = static_cast<uint8>((std::clamp(slot, 0, 2) + 1) * 4);
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
+    packet[13] = SferaProtocol::ServerChannelByte;
+    packet[14] = SferaProtocol::ServerFamilyByte;
+    packet[15] = SferaProtocol::CharacterSelectMarker;
+    packet[16] = SferaProtocol::DeleteCharacterAction;
+    packet[17] = static_cast<uint8>((Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount) + 1) * SferaProtocol::SlotWireStride);
     return packet;
 }
 FByteArray FSphereEmuProtocol::BuildIngameAckPacket(uint16 localId)
@@ -392,12 +376,12 @@ FByteArray FSphereEmuProtocol::BuildIngameAckPacket(uint16 localId)
     constexpr uint16 length = 0x13;
     FByteArray packet(length, 0);
     WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, 300);
-    packet[6] = 0x04;
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
     packet[7] = static_cast<uint8>((localId >> 8) & 0xff);
     packet[8] = static_cast<uint8>(localId & 0xff);
-    packet[9] = 0x08;
-    packet[10] = 0x40;
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
     return packet;
 }
 FByteArray FSphereEmuProtocol::BuildPositionPacket(uint16 localId, uint8 sequence, double x, double y, double z, double angle)
@@ -405,10 +389,10 @@ FByteArray FSphereEmuProtocol::BuildPositionPacket(uint16 localId, uint8 sequenc
     constexpr uint16 length = 0x26;
     FByteArray packet(length, 0);
     WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, 300);
-    packet[6] = 0x04;
-    packet[9] = 0x08;
-    packet[10] = 0x40;
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
     packet[11] = static_cast<uint8>((localId >> 8) & 0xff);
     packet[12] = static_cast<uint8>(localId & 0xff);
     packet[17] = sequence;
@@ -443,12 +427,12 @@ FByteArray FSphereEmuProtocol::EncodeClientPacket(const FByteArray& decoded)
 
     return encoded;
 }
-bool FSphereEmuProtocol::LooksLikeCannotConnect(const FByteArray& frame) { return frame.size() == 14 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0xA0; }
-bool FSphereEmuProtocol::LooksLikeCharacterSelectStart(const FByteArray& frame) { return frame.size() == 82 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0x80 && frame[12] == 0x10; }
-bool FSphereEmuProtocol::LooksLikeEmptyCharacterSlot(const FByteArray& frame) { return frame.size() == 108 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0x60 && frame[12] == 0x79; }
-bool FSphereEmuProtocol::LooksLikeCharacterSlot(const FByteArray& frame) { return frame.size() == 108 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0x60; }
-bool FSphereEmuProtocol::LooksLikeNameCheckPassed(const FByteArray& frame) { return frame.size() == 14 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0x80 && frame[12] == 0x00; }
-bool FSphereEmuProtocol::LooksLikeNameAlreadyExists(const FByteArray& frame) { return frame.size() == 14 && ReadU16LE(frame, 2) == 300 && frame[9] == 0x08 && frame[10] == 0x40 && frame[11] == 0x00 && frame[12] == 0x01; }
+bool FSphereEmuProtocol::LooksLikeCannotConnect(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::ShortStatusFrameSize, SferaProtocol::CannotConnectMarker); }
+bool FSphereEmuProtocol::LooksLikeCharacterSelectStart(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::CharacterSelectStartFrameSize, SferaProtocol::CharacterSelectMarker, SferaProtocol::CharacterSelectStartState); }
+bool FSphereEmuProtocol::LooksLikeEmptyCharacterSlot(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::CharacterSlotFrameSize, SferaProtocol::CharacterSlotMarker, SferaProtocol::EmptySlotState); }
+bool FSphereEmuProtocol::LooksLikeCharacterSlot(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::CharacterSlotFrameSize, SferaProtocol::CharacterSlotMarker); }
+bool FSphereEmuProtocol::LooksLikeNameCheckPassed(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::ShortStatusFrameSize, SferaProtocol::CharacterSelectMarker, SferaProtocol::NameCheckPassedState); }
+bool FSphereEmuProtocol::LooksLikeNameAlreadyExists(const FByteArray& frame) { return MatchesServerFrame(frame, SferaProtocol::ShortStatusFrameSize, SferaProtocol::NameAlreadyExistsMarker, SferaProtocol::NameAlreadyExistsState); }
 FCharacterSlot FSphereEmuProtocol::ParseCharacterSlot(const FByteArray& frame, int32 slot, const FCharacterAppearanceRules& rules)
 {
     FCharacterSlot out;

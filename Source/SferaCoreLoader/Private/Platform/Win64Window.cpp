@@ -1,4 +1,5 @@
 #include "Platform/Win64Window.h"
+#include "Common/TextEncoding.h"
 #include <windowsx.h>
 
 #include <array>
@@ -8,29 +9,16 @@
 
 namespace
 {
-    std::wstring Utf8ToWideLocal(const std::string& text)
-    {
-        if (text.empty()) { return {}; }
+std::wstring Utf8ToWideOrByteExpanded(std::string_view text)
+{
+    std::wstring wide = Common::Utf8ToWide(text);
+    return !wide.empty() || text.empty() ? wide : std::wstring(text.begin(), text.end());
+}
 
-        const int required = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
-
-        if (required <= 0) { return std::wstring(text.begin(), text.end()); }
-
-        std::wstring out(static_cast<size_t>(required), L'\0');
-        MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), out.data(), required);
-        return out;
-    }
-
-    void AppendWideCharAsUtf8(std::string& out, wchar_t ch)
-    {
-        std::array<char, 8> buffer{};
-        const int count = WideCharToMultiByte(CP_UTF8, 0, &ch, 1, buffer.data(), static_cast<int>(buffer.size()), nullptr, nullptr);
-
-        if (count > 0)
-        {
-            out.append(buffer.data(), buffer.data() + count);
-        }
-    }
+std::string WideCharToUtf8(wchar_t ch)
+{
+    return Common::WideToUtf8(std::wstring_view(&ch, 1));
+}
 }
 
 FWin64Window::FWin64Window() = default;
@@ -61,8 +49,8 @@ FStatus FWin64Window::Create(const FWindowDesc& desc, FLogger* logger)
 
     Instance = GetModuleHandleW(nullptr);
     WNDCLASSEXW wc{};
-    const std::wstring classNameW = Utf8ToWideLocal(Desc.ClassName);
-    const std::wstring titleW = Utf8ToWideLocal(Desc.Title);
+    const std::wstring classNameW = Utf8ToWideOrByteExpanded(Desc.ClassName);
+    const std::wstring titleW = Utf8ToWideOrByteExpanded(Desc.Title);
 
     wc.cbSize = sizeof(wc);
     wc.style = CS_OWNDC | CS_DBLCLKS;
@@ -260,7 +248,7 @@ LRESULT FWin64Window::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
         if (wparam >= 32 && wparam <= 0xffff)
         {
-            AppendWideCharAsUtf8(InputState.TypedText, static_cast<wchar_t>(wparam));
+            InputState.TypedText += WideCharToUtf8(static_cast<wchar_t>(wparam));
         }
 
         return 0;

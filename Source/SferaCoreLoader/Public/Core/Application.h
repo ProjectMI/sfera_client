@@ -17,6 +17,7 @@ class FApplication
 {
 public:
     FApplication();
+    ~FApplication();
     int Run();
 private:
     void RegisterRecoveredNatives();

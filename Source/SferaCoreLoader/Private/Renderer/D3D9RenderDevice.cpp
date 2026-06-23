@@ -1,8 +1,9 @@
 #include <string_view>
 #include <array>
 #include "Renderer/D3D9RenderDevice.h"
-#include "D3D9Utils.h"
+#include "Renderer/D3D9Utils.h"
 #include "Common/StringUtils.h"
+#include "Common/TextEncoding.h"
 #include "Renderer/DdsImage.h"
 #include "FileSystem/PathUtils.h"
 #include "ResourceLoader/ResourceTypes.h"
@@ -13,6 +14,8 @@
 #include <cctype>
 #include <cstdint>
 #include <bit>
+#include <chrono>
+#include <cstdio>
 
 namespace
 {
@@ -79,6 +82,31 @@ namespace
         return !button.UncheckedImage.empty() ? button.UncheckedImage : std::string(normalFallback);
     }
 
+    std::string FormatOneDecimal(double value)
+    {
+        char buffer[32]{};
+        std::snprintf(buffer, sizeof(buffer), "%.1f", value);
+        return buffer;
+    }
+
+    std::string FormatCompactCount(uint64 value)
+    {
+        char buffer[32]{};
+        if (value >= 1000000ULL)
+        {
+            std::snprintf(buffer, sizeof(buffer), "%.1fM", static_cast<double>(value) / 1000000.0);
+        }
+        else if (value >= 1000ULL)
+        {
+            std::snprintf(buffer, sizeof(buffer), "%.1fk", static_cast<double>(value) / 1000.0);
+        }
+        else
+        {
+            std::snprintf(buffer, sizeof(buffer), "%llu", static_cast<unsigned long long>(value));
+        }
+        return buffer;
+    }
+
     bool IsTextLikeControl(const FUiControlDef& control) { return Common::EqualsNoCase(control.ClassId, "TEXT") || Common::EqualsNoCase(control.ClassId, "TEXTLIST") || Common::EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
     std::string TextForControl(const FUiRuntime& ui, const FUiWindowDef& window, const FUiControlDef& control)
     {
@@ -124,18 +152,18 @@ FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLog
     pp.BackBufferCount = 1;
     pp.EnableAutoDepthStencil = TRUE;
     pp.AutoDepthStencilFormat = D3DFMT_D24S8;
-    pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    HRESULT hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device);
+    pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    HRESULT hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
 
     if (FAILED(hr))
     {
         pp.AutoDepthStencilFormat = D3DFMT_D16;
-        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device);
+        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
     }
 
     if (FAILED(hr))
     {
-        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &pp, &Device);
+        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &Device);
     }
 
     if (FAILED(hr)) { Shutdown(); return FStatus::Error(EStatusCode::RuntimeError, "IDirect3D9::CreateDevice failed: hr=" + std::to_string(static_cast<long>(hr))); }
@@ -168,6 +196,7 @@ void FD3D9RenderDevice::ReleaseTextures()
 
 void FD3D9RenderDevice::Shutdown()
 {
+    GameWorldScene.Shutdown();
     CharacterScene.Shutdown();
     ReleaseTextures();
 
@@ -175,6 +204,8 @@ void FD3D9RenderDevice::Shutdown()
     SafeRelease(D3D);
 
     DeviceWindow = nullptr;
+    ActiveWorldScene = nullptr;
+    FailedWorldScene = nullptr;
     BackBufferWidth = 0;
     BackBufferHeight = 0;
 
@@ -955,6 +986,111 @@ void FD3D9RenderDevice::DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& u
     }
 }
 
+
+void FD3D9RenderDevice::UpdateFrameStats(double frameMilliseconds)
+{
+    if (frameMilliseconds <= 0.0)
+    {
+        return;
+    }
+    ++Stats.FrameCounter;
+    Stats.LastMilliseconds = frameMilliseconds;
+    if (!Stats.Initialized)
+    {
+        Stats.Initialized = true;
+        Stats.AverageMilliseconds = frameMilliseconds;
+        Stats.MinMilliseconds = frameMilliseconds;
+        Stats.MaxMilliseconds = frameMilliseconds;
+    }
+    else
+    {
+        Stats.AverageMilliseconds = Stats.AverageMilliseconds * 0.92 + frameMilliseconds * 0.08;
+    }
+    Stats.History[Stats.HistoryHead] = frameMilliseconds;
+    Stats.HistoryHead = (Stats.HistoryHead + 1) % Stats.History.size();
+    Stats.HistoryCount = std::min(Stats.HistoryCount + 1, Stats.History.size());
+    std::vector<double> samples;
+    samples.reserve(Stats.HistoryCount);
+    for (size_t i = 0; i < Stats.HistoryCount; ++i)
+    {
+        samples.push_back(Stats.History[i]);
+    }
+    std::sort(samples.begin(), samples.end());
+    if (!samples.empty())
+    {
+        Stats.MinMilliseconds = samples.front();
+        Stats.MaxMilliseconds = samples.back();
+        const size_t p95Index = std::min(samples.size() - 1, static_cast<size_t>(static_cast<double>(samples.size() - 1) * 0.95));
+        Stats.P95Milliseconds = samples[p95Index];
+        Stats.LowFps = Stats.MaxMilliseconds > 0.0 ? 1000.0 / Stats.MaxMilliseconds : 0.0;
+    }
+    if (frameMilliseconds > 33.333)
+    {
+        ++Stats.DropFrames;
+    }
+    if (frameMilliseconds > 100.0)
+    {
+        ++Stats.HitchFrames;
+    }
+    Stats.SecondAccumulator += frameMilliseconds / 1000.0;
+    ++Stats.SecondFrames;
+    if (Stats.SecondAccumulator >= 0.5)
+    {
+        Stats.CurrentFps = static_cast<uint32>(std::max(0.0, static_cast<double>(Stats.SecondFrames) / Stats.SecondAccumulator + 0.5));
+        Stats.SecondAccumulator = 0.0;
+        Stats.SecondFrames = 0;
+    }
+}
+
+void FD3D9RenderDevice::DrawRenderStatsOverlay(FDrawContext& ctx, const RECT& clientRect, const FD3D9GameWorldRenderStats* worldStats)
+{
+    if (!Stats.Initialized)
+    {
+        return;
+    }
+    std::vector<std::string> lines;
+    const double instantFps = Stats.LastMilliseconds > 0.0 ? 1000.0 / Stats.LastMilliseconds : 0.0;
+    const uint32 fps = Stats.CurrentFps != 0 ? Stats.CurrentFps : static_cast<uint32>(instantFps + 0.5);
+    lines.push_back("FPS " + std::to_string(fps) + "   MS " + FormatOneDecimal(Stats.LastMilliseconds));
+    lines.push_back("AVG " + FormatOneDecimal(Stats.AverageMilliseconds) + "  P95 " + FormatOneDecimal(Stats.P95Milliseconds));
+    lines.push_back("LOW " + FormatOneDecimal(Stats.LowFps) + "  D " + std::to_string(Stats.DropFrames) + " H " + std::to_string(Stats.HitchFrames));
+    if (worldStats)
+    {
+        lines.push_back("DRW " + std::to_string(worldStats->DrawCalls) + "  TRI " + FormatCompactCount(worldStats->Triangles));
+        lines.push_back("T " + std::to_string(worldStats->TerrainInstances) + "/" + std::to_string(worldStats->TerrainResources) + "  S " + std::to_string(worldStats->StaticInstances) + "  G " + std::to_string(worldStats->GrassInstances));
+        if (worldStats->WorldEntryLoadPending || worldStats->TerrainStreamingPending || worldStats->DeferredStaticPending || worldStats->DeferredGrassPending)
+        {
+            std::string load = "LOAD ";
+            load += worldStats->WorldEntryLoadPending ? "entry " : "";
+            load += worldStats->TerrainStreamingPending ? "terrain " : "";
+            load += worldStats->DeferredStaticPending ? "static " : "";
+            load += worldStats->DeferredGrassPending ? "grass" : "";
+            lines.push_back(load);
+        }
+    }
+    const float scale = std::max(0.75f, ctx.Scale);
+    const float margin = 10.0f * scale;
+    const float rowH = 13.0f * scale;
+    const float pad = 6.0f * scale;
+    const float panelW = worldStats ? 214.0f * scale : 174.0f * scale;
+    const float panelH = pad * 2.0f + rowH * static_cast<float>(lines.size());
+    const int32 clientW = std::max<int32>(1, clientRect.right - clientRect.left);
+    const int32 clientH = std::max<int32>(1, clientRect.bottom - clientRect.top);
+    const float screenW = static_cast<float>(std::max<int32>(clientW, BackBufferWidth));
+    const float screenH = static_cast<float>(std::max<int32>(clientH, BackBufferHeight));
+    const float x = std::floor(std::max(0.0f, screenW - panelW - margin));
+    const float y = std::floor(std::max(0.0f, screenH - panelH - margin));
+    const unsigned long accent = Stats.LastMilliseconds > 33.333 ? Argb(225, 215, 82, 64) : Argb(225, 86, 180, 96);
+    DrawSolidRect(x, y, panelW, panelH, Argb(145, 0, 0, 0));
+    DrawSolidRect(x, y, 3.0f * scale, panelH, accent);
+    float textY = y + pad - 1.0f * scale;
+    for (const auto& line : lines)
+    {
+        DrawTextRect(ctx, FUiRectF{x + pad + 4.0f * scale, textY, panelW - pad * 2.0f, rowH}, line, Argb(235, 235, 235, 225), false, 0);
+        textY += rowH;
+    }
+}
+
 bool FD3D9RenderDevice::EnsureDeviceReady(int32 width, int32 height, FLogger* logger)
 {
     if (!Device) { return false; }
@@ -977,7 +1113,7 @@ bool FD3D9RenderDevice::EnsureDeviceReady(int32 width, int32 height, FLogger* lo
         pp.BackBufferCount = 1;
         pp.EnableAutoDepthStencil = TRUE;
         pp.AutoDepthStencilFormat = D3DFMT_D24S8;
-        pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+        pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
         HRESULT hr = Device->Reset(&pp);
 
         if (FAILED(hr))
@@ -1049,55 +1185,7 @@ void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, con
         }
     }
 
-    for (const auto& [name, sprite] : ui.PickPersonWindow().Sprites)
-    {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
-    }
-
-    for (const auto& [name, sprite] : ui.CreatePersonWindow().Sprites)
-    {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
-    }
-
-    for (const auto& [name, sprite] : ui.DeleteCharacterWindow().Sprites)
-    {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
-    }
-
-    for (const auto& [name, sprite] : ui.ConnectMessageWindow().Sprites)
-    {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
-    }
-
-    for (const auto& [name, sprite] : ui.MessageWindow().Sprites)
-    {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
-    }
+    // Character-select, modal and game HUD textures are loaded lazily after login.
 
     FontCache.Preload(Device, resources, logger);
 
@@ -1107,8 +1195,9 @@ void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, con
     }
 }
 
-FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const RECT& rect, FLogger* logger)
+FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger)
 {
+    const auto frameStart = std::chrono::steady_clock::now();
     if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
 
     if (!ui.IsReady()) { return FStatus::Error(EStatusCode::RuntimeError, "UI runtime is not initialized"); }
@@ -1117,6 +1206,68 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     const int height = std::max(1, static_cast<int>(rect.bottom - rect.top));
 
     if (!EnsureDeviceReady(width, height, logger)) { return FStatus::Ok(); }
+
+    if (ui.Mode() != EUiRuntimeMode::Game)
+    {
+        if (ActiveWorldScene || FailedWorldScene || GameWorldScene.IsValid())
+        {
+            GameWorldScene.Shutdown();
+            ActiveWorldScene = nullptr;
+            FailedWorldScene = nullptr;
+        }
+    }
+    else if (worldScene)
+    {
+        if (ActiveWorldScene != worldScene && GameWorldScene.IsValid())
+        {
+            GameWorldScene.Shutdown();
+            ActiveWorldScene = nullptr;
+        }
+
+        if (ActiveWorldScene != worldScene && FailedWorldScene != worldScene)
+        {
+            std::wstring worldError;
+            auto worldConfig = FD3D9GameWorldScene::DefaultConfig();
+            const auto playerModel = CharacterScene.ExportSkinnedModel();
+            const auto* playerModelPtr = playerModel.IsValid() ? &playerModel : nullptr;
+
+            if (GameWorldScene.Initialize(DeviceWindow, Device, resources, *worldScene, worldConfig, 0.0, 0.0, 0.0, 0.0, worldError, logger, playerModelPtr))
+            {
+                ActiveWorldScene = worldScene;
+                FailedWorldScene = nullptr;
+            }
+            else
+            {
+                GameWorldScene.Shutdown();
+                ActiveWorldScene = nullptr;
+                FailedWorldScene = worldScene;
+
+                if (logger)
+                {
+                    logger->Warning("D3D9 game world scene initialization failed: " + Common::WideToUtf8(worldError));
+                }
+            }
+        }
+
+        if (GameWorldScene.IsValid())
+        {
+            if (lookDeltaX != 0.0f || lookDeltaY != 0.0f)
+            {
+                GameWorldScene.RotateView(lookDeltaX, lookDeltaY);
+            }
+
+            if (jumpRequested)
+            {
+                GameWorldScene.Jump();
+            }
+
+            std::wstring worldUpdateError;
+            if (!GameWorldScene.Update(deltaSeconds, gameInput, worldUpdateError) && logger)
+            {
+                logger->Warning("D3D9 game world Update failed: " + Common::WideToUtf8(worldUpdateError));
+            }
+        }
+    }
 
     const FUiRectF design = ui.BuildDesignRect(rect);
     const float scale = design.W / static_cast<float>(std::max(1, ui.DesignWidth()));
@@ -1128,12 +1279,20 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 BeginScene failed: hr=" + std::to_string(static_cast<long>(hr))); }
 
-    Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
     bool backgroundDrawn = true;
 
-    if (ui.Mode() == EUiRuntimeMode::CharacterSelect)
+    if (ui.Mode() == EUiRuntimeMode::Game && worldScene && GameWorldScene.IsValid())
     {
-        CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, logger);
+        GameWorldScene.RenderInsideScene(rect);
+    }
+    else
+    {
+        Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+
+        if (ui.Mode() == EUiRuntimeMode::CharacterSelect)
+        {
+            CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, logger);
+        }
     }
 
     ConfigureUiRenderState();
@@ -1152,18 +1311,39 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     }
     else
     {
-        DrawTextRect(ctx, FUiRectF{design.X + 24.0f, design.Y + 24.0f, design.W - 48.0f, 30.0f}, "game session active", Argb(230, 237, 208, 161), false, 0);
-        DrawSolidRect(design.X + 24.0f, design.Y + design.H - 54.0f, design.W - 48.0f, 30.0f, Argb(150, 0, 0, 0));
-        DrawTextRect(ctx, FUiRectF{design.X + 34.0f, design.Y + design.H - 50.0f, design.W - 68.0f, 22.0f}, ctx.Ui.GameChatDraft().empty() ? std::string("_") : ctx.Ui.GameChatDraft() + "_", Argb(230, 237, 208, 161), false, 0);
+        const auto& gameWindows = ui.GameWindows();
+        const auto& gameVisibility = ui.GameWindowVisibility();
+        for (size_t i = 0; i < gameWindows.size(); ++i)
+        {
+            if (i < gameVisibility.size() && !gameVisibility[i]) { continue; }
+            DrawWindow(ctx, gameWindows[i], ui.BuildWindowRect(gameWindows[i], rect));
+        }
+
+        if (gameWindows.empty())
+        {
+            DrawSolidRect(design.X + 24.0f, design.Y + design.H - 54.0f, design.W - 48.0f, 30.0f, Argb(150, 0, 0, 0));
+            DrawTextRect(ctx, FUiRectF{design.X + 34.0f, design.Y + design.H - 50.0f, design.W - 68.0f, 22.0f}, ctx.Ui.GameChatDraft().empty() ? std::string("_") : ctx.Ui.GameChatDraft() + "_", Argb(230, 237, 208, 161), false, 0);
+        }
     }
 
     DrawModalDialog(ctx, rect);
+    FD3D9GameWorldRenderStats currentWorldStats;
+    const FD3D9GameWorldRenderStats* currentWorldStatsPtr = nullptr;
+    if (ui.Mode() == EUiRuntimeMode::Game && GameWorldScene.IsValid())
+    {
+        currentWorldStats = GameWorldScene.RenderStats();
+        currentWorldStatsPtr = &currentWorldStats;
+    }
+    DrawRenderStatsOverlay(ctx, rect, currentWorldStatsPtr);
     Device->EndScene();
     hr = Device->Present(nullptr, nullptr, nullptr, nullptr);
 
     if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) { return FStatus::Ok(); }
 
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 Present failed: hr=" + std::to_string(static_cast<long>(hr))); }
+
+    const auto frameEnd = std::chrono::steady_clock::now();
+    UpdateFrameStats(std::chrono::duration<double, std::milli>(frameEnd - frameStart).count());
 
     if (!backgroundDrawn) { return FStatus::Error(EStatusCode::NotFound, "login background texture was not rendered: " + ui.LoginBackgroundTexture()); }
 

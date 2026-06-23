@@ -253,10 +253,16 @@ LRESULT FWin64Window::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
         return 0;
     case WM_RBUTTONDOWN:
+        InputState.MouseX = GET_X_LPARAM(lparam);
+        InputState.MouseY = GET_Y_LPARAM(lparam);
         InputState.RightButton = true;
+        SetCapture(hwnd);
         return 0;
     case WM_RBUTTONUP:
+        InputState.MouseX = GET_X_LPARAM(lparam);
+        InputState.MouseY = GET_Y_LPARAM(lparam);
         InputState.RightButton = false;
+        ReleaseCapture();
         return 0;
     case WM_PAINT:
         {

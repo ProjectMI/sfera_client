@@ -11,7 +11,7 @@
 #include <system_error>
 #include <vector>
 
-FClientFrontendRuntime::FClientFrontendRuntime(FLogger* logger) : Log(logger), Session(logger) {}
+FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), Session(Logger) {}
 FClientFrontendRuntime::~FClientFrontendRuntime()
 {
     Shutdown();
@@ -274,12 +274,12 @@ bool FClientFrontendRuntime::PumpUi()
     return open && Window.IsOpen();
 }
 
-FStatus FClientFrontendRuntime::InitializeUiResources(const FResourceManager& resources, const FUiBootstrapDesc& desc)
+FStatus FClientFrontendRuntime::InitializeUiResources(const FResourceManager& TerrainResources, const FUiBootstrapDesc& desc)
 {
     if (!ShellCreated) { return FStatus::Error(EStatusCode::RuntimeError, "frontend shell is not created"); }
 
     std::lock_guard<std::recursive_mutex> lock(UiMutex);
-    FStatus status = Ui.Initialize(resources, desc, Log);
+    FStatus status = Ui.Initialize(TerrainResources, desc, Log);
 
     if (!status.IsOk()) { return status; }
 
@@ -290,7 +290,7 @@ FStatus FClientFrontendRuntime::InitializeUiResources(const FResourceManager& re
     return FStatus::Ok();
 }
 
-FStatus FClientFrontendRuntime::InitializeD3D9(const FResourceManager& resources)
+FStatus FClientFrontendRuntime::InitializeD3D9(const FResourceManager& TerrainResources, const FWorldScene* worldScene)
 {
     if (!ShellCreated) { return FStatus::Error(EStatusCode::RuntimeError, "frontend shell is not created"); }
 
@@ -304,14 +304,14 @@ FStatus FClientFrontendRuntime::InitializeD3D9(const FResourceManager& resources
 
     if (!d3dStatus.IsOk()) { return d3dStatus; }
 
-    RenderResources = &resources;
+    RenderResources = &TerrainResources;
+    RenderWorldScene = worldScene;
     D3DInitialized.store(true);
     {
         std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
         std::lock_guard<std::mutex> renderLock(RenderMutex);
-        RenderDevice.PreloadUiTextures(resources, Ui, Log);
+        RenderDevice.PreloadUiTextures(TerrainResources, Ui, Log);
     }
-    RenderDevice.InspectShaderResources(resources, Log);
     RepaintDirty = true;
     return FStatus::Ok();
 }
@@ -326,7 +326,7 @@ void FClientFrontendRuntime::StartNetworkProbe(const FClientFrontendDesc& desc)
     }
 }
 
-void FClientFrontendRuntime::RenderFrame()
+void FClientFrontendRuntime::RenderFrame(float deltaSeconds, FGameMovementInput gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested)
 {
     if (!ShellCreated || !Window.Handle()) { return; }
 
@@ -336,12 +336,86 @@ void FClientFrontendRuntime::RenderFrame()
     GetClientRect(Window.Handle(), &client);
     std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
     std::lock_guard<std::mutex> renderLock(RenderMutex);
-    FStatus status = RenderDevice.RenderUiDesktop(*RenderResources, Ui, client, Log);
+    FStatus status = RenderDevice.RenderUiDesktop(*RenderResources, RenderWorldScene, Ui, client, deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested, Log);
 
     if (!status.IsOk() && Log)
     {
         Log->Warning("D3D9 render failed: " + status.Message());
     }
+}
+
+FGameMovementInput FClientFrontendRuntime::BuildGameMovementInput(const FInputSnapshot& input, const RECT& clientRect, float& lookDeltaX, float& lookDeltaY, bool& jumpRequested)
+{
+    std::lock_guard<std::recursive_mutex> lock(UiMutex);
+    lookDeltaX = 0.0f;
+    lookDeltaY = 0.0f;
+    jumpRequested = false;
+
+    FGameMovementInput movement{};
+    auto keyDown = [](int key) { return (GetAsyncKeyState(key) & 0x8000) != 0; };
+
+    if (Ui.Mode() != EUiRuntimeMode::Game || !input.HasFocus)
+    {
+        GameLookMode = false;
+        LastGameTabDown = false;
+        LastGameSpaceDown = false;
+        LastGameMouseValid = false;
+        return movement;
+    }
+
+    movement.Forward = keyDown('W') || keyDown(VK_UP);
+    movement.Backward = keyDown('S') || keyDown(VK_DOWN);
+    movement.StrafeLeft = keyDown('A') || keyDown(VK_LEFT);
+    movement.StrafeRight = keyDown('D') || keyDown(VK_RIGHT);
+    movement.Run = keyDown(VK_SHIFT);
+
+    const bool spaceDown = keyDown(VK_SPACE);
+    jumpRequested = spaceDown && !LastGameSpaceDown;
+    LastGameSpaceDown = spaceDown;
+
+    const bool tabDown = keyDown(VK_TAB);
+    if (tabDown && !LastGameTabDown)
+    {
+        GameLookMode = !GameLookMode;
+        LastGameMouseValid = false;
+    }
+    LastGameTabDown = tabDown;
+
+    if (GameLookMode && Window.Handle())
+    {
+        const int centerX = (clientRect.right - clientRect.left) / 2;
+        const int centerY = (clientRect.bottom - clientRect.top) / 2;
+        lookDeltaX = static_cast<float>(input.MouseX - centerX);
+        lookDeltaY = static_cast<float>(input.MouseY - centerY);
+        if (lookDeltaX != 0.0f || lookDeltaY != 0.0f)
+        {
+            POINT center{centerX, centerY};
+            ClientToScreen(Window.Handle(), &center);
+            SetCursorPos(center.x, center.y);
+        }
+        LastGameMouseX = centerX;
+        LastGameMouseY = centerY;
+        LastGameMouseValid = true;
+        return movement;
+    }
+
+    if (input.RightButton)
+    {
+        if (LastGameMouseValid)
+        {
+            lookDeltaX = static_cast<float>(input.MouseX - LastGameMouseX);
+            lookDeltaY = static_cast<float>(input.MouseY - LastGameMouseY);
+        }
+        LastGameMouseX = input.MouseX;
+        LastGameMouseY = input.MouseY;
+        LastGameMouseValid = true;
+    }
+    else
+    {
+        LastGameMouseValid = false;
+    }
+
+    return movement;
 }
 
 void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
@@ -487,12 +561,12 @@ void FClientFrontendRuntime::BeginCharacterEnterRequest()
 
     std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool present = false;
+    bool Present = false;
     bool canCreate = false;
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.SelectedCharacterSlot();
-        present = Ui.SelectedCharacterPresent();
+        Present = Ui.SelectedCharacterPresent();
         canCreate = Ui.SelectedCharacterCanCreate();
         Ui.SetCharacterActionLocked(true);
     }
@@ -508,7 +582,7 @@ void FClientFrontendRuntime::BeginCharacterEnterRequest()
         return;
     }
 
-    if (!present)
+    if (!Present)
     {
         CharacterActionInProgress.store(false);
         {
@@ -556,7 +630,7 @@ void FClientFrontendRuntime::BeginCharacterCreateRequest()
 
     std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool present = false;
+    bool Present = false;
     bool canCreate = false;
     std::wstring name;
     FCharacterCreationAppearance appearance;
@@ -565,7 +639,7 @@ void FClientFrontendRuntime::BeginCharacterCreateRequest()
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.SelectedCharacterSlot();
-        present = Ui.SelectedCharacterPresent();
+        Present = Ui.SelectedCharacterPresent();
         canCreate = Ui.SelectedCharacterCanCreate();
         name = Ui.SelectedCharacterName();
         appearance = Ui.SelectedCharacterAppearance(AppearanceRules);
@@ -585,7 +659,7 @@ void FClientFrontendRuntime::BeginCharacterCreateRequest()
         return;
     }
 
-    if (present || !canCreate)
+    if (Present || !canCreate)
     {
         CharacterActionInProgress.store(false);
         {
@@ -645,13 +719,13 @@ void FClientFrontendRuntime::BeginCharacterDeleteRequest()
 
     std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool present = false;
+    bool Present = false;
     std::string loginText;
     std::string passwordText;
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.SelectedCharacterSlot();
-        present = Ui.SelectedCharacterPresent();
+        Present = Ui.SelectedCharacterPresent();
         loginText = Ui.ActionState().LoginText;
         passwordText = Ui.ActionState().PasswordText;
         Ui.SetCharacterActionLocked(true);
@@ -668,7 +742,7 @@ void FClientFrontendRuntime::BeginCharacterDeleteRequest()
         return;
     }
 
-    if (!present)
+    if (!Present)
     {
         CharacterActionInProgress.store(false);
         {
@@ -786,6 +860,8 @@ FStatus FClientFrontendRuntime::RunEventLoop()
 
     LastPaint = std::chrono::steady_clock::now();
     auto lastRender = std::chrono::steady_clock::now() - std::chrono::milliseconds(100);
+    auto nextRender = std::chrono::steady_clock::now();
+    constexpr auto GameFrameInterval = std::chrono::microseconds(14286);
 
     while (Window.IsOpen() && Window.PumpMessages())
     {
@@ -824,14 +900,38 @@ FStatus FClientFrontendRuntime::RunEventLoop()
         PollLoginResult();
         PollCharacterResult();
         auto now = std::chrono::steady_clock::now();
-
-        if (D3DInitialized.load() && (RepaintDirty || now - lastRender >= std::chrono::milliseconds(16)))
+        bool gameMode = false;
         {
-            RenderFrame();
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            gameMode = Ui.Mode() == EUiRuntimeMode::Game;
+        }
+        const bool renderDue = now >= nextRender;
+        const bool repaintDue = RepaintDirty && !gameMode;
+
+        if (D3DInitialized.load() && (renderDue || repaintDue))
+        {
+            float lookDeltaX = 0.0f;
+            float lookDeltaY = 0.0f;
+            bool jumpRequested = false;
+            FGameMovementInput gameInput = BuildGameMovementInput(input, client, lookDeltaX, lookDeltaY, jumpRequested);
+            const float deltaSeconds = std::clamp(static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(now - lastRender).count()) / 1000000.0f, 0.0f, 0.1f);
+            RenderFrame(deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested);
             lastRender = now;
+            if (renderDue)
+            {
+                nextRender += GameFrameInterval;
+                if (nextRender < now - GameFrameInterval)
+                {
+                    nextRender = now + GameFrameInterval;
+                }
+            }
+            else
+            {
+                nextRender = now + GameFrameInterval;
+            }
             RepaintDirty = false;
         }
-        else if (RepaintDirty)
+        else if (RepaintDirty && !gameMode)
         {
             RequestRepaintThrottled();
         }

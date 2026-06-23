@@ -1,5 +1,5 @@
 #include "Renderer/D3D9CharacterScene.h"
-#include "D3D9Utils.h"
+#include "Renderer/D3D9Utils.h"
 #include "Core/BinaryReader.h"
 #include "Core/Logger.h"
 #include "Model/ChrModel.h"
@@ -19,424 +19,422 @@
 #include <stdexcept>
 #include <unordered_map>
 
-namespace
+constexpr unsigned long FVF_SCENE = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+constexpr size_t CHARACTER_FREE_ACTION = 20;
+
+struct FSceneQuat { float W = 1.0f; float X = 0.0f; float Y = 0.0f; float Z = 0.0f; };
+
+static float Approach(float current, float target, float factor) { return current + (target - current) * factor; }
+
+
+static float Dot(FVector3 a, FVector3 b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
+static FVector3 Cross(FVector3 a, FVector3 b) { return {a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X}; }
+static FVector3 NormalizeVec3(FVector3 value)
 {
-    constexpr unsigned long FVF_SCENE = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1;
-    constexpr size_t CHARACTER_FREE_ACTION = 20;
-
-    float Approach(float current, float target, float factor) { return current + (target - current) * factor; }
-
-
-    float Dot(FVec3 a, FVec3 b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
-    FVec3 Cross(FVec3 a, FVec3 b) { return {a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X}; }
-    FVec3 NormalizeVec3(FVec3 value)
+    const float length = std::sqrt(Dot(value, value));
+    return length <= 0.00001f ? FVector3
     {
-        const float length = std::sqrt(Dot(value, value));
-        return length <= 0.00001f ? FVec3
-        {
-            0.0f, 0.0f, 1.0f
-        }
-        : FVec3
-        {
-            value.X / length, value.Y / length, value.Z / length
-        };
+        0.0f, 0.0f, 1.0f
     }
-    FQuat NormalizeQuat(FQuat value)
+    : FVector3
     {
-        const float length = std::sqrt(value.W * value.W + value.X * value.X + value.Y * value.Y + value.Z * value.Z);
-        return length <= 0.00001f ? FQuat{} : FQuat
-        {
-            value.W / length, value.X / length, value.Y / length, value.Z / length
-        };
-    }
-    FQuat Multiply(FQuat a, FQuat b) { return {a.W * b.W - a.X * b.X - a.Y * b.Y - a.Z * b.Z, a.W * b.X + a.X * b.W + a.Y * b.Z - a.Z * b.Y, a.W * b.Y - a.X * b.Z + a.Y * b.W + a.Z * b.X, a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W}; }
-    FVec3 Rotate(FQuat rotation, FVec3 value)
+        value.X / length, value.Y / length, value.Z / length
+    };
+}
+static FSceneQuat NormalizeQuat(FSceneQuat value)
+{
+    const float length = std::sqrt(value.W * value.W + value.X * value.X + value.Y * value.Y + value.Z * value.Z);
+    return length <= 0.00001f ? FSceneQuat{} : FSceneQuat
     {
-        const auto q = NormalizeQuat(rotation);
-        const FVec3 u
-        {
-            q.X, q.Y, q.Z
-        };
-        const float s = q.W;
-        const auto uv = Cross(u, value);
-        const auto uuv = Cross(u, uv);
-        return
-        {
-            value.X + (uv.X * s + uuv.X) * 2.0f, value.Y + (uv.Y * s + uuv.Y) * 2.0f, value.Z + (uv.Z * s + uuv.Z) * 2.0f
-        };
-    }
-
-    D3DMATRIX IdentityMatrix()
+        value.W / length, value.X / length, value.Y / length, value.Z / length
+    };
+}
+static FSceneQuat Multiply(FSceneQuat a, FSceneQuat b) { return {a.W * b.W - a.X * b.X - a.Y * b.Y - a.Z * b.Z, a.W * b.X + a.X * b.W + a.Y * b.Z - a.Z * b.Y, a.W * b.Y - a.X * b.Z + a.Y * b.W + a.Z * b.X, a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W}; }
+static FVector3 Rotate(FSceneQuat rotation, FVector3 value)
+{
+    const auto q = NormalizeQuat(rotation);
+    const FVector3 u
     {
-        D3DMATRIX matrix{};
-        matrix._11 = 1.0f;
-        matrix._22 = 1.0f;
-        matrix._33 = 1.0f;
-        matrix._44 = 1.0f;
-        return matrix;
-    }
-    D3DMATRIX RotationYMatrix(float radians)
+        q.X, q.Y, q.Z
+    };
+    const float s = q.W;
+    const auto uv = Cross(u, value);
+    const auto uuv = Cross(u, uv);
+    return
     {
-        D3DMATRIX matrix = IdentityMatrix();
-        const float c = std::cos(radians);
-        const float s = std::sin(radians);
-        matrix._11 = c;
-        matrix._13 = -s;
-        matrix._31 = s;
-        matrix._33 = c;
-        return matrix;
-    }
-    FMatrix4 Identity4()
-    {
-        FMatrix4 matrix{};
-        matrix.M[0] = 1.0f;
-        matrix.M[5] = 1.0f;
-        matrix.M[10] = 1.0f;
-        matrix.M[15] = 1.0f;
-        return matrix;
-    }
-    FMatrix4 MatrixFromSkl(const FSklTransform& transform)
-    {
-        float x = transform.QX;
-        float y = transform.QY;
-        float z = transform.QZ;
-        float w = transform.QW;
-        const float length = std::sqrt(x * x + y * y + z * z + w * w);
-
-        if (length <= 0.00001f)
-        {
-            x = 0.0f;
-            y = 0.0f;
-            z = 0.0f;
-            w = 1.0f;
-        }
-        else
-        {
-            x /= length;
-            y /= length;
-            z /= length;
-            w /= length;
-        }
-
-        auto matrix = Identity4();
-        matrix.M[0] = 1.0f - 2.0f * y * y - 2.0f * z * z;
-        matrix.M[1] = 2.0f * x * y + 2.0f * z * w;
-        matrix.M[2] = 2.0f * x * z - 2.0f * y * w;
-        matrix.M[4] = 2.0f * x * y - 2.0f * z * w;
-        matrix.M[5] = 1.0f - 2.0f * x * x - 2.0f * z * z;
-        matrix.M[6] = 2.0f * y * z + 2.0f * x * w;
-        matrix.M[8] = 2.0f * x * z + 2.0f * y * w;
-        matrix.M[9] = 2.0f * y * z - 2.0f * x * w;
-        matrix.M[10] = 1.0f - 2.0f * x * x - 2.0f * y * y;
-        matrix.M[12] = transform.TX;
-        matrix.M[13] = transform.TY;
-        matrix.M[14] = transform.TZ;
-        return matrix;
-    }
-    FMatrix4 MatrixMultiply(FMatrix4 a, FMatrix4 b)
-    {
-        FMatrix4 out{};
-
-        for (int row = 0; row < 4; ++row)
-        {
-            for (int col = 0; col < 4; ++col)
-            {
-                out.M[row * 4 + col] = a.M[row * 4 + 0] * b.M[0 * 4 + col] + a.M[row * 4 + 1] * b.M[1 * 4 + col] + a.M[row * 4 + 2] * b.M[2 * 4 + col] + a.M[row * 4 + 3] * b.M[3 * 4 + col];
-            }
-        }
-
-        return out;
-    }
-    FVec3 TransformPoint(FMatrix4 matrix, FVec3 value) { return {value.X * matrix.M[0] + value.Y * matrix.M[4] + value.Z * matrix.M[8] + matrix.M[12], value.X * matrix.M[1] + value.Y * matrix.M[5] + value.Z * matrix.M[9] + matrix.M[13], value.X * matrix.M[2] + value.Y * matrix.M[6] + value.Z * matrix.M[10] + matrix.M[14]}; }
-    FVec3 TransformVector(FMatrix4 matrix, FVec3 value) { return {value.X * matrix.M[0] + value.Y * matrix.M[4] + value.Z * matrix.M[8], value.X * matrix.M[1] + value.Y * matrix.M[5] + value.Z * matrix.M[9], value.X * matrix.M[2] + value.Y * matrix.M[6] + value.Z * matrix.M[10]}; }
-    D3DMATRIX LookAtRh(FVec3 eye, FVec3 at, FVec3 up)
-    {
-        const FVec3 viewDirection
-        {
-            eye.X - at.X, eye.Y - at.Y, eye.Z - at.Z
-        };
-        const FVec3 zaxis = NormalizeVec3(viewDirection);
-        const FVec3 xaxis = NormalizeVec3(Cross(up, zaxis));
-        const FVec3 yaxis = Cross(zaxis, xaxis);
-        D3DMATRIX matrix = IdentityMatrix();
-        matrix._11 = xaxis.X;
-        matrix._12 = yaxis.X;
-        matrix._13 = zaxis.X;
-        matrix._21 = xaxis.Y;
-        matrix._22 = yaxis.Y;
-        matrix._23 = zaxis.Y;
-        matrix._31 = xaxis.Z;
-        matrix._32 = yaxis.Z;
-        matrix._33 = zaxis.Z;
-        matrix._41 = -Dot(xaxis, eye);
-        matrix._42 = -Dot(yaxis, eye);
-        matrix._43 = -Dot(zaxis, eye);
-        return matrix;
-    }
-    D3DMATRIX PerspectiveFovRh(float fovY, float aspect, float zNear, float zFar)
-    {
-        const float yScale = 1.0f / std::tan(fovY * 0.5f);
-        const float xScale = yScale / std::max(aspect, 0.001f);
-        D3DMATRIX matrix{};
-        matrix._11 = xScale;
-        matrix._22 = yScale;
-        matrix._33 = zFar / (zNear - zFar);
-        matrix._34 = -1.0f;
-        matrix._43 = (zNear * zFar) / (zNear - zFar);
-        return matrix;
-    }
-
-    size_t SkeletonAnimationFrameOffset(const FSklSkeleton& skeleton, size_t action)
-    {
-        if (action >= skeleton.AnimationFrameCounts.size())
-        {
-            throw std::runtime_error("SKL has no requested animation action");
-        }
-
-        size_t offset = 0;
-
-        for (size_t i = 0; i < action; ++i)
-        {
-            offset += static_cast<size_t>(skeleton.AnimationFrameCounts[i]);
-        }
-
-        return offset;
-    }
-    size_t SkeletonBoneIndex(const FSklSkeleton& skeleton, const std::string& name)
-    {
-        const std::string wanted = Common::ToLower(name);
-
-        for (size_t i = 0; i < skeleton.BoneNames.size(); ++i)
-        {
-            if (Common::ToLower(skeleton.BoneNames[i]) == wanted)
-            {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("SKL bone not found: " + name);
-    }
-
-    std::vector<std::string> QuotedStrings(const std::string& line)
-    {
-        std::vector<std::string> values;
-        size_t cursor = 0;
-
-        while (cursor < line.size())
-        {
-            const size_t open = line.find('"', cursor);
-
-            if (open == std::string::npos)
-            {
-                break;
-            }
-
-            const size_t close = line.find('"', open + 1);
-
-            if (close == std::string::npos)
-            {
-                throw std::runtime_error("unterminated quoted string in subobjs.dat");
-            }
-
-            values.push_back(line.substr(open + 1, close - open - 1));
-            cursor = close + 1;
-        }
-
-        return values;
-    }
-    std::unordered_map<std::string, FXaddSubobject> LoadXaddSubobjects(const FResourceManager& resources)
-    {
-        auto blob = resources.Load("xadd/subobjs.dat");
-
-        if (!blob.IsOk())
-        {
-            throw std::runtime_error(blob.Status().Message());
-        }
-
-        std::string text;
-        text.reserve(blob.Value().Bytes.size());
-
-        for (uint8 value : blob.Value().Bytes)
-        {
-            text.push_back(static_cast<char>(value));
-        }
-        std::unordered_map<std::string, FXaddSubobject> subobjects;
-        bool inSubobjects = false;
-        std::istringstream stream(text);
-        std::string line;
-
-        while (std::getline(stream, line))
-        {
-            if (line.find("subobjs<as>") != std::string::npos)
-            {
-                inSubobjects = true;
-                continue;
-            }
-
-            if (inSubobjects && line.find("lods<as>") != std::string::npos)
-            {
-                break;
-            }
-
-            if (!inSubobjects || line.find('{') == std::string::npos || line.find("s<t>=") == std::string::npos)
-            {
-                continue;
-            }
-
-            const auto values = QuotedStrings(line);
-
-            if (values.size() < 3)
-            {
-                throw std::runtime_error("bad subobjs.dat entry: " + line);
-            }
-
-            FXaddSubobject entry;
-            entry.Code = values[0];
-            entry.MeshName = values[1];
-            entry.TextureNames.assign(values.begin() + 2, values.end());
-            subobjects[entry.Code] = std::move(entry);
-        }
-
-        if (subobjects.empty())
-        {
-            throw std::runtime_error("subobjs.dat has no subobjects");
-        }
-
-        return subobjects;
-    }
-    const std::vector<std::string>& FaceCodes(bool female)
-    {
-        static const std::vector<std::string> male =
-        {
-            "mf0", "mf1", "mf2", "mf3", "mf4", "mf5", "mf6", "mf7", "mf8", "mf9", "mfa", "mfb", "mfc"
-        };
-        static const std::vector<std::string> femaleCodes =
-        {
-            "wf0", "wf1", "wf2", "wf3", "wf4", "wf5", "wf6", "wf7", "wf8", "wf9", "wfa", "wfb"
-        };
-        return female ? femaleCodes : male;
-    }
-    const std::vector<std::string>& HairCodes(bool female)
-    {
-        static const std::vector<std::string> male =
-        {
-            "mr0", "mr1", "mr2"
-        };
-        static const std::vector<std::string> femaleCodes =
-        {
-            "wr0", "wr1", "wr2", "wr3", "wr4"
-        };
-        return female ? femaleCodes : male;
-    }
-    size_t WrapIndex(int value, size_t count)
-    {
-        if (count == 0)
-        {
-            return 0;
-        }
-
-        int v = value % static_cast<int>(count);
-
-        if (v < 0)
-        {
-            v += static_cast<int>(count);
-        }
-
-        return static_cast<size_t>(v);
-    }
-    std::vector<std::string> CharacterSubobjectCodes(bool female, int face, int hair)
-    {
-        const auto& faces = FaceCodes(female);
-        const auto& hairs = HairCodes(female);
-
-        if (female)
-        {
-            return
-            {
-                "wb0", "wt0", "wg0", "wc0", "we0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]
-            };
-        }
-
-        return
-        {
-            "mb0", "mt0", "mg0", "mc0", "me0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]
-        };
-    }
-    bool IsFaceCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'f') || (code[0] == 'w' && code[1] == 'f')); }
-    bool IsHairCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'r') || (code[0] == 'w' && code[1] == 'r')); }
-    size_t TextureIndexForSubobject(const FXaddSubobject& entry, int hairColor, int tattoo)
-    {
-        size_t textureIndex = 0;
-
-        if (IsFaceCode(entry.Code))
-        {
-            textureIndex = WrapIndex(tattoo, entry.TextureNames.size());
-        }
-        else if (IsHairCode(entry.Code))
-        {
-            textureIndex = WrapIndex(hairColor, entry.TextureNames.size());
-        }
-
-        if (textureIndex >= entry.TextureNames.size())
-        {
-            throw std::runtime_error("subobject texture index out of range: " + entry.Code);
-        }
-
-        return textureIndex;
-    }
-    std::string ModelTextureLogicalName(const std::string& materialName) { return "models/textures/" + Common::ToLower(materialName) + ".dds"; }
-    std::string FindLogicalOrStem(const FResourceManager& resources, const std::string& preferred)
-    {
-        if (resources.Catalog().FindByLogicalName(preferred))
-        {
-            return preferred;
-        }
-
-        const std::string preferredLower = Common::ToLower(FPath(preferred).filename().string());
-        const std::string preferredStem = Common::ToLower(FPath(preferred).stem().string());
-
-        for (const auto& record : resources.Catalog().All())
-        {
-            const std::string filename = Common::ToLower(record.RelativePath.filename().string());
-            const std::string stem = Common::ToLower(record.RelativePath.stem().string());
-
-            if (filename == preferredLower || stem == preferredStem)
-            {
-                return record.RelativePath.generic_string();
-            }
-        }
-
-        return preferred;
-    }
-    std::vector<uint8> ReadBytesOrThrow(const FResourceManager& resources, const std::string& logicalName)
-    {
-        auto blob = resources.Load(logicalName);
-
-        if (!blob.IsOk())
-        {
-            throw std::runtime_error(blob.Status().Message());
-        }
-
-        return blob.Value().Bytes;
-    }
-    std::string HresultText(std::string_view action, HRESULT hr)
-    {
-        std::ostringstream out;
-        out << action << " failed: 0x" << std::hex << static_cast<unsigned long>(hr);
-        return out.str();
-    }
-    bool SameAppearance(const FCharacterCreationAppearance& a, const FCharacterCreationAppearance& b) { return a.Female == b.Female && a.Face == b.Face && a.Hair == b.Hair && a.HairColor == b.HairColor && a.Tattoo == b.Tattoo; }
+        value.X + (uv.X * s + uuv.X) * 2.0f, value.Y + (uv.Y * s + uuv.Y) * 2.0f, value.Z + (uv.Z * s + uuv.Z) * 2.0f
+    };
 }
 
+static D3DMATRIX IdentityMatrix()
+{
+    D3DMATRIX matrix{};
+    matrix._11 = 1.0f;
+    matrix._22 = 1.0f;
+    matrix._33 = 1.0f;
+    matrix._44 = 1.0f;
+    return matrix;
+}
+static D3DMATRIX RotationYMatrix(float radians)
+{
+    D3DMATRIX matrix = IdentityMatrix();
+    const float c = std::cos(radians);
+    const float s = std::sin(radians);
+    matrix._11 = c;
+    matrix._13 = -s;
+    matrix._31 = s;
+    matrix._33 = c;
+    return matrix;
+}
+static FSceneMatrix4 Identity4()
+{
+    FSceneMatrix4 matrix{};
+    matrix[0] = 1.0f;
+    matrix[5] = 1.0f;
+    matrix[10] = 1.0f;
+    matrix[15] = 1.0f;
+    return matrix;
+}
+static FSceneMatrix4 MatrixFromSkl(const FSklTransform& transform)
+{
+    float x = transform.QX;
+    float y = transform.QY;
+    float z = transform.QZ;
+    float w = transform.QW;
+    const float length = std::sqrt(x * x + y * y + z * z + w * w);
+
+    if (length <= 0.00001f)
+    {
+        x = 0.0f;
+        y = 0.0f;
+        z = 0.0f;
+        w = 1.0f;
+    }
+    else
+    {
+        x /= length;
+        y /= length;
+        z /= length;
+        w /= length;
+    }
+
+    auto matrix = Identity4();
+    matrix[0] = 1.0f - 2.0f * y * y - 2.0f * z * z;
+    matrix[1] = 2.0f * x * y + 2.0f * z * w;
+    matrix[2] = 2.0f * x * z - 2.0f * y * w;
+    matrix[4] = 2.0f * x * y - 2.0f * z * w;
+    matrix[5] = 1.0f - 2.0f * x * x - 2.0f * z * z;
+    matrix[6] = 2.0f * y * z + 2.0f * x * w;
+    matrix[8] = 2.0f * x * z + 2.0f * y * w;
+    matrix[9] = 2.0f * y * z - 2.0f * x * w;
+    matrix[10] = 1.0f - 2.0f * x * x - 2.0f * y * y;
+    matrix[12] = transform.TX;
+    matrix[13] = transform.TY;
+    matrix[14] = transform.TZ;
+    return matrix;
+}
+static FSceneMatrix4 MatrixMultiply(FSceneMatrix4 a, FSceneMatrix4 b)
+{
+    FSceneMatrix4 out{};
+
+    for (int row = 0; row < 4; ++row)
+    {
+        for (int col = 0; col < 4; ++col)
+        {
+            out[row * 4 + col] = a[row * 4 + 0] * b[0 * 4 + col] + a[row * 4 + 1] * b[1 * 4 + col] + a[row * 4 + 2] * b[2 * 4 + col] + a[row * 4 + 3] * b[3 * 4 + col];
+        }
+    }
+
+    return out;
+}
+static FVector3 TransformPoint(FSceneMatrix4 matrix, FVector3 value) { return {value.X * matrix[0] + value.Y * matrix[4] + value.Z * matrix[8] + matrix[12], value.X * matrix[1] + value.Y * matrix[5] + value.Z * matrix[9] + matrix[13], value.X * matrix[2] + value.Y * matrix[6] + value.Z * matrix[10] + matrix[14]}; }
+static FVector3 TransformVector(FSceneMatrix4 matrix, FVector3 value) { return {value.X * matrix[0] + value.Y * matrix[4] + value.Z * matrix[8], value.X * matrix[1] + value.Y * matrix[5] + value.Z * matrix[9], value.X * matrix[2] + value.Y * matrix[6] + value.Z * matrix[10]}; }
+static D3DMATRIX LookAtRh(FVector3 eye, FVector3 at, FVector3 up)
+{
+    const FVector3 viewDirection
+    {
+        eye.X - at.X, eye.Y - at.Y, eye.Z - at.Z
+    };
+    const FVector3 zaxis = NormalizeVec3(viewDirection);
+    const FVector3 xaxis = NormalizeVec3(Cross(up, zaxis));
+    const FVector3 yaxis = Cross(zaxis, xaxis);
+    D3DMATRIX matrix = IdentityMatrix();
+    matrix._11 = xaxis.X;
+    matrix._12 = yaxis.X;
+    matrix._13 = zaxis.X;
+    matrix._21 = xaxis.Y;
+    matrix._22 = yaxis.Y;
+    matrix._23 = zaxis.Y;
+    matrix._31 = xaxis.Z;
+    matrix._32 = yaxis.Z;
+    matrix._33 = zaxis.Z;
+    matrix._41 = -Dot(xaxis, eye);
+    matrix._42 = -Dot(yaxis, eye);
+    matrix._43 = -Dot(zaxis, eye);
+    return matrix;
+}
+static D3DMATRIX PerspectiveFovRh(float fovY, float aspect, float zNear, float zFar)
+{
+    const float yScale = 1.0f / std::tan(fovY * 0.5f);
+    const float xScale = yScale / std::max(aspect, 0.001f);
+    D3DMATRIX matrix{};
+    matrix._11 = xScale;
+    matrix._22 = yScale;
+    matrix._33 = zFar / (zNear - zFar);
+    matrix._34 = -1.0f;
+    matrix._43 = (zNear * zFar) / (zNear - zFar);
+    return matrix;
+}
+
+static size_t SkeletonAnimationFrameOffset(const FSklSkeleton& Skeleton, size_t action)
+{
+    if (action >= Skeleton.AnimationFrameCounts.size())
+    {
+        throw std::runtime_error("SKL has no requested animation action");
+    }
+
+    size_t offset = 0;
+
+    for (size_t i = 0; i < action; ++i)
+    {
+        offset += static_cast<size_t>(Skeleton.AnimationFrameCounts[i]);
+    }
+
+    return offset;
+}
+static size_t SkeletonBoneIndex(const FSklSkeleton& Skeleton, const std::string& name)
+{
+    const std::string wanted = Common::ToLower(name);
+
+    for (size_t i = 0; i < Skeleton.BoneNames.size(); ++i)
+    {
+        if (Common::ToLower(Skeleton.BoneNames[i]) == wanted)
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("SKL bone not found: " + name);
+}
+
+static std::vector<std::string> QuotedStrings(const std::string& line)
+{
+    std::vector<std::string> values;
+    size_t cursor = 0;
+
+    while (cursor < line.size())
+    {
+        const size_t open = line.find('"', cursor);
+
+        if (open == std::string::npos)
+        {
+            break;
+        }
+
+        const size_t close = line.find('"', open + 1);
+
+        if (close == std::string::npos)
+        {
+            throw std::runtime_error("unterminated quoted string in subobjs.dat");
+        }
+
+        values.push_back(line.substr(open + 1, close - open - 1));
+        cursor = close + 1;
+    }
+
+    return values;
+}
+static std::unordered_map<std::string, FXaddSubobject> LoadXaddSubobjects(const FResourceManager& resources)
+{
+    auto blob = resources.Load("xadd/subobjs.dat");
+
+    if (!blob.IsOk())
+    {
+        throw std::runtime_error(blob.Status().Message());
+    }
+
+    std::string text;
+    text.reserve(blob.Value().Bytes.size());
+
+    for (uint8 value : blob.Value().Bytes)
+    {
+        text.push_back(static_cast<char>(value));
+    }
+    std::unordered_map<std::string, FXaddSubobject> subobjects;
+    bool inSubobjects = false;
+    std::istringstream stream(text);
+    std::string line;
+
+    while (std::getline(stream, line))
+    {
+        if (line.find("subobjs<as>") != std::string::npos)
+        {
+            inSubobjects = true;
+            continue;
+        }
+
+        if (inSubobjects && line.find("lods<as>") != std::string::npos)
+        {
+            break;
+        }
+
+        if (!inSubobjects || line.find('{') == std::string::npos || line.find("s<t>=") == std::string::npos)
+        {
+            continue;
+        }
+
+        const auto values = QuotedStrings(line);
+
+        if (values.size() < 3)
+        {
+            throw std::runtime_error("bad subobjs.dat entry: " + line);
+        }
+
+        FXaddSubobject entry;
+        entry.Code = values[0];
+        entry.MeshName = values[1];
+        entry.TextureNames.assign(values.begin() + 2, values.end());
+        subobjects[entry.Code] = std::move(entry);
+    }
+
+    if (subobjects.empty())
+    {
+        throw std::runtime_error("subobjs.dat has no subobjects");
+    }
+
+    return subobjects;
+}
+static const std::vector<std::string>& FaceCodes(bool female)
+{
+    static const std::vector<std::string> male =
+    {
+        "mf0", "mf1", "mf2", "mf3", "mf4", "mf5", "mf6", "mf7", "mf8", "mf9", "mfa", "mfb", "mfc"
+    };
+    static const std::vector<std::string> femaleCodes =
+    {
+        "wf0", "wf1", "wf2", "wf3", "wf4", "wf5", "wf6", "wf7", "wf8", "wf9", "wfa", "wfb"
+    };
+    return female ? femaleCodes : male;
+}
+static const std::vector<std::string>& HairCodes(bool female)
+{
+    static const std::vector<std::string> male =
+    {
+        "mr0", "mr1", "mr2"
+    };
+    static const std::vector<std::string> femaleCodes =
+    {
+        "wr0", "wr1", "wr2", "wr3", "wr4"
+    };
+    return female ? femaleCodes : male;
+}
+static size_t WrapIndex(int value, size_t count)
+{
+    if (count == 0)
+    {
+        return 0;
+    }
+
+    int v = value % static_cast<int>(count);
+
+    if (v < 0)
+    {
+        v += static_cast<int>(count);
+    }
+
+    return static_cast<size_t>(v);
+}
+static std::vector<std::string> CharacterSubobjectCodes(bool female, int face, int hair)
+{
+    const auto& faces = FaceCodes(female);
+    const auto& hairs = HairCodes(female);
+
+    if (female)
+    {
+        return
+        {
+            "wb0", "wt0", "wg0", "wc0", "we0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]
+        };
+    }
+
+    return
+    {
+        "mb0", "mt0", "mg0", "mc0", "me0", faces[WrapIndex(face, faces.size())], hairs[WrapIndex(hair, hairs.size())]
+    };
+}
+static bool IsFaceCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'f') || (code[0] == 'w' && code[1] == 'f')); }
+static bool IsHairCode(const std::string& code) { return code.size() == 3 && ((code[0] == 'm' && code[1] == 'r') || (code[0] == 'w' && code[1] == 'r')); }
+static size_t TextureIndexForSubobject(const FXaddSubobject& entry, int hairColor, int tattoo)
+{
+    size_t textureIndex = 0;
+
+    if (IsFaceCode(entry.Code))
+    {
+        textureIndex = WrapIndex(tattoo, entry.TextureNames.size());
+    }
+    else if (IsHairCode(entry.Code))
+    {
+        textureIndex = WrapIndex(hairColor, entry.TextureNames.size());
+    }
+
+    if (textureIndex >= entry.TextureNames.size())
+    {
+        throw std::runtime_error("subobject texture index out of range: " + entry.Code);
+    }
+
+    return textureIndex;
+}
+static std::string ModelTextureLogicalName(const std::string& materialName) { return "models/textures/" + Common::ToLower(materialName) + ".dds"; }
+static std::string FindLogicalOrStem(const FResourceManager& resources, const std::string& preferred)
+{
+    if (resources.Catalog().FindByLogicalName(preferred))
+    {
+        return preferred;
+    }
+
+    const std::string preferredLower = Common::ToLower(FPath(preferred).filename().string());
+    const std::string preferredStem = Common::ToLower(FPath(preferred).stem().string());
+
+    for (const auto& record : resources.Catalog().All())
+    {
+        const std::string filename = Common::ToLower(record.RelativePath.filename().string());
+        const std::string stem = Common::ToLower(record.RelativePath.stem().string());
+
+        if (filename == preferredLower || stem == preferredStem)
+        {
+            return record.RelativePath.generic_string();
+        }
+    }
+
+    return preferred;
+}
+static std::vector<uint8> ReadBytesOrThrow(const FResourceManager& resources, const std::string& logicalName)
+{
+    auto blob = resources.Load(logicalName);
+
+    if (!blob.IsOk())
+    {
+        throw std::runtime_error(blob.Status().Message());
+    }
+
+    return blob.Value().Bytes;
+}
+static std::string HresultText(std::string_view action, HRESULT hr)
+{
+    std::ostringstream out;
+    out << action << " failed: 0x" << std::hex << static_cast<unsigned long>(hr);
+    return out.str();
+}
+static bool SameAppearance(const FCharacterCreationAppearance& a, const FCharacterCreationAppearance& b) { return a.Female == b.Female && a.Face == b.Face && a.Hair == b.Hair && a.HairColor == b.HairColor && a.Tattoo == b.Tattoo; }
 FD3D9CharacterScene::FD3D9CharacterScene() = default;
 FD3D9CharacterScene::~FD3D9CharacterScene()
 {
     Shutdown();
 }
 
-void FD3D9CharacterScene::ReleaseBatches(std::vector<FSceneBatch>& batches)
+void FD3D9CharacterScene::ReleaseBatches(std::vector<FSceneBatch>& Batches)
 {
-    for (auto& batch : batches)
+    for (auto& batch : Batches)
     {
         SafeRelease(batch.Texture);
     }
@@ -469,10 +467,7 @@ void FD3D9CharacterScene::Shutdown()
     GroundVertices.clear();
     GroundIndices.clear();
     GroundBatches.clear();
-    SkeletonParents.clear();
-    SkeletonBoneNames.clear();
-    SkeletonTransforms.clear();
-    SkeletonAnimationFrameCounts.clear();
+    Skeleton = {};
     Initialized = false;
 }
 
@@ -539,7 +534,7 @@ bool FD3D9CharacterScene::LoadGroundMesh(const FResourceManager& resources, std:
 
     for (const auto& source : mesh.Vertices)
     {
-        const FVec3 groundNormalSource
+        const FVector3 groundNormalSource
         {
             source.NZ, -source.NY, source.NX
         };
@@ -602,36 +597,29 @@ bool FD3D9CharacterScene::LoadGroundMesh(const FResourceManager& resources, std:
         GroundBatches.push_back({start, static_cast<uint32>(group.size()), FindLogicalOrStem(resources, ModelTextureLogicalName(materialName)), nullptr, materialName == "LOAD_SC02", false});
     }
 
-    if (GroundBatches.empty()) { error = "loadscene.mdl has no material batches"; return false; }
+    if (GroundBatches.empty()) { error = "loadscene.mdl has no material Batches"; return false; }
 
     return true;
 }
 
-std::vector<FMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) const
+std::vector<FSceneMatrix4> FD3D9CharacterScene::BuildSkeletonMatrices(size_t frame) const
 {
-    if (SkeletonBoneCount <= 0 || SkeletonFrameCount <= 0 || frame >= static_cast<size_t>(SkeletonFrameCount)) { throw std::runtime_error("SKL frame out of range"); }
+    if (Skeleton.BoneCount <= 0 || Skeleton.FrameCount <= 0 || frame >= static_cast<size_t>(Skeleton.FrameCount)) { throw std::runtime_error("SKL frame out of range"); }
 
-    const size_t boneCount = static_cast<size_t>(SkeletonBoneCount);
-    std::vector<FMatrix4> matrices(boneCount);
+    const size_t boneCount = static_cast<size_t>(Skeleton.BoneCount);
+    std::vector<FSceneMatrix4> matrices(boneCount);
     std::vector<uint8> states(boneCount, 0);
-    std::function<FMatrix4(size_t)> resolve = [&](size_t bone) -> FMatrix4
+    std::function<FSceneMatrix4(size_t)> resolve = [&](size_t bone) -> FSceneMatrix4
     {
         if (states[bone] == 2) { return matrices[bone]; }
 
         if (states[bone] == 1) { throw std::runtime_error("SKL parent hierarchy cycle"); }
 
         states[bone] = 1;
-        const size_t base = (frame * boneCount + bone) * 7;
-        FSklTransform transform;
-        transform.QX = SkeletonTransforms[base + 0];
-        transform.QY = SkeletonTransforms[base + 1];
-        transform.QZ = SkeletonTransforms[base + 2];
-        transform.QW = SkeletonTransforms[base + 3];
-        transform.TX = SkeletonTransforms[base + 4];
-        transform.TY = SkeletonTransforms[base + 5];
-        transform.TZ = SkeletonTransforms[base + 6];
-        FMatrix4 matrix = MatrixFromSkl(transform);
-        const int32 parent = SkeletonParents[bone];
+        const size_t transformIndex = frame * boneCount + bone;
+        if (transformIndex >= Skeleton.Transforms.size()) { throw std::runtime_error("SKL transform index out of range"); }
+        FSceneMatrix4 matrix = MatrixFromSkl(Skeleton.Transforms[transformIndex]);
+        const int32 parent = Skeleton.Parents[bone];
 
         if (parent >= 0)
         {
@@ -659,16 +647,16 @@ void FD3D9CharacterScene::UpdateCharacterVerticesForFrame(size_t frame)
 
     if (CharacterRootBone >= matrices.size()) { throw std::runtime_error("character root bone out of range"); }
 
-    const FVec3 rootDelta
+    const FVector3 rootDelta
     {
-        matrices[CharacterRootBone].M[12] - CharacterRootBindX, matrices[CharacterRootBone].M[13] - CharacterRootBindY, matrices[CharacterRootBone].M[14] - CharacterRootBindZ
+        matrices[CharacterRootBone][12] - CharacterRootBindX, matrices[CharacterRootBone][13] - CharacterRootBindY, matrices[CharacterRootBone][14] - CharacterRootBindZ
     };
 
     for (auto& matrix : matrices)
     {
-        matrix.M[12] -= rootDelta.X;
-        matrix.M[13] -= rootDelta.Y;
-        matrix.M[14] -= rootDelta.Z;
+        matrix[12] -= rootDelta.X;
+        matrix[13] -= rootDelta.Y;
+        matrix[14] -= rootDelta.Z;
     }
 
     CharacterVertices.resize(CharacterSources.size());
@@ -687,11 +675,11 @@ void FD3D9CharacterScene::UpdateCharacterVerticesForFrame(size_t frame)
         const auto p1 = TransformPoint(matrix1, {source.X, source.Y, source.Z});
         const auto n0 = TransformVector(matrix0, {source.NX, source.NY, source.NZ});
         const auto n1 = TransformVector(matrix1, {source.NX, source.NY, source.NZ});
-        const FVec3 skinnedPosition
+        const FVector3 skinnedPosition
         {
             p0.X * weight0 + p1.X * weight1, p0.Y * weight0 + p1.Y * weight1, p0.Z * weight0 + p1.Z * weight1
         };
-        const FVec3 skinnedNormalSource
+        const FVector3 skinnedNormalSource
         {
             n0.X * weight0 + n1.X * weight1, n0.Y * weight0 + n1.Y * weight1, n0.Z * weight0 + n1.Z * weight1
         };
@@ -700,7 +688,7 @@ void FD3D9CharacterScene::UpdateCharacterVerticesForFrame(size_t frame)
         vertex.X = (skinnedPosition.X - CharacterCenterX) * CharacterScale;
         vertex.Y = ((-skinnedPosition.Y) - CharacterMinY) * CharacterScale;
         vertex.Z = (skinnedPosition.Z - CharacterCenterZ) * CharacterScale;
-        const FVec3 normalSource
+        const FVector3 normalSource
         {
             skinnedNormal.X, -skinnedNormal.Y, skinnedNormal.Z
         };
@@ -724,34 +712,15 @@ bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, c
 
         if (!skeletonResult.IsOk()) { error = skeletonResult.Status().Message(); return false; }
 
-        const auto& skeleton = skeletonResult.Value();
-        SkeletonBoneCount = skeleton.BoneCount;
-        SkeletonFrameCount = skeleton.FrameCount;
-        SkeletonParents = skeleton.Parents;
-        SkeletonBoneNames = skeleton.BoneNames;
-        SkeletonAnimationFrameCounts = skeleton.AnimationFrameCounts;
-        SkeletonTransforms.clear();
-        SkeletonTransforms.reserve(skeleton.Transforms.size() * 7);
-
-        for (const auto& transform : skeleton.Transforms)
-        {
-            SkeletonTransforms.push_back(transform.QX);
-            SkeletonTransforms.push_back(transform.QY);
-            SkeletonTransforms.push_back(transform.QZ);
-            SkeletonTransforms.push_back(transform.QW);
-            SkeletonTransforms.push_back(transform.TX);
-            SkeletonTransforms.push_back(transform.TY);
-            SkeletonTransforms.push_back(transform.TZ);
-        }
-
-        CharacterAnimationStart = SkeletonAnimationFrameOffset(skeleton, CHARACTER_FREE_ACTION);
-        CharacterAnimationFrames = static_cast<size_t>(skeleton.AnimationFrameCounts[CHARACTER_FREE_ACTION]);
+        Skeleton = skeletonResult.Value();
+        CharacterAnimationStart = SkeletonAnimationFrameOffset(Skeleton, CHARACTER_FREE_ACTION);
+        CharacterAnimationFrames = static_cast<size_t>(Skeleton.AnimationFrameCounts[CHARACTER_FREE_ACTION]);
         CharacterAnimationTick = GetTickCount();
         const auto originMatrices = BuildSkeletonMatrices(CharacterAnimationStart);
-        CharacterRootBone = SkeletonBoneIndex(skeleton, "hips");
-        CharacterRootBindX = originMatrices[CharacterRootBone].M[12];
-        CharacterRootBindY = originMatrices[CharacterRootBone].M[13];
-        CharacterRootBindZ = originMatrices[CharacterRootBone].M[14];
+        CharacterRootBone = SkeletonBoneIndex(Skeleton, "hips");
+        CharacterRootBindX = originMatrices[CharacterRootBone][12];
+        CharacterRootBindY = originMatrices[CharacterRootBone][13];
+        CharacterRootBindZ = originMatrices[CharacterRootBone][14];
         const auto subobjects = LoadXaddSubobjects(resources);
         const auto codes = CharacterSubobjectCodes(appearance.Female, appearance.Face, appearance.Hair);
         std::set<std::string> headCodes;
@@ -770,11 +739,11 @@ bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, c
         float minX = 0.0f, maxX = 0.0f, minY = 0.0f, maxY = 0.0f, minZ = 0.0f, maxZ = 0.0f;
         std::unordered_map<std::string, uint8> skeletonBones;
 
-        for (size_t i = 0; i < skeleton.BoneNames.size(); ++i)
+        for (size_t i = 0; i < Skeleton.BoneNames.size(); ++i)
         {
             if (i <= 0xff)
             {
-                skeletonBones[Common::ToLower(skeleton.BoneNames[i])] = static_cast<uint8>(i);
+                skeletonBones[Common::ToLower(Skeleton.BoneNames[i])] = static_cast<uint8>(i);
             }
         }
 
@@ -807,7 +776,7 @@ bool FD3D9CharacterScene::LoadCharacterMesh(const FResourceManager& resources, c
 
                 if (it == skeletonBones.end())
                 {
-                    throw std::runtime_error("CHR bone not found in skeleton: " + name);
+                    throw std::runtime_error("CHR bone not found in Skeleton: " + name);
                 }
 
                 boneRemap.push_back(it->second);
@@ -1296,7 +1265,7 @@ void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const R
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
     const float aspect = static_cast<float>(width) / static_cast<float>(height);
     UpdateCamera();
-    const FVec3 target
+    const FVector3 target
     {
         CameraFocusX, CameraFocusY, CameraFocusZ
     };
@@ -1305,11 +1274,11 @@ void FD3D9CharacterScene::UpdateViewProjection(IDirect3DDevice9* device, const R
     const float sy = std::sin(CameraYaw);
     const float cy = std::cos(CameraYaw);
     const float horizontalDistance = cp * CameraDistance;
-    const FVec3 eye
+    const FVector3 eye
     {
         target.X + sy * horizontalDistance, target.Y + sp * CameraDistance, target.Z - cy * horizontalDistance
     };
-    const FVec3 up
+    const FVector3 up
     {
         0.0f, 1.0f, 0.0f
     };
@@ -1405,6 +1374,27 @@ void FD3D9CharacterScene::DrawCharacter(IDirect3DDevice9* device)
             device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, static_cast<UINT>(CharacterVertices.size()), batch.StartIndex, batch.IndexCount / 3);
         }
     }
+}
+
+
+FSkinnedCharacterModel FD3D9CharacterScene::ExportSkinnedModel() const
+{
+    FSkinnedCharacterModel out;
+    if (CharacterSources.empty() || CharacterIndices.empty() || CharacterBatches.empty() || Skeleton.BoneCount <= 0 || Skeleton.FrameCount <= 0) { return out; }
+    out.Skeleton = Skeleton;
+    out.RootBone = CharacterRootBone;
+    out.RootBindX = CharacterRootBindX;
+    out.RootBindY = CharacterRootBindY;
+    out.RootBindZ = CharacterRootBindZ;
+    out.CenterX = CharacterCenterX;
+    out.CenterZ = CharacterCenterZ;
+    out.MinY = CharacterMinY;
+    out.Scale = CharacterScale;
+    out.Indices = CharacterIndices;
+    out.Sources = CharacterSources;
+    out.Batches.reserve(CharacterBatches.size());
+    for (const auto& batch : CharacterBatches) { out.Batches.push_back({batch.StartIndex, batch.IndexCount, std::filesystem::path(batch.TextureLogicalName), batch.Head}); }
+    return out;
 }
 
 bool FD3D9CharacterScene::Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, FLogger* logger)

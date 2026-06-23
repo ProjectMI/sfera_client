@@ -19,6 +19,8 @@ void FFileSystem::BuildCatalog(FLogger* logger)
 {
     Files.clear();
     Lookup.clear();
+    Files.reserve(8192);
+    Lookup.reserve(8192);
 
     if (!std::filesystem::exists(Root))
     {
@@ -30,14 +32,17 @@ void FFileSystem::BuildCatalog(FLogger* logger)
         return;
     }
 
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(Root, std::filesystem::directory_options::skip_permission_denied))
+    std::error_code error;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(Root, std::filesystem::directory_options::skip_permission_denied, error))
     {
-        if (!entry.is_regular_file()) { continue; }
+        std::error_code entryError;
+        if (!entry.is_regular_file(entryError) || entryError) { continue; }
 
         FFileRecord record;
         record.AbsolutePath = entry.path();
-        record.RelativePath = std::filesystem::relative(entry.path(), Root);
-        record.Size = static_cast<uint64>(entry.file_size());
+        record.RelativePath = record.AbsolutePath.lexically_relative(Root);
+        record.Size = static_cast<uint64>(entry.file_size(entryError));
+        if (entryError) { record.Size = 0; }
         size_t index = Files.size();
         Files.push_back(record);
         Lookup.emplace(PathUtils::NormalizeForLookup(record.RelativePath), index);

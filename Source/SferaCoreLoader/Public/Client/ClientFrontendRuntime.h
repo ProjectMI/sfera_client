@@ -7,6 +7,7 @@
 #include "Renderer/D3D9RenderDevice.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
+#include "WorldScene/WorldScene.h"
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -26,7 +27,7 @@ struct FClientFrontendDesc
 class FClientFrontendRuntime 
 {
 public:
-    explicit FClientFrontendRuntime(FLogger* logger = nullptr);
+    explicit FClientFrontendRuntime(FLogger* Logger = nullptr);
     ~FClientFrontendRuntime();
     FStatus CreateShell(const FClientSettings& settings);
     void ShowShell();
@@ -34,9 +35,9 @@ public:
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
     bool PumpUi();
-    FStatus InitializeUiResources(const FResourceManager& resources, const FUiBootstrapDesc& desc);
-    FStatus InitializeD3D9(const FResourceManager& resources);
-    void RenderFrame();
+    FStatus InitializeUiResources(const FResourceManager& TerrainResources, const FUiBootstrapDesc& desc);
+    FStatus InitializeD3D9(const FResourceManager& TerrainResources, const FWorldScene* worldScene = nullptr);
+    void RenderFrame(float deltaSeconds = 0.0f, FGameMovementInput gameInput = FGameMovementInput{}, float lookDeltaX = 0.0f, float lookDeltaY = 0.0f, bool jumpRequested = false);
     void StartNetworkProbe(const FClientFrontendDesc& desc);
     FStatus RunEventLoop();
     void Shutdown();
@@ -52,6 +53,7 @@ private:
     void BeginCharacterDeleteRequest();
     void PollCharacterResult();
     void DrawLoadingFrame(HDC dc, const RECT& rect);
+    FGameMovementInput BuildGameMovementInput(const FInputSnapshot& input, const RECT& clientRect, float& lookDeltaX, float& lookDeltaY, bool& jumpRequested);
     void LoadSavedLogin();
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
@@ -65,6 +67,7 @@ private:
     FClientSettings Settings;
     FCharacterAppearanceRules AppearanceRules;
     const FResourceManager* RenderResources = nullptr;
+    const FWorldScene* RenderWorldScene = nullptr;
     mutable std::recursive_mutex UiMutex;
     mutable std::mutex RenderMutex;
     mutable std::mutex SessionMutex;
@@ -88,4 +91,10 @@ private:
     bool RepaintDirty = true;
     EClientSessionStage LastSessionStage = EClientSessionStage::Idle;
     std::chrono::steady_clock::time_point LastPaint = std::chrono::steady_clock::now();
+    bool GameLookMode = false;
+    bool LastGameTabDown = false;
+    bool LastGameSpaceDown = false;
+    bool LastGameMouseValid = false;
+    int32 LastGameMouseX = 0;
+    int32 LastGameMouseY = 0;
 };

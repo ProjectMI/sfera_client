@@ -3,9 +3,11 @@
 #include "Core/Types.h"
 #include "Renderer/D3D9BitmapFont.h"
 #include "Renderer/D3D9CharacterScene.h"
+#include "Renderer/D3D9GameWorldScene.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
 #include <Windows.h>
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -42,7 +44,7 @@ public:
     void Shutdown();
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
-    FStatus RenderUiDesktop(const FResourceManager& resources, const FUiRuntime& ui, const RECT& rect, FLogger* logger);
+    FStatus RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
 private:
     struct FDrawContext;
@@ -58,9 +60,30 @@ private:
     bool DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, unsigned long color);
     bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst);
     void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect);
+    struct FFrameStats
+    {
+        bool Initialized = false;
+        uint64 FrameCounter = 0;
+        double LastMilliseconds = 0.0;
+        double AverageMilliseconds = 0.0;
+        double MinMilliseconds = 0.0;
+        double MaxMilliseconds = 0.0;
+        double P95Milliseconds = 0.0;
+        double LowFps = 0.0;
+        double SecondAccumulator = 0.0;
+        uint32 CurrentFps = 0;
+        uint32 SecondFrames = 0;
+        uint32 DropFrames = 0;
+        uint32 HitchFrames = 0;
+        std::array<double, 120> History{};
+        size_t HistoryHead = 0;
+        size_t HistoryCount = 0;
+    };
     void DrawModalDialog(FDrawContext& ctx, const RECT& rect);
     void DrawTextRect(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex);
     void DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& ui, const FUiRectF& designRect);
+    void DrawRenderStatsOverlay(FDrawContext& ctx, const RECT& clientRect, const FD3D9GameWorldRenderStats* worldStats);
+    void UpdateFrameStats(double frameMilliseconds);
     void DrawSolidRect(float x, float y, float w, float h, unsigned long color);
     void DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, unsigned long color);
     void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color);
@@ -72,7 +95,11 @@ private:
     FD3DXCreateTextureFromFileInMemoryExPtr D3DXCreateTextureFromFileInMemoryExFn = nullptr;
     std::unordered_map<std::string, FD3D9TextureEntry> TextureCache;
     FD3D9BitmapFontCatalog FontCache;
+    FFrameStats Stats;
     FD3D9CharacterScene CharacterScene;
+    FD3D9GameWorldScene GameWorldScene;
+    const FWorldScene* ActiveWorldScene = nullptr;
+    const FWorldScene* FailedWorldScene = nullptr;
     int32 BackBufferWidth = 0;
     int32 BackBufferHeight = 0;
     HWND DeviceWindow = nullptr;

@@ -1,14 +1,53 @@
 #include "Model/MdlModel.h"
 #include "Core/BinaryReader.h"
+#include "Common/StringUtils.h"
 #include "Core/StatusUtils.h"
-#include "ModelParseUtils.h"
+#include "Model/ModelParseUtils.h"
 #include "ResourceLoader/ResourceLoadHelpers.h"
+#include <algorithm>
+#include <memory>
+#include <mutex>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 
 namespace
 {
     constexpr size_t MdlHeaderSize = 0x102;
+    std::mutex MdlMeshCacheMutex;
+    std::unordered_map<std::string, std::shared_ptr<const FMdlMesh>> MdlMeshCache;
+
+    std::string MdlCacheKey(std::string_view sourceName)
+    {
+        std::string key(sourceName);
+        std::replace(key.begin(), key.end(), '\\', '/');
+        return Common::ToLower(key);
+    }
+
+    std::shared_ptr<const FMdlMesh> FindCachedMdlMeshInternal(std::string_view sourceName)
+    {
+        const auto key = MdlCacheKey(sourceName);
+        if (key.empty())
+        {
+            return {};
+        }
+        std::lock_guard<std::mutex> lock(MdlMeshCacheMutex);
+        auto it = MdlMeshCache.find(key);
+        return it == MdlMeshCache.end() ? std::shared_ptr<const FMdlMesh>{} : it->second;
+    }
+
+    std::shared_ptr<const FMdlMesh> StoreCachedMdlMesh(std::string_view sourceName, FMdlMesh mesh)
+    {
+        const auto key = MdlCacheKey(sourceName);
+        auto parsed = std::make_shared<FMdlMesh>(std::move(mesh));
+        if (key.empty())
+        {
+            return parsed;
+        }
+        std::lock_guard<std::mutex> lock(MdlMeshCacheMutex);
+        auto [it, inserted] = MdlMeshCache.emplace(key, parsed);
+        return inserted ? parsed : it->second;
+    }
 
     void AddSection(FMdlInfo& info, std::string name, size_t& offset, size_t count, size_t stride)
     {
@@ -272,14 +311,47 @@ TResult<FMdlInfo> LoadMdlInfoFromBytes(const FByteArray& bytes, std::string_view
 }
 TResult<FMdlMesh> LoadMdlMeshFromBytes(const FByteArray& bytes, std::string_view sourceName)
 {
+    if (auto cached = FindCachedMdlMeshInternal(sourceName))
+    {
+        return *cached;
+    }
     try
     {
-        return ParseMesh(bytes, sourceName);
+        return *StoreCachedMdlMesh(sourceName, ParseMesh(bytes, sourceName));
     }
     catch (const std::exception& e)
     {
         return StatusUtils::InvalidDataFromException("MDL mesh parse failed: ", e);
     }
+}
+
+std::shared_ptr<const FMdlMesh> FindCachedMdlMesh(std::string_view sourceName)
+{
+    return FindCachedMdlMeshInternal(sourceName);
+}
+
+void AliasCachedMdlMesh(std::string_view aliasName, std::string_view sourceName)
+{
+    auto mesh = FindCachedMdlMeshInternal(sourceName);
+    const auto aliasKey = MdlCacheKey(aliasName);
+    if (!mesh || aliasKey.empty())
+    {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(MdlMeshCacheMutex);
+    MdlMeshCache[aliasKey] = std::move(mesh);
+}
+
+void ClearMdlMeshCache()
+{
+    std::lock_guard<std::mutex> lock(MdlMeshCacheMutex);
+    MdlMeshCache.clear();
+}
+
+size_t CachedMdlMeshCount()
+{
+    std::lock_guard<std::mutex> lock(MdlMeshCacheMutex);
+    return MdlMeshCache.size();
 }
 TResult<FMdlInfo> LoadMdlInfoFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
@@ -287,5 +359,26 @@ TResult<FMdlInfo> LoadMdlInfoFromResource(const FResourceManager& resources, std
 }
 TResult<FMdlMesh> LoadMdlMeshFromResource(const FResourceManager& resources, std::string_view logicalName)
 {
+    if (auto record = resources.Catalog().FindByLogicalName(logicalName))
+    {
+        const auto absoluteName = record->AbsolutePath.generic_string();
+        if (auto cached = FindCachedMdlMeshInternal(absoluteName))
+        {
+            return *cached;
+        }
+        if (auto cached = FindCachedMdlMeshInternal(logicalName))
+        {
+            AliasCachedMdlMesh(absoluteName, logicalName);
+            AliasCachedMdlMesh(record->RelativePath.generic_string(), logicalName);
+            return *cached;
+        }
+        auto result = ResourceLoader::DecodeResource<FMdlMesh>(resources, logicalName, LoadMdlMeshFromBytes);
+        if (result.IsOk())
+        {
+            AliasCachedMdlMesh(absoluteName, logicalName);
+            AliasCachedMdlMesh(record->RelativePath.generic_string(), logicalName);
+        }
+        return result;
+    }
     return ResourceLoader::DecodeResource<FMdlMesh>(resources, logicalName, LoadMdlMeshFromBytes);
 }

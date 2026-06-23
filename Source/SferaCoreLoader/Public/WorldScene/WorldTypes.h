@@ -2,6 +2,7 @@
 #include "Core/Types.h"
 #include "ResourceLoader/ResourceTypes.h"
 #include <array>
+#include <string>
 #include <unordered_map>
 
 struct FVector2 
@@ -113,6 +114,14 @@ struct FWorldMapCell
 	bool ResolvedByPatchCatalog = false; 
 	size_t TileRecordIndex = static_cast<size_t>(-1); 
 	size_t TerrainSizeRecordIndex = static_cast<size_t>(-1); 
+	std::string TerrainStem() const 
+	{ 
+		if (TileName.empty()) { return {}; } 
+		if (TileName == "FILL_EMPT" || TileName == "fill_empt") { return "fill_empt_00"; } 
+		const int first = static_cast<int>(Reserved & 0xff); 
+		const int second = static_cast<int>((Reserved >> 8) & 0xff); 
+		return TileName + "_" + std::to_string(first) + std::to_string(second); 
+	} 
 };
 
 struct FWorldMapGrid 

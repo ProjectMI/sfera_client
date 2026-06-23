@@ -19,10 +19,12 @@ public:
     int32 GetDirectionCode(uint32 handle) const;
     FGameObjectRegistry& Registry() { return ObjectRegistry; }
     const FGameObjectRegistry& Registry() const { return ObjectRegistry; }
-    FObjectParamManager& Params() { return ParamManager; }
+    FObjectParamManager& Params();
+    FStatus EnsureParamsLoaded(FLogger* logger = nullptr);
     void RegisterMbcNatives(FMbcNativeRegistry& registry, FLogger* logger = nullptr);
 private:
     const FResourceManager& Resources;
     FObjectParamManager ParamManager;
+    bool ParamsLoaded = false;
     FGameObjectRegistry ObjectRegistry;
 };

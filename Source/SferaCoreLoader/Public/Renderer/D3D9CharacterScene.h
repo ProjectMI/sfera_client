@@ -1,5 +1,8 @@
 #pragma once
 #include "Core/Types.h"
+#include "Renderer/GameWorld/SkinnedCharacterModel.h"
+#include "Renderer/CharacterSceneTypes.h"
+#include "Model/SklSkeleton.h"
 #include "Network/SphereEmuProtocol.h"
 #include "ResourceLoader/ResourceManager.h"
 #include <Windows.h>
@@ -13,64 +16,6 @@ struct IDirect3DVertexBuffer9;
 struct IDirect3DIndexBuffer9;
 struct IDirect3DTexture9;
 class FLogger;
-
-struct FSceneVertex 
-{ 
-    float X = 0.0f; 
-    float Y = 0.0f; 
-    float Z = 0.0f; 
-    float NX = 0.0f; 
-    float NY = 1.0f; 
-    float NZ = 0.0f; 
-    unsigned long Diffuse = 0xfffffffful; 
-    float U = 0.0f; 
-    float V = 0.0f; 
-};
-
-struct FSceneBatch 
-{ 
-    uint32 StartIndex = 0; 
-    uint32 IndexCount = 0; 
-    std::string TextureLogicalName; 
-    IDirect3DTexture9* Texture = nullptr; 
-    bool Sky = false;
-    bool Head = false; 
-};
-
-struct FSkinnedVertexSource 
-{
-    float X = 0.0f; 
-    float Y = 0.0f; 
-    float Z = 0.0f;
-    float NX = 0.0f;
-    float NY = 1.0f; 
-    float NZ = 0.0f; 
-    float U = 0.0f; 
-    float V = 0.0f; 
-    uint8 Bone0 = 0; 
-    uint8 Bone1 = 0; 
-    float Blend = 1.0f;
-};
-
-struct FVec3 
-{ 
-    float X = 0.0f;
-    float Y = 0.0f; 
-    float Z = 0.0f;
-};
-
-struct FQuat 
-{ 
-    float W = 1.0f;
-    float X = 0.0f;
-    float Y = 0.0f;
-    float Z = 0.0f;
-};
-
-struct FMatrix4 
-{ 
-    float M[16]{}; 
-};
 
 struct FXaddSubobject 
 { 
@@ -88,11 +33,12 @@ public:
     FD3D9CharacterScene& operator=(const FD3D9CharacterScene&) = delete;
     bool EnsureInitialized(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger);
     bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, FLogger* logger);
+    FSkinnedCharacterModel ExportSkinnedModel() const;
     void Shutdown();
     bool IsReady() const { return Initialized; }
 
 private:
-    void ReleaseBatches(std::vector<FSceneBatch>& batches);
+    void ReleaseBatches(std::vector<FSceneBatch>& Batches);
     void ReleaseBuffers();
     void ReleaseCharacterResources();
     bool LoadGroundMesh(const FResourceManager& resources, std::string& error);
@@ -109,7 +55,7 @@ private:
     void DrawGround(IDirect3DDevice9* device);
     void DrawCharacter(IDirect3DDevice9* device);
     IDirect3DTexture9* LoadDdsTexture(IDirect3DDevice9* device, const FResourceManager& resources, const std::string& logicalName, FLogger* logger, std::string& error);
-    std::vector<FMatrix4> BuildSkeletonMatrices(size_t frame) const;
+    std::vector<FSceneMatrix4> BuildSkeletonMatrices(size_t frame) const;
     void UpdateCharacterVerticesForFrame(size_t frame);
     bool Initialized = false;
     bool GroundUploaded = false;
@@ -122,12 +68,7 @@ private:
     std::vector<FSceneVertex> GroundVertices;
     std::vector<uint16> GroundIndices;
     std::vector<FSceneBatch> GroundBatches;
-    std::vector<int32> SkeletonParents;
-    std::vector<std::string> SkeletonBoneNames;
-    std::vector<float> SkeletonTransforms;
-    std::vector<int32> SkeletonAnimationFrameCounts;
-    int32 SkeletonBoneCount = 0;
-    int32 SkeletonFrameCount = 0;
+    FSklSkeleton Skeleton;
     size_t CharacterRootBone = 0;
     float CharacterRootBindX = 0.0f;
     float CharacterRootBindY = 0.0f;

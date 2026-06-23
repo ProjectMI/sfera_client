@@ -1,11 +1,10 @@
 #include "UI/UiRuntime.h"
-#include "UiRuntimeInternals.h"
+#include "UI/UiRuntimeInternals.h"
 #include "Common/SferaGameConstants.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 #include "Common/ValueUtils.h"
 #include <algorithm>
-using namespace UiRuntimeInternal;
 
 void FUiRuntime::ApplyCharacterDeleted(int32 slot)
 {
@@ -70,7 +69,7 @@ std::wstring FUiRuntime::DefaultCharacterNameForSlot(int32 slot) const
 
     for (wchar_t ch : Common::Utf8ToWide(Actions.LoginText))
     {
-        if (IsCharacterNameChar(ch))
+        if (FUiRuntimeInternals::IsCharacterNameChar(ch))
         {
             name.push_back(ch);
         }
@@ -405,7 +404,7 @@ bool FUiRuntime::ModalEditMatchesSelectedCharacter() const
 {
     if (Modal != EUiModalDialog::CharacterDelete) { return true; }
 
-    return Utf8EqualsWideNoCase(ModalEditText, SelectedCharacterName());
+    return FUiRuntimeInternals::Utf8EqualsWideNoCase(ModalEditText, SelectedCharacterName());
 }
 
 std::string FUiRuntime::CharacterTitleText() const

@@ -1,4 +1,5 @@
 #include "ResourceLoader/ResourceManager.h"
+#include "FileSystem/NativeFile.h"
 
 FResourceManager::FResourceManager(const FFileSystem& fileSystem, const FCompressionService& compression) : FileSystem(fileSystem), Compression(compression) {}
 
@@ -18,20 +19,28 @@ TResult<FResourceBlob> FResourceManager::Load(std::string_view logicalName) cons
 
     if (!path) { return FStatus::Error(EStatusCode::NotFound, "resource not found: " + std::string(logicalName)); }
 
-    auto raw = FileSystem.ReadBytes(logicalName);
+    auto raw = FNativeFile::ReadAllBytes(*path);
 
     if (!raw.IsOk()) { return raw.Status(); }
 
     auto probe = Compression.Probe(raw.Value());
-    auto decoded = Compression.DecompressAuto(raw.Value());
-
-    if (!decoded.IsOk()) { return decoded.Status(); }
+    FByteArray bytes;
+    if (probe.Method == ECompressionMethod::Raw)
+    {
+        bytes = std::move(raw.Value());
+    }
+    else
+    {
+        auto decoded = Compression.Decompress(probe.Method, raw.Value().data() + probe.HeaderSize, raw.Value().size() - probe.HeaderSize, probe.ExpectedSize);
+        if (!decoded.IsOk()) { return decoded.Status(); }
+        bytes = std::move(decoded.Value());
+    }
 
     FResourceBlob blob;
     blob.Id.LogicalName = std::string(logicalName);
     blob.Id.Kind = GuessResourceKind(*path);
     blob.SourcePath = *path;
-    blob.Bytes = std::move(decoded.Value());
+    blob.Bytes = std::move(bytes);
     blob.WasCompressed = probe.Method != ECompressionMethod::Raw;
     return blob;
 }

@@ -2,6 +2,7 @@
 #include "Core/Types.h"
 #include "ResourceLoader/ResourceManager.h"
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -119,3 +120,8 @@ TResult<FMdlInfo> LoadMdlInfoFromBytes(const FByteArray& bytes, std::string_view
 TResult<FMdlMesh> LoadMdlMeshFromBytes(const FByteArray& bytes, std::string_view sourceName);
 TResult<FMdlInfo> LoadMdlInfoFromResource(const FResourceManager& resources, std::string_view logicalName);
 TResult<FMdlMesh> LoadMdlMeshFromResource(const FResourceManager& resources, std::string_view logicalName);
+
+std::shared_ptr<const FMdlMesh> FindCachedMdlMesh(std::string_view sourceName);
+void AliasCachedMdlMesh(std::string_view aliasName, std::string_view sourceName);
+void ClearMdlMeshCache();
+size_t CachedMdlMeshCount();

@@ -3,12 +3,11 @@
 #include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <bit>
 #include <cmath>
-#include <regex>
 #include <sstream>
-#include <set>
 #include <unordered_set>
 
 static int64 MakeSignedPairKey(int32 x, int32 y) { return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(y); }
@@ -30,6 +29,38 @@ static void ExpandBounds(FBox2& box, FVector2 point, bool& initialized)
 }
 static bool IsLandscapeMtxPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string_view::npos && Common::EndsWith(lowerPath, ".mtx"); }
 static bool IsLandscapeSizPath(std::string_view lowerPath) { return lowerPath.find("landscape") != std::string_view::npos && Common::EndsWith(lowerPath, ".siz"); }
+
+static bool TryExtractResourceCoords(std::string_view text, int32& outX, int32& outZ)
+{
+    std::array<std::string, 2> last{};
+    int count = 0;
+    for (std::size_t i = 0; i < text.size();)
+    {
+        const bool neg = text[i] == '-' && i + 1 < text.size() && std::isdigit(static_cast<unsigned char>(text[i + 1]));
+        if (!neg && !std::isdigit(static_cast<unsigned char>(text[i])))
+        {
+            ++i;
+            continue;
+        }
+        const std::size_t start = i;
+        if (neg)
+        {
+            ++i;
+        }
+        while (i < text.size() && std::isdigit(static_cast<unsigned char>(text[i])))
+        {
+            ++i;
+        }
+        const std::size_t length = i - start;
+        if (length > 0 && length <= 4)
+        {
+            last[0] = std::move(last[1]);
+            last[1] = std::string(text.substr(start, length));
+            ++count;
+        }
+    }
+    return count >= 2 && NumericParse::TryParseInt32Strict(last[0], outX) && NumericParse::TryParseInt32Strict(last[1], outZ);
+}
 FWorldScene::FWorldScene(const FResourceManager& resources, FGameObjectRegistry& objectRegistry) : Resources(resources), Objects(objectRegistry), Spatial(256.0f) {}
 
 FStatus FWorldScene::LoadBootstrapScene(FLogger* logger)
@@ -44,6 +75,8 @@ FStatus FWorldScene::LoadBootstrapScene(FLogger* logger)
     BinaryBlobRecords.clear();
     MapGrid = {};
     Contours = {};
+    ZoningLoaded = false;
+    ContoursLoaded = false;
     GrassDatabase = {};
     SnowPath = {};
     WeatherProfile = {};
@@ -51,7 +84,6 @@ FStatus FWorldScene::LoadBootstrapScene(FLogger* logger)
     CatalogLandscapeResources(logger);
     LoadRuntimeBinaries(logger);
     LoadTextProfiles(logger);
-    ReloadZoning(logger);
     RunAsmSelfTest(logger);
 
     if (logger)
@@ -63,7 +95,44 @@ FStatus FWorldScene::LoadBootstrapScene(FLogger* logger)
     return FStatus::Ok();
 }
 
-FStatus FWorldScene::ReloadZoning(FLogger* logger) { return ZoningManager.LoadDefault(Resources, logger); }
+FStatus FWorldScene::ReloadZoning(FLogger* logger)
+{
+    FStatus status = ZoningManager.LoadDefault(Resources, logger);
+    ZoningLoaded = status.IsOk();
+    return status;
+}
+
+FStatus FWorldScene::EnsureZoningLoaded(FLogger* logger)
+{
+    if (ZoningLoaded)
+    {
+        return FStatus::Ok();
+    }
+    return ReloadZoning(logger);
+}
+
+FStatus FWorldScene::EnsureContoursLoaded(FLogger* logger)
+{
+    if (ContoursLoaded)
+    {
+        return FStatus::Ok();
+    }
+    LoadContours(logger);
+    ContoursLoaded = Contours.Loaded;
+    return Contours.Loaded ? FStatus::Ok() : FStatus::Error(EStatusCode::NotFound, "world contours not loaded");
+}
+
+const FWorldZoneParams* FWorldScene::FindZone(FVector3 position)
+{
+    EnsureZoningLoaded(nullptr);
+    return ZoningManager.FindZone(position);
+}
+
+std::vector<uint32> FWorldScene::QueryContours(FBox2 area)
+{
+    EnsureContoursLoaded(nullptr);
+    return Contours.Query(area);
+}
 void FWorldScene::SyncObject(uint32 objectId, FVector3 position, float radius, std::string tag)
 {
     FBox2 b;
@@ -314,6 +383,10 @@ const FWorldPatchRecord* FWorldScene::FindPatchByCoord(int32 patchX, int32 patch
 
 void FWorldScene::CatalogLandscapeResources(FLogger* logger)
 {
+    PatchRecords.reserve(2048);
+    TerrainRecords.reserve(512);
+    MicrotextureRecords.reserve(512);
+
     for (const auto& item : Resources.Catalog().All())
     {
         std::string lower = Common::ToLowerPath(item.RelativePath);
@@ -328,21 +401,14 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
         record.Size = item.Size;
         record.Kind = GuessResourceKind(item.RelativePath);
         record.IsMapTile = IsLandscapeMtxPath(lower);
-        std::smatch match;
         std::string pathText = item.RelativePath.generic_string();
-        std::regex coordRegex(R"((?:patch|grassmap|map|terrain)?[_\-/\\]?(-?[0-9]{1,3})[_xX-](-?[0-9]{1,3}))");
-
-        if (std::regex_search(pathText, match, coordRegex) && match.size() >= 3)
+        int32 px = 0;
+        int32 pz = 0;
+        if (TryExtractResourceCoords(pathText, px, pz))
         {
-            int32 px = 0;
-            int32 pz = 0;
-
-            if (NumericParse::TryParseInt32Strict(match[1].str(), px) && NumericParse::TryParseInt32Strict(match[2].str(), pz))
-            {
-                record.PatchX = px;
-                record.PatchZ = pz;
-                record.HasPatchCoords = true;
-            }
+            record.PatchX = px;
+            record.PatchZ = pz;
+            record.HasPatchCoords = true;
         }
 
         PatchRecords.push_back(std::move(record));
@@ -354,15 +420,6 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
             terrain.StemName = item.RelativePath.stem().string();
             terrain.RelativePath = item.RelativePath;
             terrain.SizeFileBytes = item.Size;
-            auto blob = Resources.Load(item.RelativePath.generic_string());
-
-            if (blob.IsOk() && blob.Value().Bytes.size() >= 8)
-            {
-                terrain.RawWidth = Common::U32LEOr(blob.Value().Bytes, 0);
-                terrain.RawHeight = Common::U32LEOr(blob.Value().Bytes, 4);
-                terrain.HasRawDimensions = true;
-            }
-
             TerrainRecords.push_back(std::move(terrain));
         }
 
@@ -388,14 +445,13 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
 
 void FWorldScene::LoadRuntimeBinaries(FLogger* logger)
 {
-    LoadContours(logger);
     LoadMapGrid(logger);
     LoadGrassMaps(logger);
     LoadSnowPath(logger);
 
     if (logger)
     {
-        logger->Info("WorldScene runtime binaries: contours=" + std::to_string(Contours.Records.size()) + ", map_cells=" + std::to_string(MapGrid.PresentCells) + ", grass_maps=" + std::to_string(GrassDatabase.Patches.size()) + ", snow_points=" + std::to_string(SnowPath.CandidatePointCount));
+        logger->Info("WorldScene runtime binaries: contours=deferred, map_cells=" + std::to_string(MapGrid.PresentCells) + ", grass_maps=" + std::to_string(GrassDatabase.Patches.size()) + ", snow_points=" + std::to_string(SnowPath.CandidatePointCount));
     }
 }
 
@@ -495,7 +551,7 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
     MapGrid.Height = height;
     MapGrid.CellStride = stride;
     MapGrid.Cells.reserve(static_cast<size_t>(width) * height);
-    std::set<std::string> uniqueNames;
+    std::unordered_set<std::string> uniqueNames;
     std::vector<std::string> unresolvedSamples;
     std::vector<std::string> patchCatalogSamples;
 
@@ -514,9 +570,31 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
             if (cell.Present)
             {
                 ++MapGrid.PresentCells;
-                uniqueNames.insert(NormalizeResourceKey(cell.TileName));
+                const std::string terrainStem = cell.TerrainStem();
+                uniqueNames.insert(NormalizeResourceKey(terrainStem.empty() ? cell.TileName : terrainStem));
 
-                if (const FWorldTerrainSizeRecord* terrain = FindTerrainSizeByName(cell.TileName))
+                if (const FWorldTerrainSizeRecord* terrain = FindTerrainSizeByName(terrainStem))
+                {
+                    cell.TileResolved = true;
+                    cell.ResolvedByTerrainSize = true;
+                    cell.TerrainSizeRecordIndex = static_cast<size_t>(terrain - TerrainRecords.data());
+                    ++MapGrid.ResolvedCells;
+                    ++MapGrid.ResolvedTerrainCells;
+                }
+                else if (const FWorldPatchRecord* patchRecord = FindPatchByName(terrainStem))
+                {
+                    cell.TileResolved = true;
+                    cell.ResolvedByPatchCatalog = true;
+                    cell.TileRecordIndex = static_cast<size_t>(patchRecord - PatchRecords.data());
+                    ++MapGrid.ResolvedCells;
+                    ++MapGrid.PatchCatalogResolvedCells;
+
+                    if (patchCatalogSamples.size() < 8)
+                    {
+                        patchCatalogSamples.push_back(terrainStem);
+                    }
+                }
+                else if (const FWorldTerrainSizeRecord* terrain = FindTerrainSizeByName(cell.TileName))
                 {
                     cell.TileResolved = true;
                     cell.ResolvedByTerrainSize = true;
@@ -543,7 +621,7 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
 
                     if (unresolvedSamples.size() < 8)
                     {
-                        unresolvedSamples.push_back(cell.TileName);
+                        unresolvedSamples.push_back(terrainStem.empty() ? cell.TileName : terrainStem);
                     }
                 }
             }
@@ -565,36 +643,29 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
 
 void FWorldScene::LoadGrassMaps(FLogger* logger)
 {
-    std::regex grassRegex(R"(grassmap[_\-/\\]?([0-9]{2})[_-]([0-9]{2})\.bin$)", std::regex::icase);
+    size_t invalidSize = 0;
+    GrassDatabase.Patches.reserve(256);
 
-    for (const auto& item : Resources.Catalog().All())
+    for (const auto& item : PatchRecords)
     {
         std::string lower = Common::ToLowerPath(item.RelativePath);
 
-        if (lower.find("grassmap") == std::string::npos || lower.find(".bin") == std::string::npos) { continue; }
+        if (lower.find("grassmap") == std::string::npos || !Common::EndsWith(lower, ".bin")) { continue; }
 
-        std::smatch match;
         std::string pathText = item.RelativePath.generic_string();
-
-        if (!std::regex_search(pathText, match, grassRegex) || match.size() < 3) { continue; }
-
-        auto blob = Resources.Load(item.RelativePath.generic_string());
-
-        if (!blob.IsOk()) { continue; }
+        int32 patchX = 0;
+        int32 patchZ = 0;
+        if (!TryExtractResourceCoords(pathText, patchX, patchZ)) { continue; }
 
         FWorldGrassPatch patch;
-        patch.PatchX = NumericParse::Int32Or(match[1].str(), 0);
-        patch.PatchZ = NumericParse::Int32Or(match[2].str(), 0);
+        patch.PatchX = patchX;
+        patch.PatchZ = patchZ;
         patch.RelativePath = item.RelativePath;
-        patch.Size = blob.Value().Bytes.size();
+        patch.Size = item.Size;
 
-        for (uint8 b : blob.Value().Bytes)
+        if (patch.Size != 0x10000)
         {
-            if (b != 0)
-            {
-                ++patch.NonZeroCells;
-                patch.MaxValue = std::max<uint8>(patch.MaxValue, b);
-            }
+            ++invalidSize;
         }
 
         GrassDatabase.Patches.push_back(std::move(patch));
@@ -604,45 +675,28 @@ void FWorldScene::LoadGrassMaps(FLogger* logger)
 
     if (logger)
     {
-        logger->Info("WorldScene grass maps loaded: " + std::to_string(GrassDatabase.Patches.size()) + (GrassDatabase.Patches.empty() ? "" : ", tile_bytes=0x10000"));
+        std::string message = "WorldScene grass maps cataloged: " + std::to_string(GrassDatabase.Patches.size()) + (GrassDatabase.Patches.empty() ? "" : ", tile_bytes=0x10000");
+        if (invalidSize != 0) { message += ", invalid_size=" + std::to_string(invalidSize); }
+        logger->Info(message);
     }
 }
 
 void FWorldScene::LoadSnowPath(FLogger* logger)
 {
-    auto blob = Resources.Load("xadd/snowpath.bin");
+    auto record = Resources.Catalog().FindByLogicalName("xadd/snowpath.bin");
+    if (!record)
+    {
+        return;
+    }
 
-    if (!blob.IsOk()) { return; }
-
-    const auto& bytes = blob.Value().Bytes;
     SnowPath.Loaded = true;
     SnowPath.SourceName = "xadd/snowpath.bin";
-    SnowPath.Size = bytes.size();
-    bool init = false;
-
-    if (bytes.size() >= 8 && bytes.size() % 8 == 0)
-    {
-        SnowPath.CandidatePointCount = static_cast<uint32>(bytes.size() / 8);
-
-        for (size_t i = 0; i + 8 <= bytes.size(); i += 8)
-        {
-            float x = Common::F32LEOr(bytes, i);
-            float z = Common::F32LEOr(bytes, i + 4);
-
-            if (ReasonableWorldFloat(x) && ReasonableWorldFloat(z))
-            {
-                ExpandBounds(SnowPath.Bounds, {x, z}, init);
-            }
-        }
-    }
-    else
-    {
-        SnowPath.CandidatePointCount = static_cast<uint32>(bytes.size() / 4);
-    }
+    SnowPath.Size = record->Size;
+    SnowPath.CandidatePointCount = static_cast<uint32>(record->Size >= 8 && record->Size % 8 == 0 ? record->Size / 8 : record->Size / 4);
 
     if (logger)
     {
-        logger->Info("WorldScene snow path loaded: bytes=" + std::to_string(SnowPath.Size) + ", candidate_points=" + std::to_string(SnowPath.CandidatePointCount));
+        logger->Info("WorldScene snow path cataloged: bytes=" + std::to_string(SnowPath.Size) + ", candidate_points=" + std::to_string(SnowPath.CandidatePointCount));
     }
 }
 

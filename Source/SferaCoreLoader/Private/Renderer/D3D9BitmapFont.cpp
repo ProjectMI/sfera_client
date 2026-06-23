@@ -1,5 +1,5 @@
 #include "Renderer/D3D9BitmapFont.h"
-#include "D3D9Utils.h"
+#include "Renderer/D3D9Utils.h"
 #include "Common/BinaryData.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"

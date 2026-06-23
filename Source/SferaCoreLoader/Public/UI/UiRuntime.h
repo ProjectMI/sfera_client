@@ -237,6 +237,8 @@ public:
     const FUiWindowDef& DeleteCharacterWindow() const { return DeleteCharacter; }
     const FUiWindowDef& ConnectMessageWindow() const { return ConnectMessage; }
     const FUiWindowDef& MessageWindow() const { return Message; }
+    const std::vector<FUiWindowDef>& GameWindows() const { return GameWindowDefs; }
+    const std::vector<bool>& GameWindowVisibility() const { return GameWindowVisible; }
     const FUiWindowDef& ActiveModalWindow() const;
     EUiModalDialog ModalDialog() const { return Modal; }
     bool HasModalDialog() const { return Modal != EUiModalDialog::None; }
@@ -315,6 +317,8 @@ private:
     FUiWindowDef DeleteCharacter;
     FUiWindowDef ConnectMessage;
     FUiWindowDef Message;
+    std::vector<FUiWindowDef> GameWindowDefs;
+    std::vector<bool> GameWindowVisible;
     FUiActionState Actions;
     EUiRuntimeMode CurrentMode = EUiRuntimeMode::Login;
     EUiModalDialog Modal = EUiModalDialog::None;

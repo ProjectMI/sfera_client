@@ -10,16 +10,18 @@ public:
     FWorldScene(const FResourceManager& resources, FGameObjectRegistry& objectRegistry);
     FStatus LoadBootstrapScene(FLogger* logger = nullptr);
     FStatus ReloadZoning(FLogger* logger = nullptr);
+    FStatus EnsureZoningLoaded(FLogger* logger = nullptr);
+    FStatus EnsureContoursLoaded(FLogger* logger = nullptr);
     void SyncObject(uint32 objectId, FVector3 position, float radius, std::string tag = {});
     void RemoveObject(uint32 objectId);
     std::vector<uint32> QueryObjects(FBox2 area) const;
-    const FWorldZoneParams* FindZone(FVector3 position) const { return ZoningManager.FindZone(position); }
+    const FWorldZoneParams* FindZone(FVector3 position);
     const FWorldPatchRecord* FindPatchByName(std::string_view name) const;
     const FWorldTerrainSizeRecord* FindTerrainSizeByName(std::string_view name) const;
     const FWorldMicrotextureRecord* FindMicrotextureByName(std::string_view name) const;
     const FWorldPatchRecord* FindPatchByCoord(int32 patchX, int32 patchZ) const;
     const FWorldMapCell* FindMapCell(int32 x, int32 z) const { return MapGrid.Find(x, z); }
-    std::vector<uint32> QueryContours(FBox2 area) const { return Contours.Query(area); }
+    std::vector<uint32> QueryContours(FBox2 area);
     const FZoningManager& Zoning() const { return ZoningManager; }
     const std::vector<FWorldPatchRecord>& Patches() const { return PatchRecords; }
     const std::vector<FWorldTerrainSizeRecord>& TerrainSizeRecords() const { return TerrainRecords; }
@@ -59,6 +61,8 @@ private:
     std::unordered_map<int64, size_t> PatchByCoord;
     FWorldMapGrid MapGrid;
     FWorldContourDatabase Contours;
+    bool ZoningLoaded = false;
+    bool ContoursLoaded = false;
     FWorldGrassDatabase GrassDatabase;
     FWorldSnowPath SnowPath;
     std::vector<FWorldBinaryBlobInfo> BinaryBlobRecords;

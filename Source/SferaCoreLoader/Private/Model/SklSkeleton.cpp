@@ -1,7 +1,7 @@
 #include "Model/SklSkeleton.h"
 #include "Core/BinaryReader.h"
 #include "Core/StatusUtils.h"
-#include "ModelParseUtils.h"
+#include "Model/ModelParseUtils.h"
 #include "ResourceLoader/ResourceLoadHelpers.h"
 #include <stdexcept>
 

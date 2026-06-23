@@ -1,5 +1,6 @@
 #include "UI/UiRuntime.h"
 #include "Common/SferaGameConstants.h"
+#include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 #include <algorithm>
 
@@ -79,6 +80,57 @@ FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBoots
         Message = std::move(message.Value());
     }
 
+    GameWindowDefs.clear();
+    GameWindowVisible.clear();
+    const std::vector<std::string> gameWindowResources = {
+        "effects/system_left.ui",
+        "effects/system_leftmin.ui",
+        "effects/system_right.ui",
+        "effects/system_rightmin.ui",
+        "effects/chat.ui",
+        "effects/chat_st2.ui",
+        "effects/chat_sys.ui",
+        "effects/inventory.ui",
+        "effects/statinfo.ui",
+        "effects/puppet.ui",
+        "effects/quickitems.ui",
+        "effects/hotkeys.ui",
+        "effects/mantrabook.ui",
+        "effects/journal.ui",
+        "effects/clan.ui",
+        "effects/group.ui",
+        "effects/minimap.ui",
+        "effects/bigmap.ui",
+        "effects/help.ui",
+        "effects/options.ui",
+        "effects/gfxoptions.ui",
+        "effects/soundopt.ui",
+        "effects/controls.ui",
+        "effects/intoptions.ui",
+        "effects/authors.ui"
+    };
+    const std::vector<std::string> initiallyVisible = {"system_left", "system_right", "chat_st2", "chat_sys"};
+    for (const auto& resourceName : gameWindowResources)
+    {
+        auto gameWindow = LoadUiWindowFromResource(resources, resourceName);
+        if (!gameWindow.IsOk())
+        {
+            if (logger) { logger->Warning("game UI window is not available: " + resourceName + "; " + gameWindow.Status().Message()); }
+            continue;
+        }
+        bool visible = false;
+        for (const auto& name : initiallyVisible)
+        {
+            if (Common::EqualsNoCase(gameWindow.Value().Name, name))
+            {
+                visible = true;
+                break;
+            }
+        }
+        GameWindowVisible.push_back(visible);
+        GameWindowDefs.push_back(std::move(gameWindow.Value()));
+    }
+
     Ready = true;
     AddStatusLine("ui: connection window loaded, controls=" + std::to_string(Connection.Controls.size()) + ", sprites=" + std::to_string(Connection.Sprites.size()));
 
@@ -109,7 +161,7 @@ FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBoots
 
     if (logger)
     {
-        logger->Info("UI runtime initialized: strings=" + std::to_string(StringTable.size()) + ", connection=" + Connection.Name + ", controls=" + std::to_string(Connection.Controls.size()) + ", pick_person=" + PickPerson.Name + ", create_person=" + CreatePerson.Name + ", connect_message=" + ConnectMessage.Name + ", message=" + Message.Name);
+        logger->Info("UI runtime initialized: strings=" + std::to_string(StringTable.size()) + ", connection=" + Connection.Name + ", controls=" + std::to_string(Connection.Controls.size()) + ", pick_person=" + PickPerson.Name + ", create_person=" + CreatePerson.Name + ", connect_message=" + ConnectMessage.Name + ", message=" + Message.Name + ", game_windows=" + std::to_string(GameWindowDefs.size()));
     }
 
     return FStatus::Ok();

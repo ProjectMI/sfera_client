@@ -1,12 +1,11 @@
 #include "UI/UiRuntime.h"
-#include "UiRuntimeInternals.h"
+#include "UI/UiRuntimeInternals.h"
 #include "Common/SferaGameConstants.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 #include "Common/ValueUtils.h"
 #include <algorithm>
 #include <cmath>
-using namespace UiRuntimeInternal;
 
 namespace
 {
@@ -15,14 +14,14 @@ const FUiControlDef* HitTestControls(const FUiWindowDef& window, const FUiRectF&
     for (auto it = window.Controls.rbegin(); it != window.Controls.rend(); ++it)
     {
         const FUiControlDef& control = *it;
-        if (!ControlCanReceiveMouse(control)) { continue; }
-        FUiRectF rect = ControlRectInWindow(windowRect, control, scale);
-        if (spinFallbackSize && IsSpinButton(control) && (control.Rect.W <= 0 || control.Rect.H <= 0))
+        if (!FUiRuntimeInternals::ControlCanReceiveMouse(control)) { continue; }
+        FUiRectF rect = FUiRuntimeInternals::ControlRectInWindow(windowRect, control, scale);
+        if (spinFallbackSize && FUiRuntimeInternals::IsSpinButton(control) && (control.Rect.W <= 0 || control.Rect.H <= 0))
         {
             rect.W = 37.0f;
             rect.H = 26.0f;
         }
-        if (Contains(rect, x, y)) { return &control; }
+        if (FUiRuntimeInternals::Contains(rect, x, y)) { return &control; }
     }
 
     return nullptr;
@@ -128,7 +127,7 @@ bool FUiRuntime::PointInsidePickPersonWindow(int32 x, int32 y, const RECT& clien
 {
     if (PickPerson.Name.empty()) { return false; }
 
-    return Contains(BuildWindowRect(PickPerson, clientRect), x, y);
+    return FUiRuntimeInternals::Contains(BuildWindowRect(PickPerson, clientRect), x, y);
 }
 
 int32 FUiRuntime::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const
@@ -213,7 +212,7 @@ void FUiRuntime::ActivateCharacterControl(const FUiControlDef& control, FLogger*
 
         if (control.Id == SferaUi::CharacterGenderControlId)
         {
-            Appearance.Gender = CycleIndex(Appearance.Gender, 2, delta);
+            Appearance.Gender = FUiRuntimeInternals::CycleIndex(Appearance.Gender, 2, delta);
             Appearance.Face = 0;
             Appearance.Hair = 0;
             Appearance.HairColor = 0;
@@ -221,19 +220,19 @@ void FUiRuntime::ActivateCharacterControl(const FUiControlDef& control, FLogger*
         }
         else if (control.Id == SferaUi::CharacterFaceControlId)
         {
-            Appearance.Face = CycleIndex(Appearance.Face, CharacterAppearanceOptionCount(SferaUi::CharacterFaceControlId), delta);
+            Appearance.Face = FUiRuntimeInternals::CycleIndex(Appearance.Face, CharacterAppearanceOptionCount(SferaUi::CharacterFaceControlId), delta);
         }
         else if (control.Id == SferaUi::CharacterHairControlId)
         {
-            Appearance.Hair = CycleIndex(Appearance.Hair, CharacterAppearanceOptionCount(SferaUi::CharacterHairControlId), delta);
+            Appearance.Hair = FUiRuntimeInternals::CycleIndex(Appearance.Hair, CharacterAppearanceOptionCount(SferaUi::CharacterHairControlId), delta);
         }
         else if (control.Id == SferaUi::CharacterHairColorControlId)
         {
-            Appearance.HairColor = CycleIndex(Appearance.HairColor, CharacterAppearanceOptionCount(SferaUi::CharacterHairColorControlId), delta);
+            Appearance.HairColor = FUiRuntimeInternals::CycleIndex(Appearance.HairColor, CharacterAppearanceOptionCount(SferaUi::CharacterHairColorControlId), delta);
         }
         else if (control.Id == SferaUi::CharacterTattooControlId)
         {
-            Appearance.Tattoo = CycleIndex(Appearance.Tattoo, CharacterAppearanceOptionCount(SferaUi::CharacterTattooControlId), delta);
+            Appearance.Tattoo = FUiRuntimeInternals::CycleIndex(Appearance.Tattoo, CharacterAppearanceOptionCount(SferaUi::CharacterTattooControlId), delta);
         }
 
         ClampCharacterAppearance();
@@ -365,7 +364,7 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
     const int32 newHover = hovered ? hovered->Id : 0;
     int32 spinHoverDirection = 0;
 
-    if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && IsSpinButton(*hovered))
+    if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered))
     {
         spinHoverDirection = CharacterSpinDeltaForPoint(*hovered, input.MouseX, input.MouseY, clientRect);
     }
@@ -395,7 +394,7 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
         Actions.SpinPressedDirection = 0;
         SceneRotateDragActive = false;
 
-        if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && IsSpinButton(*hovered))
+        if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered))
         {
             CharacterSpinDelta = CharacterSpinDeltaForPoint(*hovered, input.MouseX, input.MouseY, clientRect);
             Actions.SpinPressedDirection = CharacterSpinDelta;
@@ -444,7 +443,7 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
     {
         if (Modal == EUiModalDialog::CharacterDelete && Actions.FocusedControlId == SferaUi::DeleteConfirmEditId)
         {
-            changed = ApplyUtf8TextEdit(ModalEditText, input, SferaUi::MaxDeleteConfirmChars) || changed;
+            changed = FUiRuntimeInternals::ApplyUtf8TextEdit(ModalEditText, input, SferaUi::MaxDeleteConfirmChars) || changed;
         }
 
         if (input.EnterPressed)
@@ -472,7 +471,7 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
         std::string& target = Actions.FocusedControlId == SferaUi::PasswordEditId ? Actions.PasswordText : Actions.LoginText;
 
         const size_t limit = Actions.FocusedControlId == SferaUi::PasswordEditId ? SferaUi::MaxPasswordChars : SferaUi::MaxLoginChars;
-        changed = ApplyUtf8TextEdit(target, input, limit) || changed;
+        changed = FUiRuntimeInternals::ApplyUtf8TextEdit(target, input, limit) || changed;
 
         if (input.TabPressed)
         {
@@ -485,12 +484,12 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
     {
         std::wstring& target = CharacterNameEdits[static_cast<size_t>(SferaUi::SlotFromNameEditId(ActiveCharacterEditId))];
 
-        changed = ApplyWideTextEdit(target, input, SferaUi::MaxCharacterNameChars, IsCharacterNameChar) || changed;
+        changed = FUiRuntimeInternals::ApplyWideTextEdit(target, input, SferaUi::MaxCharacterNameChars, FUiRuntimeInternals::IsCharacterNameChar) || changed;
     }
 
     if (CurrentMode == EUiRuntimeMode::Game)
     {
-        changed = ApplyUtf8TextEdit(GameChat, input, SferaUi::MaxGameChatChars) || changed;
+        changed = FUiRuntimeInternals::ApplyUtf8TextEdit(GameChat, input, SferaUi::MaxGameChatChars) || changed;
     }
 
     if (input.EnterPressed)

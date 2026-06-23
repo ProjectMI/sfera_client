@@ -1,7 +1,6 @@
 #include "MBC/MbcLinker.h"
 #include "Common/StringUtils.h"
-#include "Core/NumericParse.h"
-#include "MBC/MbcOpcode.h"
+#include "MBC/MbcTypes.h"
 #include <algorithm>
 
 static bool HasImportStubPayload(const FMbcModule& module, uint32 codeOffset, uint32& payload)
@@ -16,6 +15,12 @@ static bool HasImportStubPayload(const FMbcModule& module, uint32 codeOffset, ui
     payload = Mbc::ReadU32(code, codeOffset + 1);
     return true;
 }
+
+uint64 FMbcProjectLinker::MakeSymbolKey(uint32 moduleIndex, uint32 codeOffset)
+{
+    return (uint64(moduleIndex) << 32) | uint64(codeOffset);
+}
+
 void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
 {
     SymbolsFound.clear();
@@ -24,6 +29,30 @@ void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
     NativeImportsFound.clear();
     ProviderByName.clear();
     NativeByName.clear();
+    SymbolByModuleOffset.clear();
+
+    size_t functionCount = 0;
+    size_t importCount = 0;
+    for (const auto& module : modules)
+    {
+        functionCount += module.Functions().size();
+        for (const auto& fn : module.Functions())
+        {
+            if (fn.IsImport())
+            {
+                ++importCount;
+            }
+        }
+    }
+
+    SymbolsFound.reserve(functionCount);
+    PatchesFound.reserve(importCount);
+    UnresolvedFound.reserve(32);
+    NativeImportsFound.reserve(16);
+    ProviderByName.reserve(functionCount > importCount ? functionCount - importCount : functionCount);
+    SymbolByModuleOffset.reserve(functionCount);
+    NativeByName.reserve(16);
+
     RegisterNative("CreateObj", "engine_import", "engine object factory", true, 2, false);
     RegisterNative("CreateObjWait", "engine_import", "engine object factory wait variant", true, 2, false);
     RegisterNative("DestroyObj", "engine_import", "engine object destroy/release", false);
@@ -54,23 +83,29 @@ void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
             sym.FunctionIndex = fn.Index;
             sym.ModuleName = moduleName;
             sym.Name = fn.Name;
-            sym.QualifiedName = moduleName + "." + fn.Name;
             sym.CodeOffset = fn.CodeOffset;
             sym.ProgramIndex = fn.ProgramIndex();
             sym.FlagsOrModule = fn.FlagsOrModule;
             sym.IsImport = fn.IsImport();
-            sym.Signature = RecoverSignature(module, fn);
+
+            if (sym.IsImport)
+            {
+                sym.QualifiedName.reserve(sym.ModuleName.size() + 1 + sym.Name.size());
+                sym.QualifiedName.append(sym.ModuleName).push_back('.');
+                sym.QualifiedName.append(sym.Name);
+            }
 
             if (HasImportStubPayload(module, fn.CodeOffset, payload))
             {
                 sym.ImportStubPayload = payload;
             }
 
-            if (!sym.IsImport && !ProviderByName.contains(sym.Name))
+            if (!sym.IsImport)
             {
-                ProviderByName.emplace(sym.Name, SymbolsFound.size());
+                ProviderByName.try_emplace(sym.Name, SymbolsFound.size());
             }
 
+            SymbolByModuleOffset.emplace(MakeSymbolKey(moduleIndex, fn.CodeOffset), SymbolsFound.size());
             SymbolsFound.push_back(std::move(sym));
         }
     }
@@ -79,7 +114,7 @@ void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
     {
         if (!sym.IsImport) { continue; }
 
-        const FMbcFunctionSymbol* target = ResolveImport(sym);
+        const FMbcFunctionSymbol* target = FindInternalByName(sym.Name);
 
         if (target)
         {
@@ -97,33 +132,29 @@ void FMbcProjectLinker::Build(const std::vector<FMbcModule>& modules)
             continue;
         }
 
-        if (!ResolveNative(sym.Name))
+        if (!ResolveNativeByName(sym.Name))
         {
             UnresolvedFound.push_back(sym);
         }
     }
 }
+
 FMbcFunctionSignature FMbcProjectLinker::RecoverSignature(const FMbcModule& module, const FMbcFunction& fn) const
 {
     FMbcFunctionSignature sig;
     const auto& code = module.Code();
 
-    if (fn.CodeOffset >= code.size()) { return sig; }
-
-    FMbcDecodedOpcode decoded = DecodeMbcOpcode(code, fn.CodeOffset);
-
-    if (decoded.Mnemonic != "program_prologue") { return sig; }
-
-    auto countIt = decoded.Operands.find("descriptor_count");
-
-    if (countIt != decoded.Operands.end())
+    if (fn.CodeOffset + 2 > code.size() || code[fn.CodeOffset] != 0x4F)
     {
-        sig.Arity = NumericParse::UInt32Or(countIt->second);
+        return sig;
     }
 
+    int8 signedCount = Mbc::Sign8(code[fn.CodeOffset + 1]);
+    sig.Arity = signedCount < 0 ? uint32(-signedCount) : uint32(signedCount);
     sig.Source = "program_prologue";
     return sig;
 }
+
 void FMbcProjectLinker::RegisterNative(std::string name, std::string layer, std::string note, bool pushesValue, uint32 arity, bool variadic)
 {
     FMbcNativeImport native;
@@ -136,24 +167,36 @@ void FMbcProjectLinker::RegisterNative(std::string name, std::string layer, std:
     NativeByName[native.Name] = NativeImportsFound.size();
     NativeImportsFound.push_back(std::move(native));
 }
+
 const FMbcFunctionSymbol* FMbcProjectLinker::SymbolAt(uint32 moduleIndex, uint32 codeOffset) const
 {
-    for (const auto& sym : SymbolsFound)
-    {
-        if (sym.ModuleIndex == moduleIndex && sym.CodeOffset == codeOffset)
-        {
-            return &sym;
-        }
-    }
-
-    return nullptr;
+    auto it = SymbolByModuleOffset.find(MakeSymbolKey(moduleIndex, codeOffset));
+    return it == SymbolByModuleOffset.end() ? nullptr : &SymbolsFound[it->second];
 }
+
+const FMbcFunctionSymbol* FMbcProjectLinker::FindInternalByName(const std::string& name) const
+{
+    auto it = ProviderByName.find(name);
+    return it == ProviderByName.end() ? nullptr : &SymbolsFound[it->second];
+}
+
 const FMbcFunctionSymbol* FMbcProjectLinker::FindInternal(std::string_view name) const
 {
     auto it = ProviderByName.find(std::string(name));
     return it == ProviderByName.end() ? nullptr : &SymbolsFound[it->second];
 }
-const FMbcFunctionSymbol* FMbcProjectLinker::ResolveImport(const FMbcFunctionSymbol& importSymbol) const { return FindInternal(importSymbol.Name); }
+
+const FMbcFunctionSymbol* FMbcProjectLinker::ResolveImport(const FMbcFunctionSymbol& importSymbol) const
+{
+    return FindInternalByName(importSymbol.Name);
+}
+
+const FMbcNativeImport* FMbcProjectLinker::ResolveNativeByName(const std::string& name) const
+{
+    auto it = NativeByName.find(name);
+    return it == NativeByName.end() ? nullptr : &NativeImportsFound[it->second];
+}
+
 const FMbcNativeImport* FMbcProjectLinker::ResolveNative(std::string_view name) const
 {
     auto it = NativeByName.find(std::string(name));

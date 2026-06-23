@@ -30,6 +30,14 @@ struct FModelRepositoryStats
     size_t TotalCount = 0; 
 };
 
+struct FModelPreloadStats
+{
+    size_t Requested = 0;
+    size_t Loaded = 0;
+    size_t Failed = 0;
+    size_t ThreadCount = 0;
+};
+
 class FModelRepository 
 {
 public:
@@ -41,6 +49,7 @@ public:
     TResult<FMdlMesh> LoadMdl(std::string_view logicalName) const;
     TResult<FChrMesh> LoadChr(std::string_view logicalName) const;
     TResult<FSklSkeleton> LoadSkl(std::string_view logicalName) const;
+    FModelPreloadStats PreloadMdlMeshes(size_t MaxWorkers, FLogger* logger = nullptr) const;
 private:
     static EModelAssetKind GuessKind(const FPath& path);
     static std::string NormalizeKey(std::string_view key);

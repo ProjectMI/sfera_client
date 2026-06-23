@@ -4,14 +4,39 @@
 FGameObjectService::FGameObjectService(const FResourceManager& resources) : Resources(resources) {}
 FStatus FGameObjectService::Initialize(FLogger* logger)
 {
-    FStatus status = ParamManager.OpenKnownConfigs(Resources, logger);
+    ParamsLoaded = false;
 
     if (logger)
     {
-        logger->Info("GameObjects initialized: params=" + std::to_string(ParamManager.ObjectCount()) + ", live_objects=" + std::to_string(ObjectRegistry.Count()));
+        logger->Info("GameObjects initialized: params=deferred, live_objects=" + std::to_string(ObjectRegistry.Count()));
     }
 
+    return FStatus::Ok();
+}
+
+FStatus FGameObjectService::EnsureParamsLoaded(FLogger* logger)
+{
+    if (ParamsLoaded)
+    {
+        return FStatus::Ok();
+    }
+
+    FStatus status = ParamManager.OpenKnownConfigs(Resources, logger);
+    if (status.IsOk())
+    {
+        ParamsLoaded = true;
+        if (logger)
+        {
+            logger->Info("GameObjects params loaded lazily: params=" + std::to_string(ParamManager.ObjectCount()));
+        }
+    }
     return status;
+}
+
+FObjectParamManager& FGameObjectService::Params()
+{
+    EnsureParamsLoaded(nullptr);
+    return ParamManager;
 }
 uint32 FGameObjectService::CreateObject(std::string archetype, EGameObjectKind kind)
 {

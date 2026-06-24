@@ -36,11 +36,8 @@ struct FGameWorldConfig
     int OriginRow = 40;
     int OriginColumn = 39;
     int VisibleRadius = 3;
-    int TerrainInitialLoadBudget = 1;
-    int TerrainStreamLoadBudget = 1;
     float TileSize = 100.0f;
     float StaticObjectRadius = 250.0f;
-    int StaticStreamModelBudget = 1;
     int GrassmapGridSize = 16;
     int GrassmapTileResolution = 256;
     float GrassmapWorldOffsetX = 4000.0f;
@@ -63,7 +60,6 @@ struct FGameWorldConfig
     float GrassFlatnessThreshold = 0.5f;
     float GrassFlatnessNormalY = 0.75f;
     float GrassGenerationMargin = 16.0f;
-    int GrassStreamCellBudget = 24;
     float GrassWindAmplitude = 0.018f;
     float GrassWindSpeed = 1.35f;
     std::wstring CameraMode;

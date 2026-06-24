@@ -32,6 +32,45 @@ struct StaticModelCpuResource
     FBox3 Bounds;
 };
 
+
+uint64 StaticRenderCellKey(int CellX, int CellZ)
+{
+    return (static_cast<uint64>(static_cast<uint32>(CellX)) << 32) | static_cast<uint32>(CellZ);
+}
+
+int StaticRenderCellCoord(float Value, float CellSize)
+{
+    return static_cast<int>(std::floor(Value / CellSize));
+}
+
+uint64 StaticRenderCellKeyForPoint(float X, float Z, float CellSize)
+{
+    return StaticRenderCellKey(StaticRenderCellCoord(X, CellSize), StaticRenderCellCoord(Z, CellSize));
+}
+
+FBox3 EmptyBounds()
+{
+    FBox3 Bounds;
+    Bounds.Min = FVector3{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    Bounds.Max = FVector3{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    return Bounds;
+}
+
+void ExpandBounds(FBox3& Bounds, const FVector3& Point)
+{
+    Bounds.Min.X = (std::min)(Bounds.Min.X, Point.X);
+    Bounds.Min.Y = (std::min)(Bounds.Min.Y, Point.Y);
+    Bounds.Min.Z = (std::min)(Bounds.Min.Z, Point.Z);
+    Bounds.Max.X = (std::max)(Bounds.Max.X, Point.X);
+    Bounds.Max.Y = (std::max)(Bounds.Max.Y, Point.Y);
+    Bounds.Max.Z = (std::max)(Bounds.Max.Z, Point.Z);
+}
+
+bool BoundsInitialized(const FBox3& Bounds)
+{
+    return Bounds.Min.X <= Bounds.Max.X && Bounds.Min.Y <= Bounds.Max.Y && Bounds.Min.Z <= Bounds.Max.Z;
+}
+
 std::mutex StaticModelCpuCacheMutex;
 std::unordered_map<std::string, std::shared_ptr<const StaticModelCpuResource>> StaticModelCpuCache;
 
@@ -398,102 +437,16 @@ StaticPlacementLoadResult BuildStaticPlacementLoadResult(const std::vector<Stati
 }
 
 
-void FD3D9GameWorldScene::Impl::ApplyStaticPlacementLoadResult(StaticPlacementLoadResult&& result)
-{
-    StaticInstances.clear();
-    VisibleStaticPlacementIndices.clear();
-    PendingStaticModelLoads.clear();
-    StaticPlacementModels = std::move(result.Models);
-    StaticPlacements = std::move(result.Placements);
-    StaticVisibilityPlanReady = false;
-}
-
 void FD3D9GameWorldScene::Impl::LoadStaticPlacements()
 {
     auto result = BuildStaticPlacementLoadResult(CollectStaticPlacementFiles(AssetResources, Config));
-    ApplyStaticPlacementLoadResult(std::move(result));
-}
-
-void FD3D9GameWorldScene::Impl::BeginStaticPlacementLoadAsync()
-{
-    if (StaticPlacementWorkerStarted)
-    {
-        return;
-    }
-    JoinStaticPlacementWorker();
-    StaticPlacementWorkerReady.store(false, std::memory_order_release);
-    StaticPlacementWorkerResult.reset();
-    StaticPlacementWorkerException = nullptr;
-    auto files = CollectStaticPlacementFiles(AssetResources, Config);
-    StaticPlacementWorkerStarted = true;
-    StaticPlacementWorker = std::thread([this, files = std::move(files)]() mutable
-    {
-#if defined(_WIN32)
-        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
-#endif
-        try
-        {
-            auto result = std::make_unique<StaticPlacementLoadResult>(BuildStaticPlacementLoadResult(files));
-            std::lock_guard<std::mutex> lock(StaticPlacementWorkerMutex);
-            StaticPlacementWorkerResult = std::move(result);
-            StaticPlacementWorkerException = nullptr;
-        }
-        catch (...)
-        {
-            std::lock_guard<std::mutex> lock(StaticPlacementWorkerMutex);
-            StaticPlacementWorkerResult.reset();
-            StaticPlacementWorkerException = std::current_exception();
-        }
-        StaticPlacementWorkerReady.store(true, std::memory_order_release);
-    });
-}
-
-bool FD3D9GameWorldScene::Impl::PollStaticPlacementLoad()
-{
-    if (!StaticPlacementWorkerStarted)
-    {
-        return false;
-    }
-    if (!StaticPlacementWorkerReady.load(std::memory_order_acquire))
-    {
-        return false;
-    }
-    if (StaticPlacementWorker.joinable())
-    {
-        StaticPlacementWorker.join();
-    }
-    std::unique_ptr<StaticPlacementLoadResult> result;
-    std::exception_ptr failure;
-    {
-        std::lock_guard<std::mutex> lock(StaticPlacementWorkerMutex);
-        result = std::move(StaticPlacementWorkerResult);
-        failure = StaticPlacementWorkerException;
-        StaticPlacementWorkerException = nullptr;
-    }
-    StaticPlacementWorkerStarted = false;
-    StaticPlacementWorkerReady.store(false, std::memory_order_release);
-    if (failure)
-    {
-        std::rethrow_exception(failure);
-    }
-    if (!result)
-    {
-        throw std::runtime_error("static placement async load finished without a result");
-    }
-    ApplyStaticPlacementLoadResult(std::move(*result));
-    return true;
-}
-
-void FD3D9GameWorldScene::Impl::JoinStaticPlacementWorker()
-{
-    if (StaticPlacementWorker.joinable())
-    {
-        StaticPlacementWorker.join();
-    }
-    StaticPlacementWorkerStarted = false;
-    StaticPlacementWorkerReady.store(false, std::memory_order_release);
-    StaticPlacementWorkerResult.reset();
-    StaticPlacementWorkerException = nullptr;
+    StaticInstances.clear();
+    VisibleStaticPlacementIndices.clear();
+    VisibleStaticRenderCells.clear();
+    ClearStaticRenderBatches();
+    StaticPlacementModels = std::move(result.Models);
+    StaticPlacements = std::move(result.Placements);
+    StaticVisibilityPlanReady = false;
 }
 
 StaticModelResource* FD3D9GameWorldScene::Impl::EnsureStaticModelResource(const std::string& ModelName)
@@ -519,6 +472,8 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
     resource->Bounds = cpu->Bounds;
     resource->CollisionPositions = cpu->CollisionPositions;
     resource->CollisionIndices = cpu->CollisionIndices;
+    resource->CpuVertices = cpu->Vertices;
+    resource->CpuIndices = cpu->Indices;
 
     for (const auto& cpuBatch : cpu->Batches)
     {
@@ -561,15 +516,15 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
     return resource;
 }
 
-bool FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects(int MaxNewModels)
+void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
 {
     const float RadiusSquared = Config.StaticObjectRadius * Config.StaticObjectRadius;
     const bool needsPlan = !StaticVisibilityPlanReady || std::abs(SpawnX - StaticVisibilityAnchorX) > 1.0f || std::abs(SpawnZ - StaticVisibilityAnchorZ) > 1.0f;
     if (needsPlan)
     {
         VisibleStaticPlacementIndices.clear();
-        PendingStaticModelLoads.clear();
-        std::unordered_set<uint32> queuedModels;
+        VisibleStaticRenderCells.clear();
+        std::unordered_set<uint64> visibleCells;
         StaticVisibilityAnchorX = SpawnX;
         StaticVisibilityAnchorZ = SpawnZ;
         for (std::size_t index = 0; index < StaticPlacements.size(); ++index)
@@ -585,32 +540,25 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects(int MaxNewModels)
             {
                 continue;
             }
-            const auto& model = StaticPlacementModels[placement.ModelId];
             VisibleStaticPlacementIndices.push_back(index);
-            if (StaticResources.find(model.Key) == StaticResources.end() && queuedModels.insert(placement.ModelId).second)
-            {
-                PendingStaticModelLoads.push_back(placement.ModelId);
-            }
+            visibleCells.insert(StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize));
         }
+        VisibleStaticRenderCells.assign(visibleCells.begin(), visibleCells.end());
         StaticVisibilityPlanReady = true;
     }
-    int LoadedThisCall = 0;
-    while (LoadedThisCall < MaxNewModels && !PendingStaticModelLoads.empty())
+    for (const auto placementIndex : VisibleStaticPlacementIndices)
     {
-        const auto modelId = PendingStaticModelLoads.back();
-        PendingStaticModelLoads.pop_back();
-        if (modelId >= StaticPlacementModels.size())
+        const auto& placement = StaticPlacements[placementIndex];
+        if (placement.ModelId >= StaticPlacementModels.size())
         {
             continue;
         }
-        const auto& model = StaticPlacementModels[modelId];
-        if (model.Key.empty() || StaticResources.find(model.Key) != StaticResources.end())
+        const auto& model = StaticPlacementModels[placement.ModelId];
+        if (!model.Key.empty() && StaticResources.find(model.Key) == StaticResources.end())
         {
-            continue;
+            const auto ModelPath = ResolveModelPath(model.Name);
+            StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ModelPath));
         }
-        const auto ModelPath = ResolveModelPath(model.Name);
-        StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ModelPath));
-        ++LoadedThisCall;
     }
     StaticInstances.clear();
     StaticInstances.reserve((std::min<std::size_t>)(VisibleStaticPlacementIndices.size(), 4096));
@@ -628,18 +576,11 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects(int MaxNewModels)
         }
         if (!placement.BoundsValid)
         {
-            placement.Bounds.Min = FVector3{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-            placement.Bounds.Max = FVector3{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+            placement.Bounds = EmptyBounds();
             for (int corner = 0; corner < 8; ++corner)
             {
                 const FVector3 local{(corner & 1) ? it->second->Bounds.Max.X : it->second->Bounds.Min.X, (corner & 2) ? it->second->Bounds.Max.Y : it->second->Bounds.Min.Y, (corner & 4) ? it->second->Bounds.Max.Z : it->second->Bounds.Min.Z};
-                const FVector3 point = TransformPoint(local, placement.World);
-                placement.Bounds.Min.X = (std::min)(placement.Bounds.Min.X, point.X);
-                placement.Bounds.Min.Y = (std::min)(placement.Bounds.Min.Y, point.Y);
-                placement.Bounds.Min.Z = (std::min)(placement.Bounds.Min.Z, point.Z);
-                placement.Bounds.Max.X = (std::max)(placement.Bounds.Max.X, point.X);
-                placement.Bounds.Max.Y = (std::max)(placement.Bounds.Max.Y, point.Y);
-                placement.Bounds.Max.Z = (std::max)(placement.Bounds.Max.Z, point.Z);
+                ExpandBounds(placement.Bounds, TransformPoint(local, placement.World));
             }
             placement.BoundsValid = true;
         }
@@ -657,11 +598,201 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects(int MaxNewModels)
         }
         return a.world._43 < b.world._43;
     });
-    return PendingStaticModelLoads.empty();
+    BuildVisibleStaticRenderBatches();
 }
 
 
+void FD3D9GameWorldScene::Impl::ReleaseStaticBatches(std::vector<StaticRenderBatch>& Batches)
+{
+    for (auto& batch : Batches)
+    {
+        SafeRelease(batch.IndexBuffer);
+        SafeRelease(batch.VertexBuffer);
+    }
+    Batches.clear();
+}
 
+void FD3D9GameWorldScene::Impl::ClearStaticRenderBatches()
+{
+    for (auto& [_, batches] : StaticCellRenderBatches)
+    {
+        ReleaseStaticBatches(batches);
+    }
+    StaticCellRenderBatches.clear();
+    VisibleStaticRenderCells.clear();
+}
+
+void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
+{
+    if (StaticCellRenderBatches.find(CellKey) != StaticCellRenderBatches.end())
+    {
+        return;
+    }
+    struct AccumulatedStaticBatch
+    {
+        std::vector<WorldVertex> Vertices;
+        std::vector<uint32> Indices;
+        FBox3 Bounds = EmptyBounds();
+    };
+    std::unordered_map<IDirect3DTexture9*, AccumulatedStaticBatch> batchesByTexture;
+    for (auto& placement : StaticPlacements)
+    {
+        if (StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize) != CellKey || placement.ModelId >= StaticPlacementModels.size())
+        {
+            continue;
+        }
+        const auto& model = StaticPlacementModels[placement.ModelId];
+        if (model.Key.empty())
+        {
+            continue;
+        }
+        auto resourceIt = StaticResources.find(model.Key);
+        if (resourceIt == StaticResources.end())
+        {
+            try
+            {
+                resourceIt = StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ResolveModelPath(model.Name))).first;
+            }
+            catch (const std::exception& ex)
+            {
+                if (Logger)
+                {
+                    Logger->Warning("static render batch skipped " + model.Name + ": " + ex.what());
+                }
+                continue;
+            }
+        }
+        if (!resourceIt->second)
+        {
+            continue;
+        }
+        const auto* resource = resourceIt->second.get();
+        if (resource->CpuVertices.empty() || resource->CpuIndices.empty())
+        {
+            continue;
+        }
+        const auto& world = placement.World;
+        if (!placement.BoundsValid)
+        {
+            placement.Bounds = EmptyBounds();
+            for (int corner = 0; corner < 8; ++corner)
+            {
+                const FVector3 local{(corner & 1) ? resource->Bounds.Max.X : resource->Bounds.Min.X, (corner & 2) ? resource->Bounds.Max.Y : resource->Bounds.Min.Y, (corner & 4) ? resource->Bounds.Max.Z : resource->Bounds.Min.Z};
+                ExpandBounds(placement.Bounds, TransformPoint(local, world));
+            }
+            placement.BoundsValid = true;
+        }
+        for (const auto& sourceBatch : resource->Batches)
+        {
+            auto& output = batchesByTexture[sourceBatch.Texture];
+            const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
+            output.Vertices.reserve(output.Vertices.size() + resource->CpuVertices.size());
+            for (const auto& source : resource->CpuVertices)
+            {
+                WorldVertex vertex = source;
+                vertex.X = source.X * world._11 + source.Y * world._21 + source.Z * world._31 + world._41;
+                vertex.Y = source.X * world._12 + source.Y * world._22 + source.Z * world._32 + world._42;
+                vertex.Z = source.X * world._13 + source.Y * world._23 + source.Z * world._33 + world._43;
+                vertex.NX = source.NX * world._11 + source.NY * world._21 + source.NZ * world._31;
+                vertex.NY = source.NX * world._12 + source.NY * world._22 + source.NZ * world._32;
+                vertex.NZ = source.NX * world._13 + source.NY * world._23 + source.NZ * world._33;
+                ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
+                output.Vertices.push_back(vertex);
+            }
+            const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
+            output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
+            for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < resource->CpuIndices.size(); ++index)
+            {
+                output.Indices.push_back(baseVertex + resource->CpuIndices[index]);
+            }
+        }
+    }
+    std::vector<StaticRenderBatch> baked;
+    for (auto& [texture, source] : batchesByTexture)
+    {
+        if (source.Vertices.empty() || source.Indices.empty() || !BoundsInitialized(source.Bounds))
+        {
+            continue;
+        }
+        StaticRenderBatch batch;
+        batch.Texture = texture;
+        batch.Bounds = source.Bounds;
+        batch.VertexCount = static_cast<UINT>(source.Vertices.size());
+        batch.IndexCount = static_cast<UINT>(source.Indices.size());
+        const UINT VertexBytes = static_cast<UINT>(source.Vertices.size() * sizeof(WorldVertex));
+        const UINT IndexBytes = static_cast<UINT>(source.Indices.size() * sizeof(uint32));
+        if (FAILED(Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &batch.VertexBuffer, nullptr)))
+        {
+            continue;
+        }
+        void* VertexData = nullptr;
+        if (FAILED(batch.VertexBuffer->Lock(0, VertexBytes, &VertexData, 0)))
+        {
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        CopyVectorBytes(VertexData, source.Vertices, VertexBytes);
+        batch.VertexBuffer->Unlock();
+        if (FAILED(Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_MANAGED, &batch.IndexBuffer, nullptr)))
+        {
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        void* IndexData = nullptr;
+        if (FAILED(batch.IndexBuffer->Lock(0, IndexBytes, &IndexData, 0)))
+        {
+            SafeRelease(batch.IndexBuffer);
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        CopyVectorBytes(IndexData, source.Indices, IndexBytes);
+        batch.IndexBuffer->Unlock();
+        baked.push_back(batch);
+    }
+    if (baked.empty())
+    {
+        return;
+    }
+    StaticCellRenderBatches.emplace(CellKey, std::move(baked));
+}
+
+void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
+{
+    for (const auto cell : VisibleStaticRenderCells)
+    {
+        BakeStaticRenderCell(cell);
+    }
+}
+
+void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, float CenterZ, float Radius)
+{
+    const float RadiusSquared = Radius * Radius;
+    for (const auto& placement : StaticPlacements)
+    {
+        const float dx = placement.Position.X - CenterX;
+        const float dz = placement.Position.Z - CenterZ;
+        if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+        {
+            continue;
+        }
+        const auto& model = StaticPlacementModels[placement.ModelId];
+        if (model.Key.empty() || StaticResources.find(model.Key) != StaticResources.end())
+        {
+            continue;
+        }
+        try
+        {
+            StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ResolveModelPath(model.Name)));
+        }
+        catch (const std::exception& ex)
+        {
+            if (Logger)
+            {
+                Logger->Warning("static guard preload skipped " + model.Name + ": " + ex.what());
+            }
+        }
+    }
+}
 
 void FD3D9GameWorldScene::PrewarmGrassModelCpuCache(const FResourceManager& resources, const FGameWorldConfig& config, FLogger* logger)
 {
@@ -931,13 +1062,14 @@ uint8 FD3D9GameWorldScene::Impl::GrassTypeAt(float WorldX, float WorldZ)
     return type;
 }
 
-bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
+void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
 {
     if (Config.GrassQuality <= 0)
     {
+        ClearGrassRenderBatches();
         GrassInstances.clear();
         GrassCells.clear();
-        return true;
+        return;
     }
     if (Config.GrassDetailModels.empty())
     {
@@ -1005,6 +1137,16 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
     {
         return !TargetCells.contains(key);
     });
+    for (auto it = GrassCellRenderBatches.begin(); it != GrassCellRenderBatches.end();)
+    {
+        if (TargetCells.contains(it->first))
+        {
+            ++it;
+            continue;
+        }
+        ReleaseGrassBatches(it->second);
+        it = GrassCellRenderBatches.erase(it);
+    }
 
     std::array<std::vector<StaticModelResource*>, 31> GrassPatternResources{};
     std::array<std::vector<StaticModelResource*>, 31> FlowerPatternResources{};
@@ -1014,9 +1156,6 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
 
     std::vector<GrassCellPlan> plans;
     plans.reserve(TargetCells.size());
-    int GeneratedThisCall = 0;
-    bool Complete = true;
-
     for (int CellX = GrassCenterX - CellRadius; CellX <= GrassCenterX + CellRadius; ++CellX)
     {
         for (int CellZ = GrassCenterZ - CellRadius; CellZ <= GrassCenterZ + CellRadius; ++CellZ)
@@ -1026,13 +1165,7 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
             {
                 continue;
             }
-            if (GeneratedThisCall >= MaxNewCells)
-            {
-                Complete = false;
-                continue;
-            }
             GrassCells.insert(key);
-            ++GeneratedThisCall;
             GrassCellPlan plan;
             plan.CellX = CellX;
             plan.CellZ = CellZ;
@@ -1058,7 +1191,7 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
 
     if (plans.empty() || !AnyTypedGrass)
     {
-        return Complete;
+        return;
     }
 
     auto ensureWideModel = [this](const std::wstring& name)
@@ -1275,6 +1408,13 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
     {
         newInstances += bucket.size();
     }
+    for (std::size_t index = 0; index < generated.size(); ++index)
+    {
+        if (!generated[index].empty())
+        {
+            BakeGrassCell(plans[index].Key, generated[index]);
+        }
+    }
     GrassInstances.reserve(GrassInstances.size() + newInstances);
     for (auto& bucket : generated)
     {
@@ -1292,7 +1432,6 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleGrass(int MaxNewCells)
         }
         return a.CellZ < b.CellZ;
     });
-    return Complete;
 }
 
 bool FD3D9GameWorldScene::Impl::CollidesWithStatic(float x, float y, float z) const
@@ -1423,57 +1562,93 @@ void FD3D9GameWorldScene::Impl::DrawStaticObjects()
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
     Device->SetRenderState(D3DRS_ALPHAREF, 0x20);
     Device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
-    // them broke foliage (leaf cards are single-sided geometry). Walking into
-    // a wall is prevented by collision, not by culling, so you never get
-    // inside a model to see its interior.
     const bool UseShader = WorldShadersReady;
+    const auto BatchedWorld = IdentityMatrix();
     if (UseShader)
     {
         BeginBaseShader();
         SetBaseLightConstants();
-    } else
+        SetBaseWorld(BatchedWorld);
+    }
+    else
     {
         Device->SetFVF(kWorldVertexFvf);
+        Device->SetTransform(D3DTS_WORLD, &BatchedWorld);
     }
-    const StaticModelResource* boundResource = nullptr;
+
     IDirect3DTexture9* boundTexture = nullptr;
-    for (const auto& instance : StaticInstances)
+    bool hadBatchedCells = false;
+    if (!StaticCellRenderBatches.empty() && !VisibleStaticRenderCells.empty())
     {
-        if (!IsBoundsVisibleToCamera(instance.Bounds, 1.0f))
+        std::vector<const StaticRenderBatch*> drawList;
+        for (const auto cell : VisibleStaticRenderCells)
         {
-            continue;
-        }
-        const auto* resource = instance.resource;
-        if (UseShader)
-        {
-            SetBaseWorld(instance.world);
-        } else
-        {
-            Device->SetTransform(D3DTS_WORLD, &instance.world);
-        }
-        if (resource != boundResource)
-        {
-            Device->SetStreamSource(0, resource->VertexBuffer, 0, sizeof(WorldVertex));
-            Device->SetIndices(resource->IndexBuffer);
-            boundResource = resource;
-            boundTexture = nullptr;
-        }
-        for (const auto& batch : resource->Batches)
-        {
-            if (batch.Texture != boundTexture)
+            const auto it = StaticCellRenderBatches.find(cell);
+            if (it == StaticCellRenderBatches.end())
             {
-                Device->SetTexture(0, batch.Texture);
-                boundTexture = batch.Texture;
+                continue;
             }
-            const UINT triangleCount = batch.IndexCount / 3;
-            Device->DrawIndexedPrimitive(
-            D3DPT_TRIANGLELIST,
-            0,
-            0,
-            resource->VertexCount,
-            batch.StartIndex,
-            triangleCount);
+            hadBatchedCells = true;
+            for (const auto& batch : it->second)
+            {
+                if (batch.VertexBuffer && batch.IndexBuffer && batch.VertexCount != 0 && batch.IndexCount >= 3 && IsBoundsVisibleToCamera(batch.Bounds, 1.0f))
+                {
+                    drawList.push_back(&batch);
+                }
+            }
+        }
+        std::sort(drawList.begin(), drawList.end(), [](const StaticRenderBatch* a, const StaticRenderBatch* b) { return std::less<IDirect3DTexture9*>{}(a->Texture, b->Texture); });
+        for (const auto* batch : drawList)
+        {
+            if (batch->Texture != boundTexture)
+            {
+                Device->SetTexture(0, batch->Texture);
+                boundTexture = batch->Texture;
+            }
+            Device->SetStreamSource(0, batch->VertexBuffer, 0, sizeof(WorldVertex));
+            Device->SetIndices(batch->IndexBuffer);
+            const UINT triangleCount = batch->IndexCount / 3;
+            Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, batch->VertexCount, 0, triangleCount);
             RecordWorldDraw(triangleCount, EGameWorldDrawBucket::StaticObjects);
+        }
+    }
+
+    if (!hadBatchedCells)
+    {
+        const StaticModelResource* boundResource = nullptr;
+        for (const auto& instance : StaticInstances)
+        {
+            if (!IsBoundsVisibleToCamera(instance.Bounds, 1.0f))
+            {
+                continue;
+            }
+            const auto* resource = instance.resource;
+            if (UseShader)
+            {
+                SetBaseWorld(instance.world);
+            }
+            else
+            {
+                Device->SetTransform(D3DTS_WORLD, &instance.world);
+            }
+            if (resource != boundResource)
+            {
+                Device->SetStreamSource(0, resource->VertexBuffer, 0, sizeof(WorldVertex));
+                Device->SetIndices(resource->IndexBuffer);
+                boundResource = resource;
+                boundTexture = nullptr;
+            }
+            for (const auto& batch : resource->Batches)
+            {
+                if (batch.Texture != boundTexture)
+                {
+                    Device->SetTexture(0, batch.Texture);
+                    boundTexture = batch.Texture;
+                }
+                const UINT triangleCount = batch.IndexCount / 3;
+                Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, resource->VertexCount, batch.StartIndex, triangleCount);
+                RecordWorldDraw(triangleCount, EGameWorldDrawBucket::StaticObjects);
+            }
         }
     }
     if (UseShader)
@@ -1483,90 +1658,219 @@ void FD3D9GameWorldScene::Impl::DrawStaticObjects()
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
 }
 
+void FD3D9GameWorldScene::Impl::ReleaseGrassBatches(std::vector<GrassRenderBatch>& Batches)
+{
+    for (auto& batch : Batches)
+    {
+        SafeRelease(batch.IndexBuffer);
+        SafeRelease(batch.VertexBuffer);
+    }
+    Batches.clear();
+}
+
+void FD3D9GameWorldScene::Impl::ClearGrassRenderBatches()
+{
+    ReleaseGrassBatches(GrassRenderBatches);
+    for (auto& [_, batches] : GrassCellRenderBatches)
+    {
+        ReleaseGrassBatches(batches);
+    }
+    GrassCellRenderBatches.clear();
+}
+
+void FD3D9GameWorldScene::Impl::BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances)
+{
+    auto& existing = GrassCellRenderBatches[CellKey];
+    ReleaseGrassBatches(existing);
+    if (!Device || Instances.empty())
+    {
+        GrassCellRenderBatches.erase(CellKey);
+        return;
+    }
+
+    struct AccumulatedGrassBatch
+    {
+        std::vector<WorldVertex> Vertices;
+        std::vector<uint32> Indices;
+        FBox3 Bounds = EmptyBounds();
+    };
+
+    std::unordered_map<IDirect3DTexture9*, AccumulatedGrassBatch> batchesByTexture;
+    for (const auto& instance : Instances)
+    {
+        const auto* resource = instance.resource;
+        if (!resource || resource->CpuVertices.empty() || resource->CpuIndices.empty())
+        {
+            continue;
+        }
+        const D3DMATRIX& world = instance.world;
+        const float ModelHeight = resource->Bounds.Max.Y - resource->Bounds.Min.Y;
+        const float InvModelHeight = ModelHeight > 0.0001f ? 1.0f / ModelHeight : 0.0f;
+        const float RootWorldY = resource->Bounds.Max.Y * world._22 + world._42;
+        for (const auto& sourceBatch : resource->Batches)
+        {
+            auto& output = batchesByTexture[sourceBatch.Texture];
+            const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
+            output.Vertices.reserve(output.Vertices.size() + resource->CpuVertices.size());
+            for (const auto& source : resource->CpuVertices)
+            {
+                WorldVertex vertex = source;
+                vertex.DetailU = std::clamp((resource->Bounds.Max.Y - source.Y) * InvModelHeight, 0.0f, 1.0f);
+                vertex.DetailV = RootWorldY;
+                vertex.X = source.X * world._11 + source.Y * world._21 + source.Z * world._31 + world._41;
+                vertex.Y = source.X * world._12 + source.Y * world._22 + source.Z * world._32 + world._42;
+                vertex.Z = source.X * world._13 + source.Y * world._23 + source.Z * world._33 + world._43;
+                vertex.NX = source.NX * world._11 + source.NY * world._21 + source.NZ * world._31;
+                vertex.NY = source.NX * world._12 + source.NY * world._22 + source.NZ * world._32;
+                vertex.NZ = source.NX * world._13 + source.NY * world._23 + source.NZ * world._33;
+                ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
+                output.Vertices.push_back(vertex);
+            }
+            const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
+            output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
+            for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < resource->CpuIndices.size(); ++index)
+            {
+                output.Indices.push_back(baseVertex + resource->CpuIndices[index]);
+            }
+        }
+    }
+
+    for (auto& [texture, source] : batchesByTexture)
+    {
+        if (source.Vertices.empty() || source.Indices.empty() || !BoundsInitialized(source.Bounds))
+        {
+            continue;
+        }
+        GrassRenderBatch batch;
+        batch.Texture = texture;
+        batch.Bounds = source.Bounds;
+        batch.VertexCount = static_cast<UINT>(source.Vertices.size());
+        batch.IndexCount = static_cast<UINT>(source.Indices.size());
+        const UINT VertexBytes = static_cast<UINT>(source.Vertices.size() * sizeof(WorldVertex));
+        const UINT IndexBytes = static_cast<UINT>(source.Indices.size() * sizeof(uint32));
+        HRESULT hr = Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &batch.VertexBuffer, nullptr);
+        if (FAILED(hr))
+        {
+            continue;
+        }
+        void* VertexData = nullptr;
+        hr = batch.VertexBuffer->Lock(0, VertexBytes, &VertexData, 0);
+        if (FAILED(hr))
+        {
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        CopyVectorBytes(VertexData, source.Vertices, VertexBytes);
+        batch.VertexBuffer->Unlock();
+
+        hr = Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_MANAGED, &batch.IndexBuffer, nullptr);
+        if (FAILED(hr))
+        {
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        void* IndexData = nullptr;
+        hr = batch.IndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
+        if (FAILED(hr))
+        {
+            SafeRelease(batch.IndexBuffer);
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        CopyVectorBytes(IndexData, source.Indices, IndexBytes);
+        batch.IndexBuffer->Unlock();
+        existing.push_back(batch);
+    }
+    if (existing.empty())
+    {
+        GrassCellRenderBatches.erase(CellKey);
+    }
+}
+
+void FD3D9GameWorldScene::Impl::BakeGrass()
+{
+    ClearGrassRenderBatches();
+    std::unordered_map<uint64, std::vector<GrassInstance>> byCell;
+    for (const auto& instance : GrassInstances)
+    {
+        const uint64 key = (static_cast<uint64>(static_cast<uint32>(instance.CellX)) << 32) | static_cast<uint32>(instance.CellZ);
+        byCell[key].push_back(instance);
+    }
+    for (const auto& [key, instances] : byCell)
+    {
+        BakeGrassCell(key, instances);
+    }
+}
+
 void FD3D9GameWorldScene::Impl::DrawGrass()
 {
+    if (GrassRenderBatches.empty() && GrassCellRenderBatches.empty())
+    {
+        return;
+    }
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
     Device->SetRenderState(D3DRS_ALPHAREF, 0x20);
     Device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
-    // Lit + textured via the base shader (consistent with terrain/objects).
-    // The wind is still the CPU coherent-wave approximation applied to each
-    // (VS 04_0x with gWindCircle/gMiniSinTable) needs grass geometry carrying
-    // per-vertex wind attributes (pivot/bend/phase/length), a separate task.
+
+    const auto world = IdentityMatrix();
     const bool UseShader = WorldShadersReady;
     if (UseShader)
     {
         BeginBaseShader();
         SetBaseLightConstants();
-    } else
+        SetBaseWorld(world);
+    }
+    else
     {
         Device->SetFVF(kWorldVertexFvf);
+        Device->SetTransform(D3DTS_WORLD, &world);
     }
-    const StaticModelResource* boundResource = nullptr;
+
     IDirect3DTexture9* boundTexture = nullptr;
-    const float GrassWindTime = ElapsedSeconds * Config.GrassWindSpeed;
-    const float GrassGustTime = GrassWindTime * 0.21f;
-    for (const auto& instance : GrassInstances)
+    auto drawBatch = [&](const GrassRenderBatch& batch)
     {
-        const auto* resource = instance.resource;
-        auto world = instance.world;
-        if (!IsPointVisibleToCamera(world._41, world._42, world._43, 4.0f))
+        if (!batch.VertexBuffer || !batch.IndexBuffer || batch.VertexCount == 0 || batch.IndexCount < 3)
         {
-            continue;
+            return;
         }
-        const float x = world._41;
-        const float y = world._42;
-        const float z = world._43;
-        world._41 = 0.0f;
-        world._42 = 0.0f;
-        world._43 = 0.0f;
-        if (Config.GrassQuality == 2)
+        if (BoundsInitialized(batch.Bounds) && !IsBoundsVisibleToCamera(batch.Bounds, Config.GrassSpacing * 2.0f))
         {
-            constexpr float kWindDirX = 0.70f;
-            constexpr float kWindDirZ = 0.71f;
-            constexpr float kSpatialFreq = 0.06f;
-            const float spatial = (x * kWindDirX + z * kWindDirZ) * kSpatialFreq;
-            const float gust = 0.55f + 0.45f * std::sin(GrassGustTime + spatial * 0.5f);
-            const float sway = std::sin(GrassWindTime - spatial + instance.WindPhase * 0.12f) * Config.GrassWindAmplitude * instance.WindScale * gust;
-            world = MultiplyMatrix(world, RotationZMatrix(sway));
+            return;
         }
-        world._41 = x;
-        world._42 = y;
-        world._43 = z;
-        if (UseShader)
+        if (batch.Texture != boundTexture)
         {
-            SetBaseWorld(world);
-        } else
-        {
-            Device->SetTransform(D3DTS_WORLD, &world);
+            Device->SetTexture(0, batch.Texture);
+            boundTexture = batch.Texture;
         }
-        if (resource != boundResource)
+        Device->SetStreamSource(0, batch.VertexBuffer, 0, sizeof(WorldVertex));
+        Device->SetIndices(batch.IndexBuffer);
+        const UINT triangleCount = batch.IndexCount / 3;
+        Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, batch.VertexCount, 0, triangleCount);
+        RecordWorldDraw(triangleCount, EGameWorldDrawBucket::Grass);
+    };
+    std::vector<const GrassRenderBatch*> drawList;
+    drawList.reserve(GrassRenderBatches.size() + GrassCellRenderBatches.size() * 2);
+    for (const auto& batch : GrassRenderBatches)
+    {
+        drawList.push_back(&batch);
+    }
+    for (const auto& [_, batches] : GrassCellRenderBatches)
+    {
+        for (const auto& batch : batches)
         {
-            Device->SetStreamSource(0, resource->VertexBuffer, 0, sizeof(WorldVertex));
-            Device->SetIndices(resource->IndexBuffer);
-            boundResource = resource;
-            boundTexture = nullptr;
-        }
-        for (const auto& batch : resource->Batches)
-        {
-            if (batch.Texture != boundTexture)
-            {
-                Device->SetTexture(0, batch.Texture);
-                boundTexture = batch.Texture;
-            }
-            const UINT triangleCount = batch.IndexCount / 3;
-            Device->DrawIndexedPrimitive(
-            D3DPT_TRIANGLELIST,
-            0,
-            0,
-            resource->VertexCount,
-            batch.StartIndex,
-            triangleCount);
-            RecordWorldDraw(triangleCount, EGameWorldDrawBucket::Grass);
+            drawList.push_back(&batch);
         }
     }
+    std::sort(drawList.begin(), drawList.end(), [](const GrassRenderBatch* a, const GrassRenderBatch* b) { return std::less<IDirect3DTexture9*>{}(a->Texture, b->Texture); });
+    for (const auto* batch : drawList)
+    {
+        drawBatch(*batch);
+    }
+
     if (UseShader)
     {
         EndBaseShader();
     }
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
 }
+

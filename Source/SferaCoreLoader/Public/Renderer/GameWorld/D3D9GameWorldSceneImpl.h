@@ -4,12 +4,7 @@
 #include "Renderer/D3D9GameWorldScene.h"
 #include "Renderer/GameWorld/GameWorldTypes.h"
 #include "Renderer/GameWorld/GameWorldSupport.h"
-#include <atomic>
-#include <deque>
-#include <exception>
 #include <memory>
-#include <mutex>
-#include <thread>
 
 enum class EGameWorldDrawBucket
 {
@@ -66,17 +61,14 @@ struct FD3D9GameWorldScene::Impl
     std::vector<StaticPlacement> StaticPlacements;
     std::vector<StaticInstance> StaticInstances;
     std::vector<std::size_t> VisibleStaticPlacementIndices;
-    std::vector<uint32> PendingStaticModelLoads;
-    std::thread StaticPlacementWorker;
-    std::atomic_bool StaticPlacementWorkerReady{false};
-    std::mutex StaticPlacementWorkerMutex;
-    std::unique_ptr<StaticPlacementLoadResult> StaticPlacementWorkerResult;
-    std::exception_ptr StaticPlacementWorkerException;
-    bool StaticPlacementWorkerStarted = false;
+    std::vector<uint64> VisibleStaticRenderCells;
+    std::unordered_map<uint64, std::vector<StaticRenderBatch>> StaticCellRenderBatches;
     bool StaticVisibilityPlanReady = false;
     float StaticVisibilityAnchorX = 0.0f;
     float StaticVisibilityAnchorZ = 0.0f;
     std::vector<GrassInstance> GrassInstances;
+    std::vector<GrassRenderBatch> GrassRenderBatches;
+    std::unordered_map<uint64, std::vector<GrassRenderBatch>> GrassCellRenderBatches;
     std::vector<WorldVertex> SkyVertices;
     std::vector<uint16> SkyIndices;
     std::unordered_map<int, std::vector<uint8>> GrassMaps;
@@ -87,6 +79,7 @@ struct FD3D9GameWorldScene::Impl
     std::vector<float> PlayerSkinScratch;
     std::vector<WorldVertex> PlayerVertexScratch;
     std::size_t PlayerAction = kPlayerIdleAction;
+    std::size_t PlayerLastSkinnedFrame = (std::numeric_limits<std::size_t>::max)();
     float PlayerAnimTime = 0.0f;
     int PlayerHeadBone = -1;
     bool PlayerEyeValid = false;
@@ -112,6 +105,10 @@ struct FD3D9GameWorldScene::Impl
     FVector3 CameraTarget{};
     int TerrainCenterRow = -1;
     int TerrainCenterColumn = -1;
+    int StreamingGuardRow = (std::numeric_limits<int>::min)();
+    int StreamingGuardColumn = (std::numeric_limits<int>::min)();
+    int StreamingGuardRowStep = (std::numeric_limits<int>::min)();
+    int StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
     int GrassCenterX = (std::numeric_limits<int>::min)();
     int GrassCenterZ = (std::numeric_limits<int>::min)();
     float GrassAnchorX = 0.0f;
@@ -134,15 +131,6 @@ struct FD3D9GameWorldScene::Impl
     int OverlayWidth = 0;
     int OverlayHeight = 0;
     bool Initialized = false;
-    bool TerrainStreamingPending = false;
-    bool DeferredGrassLoadPending = false;
-    bool DeferredStaticPlacementsPending = false;
-    bool DeferredStaticInstancesPending = false;
-    bool DeferredReflectionTargetPending = false;
-    bool WorldEntryLoadPending = false;
-    int WorldEntryLoadStage = 0;
-    FSkinnedCharacterModel PendingPlayerModel;
-    std::deque<std::wstring> TerrainGpuUploadQueue;
     mutable std::unordered_map<std::string, std::filesystem::path> OptionalPathCache;
     mutable std::unordered_map<std::string, std::optional<std::filesystem::path>> TerrainStemPathCache;
     mutable std::unordered_map<std::string, std::filesystem::path> ModelPathCache;
@@ -176,24 +164,28 @@ struct FD3D9GameWorldScene::Impl
         const std::string& MaterialName) const;
     IDirect3DTexture9* LoadCachedDdsTexture(const std::filesystem::path& Path);
     void LoadStaticPlacements();
-    void BeginStaticPlacementLoadAsync();
-    bool PollStaticPlacementLoad();
-    void JoinStaticPlacementWorker();
-    void ApplyStaticPlacementLoadResult(StaticPlacementLoadResult&& result);
     StaticModelResource* EnsureStaticModelResource(const std::string& ModelName);
     std::unique_ptr<StaticModelResource> LoadStaticModelResource(
         const std::string& ModelName,
         const std::filesystem::path& ModelPath);
-    bool LoadVisibleStaticObjects(int MaxNewModels = (std::numeric_limits<int>::max)());
     const std::vector<uint8>& LoadGrassMap(int ChunkX, int ChunkZ);
     uint8 GrassTypeAt(float WorldX, float WorldZ);
-    bool LoadVisibleGrass(int MaxNewCells = (std::numeric_limits<int>::max)());
+    void LoadVisibleStaticObjects();
+    void ReleaseStaticBatches(std::vector<StaticRenderBatch>& Batches);
+    void ClearStaticRenderBatches();
+    void BakeStaticRenderCell(uint64 CellKey);
+    void BuildVisibleStaticRenderBatches();
+    void PreloadStaticResourcesAround(float CenterX, float CenterZ, float Radius);
+    void LoadVisibleGrass();
+    void ReleaseGrassBatches(std::vector<GrassRenderBatch>& Batches);
+    void ClearGrassRenderBatches();
+    void BakeGrass();
+    void BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances);
     std::unique_ptr<TerrainResource> LoadTerrainResource(const std::filesystem::path& LNDPath);
-    void UploadWaterMesh(TerrainResource& resource);
-    bool UploadTerrainResourceStep(TerrainResource& resource);
-    bool PumpTerrainGpuUploads(int MaxSteps);
-    bool PumpWorldEntryLoad(std::wstring& error);
-    bool LoadVisibleTerrain(int MaxNewResources = (std::numeric_limits<int>::max)());
+    void LoadVisibleTerrain();
+    void PreloadTerrainForCenter(int CenterRow, int CenterColumn, int Radius);
+    void PreloadStreamingGuard();
+    void UploadWaterMesh(TerrainResource& resource, const std::vector<uint16>& indices);
     void LoadWorldShaders();
     void SetVsConst(const char* name, const float* data, int Vec4Count);
     void SetBaseLightConstants();

@@ -65,6 +65,17 @@ int TerrainTileCoord(float value, float tileSize)
     return static_cast<int>(std::floor(value / tileSize));
 }
 
+
+FBox3 TranslatedTerrainBounds(const TerrainInstance& instance)
+{
+    FBox3 bounds = instance.resource ? instance.resource->Bounds : FBox3{};
+    bounds.Min.X += instance.OriginX;
+    bounds.Max.X += instance.OriginX;
+    bounds.Min.Z += instance.OriginZ;
+    bounds.Max.Z += instance.OriginZ;
+    return bounds;
+}
+
 bool TerrainHeightAtInstance(const TerrainInstance& instance, float tileSize, float WorldX, float WorldZ, float ReferenceY, float& OutHeight)
 {
     if (!instance.resource)
@@ -291,11 +302,19 @@ std::shared_ptr<const TerrainCpuResource> BuildTerrainCpuResource(const std::fil
     }
     resource->Vertices.reserve(VertexCount);
     resource->Positions.reserve(VertexCount);
+    resource->Bounds.Min = FVector3{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    resource->Bounds.Max = FVector3{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
     for (std::size_t i = 0; i < VertexCount; ++i)
     {
         const std::size_t offset = kLndHeaderBytes + i * kLndVertexBytes;
         const auto normal = NormalizeVector(FVector3{Binary::F32LE(data, offset + 12), Binary::F32LE(data, offset + 16), Binary::F32LE(data, offset + 20)});
         WorldVertex vertex{Binary::F32LE(data, offset), Binary::F32LE(data, offset + 4), Binary::F32LE(data, offset + 8), normal.X, normal.Y, normal.Z, 0xffffffff, Binary::F32LE(data, offset + 24), Binary::F32LE(data, offset + 28), Binary::F32LE(data, offset + 32), Binary::F32LE(data, offset + 36)};
+        resource->Bounds.Min.X = (std::min)(resource->Bounds.Min.X, vertex.X);
+        resource->Bounds.Min.Y = (std::min)(resource->Bounds.Min.Y, vertex.Y);
+        resource->Bounds.Min.Z = (std::min)(resource->Bounds.Min.Z, vertex.Z);
+        resource->Bounds.Max.X = (std::max)(resource->Bounds.Max.X, vertex.X);
+        resource->Bounds.Max.Y = (std::max)(resource->Bounds.Max.Y, vertex.Y);
+        resource->Bounds.Max.Z = (std::max)(resource->Bounds.Max.Z, vertex.Z);
         resource->Positions.push_back(FVector3{vertex.X, vertex.Y, vertex.Z});
         resource->Vertices.push_back(vertex);
     }
@@ -344,7 +363,6 @@ std::unique_ptr<TerrainResource> FD3D9GameWorldScene::Impl::LoadTerrainResource(
     resource->TexturePath = cpu->TexturePath;
     resource->VertexCount = static_cast<UINT>(cpu->Vertices.size());
     resource->IndexCount = static_cast<UINT>(cpu->Indices.size());
-    resource->CpuVerts = cpu->Vertices;
     resource->positions = cpu->Positions;
     resource->Indices = cpu->Indices;
     resource->SurfaceGridResolution = cpu->SurfaceGridResolution;
@@ -354,15 +372,46 @@ std::unique_ptr<TerrainResource> FD3D9GameWorldScene::Impl::LoadTerrainResource(
     resource->WaterHeight = cpu->WaterHeight;
     resource->HasWater = cpu->HasWater;
     resource->WaterCpuVerts = cpu->WaterVertices;
-    resource->WaterCpuIndices = cpu->WaterIndices;
-    resource->GpuUploadStage = 0;
-    resource->GpuUploaded = false;
+    resource->Bounds = cpu->Bounds;
+    resource->texture = LoadCachedDdsTexture(resource->TexturePath);
+
+    const UINT VertexBytes = static_cast<UINT>(cpu->Vertices.size() * sizeof(WorldVertex));
+    HRESULT hr = Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &resource->VertexBuffer, nullptr);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error(HResultTextNarrow("CreateVertexBuffer terrain", hr));
+    }
+    void* VertexData = nullptr;
+    hr = resource->VertexBuffer->Lock(0, VertexBytes, &VertexData, 0);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error(HResultTextNarrow("TerrainVertexBuffer::Lock", hr));
+    }
+    CopyVectorBytes(VertexData, cpu->Vertices, VertexBytes);
+    resource->VertexBuffer->Unlock();
+
+    const UINT IndexBytes = static_cast<UINT>(cpu->Indices.size() * sizeof(uint16));
+    hr = Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &resource->IndexBuffer, nullptr);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error(HResultTextNarrow("CreateIndexBuffer terrain", hr));
+    }
+    void* IndexData = nullptr;
+    hr = resource->IndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
+    if (FAILED(hr))
+    {
+        throw std::runtime_error(HResultTextNarrow("TerrainIndexBuffer::Lock", hr));
+    }
+    CopyVectorBytes(IndexData, cpu->Indices, IndexBytes);
+    resource->IndexBuffer->Unlock();
+
+    UploadWaterMesh(*resource, cpu->WaterIndices);
     return resource;
 }
 
-void FD3D9GameWorldScene::Impl::UploadWaterMesh(TerrainResource& resource)
+void FD3D9GameWorldScene::Impl::UploadWaterMesh(TerrainResource& resource, const std::vector<uint16>& indices)
 {
-    if (resource.WaterCpuVerts.empty() || resource.WaterCpuIndices.empty())
+    if (resource.WaterCpuVerts.empty() || indices.empty())
     {
         return;
     }
@@ -376,107 +425,19 @@ void FD3D9GameWorldScene::Impl::UploadWaterMesh(TerrainResource& resource)
             resource.WaterVertexBuffer->Unlock();
         }
     }
-    const UINT ibytes = static_cast<UINT>(resource.WaterCpuIndices.size() * sizeof(uint16));
+    const UINT ibytes = static_cast<UINT>(indices.size() * sizeof(uint16));
     if (SUCCEEDED(Device->CreateIndexBuffer(ibytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &resource.WaterIndexBuffer, nullptr)))
     {
         void* p = nullptr;
         if (SUCCEEDED(resource.WaterIndexBuffer->Lock(0, ibytes, &p, 0)))
         {
-            CopyVectorBytes(p, resource.WaterCpuIndices, ibytes);
+            CopyVectorBytes(p, indices, ibytes);
             resource.WaterIndexBuffer->Unlock();
         }
     }
 }
 
-
-bool FD3D9GameWorldScene::Impl::UploadTerrainResourceStep(TerrainResource& resource)
-{
-    if (resource.GpuUploaded)
-    {
-        return true;
-    }
-    if (resource.GpuUploadStage == 0)
-    {
-        if (!resource.texture)
-        {
-            resource.texture = LoadCachedDdsTexture(resource.TexturePath);
-        }
-        resource.GpuUploadStage = 1;
-        return false;
-    }
-    if (resource.GpuUploadStage == 1)
-    {
-        const UINT VertexBytes = static_cast<UINT>(resource.CpuVerts.size() * sizeof(WorldVertex));
-        HRESULT hr = Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &resource.VertexBuffer, nullptr);
-        if (FAILED(hr))
-        {
-            throw std::runtime_error(HResultTextNarrow("CreateVertexBuffer terrain", hr));
-        }
-        void* VertexData = nullptr;
-        hr = resource.VertexBuffer->Lock(0, VertexBytes, &VertexData, 0);
-        if (FAILED(hr))
-        {
-            throw std::runtime_error(HResultTextNarrow("TerrainVertexBuffer::Lock", hr));
-        }
-        CopyVectorBytes(VertexData, resource.CpuVerts, VertexBytes);
-        resource.VertexBuffer->Unlock();
-        resource.GpuUploadStage = 2;
-        return false;
-    }
-    if (resource.GpuUploadStage == 2)
-    {
-        const UINT IndexBytes = static_cast<UINT>(resource.Indices.size() * sizeof(uint16));
-        HRESULT hr = Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &resource.IndexBuffer, nullptr);
-        if (FAILED(hr))
-        {
-            throw std::runtime_error(HResultTextNarrow("CreateIndexBuffer terrain", hr));
-        }
-        void* IndexData = nullptr;
-        hr = resource.IndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
-        if (FAILED(hr))
-        {
-            throw std::runtime_error(HResultTextNarrow("TerrainIndexBuffer::Lock", hr));
-        }
-        CopyVectorBytes(IndexData, resource.Indices, IndexBytes);
-        resource.IndexBuffer->Unlock();
-        resource.GpuUploadStage = 3;
-        return false;
-    }
-    if (resource.GpuUploadStage == 3)
-    {
-        UploadWaterMesh(resource);
-        resource.CpuVerts.clear();
-        resource.CpuVerts.shrink_to_fit();
-        resource.GpuUploadStage = 4;
-        resource.GpuUploaded = true;
-        return true;
-    }
-    resource.GpuUploaded = true;
-    return true;
-}
-
-bool FD3D9GameWorldScene::Impl::PumpTerrainGpuUploads(int MaxSteps)
-{
-    int steps = 0;
-    while (steps < MaxSteps && !TerrainGpuUploadQueue.empty())
-    {
-        const auto key = TerrainGpuUploadQueue.front();
-        auto it = TerrainResources.find(key);
-        if (it == TerrainResources.end())
-        {
-            TerrainGpuUploadQueue.pop_front();
-            continue;
-        }
-        if (UploadTerrainResourceStep(*it->second))
-        {
-            TerrainGpuUploadQueue.pop_front();
-        }
-        ++steps;
-    }
-    return TerrainGpuUploadQueue.empty();
-}
-
-bool FD3D9GameWorldScene::Impl::LoadVisibleTerrain(int MaxNewResources)
+void FD3D9GameWorldScene::Impl::LoadVisibleTerrain()
 {
     if (!WorldScene || !WorldScene->Map().Loaded)
     {
@@ -523,9 +484,6 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleTerrain(int MaxNewResources)
     TerrainInstances.clear();
     TerrainInstanceLookup.clear();
     TerrainInstanceLookup.reserve(candidates.size());
-    int LoadedThisCall = 0;
-    bool Complete = true;
-
     for (const auto& candidate : candidates)
     {
         const FWorldMapCell* cell = map.Find(candidate.Column, candidate.Row);
@@ -543,21 +501,9 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleTerrain(int MaxNewResources)
 
             if (it == TerrainResources.end())
             {
-                if (LoadedThisCall >= MaxNewResources)
-                {
-                    Complete = false;
-                    continue;
-                }
                 it = TerrainResources.emplace(key, LoadTerrainResource(LNDPath)).first;
-                TerrainGpuUploadQueue.push_back(key);
-                Complete = false;
-                ++LoadedThisCall;
             }
 
-            if (!it->second->GpuUploaded)
-            {
-                Complete = false;
-            }
             TerrainInstance instance{it->second.get(), static_cast<float>(candidate.Row - Config.OriginRow) * Config.TileSize, static_cast<float>(Config.OriginColumn - candidate.Column) * Config.TileSize};
             TerrainInstances.push_back(instance);
             TerrainInstanceLookup.emplace(TerrainTileKey(candidate.Row - Config.OriginRow, Config.OriginColumn - candidate.Column), instance);
@@ -578,7 +524,104 @@ bool FD3D9GameWorldScene::Impl::LoadVisibleTerrain(int MaxNewResources)
 
     TerrainCenterRow = CenterRow;
     TerrainCenterColumn = CenterColumn;
-    return Complete && TerrainGpuUploadQueue.empty();
+}
+
+void FD3D9GameWorldScene::Impl::PreloadTerrainForCenter(int CenterRow, int CenterColumn, int Radius)
+{
+    if (!WorldScene || !WorldScene->Map().Loaded || Radius < 0)
+    {
+        return;
+    }
+    const FWorldMapGrid& map = WorldScene->Map();
+    for (int row = CenterRow - Radius; row <= CenterRow + Radius; ++row)
+    {
+        for (int column = CenterColumn - Radius; column <= CenterColumn + Radius; ++column)
+        {
+            if (row < 0 || column < 0 || static_cast<uint32>(row) >= map.Height || static_cast<uint32>(column) >= map.Width)
+            {
+                continue;
+            }
+            const FWorldMapCell* cell = map.Find(column, row);
+            if (!cell || !cell->Present)
+            {
+                continue;
+            }
+            try
+            {
+                const auto LNDPath = ResolveTerrainPath(*cell);
+                const auto key = LNDPath.wstring();
+                if (TerrainResources.find(key) == TerrainResources.end())
+                {
+                    TerrainResources.emplace(key, LoadTerrainResource(LNDPath));
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                if (Logger)
+                {
+                    Logger->Warning("terrain guard preload skipped " + std::to_string(column) + "," + std::to_string(row) + ": " + ex.what());
+                }
+            }
+        }
+    }
+}
+
+void FD3D9GameWorldScene::Impl::PreloadStreamingGuard()
+{
+    if (!WorldScene || !WorldScene->Map().Loaded || Config.TileSize <= 0.0f)
+    {
+        return;
+    }
+    const int CenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
+    const int CenterColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
+    const int TileX = static_cast<int>(std::floor(SpawnX / Config.TileSize));
+    const int TileZ = static_cast<int>(std::floor(SpawnZ / Config.TileSize));
+    const float LocalX = SpawnX - static_cast<float>(TileX) * Config.TileSize;
+    const float LocalZ = SpawnZ - static_cast<float>(TileZ) * Config.TileSize;
+    const float Low = Config.TileSize * 0.35f;
+    const float High = Config.TileSize * 0.65f;
+    int RowStep = 0;
+    int ColumnStep = 0;
+    if (LocalX >= High || VelocityX > Config.WalkSpeed * 0.75f)
+    {
+        RowStep = 1;
+    }
+    else if (LocalX <= Low || VelocityX < -Config.WalkSpeed * 0.75f)
+    {
+        RowStep = -1;
+    }
+    if (LocalZ >= High || VelocityZ > Config.WalkSpeed * 0.75f)
+    {
+        ColumnStep = -1;
+    }
+    else if (LocalZ <= Low || VelocityZ < -Config.WalkSpeed * 0.75f)
+    {
+        ColumnStep = 1;
+    }
+    if (CenterRow == StreamingGuardRow && CenterColumn == StreamingGuardColumn && RowStep == StreamingGuardRowStep && ColumnStep == StreamingGuardColumnStep)
+    {
+        return;
+    }
+    StreamingGuardRow = CenterRow;
+    StreamingGuardColumn = CenterColumn;
+    StreamingGuardRowStep = RowStep;
+    StreamingGuardColumnStep = ColumnStep;
+    const int GuardRadius = Config.VisibleRadius + 1;
+    PreloadTerrainForCenter(CenterRow, CenterColumn, GuardRadius);
+    if (RowStep != 0)
+    {
+        PreloadTerrainForCenter(CenterRow + RowStep, CenterColumn, GuardRadius);
+    }
+    if (ColumnStep != 0)
+    {
+        PreloadTerrainForCenter(CenterRow, CenterColumn + ColumnStep, GuardRadius);
+    }
+    if (RowStep != 0 && ColumnStep != 0)
+    {
+        PreloadTerrainForCenter(CenterRow + RowStep, CenterColumn + ColumnStep, GuardRadius);
+    }
+    const float StaticGuardRadius = Config.StaticObjectRadius + Config.TileSize;
+    PreloadStaticResourcesAround(SpawnX, SpawnZ, StaticGuardRadius);
 }
 
 void FD3D9GameWorldScene::PrewarmCpuCaches(const FResourceManager& resources, const FWorldScene& world, const FGameWorldConfig& config, float spawnX, float spawnZ, FLogger* logger)
@@ -770,7 +813,11 @@ void FD3D9GameWorldScene::Impl::DrawTerrain()
     for (const auto& instance : TerrainInstances)
     {
         const auto* resource = instance.resource;
-        if (!resource || !resource->GpuUploaded || !resource->VertexBuffer || !resource->IndexBuffer)
+        if (!resource || !resource->VertexBuffer || !resource->IndexBuffer)
+        {
+            continue;
+        }
+        if (!IsBoundsVisibleToCamera(TranslatedTerrainBounds(instance), Config.TileSize * 0.1f))
         {
             continue;
         }
@@ -840,7 +887,7 @@ float FD3D9GameWorldScene::Impl::WaterReflectCoeff() const
 
 void FD3D9GameWorldScene::Impl::RenderReflection()
 {
-    if (Config.WaterReflectionEnabled == 0 || !ReflectionSurface || !ReflectionDepth)
+    if (Config.WaterReflectionEnabled == 0 || !ReflectionSurface || !ReflectionDepth || WaterReflectCoeff() <= 0.01f)
     {
         return;
     }
@@ -921,7 +968,7 @@ void FD3D9GameWorldScene::Impl::DrawWater()
     bool any = false;
     for (const auto& instance : TerrainInstances)
     {
-        if (instance.resource && instance.resource->GpuUploaded && instance.resource->WaterIndexCount > 0 && instance.resource->WaterVertexBuffer && instance.resource->WaterIndexBuffer)
+        if (instance.resource && instance.resource->WaterIndexCount > 0 && instance.resource->WaterVertexBuffer && instance.resource->WaterIndexBuffer && IsBoundsVisibleToCamera(TranslatedTerrainBounds(instance), Config.TileSize * 0.1f))
         {
             any = true;
             break;
@@ -948,8 +995,9 @@ void FD3D9GameWorldScene::Impl::DrawWater()
     // to swing as the camera turns — so fall back to the flat texture there.
     // Reflection is gated only by the REFLQUAL graphics option (native:
     // FUN_0046a070 does the reflection pass when 0 < DAT_04f49a9c) + a IsValid RT.
+    const float ReflectionCoeff = WaterReflectCoeff();
     const bool UseReflection =
-    Config.WaterReflectionEnabled != 0 && ReflectionTexture != nullptr && ReflectionTextureReady;
+    Config.WaterReflectionEnabled != 0 && ReflectionTexture != nullptr && ReflectionTextureReady && ReflectionCoeff > 0.01f;
     if (UseReflection)
     {
         // Project the planar-reflection RT onto the surface: texcoord = the
@@ -972,7 +1020,7 @@ void FD3D9GameWorldScene::Impl::DrawWater()
         // coefficient (decoded FUN_004db5e0): result = k*reflection + (1-k)*base.
         // Base colour = the environment sky/clear colour (data-driven, Sky.txt) —
         // a stand-in for the native Fresnel gradient until step 4 (the shader).
-        const int k = std::clamp(static_cast<int>(WaterReflectCoeff() * 255.0f + 0.5f), 0, 255);
+        const int k = std::clamp(static_cast<int>(ReflectionCoeff * 255.0f + 0.5f), 0, 255);
         Device->SetTextureStageState(0, D3DTSS_CONSTANT,
         D3DCOLOR_ARGB(k, EnvironmentClearRed, EnvironmentClearGreen, EnvironmentClearBlue));
         Device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_LERP);
@@ -996,7 +1044,11 @@ void FD3D9GameWorldScene::Impl::DrawWater()
     for (const auto& instance : TerrainInstances)
     {
         auto* resource = instance.resource;
-        if (!resource || !resource->GpuUploaded || resource->WaterIndexCount == 0 || !resource->WaterVertexBuffer || !resource->WaterIndexBuffer)
+        if (!resource || resource->WaterIndexCount == 0 || !resource->WaterVertexBuffer || !resource->WaterIndexBuffer)
+        {
+            continue;
+        }
+        if (!IsBoundsVisibleToCamera(TranslatedTerrainBounds(instance), Config.TileSize * 0.1f))
         {
             continue;
         }

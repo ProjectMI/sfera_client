@@ -86,6 +86,7 @@ struct TerrainCpuResource
     std::vector<std::vector<uint32>> SurfaceCells;
     std::vector<WorldVertex> WaterVertices;
     std::vector<uint16> WaterIndices;
+    FBox3 Bounds{};
     float WaterHeight = 0.0f;
     bool HasWater = false;
 };
@@ -99,7 +100,6 @@ struct TerrainResource
     IDirect3DTexture9* texture = nullptr;
     UINT VertexCount = 0;
     UINT IndexCount = 0;
-    std::vector<WorldVertex> CpuVerts;
     std::vector<FVector3> positions;
     std::vector<uint16> Indices;
     int SurfaceGridResolution = 0;
@@ -111,9 +111,7 @@ struct TerrainResource
     float WaterHeight = 0.0f;
     bool HasWater = false;
     std::vector<WorldVertex> WaterCpuVerts;
-    std::vector<uint16> WaterCpuIndices;
-    int GpuUploadStage = 0;
-    bool GpuUploaded = false;
+    FBox3 Bounds{};
 };
 
 struct TerrainInstance
@@ -131,7 +129,29 @@ struct StaticModelResource
     std::vector<FSceneBatch> Batches;
     std::vector<FVector3> CollisionPositions;
     std::vector<uint16> CollisionIndices;
+    std::vector<WorldVertex> CpuVertices;
+    std::vector<uint16> CpuIndices;
     FBox3 Bounds;
+};
+
+struct GrassRenderBatch
+{
+    IDirect3DTexture9* Texture = nullptr;
+    IDirect3DVertexBuffer9* VertexBuffer = nullptr;
+    IDirect3DIndexBuffer9* IndexBuffer = nullptr;
+    UINT VertexCount = 0;
+    UINT IndexCount = 0;
+    FBox3 Bounds{};
+};
+
+struct StaticRenderBatch
+{
+    IDirect3DTexture9* Texture = nullptr;
+    IDirect3DVertexBuffer9* VertexBuffer = nullptr;
+    IDirect3DIndexBuffer9* IndexBuffer = nullptr;
+    UINT VertexCount = 0;
+    UINT IndexCount = 0;
+    FBox3 Bounds{};
 };
 
 struct StaticPlacementModel

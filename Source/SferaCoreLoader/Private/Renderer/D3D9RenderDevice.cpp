@@ -1058,15 +1058,6 @@ void FD3D9RenderDevice::DrawRenderStatsOverlay(FDrawContext& ctx, const RECT& cl
     {
         lines.push_back("DRW " + std::to_string(worldStats->DrawCalls) + "  TRI " + FormatCompactCount(worldStats->Triangles));
         lines.push_back("T " + std::to_string(worldStats->TerrainInstances) + "/" + std::to_string(worldStats->TerrainResources) + "  S " + std::to_string(worldStats->StaticInstances) + "  G " + std::to_string(worldStats->GrassInstances));
-        if (worldStats->WorldEntryLoadPending || worldStats->TerrainStreamingPending || worldStats->DeferredStaticPending || worldStats->DeferredGrassPending)
-        {
-            std::string load = "LOAD ";
-            load += worldStats->WorldEntryLoadPending ? "entry " : "";
-            load += worldStats->TerrainStreamingPending ? "terrain " : "";
-            load += worldStats->DeferredStaticPending ? "static " : "";
-            load += worldStats->DeferredGrassPending ? "grass" : "";
-            lines.push_back(load);
-        }
     }
     const float scale = std::max(0.75f, ctx.Scale);
     const float margin = 10.0f * scale;

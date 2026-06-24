@@ -39,10 +39,6 @@ struct FD3D9GameWorldRenderStats
     size_t GrassInstances = 0;
     size_t GrassMaps = 0;
     size_t GrassCells = 0;
-    bool WorldEntryLoadPending = false;
-    bool TerrainStreamingPending = false;
-    bool DeferredStaticPending = false;
-    bool DeferredGrassPending = false;
 };
 
 class FD3D9GameWorldScene

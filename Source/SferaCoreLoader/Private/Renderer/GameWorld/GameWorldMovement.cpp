@@ -154,88 +154,6 @@ void FD3D9GameWorldScene::Impl::UpdateVertical(float DeltaSeconds)
     }
 }
 
-bool FD3D9GameWorldScene::Impl::PumpWorldEntryLoad(std::wstring& error)
-{
-    if (!WorldEntryLoadPending)
-    {
-        return false;
-    }
-    try
-    {
-        if (WorldEntryLoadStage == 0)
-        {
-            LoadWorldShaders();
-            WorldEntryLoadStage = 1;
-            return true;
-        }
-        if (WorldEntryLoadStage == 1)
-        {
-            TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(Config.TerrainMicrotexture));
-            WorldEntryLoadStage = 2;
-            return true;
-        }
-        if (WorldEntryLoadStage == 2)
-        {
-            SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(Config.SkyTexture));
-            WorldEntryLoadStage = 3;
-            return true;
-        }
-        if (WorldEntryLoadStage == 3)
-        {
-            const auto WaterPath = ResolveOptionalPath("landscape/river1a_00.dds");
-            if (!WaterPath.empty())
-            {
-                WaterTexture = LoadCachedDdsTexture(WaterPath);
-            }
-            WorldEntryLoadStage = 4;
-            return true;
-        }
-        if (WorldEntryLoadStage == 4)
-        {
-            TerrainStreamingPending = !LoadVisibleTerrain((std::max)(1, Config.TerrainInitialLoadBudget));
-            WorldEntryLoadStage = 5;
-            return true;
-        }
-        if (WorldEntryLoadStage == 5)
-        {
-            SnapToGround();
-            WorldEntryLoadStage = 6;
-            return true;
-        }
-        if (WorldEntryLoadStage == 6)
-        {
-            if (PendingPlayerModel.IsValid())
-            {
-                LoadPlayerModel(PendingPlayerModel);
-                PendingPlayerModel = FSkinnedCharacterModel{};
-            }
-            WorldEntryLoadStage = 7;
-            return true;
-        }
-        if (WorldEntryLoadStage == 7)
-        {
-            if (!PumpTerrainGpuUploads(1))
-            {
-                return true;
-            }
-            WorldEntryLoadStage = 8;
-            return true;
-        }
-        DeferredGrassLoadPending = Config.GrassQuality > 0;
-        DeferredStaticPlacementsPending = true;
-        DeferredStaticInstancesPending = false;
-        DeferredReflectionTargetPending = true;
-        WorldEntryLoadPending = false;
-        return false;
-    }
-    catch (const std::exception& ex)
-    {
-        WorldEntryLoadPending = false;
-        AssignError(error, std::string("game world entry load failed: ") + ex.what());
-        return false;
-    }
-}
-
 bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementInput& input, std::wstring& error)
 {
     if (!Initialized)
@@ -245,93 +163,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     }
     ElapsedSeconds += (std::max)(0.0f, DeltaSeconds);
     SetGameTime(GameTimeFraction + (std::max)(0.0f, DeltaSeconds) * 12.0f / 86400.0f);
-    if (PumpWorldEntryLoad(error))
-    {
-        return error.empty();
-    }
-    if (!error.empty())
-    {
-        return false;
-    }
-    if (!PumpTerrainGpuUploads(1))
-    {
-        return true;
-    }
-    if (TerrainStreamingPending)
-    {
-        try
-        {
-            TerrainStreamingPending = !LoadVisibleTerrain((std::max)(1, Config.TerrainStreamLoadBudget));
-            PumpTerrainGpuUploads(1);
-        }
-        catch (const std::exception& ex)
-        {
-            TerrainStreamingPending = false;
-            if (Logger)
-            {
-                Logger->Warning(std::string("deferred terrain stream failed: ") + ex.what());
-            }
-        }
-    }
-    else if (DeferredStaticPlacementsPending)
-    {
-        try
-        {
-            if (!StaticPlacementWorkerStarted)
-            {
-                BeginStaticPlacementLoadAsync();
-            }
-            if (PollStaticPlacementLoad())
-            {
-                DeferredStaticPlacementsPending = false;
-                DeferredStaticInstancesPending = true;
-            }
-        }
-        catch (const std::exception& ex)
-        {
-            DeferredStaticPlacementsPending = false;
-            JoinStaticPlacementWorker();
-            if (Logger)
-            {
-                Logger->Warning(std::string("deferred static placement load failed: ") + ex.what());
-            }
-        }
-    }
-    else if (DeferredStaticInstancesPending)
-    {
-        try
-        {
-            DeferredStaticInstancesPending = !LoadVisibleStaticObjects((std::max)(1, Config.StaticStreamModelBudget));
-        }
-        catch (const std::exception& ex)
-        {
-            DeferredStaticInstancesPending = false;
-            if (Logger)
-            {
-                Logger->Warning(std::string("deferred static object load failed: ") + ex.what());
-            }
-        }
-    }
-    else if (DeferredGrassLoadPending)
-    {
-        try
-        {
-            DeferredGrassLoadPending = !LoadVisibleGrass((std::numeric_limits<int>::max)());
-        }
-        catch (const std::exception& ex)
-        {
-            DeferredGrassLoadPending = false;
-            if (Logger)
-            {
-                Logger->Warning(std::string("deferred grass load failed: ") + ex.what());
-            }
-        }
-    }
-    else if (DeferredReflectionTargetPending)
-    {
-        CreateReflectionTarget();
-        DeferredReflectionTargetPending = false;
-    }
     const float Forward = (input.Forward ? 1.0f : 0.0f) - (input.Backward ? 1.0f : 0.0f);
     const float right = (input.StrafeRight ? 1.0f : 0.0f) - (input.StrafeLeft ? 1.0f : 0.0f);
     const float InputLength = std::sqrt(Forward * Forward + right * right);
@@ -404,10 +235,12 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     {
         try
         {
-            TerrainStreamingPending = !LoadVisibleTerrain((std::max)(1, Config.TerrainStreamLoadBudget));
-            PumpTerrainGpuUploads(1);
-            DeferredStaticInstancesPending = true;
-            DeferredGrassLoadPending = Config.GrassQuality > 0;
+            LoadVisibleTerrain();
+            LoadVisibleStaticObjects();
+            if (Config.GrassQuality > 0)
+            {
+                LoadVisibleGrass();
+            }
         } catch (const std::exception& ex)
         {
             AssignError(error, std::string("game world terrain update failed: ") + ex.what());
@@ -423,16 +256,16 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     {
         try
         {
-            DeferredGrassLoadPending = !LoadVisibleGrass((std::numeric_limits<int>::max)());
+            LoadVisibleGrass();
         } catch (const std::exception& ex)
         {
-            DeferredGrassLoadPending = false;
             if (Logger)
             {
                 Logger->Warning(std::string("game world grass update skipped: ") + ex.what());
             }
         }
     }
+    PreloadStreamingGuard();
     return true;
 }
 

@@ -24,7 +24,6 @@ FD3D9GameWorldScene::Impl::~Impl()
 
 void FD3D9GameWorldScene::Impl::Release()
 {
-    JoinStaticPlacementWorker();
     SafeRelease(OverlayTexture);
     SafeRelease(TerrainMicrotexture);
     SafeRelease(SkyTexture);
@@ -64,11 +63,13 @@ void FD3D9GameWorldScene::Impl::Release()
         SafeRelease(resource->IndexBuffer);
         SafeRelease(resource->VertexBuffer);
     }
+    ClearStaticRenderBatches();
     for (auto& [_, texture] : DdsTextureCache)
     {
         SafeRelease(texture);
     }
     DdsTextureCache.clear();
+    ClearGrassRenderBatches();
     GrassInstances.clear();
     GrassCells.clear();
     GrassMaps.clear();
@@ -76,13 +77,16 @@ void FD3D9GameWorldScene::Impl::Release()
     StaticPlacementModels.clear();
     StaticPlacements.clear();
     VisibleStaticPlacementIndices.clear();
-    PendingStaticModelLoads.clear();
+    VisibleStaticRenderCells.clear();
     StaticVisibilityPlanReady = false;
     StaticResources.clear();
     TerrainInstances.clear();
     TerrainInstanceLookup.clear();
     TerrainResources.clear();
-    TerrainGpuUploadQueue.clear();
+    StreamingGuardRow = (std::numeric_limits<int>::min)();
+    StreamingGuardColumn = (std::numeric_limits<int>::min)();
+    StreamingGuardRowStep = (std::numeric_limits<int>::min)();
+    StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
     OptionalPathCache.clear();
     TerrainStemPathCache.clear();
     ModelPathCache.clear();
@@ -92,14 +96,6 @@ void FD3D9GameWorldScene::Impl::Release()
     SafeRelease(Device);
     SafeRelease(D3D);
     Initialized = false;
-    TerrainStreamingPending = false;
-    DeferredGrassLoadPending = false;
-    DeferredStaticPlacementsPending = false;
-    DeferredStaticInstancesPending = false;
-    DeferredReflectionTargetPending = false;
-    WorldEntryLoadPending = false;
-    WorldEntryLoadStage = 0;
-    PendingPlayerModel = FSkinnedCharacterModel{};
 }
 
 
@@ -510,21 +506,29 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     FillPresentParameters();
     try
     {
+        LoadWorldShaders();
+        TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(Config.TerrainMicrotexture));
+        SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(Config.SkyTexture));
+        const auto WaterPath = ResolveOptionalPath("landscape/river1a_00.dds");
+        if (!WaterPath.empty())
+        {
+            WaterTexture = LoadCachedDdsTexture(WaterPath);
+        }
+        LoadVisibleTerrain();
+        SnapToGround();
+        LoadStaticPlacements();
+        LoadVisibleStaticObjects();
+        LoadVisibleGrass();
+        PreloadStreamingGuard();
         if (PlayerModelIn && PlayerModelIn->IsValid())
         {
-            PendingPlayerModel = *PlayerModelIn;
+            LoadPlayerModel(*PlayerModelIn);
         }
-        WorldEntryLoadPending = true;
-        WorldEntryLoadStage = 0;
-        TerrainStreamingPending = false;
-        DeferredGrassLoadPending = false;
-        DeferredStaticPlacementsPending = false;
-        DeferredStaticInstancesPending = false;
-        DeferredReflectionTargetPending = false;
+        CreateReflectionTarget();
     }
     catch (const std::exception& ex)
     {
-        AssignError(error, std::string("game world prepare failed: ") + ex.what());
+        AssignError(error, std::string("game world load failed: ") + ex.what());
         return false;
     }
     ConfigureRenderState();
@@ -604,7 +608,7 @@ bool FD3D9GameWorldScene::Impl::SetGrassQuality(int quality, std::wstring& error
     GrassAnchorValid = false;
     try
     {
-        DeferredGrassLoadPending = !LoadVisibleGrass((std::numeric_limits<int>::max)());
+        LoadVisibleGrass();
         return true;
     }
     catch (const std::exception& ex)

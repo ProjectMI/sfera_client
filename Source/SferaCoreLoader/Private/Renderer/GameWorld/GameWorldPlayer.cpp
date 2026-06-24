@@ -18,6 +18,10 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
     const std::size_t LocalFrame =
     static_cast<std::size_t>(PlayerAnimTime / kPlayerAnimSecondsPerFrame) % ActionFrames;
     const std::size_t frame = ActionStart + LocalFrame;
+    if (frame == PlayerLastSkinnedFrame && !PlayerVertexScratch.empty())
+    {
+        return;
+    }
 
     try
     {
@@ -71,6 +75,7 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
         PlayerEyeValid = true;
         PlayerEyeInitialized = true;
     }
+    PlayerLastSkinnedFrame = frame;
 }
 
 void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& model)
@@ -86,6 +91,7 @@ void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& mo
         PlayerHeadBone = PlayerModel.BoneIndex("head");
     }
     PlayerAction = kPlayerIdleAction;
+    PlayerLastSkinnedFrame = (std::numeric_limits<std::size_t>::max)();
     PlayerAnimTime = 0.0f;
 
     for (const auto& source : PlayerModel.Batches)

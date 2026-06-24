@@ -576,10 +576,6 @@ void FD3D9GameWorldScene::Impl::ResetRenderStats()
     LastRenderStats.GrassInstances = GrassInstances.size();
     LastRenderStats.GrassMaps = GrassMaps.size();
     LastRenderStats.GrassCells = GrassCells.size();
-    LastRenderStats.WorldEntryLoadPending = WorldEntryLoadPending;
-    LastRenderStats.TerrainStreamingPending = TerrainStreamingPending;
-    LastRenderStats.DeferredStaticPending = DeferredStaticPlacementsPending || DeferredStaticInstancesPending || StaticPlacementWorkerStarted;
-    LastRenderStats.DeferredGrassPending = DeferredGrassLoadPending;
 }
 
 void FD3D9GameWorldScene::Impl::RecordWorldDraw(uint32 triangles, EGameWorldDrawBucket bucket)
@@ -627,20 +623,14 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     }
     UpdateViewProjection();
     ResetRenderStats();
-    const bool ReflectionBusy = WorldEntryLoadPending || TerrainStreamingPending || DeferredStaticPlacementsPending || DeferredStaticInstancesPending || DeferredReflectionTargetPending || StaticPlacementWorkerStarted;
-    if (ReflectionBusy)
-    {
-        ReflectionWarmupFrames = (std::max)(ReflectionWarmupFrames, 2);
-        ReflectionUpdateCountdown = 0;
-    }
-    else if (ReflectionWarmupFrames > 0)
+    if (ReflectionWarmupFrames > 0)
     {
         --ReflectionWarmupFrames;
     }
     else if (ReflectionUpdateCountdown <= 0)
     {
         RenderReflection();
-        ReflectionUpdateCountdown = ReflectionTextureReady ? 3 : 0;
+        ReflectionUpdateCountdown = ReflectionTextureReady ? 7 : 0;
     }
     else
     {
@@ -649,11 +639,7 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(EnvironmentClearRed, EnvironmentClearGreen, EnvironmentClearBlue), 1.0f, 0);
     DrawSky();
     DrawTerrain();
-    const bool SuppressGrassUntilFirstBuild = WorldEntryLoadPending && GrassInstances.empty();
-    if (!SuppressGrassUntilFirstBuild)
-    {
-        DrawGrass();
-    }
+    DrawGrass();
     DrawStaticObjects();
     DrawPlayer();
     DrawWater();

@@ -144,7 +144,6 @@ void FD3D9GameWorldScene::Impl::UpdateVertical(float DeltaSeconds)
 
 bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementInput& input, std::wstring& error)
 {
-    FScopedDurationLog UpdateProbe(Logger, "gameworld.Update", 10.0, "pos=(" + FormatDurationLogValue(SpawnX) + "," + FormatDurationLogValue(SpawnZ) + ") delta=" + FormatDurationLogValue(static_cast<double>(DeltaSeconds) * 1000.0));
     if (!Initialized)
     {
         error = L"game world scene is not initialized";
@@ -158,11 +157,9 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const bool moving = InputLength > 0.0001f && DeltaSeconds > 0.0f;
     UpdatePlayerAnimation(DeltaSeconds, moving, input.Run);
     {
-        FScopedDurationLog Probe(Logger, "gameworld.UpdateNpcAnimation", 8.0);
         UpdateNpcAnimation(DeltaSeconds);
     }
     {
-        FScopedDurationLog Probe(Logger, "gameworld.UpdateVertical", 1.5);
         UpdateVertical(DeltaSeconds);
     }
 
@@ -184,7 +181,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         VelocityZ = 0.0f;
         if (Grounded)
         {
-            FScopedDurationLog Probe(Logger, "gameworld.ApplySlopeSlide", 1.5);
             ApplySlopeSlide(DeltaSeconds);
         }
         return true;
@@ -202,7 +198,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const float StepX = DispX / static_cast<float>(MovementSteps);
     const float StepZ = DispZ / static_cast<float>(MovementSteps);
     {
-        FScopedDurationLog Probe(Logger, "gameworld.MovementCollisionSteps", 2.0, "steps=" + std::to_string(MovementSteps));
         for (int step = 0; step < MovementSteps; ++step)
         {
             const float PreviousX = SpawnX;
@@ -229,12 +224,10 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     {
         try
         {
-            FScopedDurationLog Probe(Logger, "gameworld.StreamingTileCrossing", 8.0, "center=(" + std::to_string(CenterRow) + "," + std::to_string(CenterColumn) + ")");
             LoadVisibleTerrain();
             LoadVisibleStaticObjects();
             if (Config.GrassQuality > 0)
             {
-                FScopedDurationLog GrassProbe(Logger, "gameworld.StreamingTileCrossing.LoadVisibleGrass", 5.0);
                 LoadVisibleGrass();
                 GrassLoadedThisFrame = true;
             }
@@ -256,7 +249,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     {
         try
         {
-            FScopedDurationLog Probe(Logger, "gameworld.GrassAnchorRefresh", 5.0);
             LoadVisibleGrass();
             GrassLoadedThisFrame = true;
         } catch (const std::exception& ex)
@@ -269,7 +261,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     }
     if (!StreamingUpdatedThisFrame && !GrassLoadedThisFrame)
     {
-        FScopedDurationLog Probe(Logger, "gameworld.PreloadStreamingGuard.callsite", 2.0);
         PreloadStreamingGuard();
     }
     return true;

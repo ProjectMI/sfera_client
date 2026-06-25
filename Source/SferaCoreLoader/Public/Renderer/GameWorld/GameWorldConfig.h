@@ -45,7 +45,7 @@ struct FGameWorldConfig
     float GrassHighlandMaxY = 800.0f;
     int GrassHighlandPatternOffset = 15;
     int GrassQuality = 1;
-    float GrassRadius = 42.0f;
+    float GrassRadius = 120.0f;
     float GrassSpacing = 8.3333f;
     int GrassDetailCount = 8;
     int GrassFlowerCountMax = 20;
@@ -58,8 +58,7 @@ struct FGameWorldConfig
     float GrassGenerationMargin = 16.0f;
     float GrassWindAmplitude = 1.8f;
     float GrassWindSpeed = 1.35f;
-    float GrassGlow = 0.12f;
-    float GrassColorGain = 2.0f;
+    float GrassColorGain = 1.8f;
     float GrassFadeStart = 42.0f;
     float GrassFadeEnd = 54.0f;
     float GrassGustRadiusScale = 0.12f;
@@ -80,7 +79,7 @@ struct FGameWorldConfig
     float CameraMinPitch = -1.40f;
     float CameraMaxPitch = 1.40f;
     float CameraFov = 60.0f;
-    float WalkSpeed = 2.1f;
+    float WalkSpeed = 5.1f;
     float RunMultiplier = 2.2f;
     float PlayerCollisionRadius = 0.32f;
     float PlayerCollisionHeight = 1.8f;

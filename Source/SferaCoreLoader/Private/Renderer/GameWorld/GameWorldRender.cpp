@@ -555,13 +555,11 @@ void FD3D9GameWorldScene::Impl::Resize()
 
 void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
 {
-    FScopedDurationLog Scope(Logger, "render.GameWorldScene", 10.0);
     if (!Initialized || !Device)
     {
         return;
     }
     {
-        FScopedDurationLog Probe(Logger, "render.UpdateViewProjection", 1.0);
         UpdateViewProjection();
     }
     ResetRenderStats();
@@ -579,9 +577,7 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
         --ReflectionUpdateCountdown;
     }
     {
-        const auto ClearStart = std::chrono::steady_clock::now();
         Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue), 1.0f, 0);
-        LogDurationProbe(Logger, "render.DeviceClear", DurationLogMillisecondsSince(ClearStart), 1.0);
     }
     DrawSky();
     DrawTerrain();

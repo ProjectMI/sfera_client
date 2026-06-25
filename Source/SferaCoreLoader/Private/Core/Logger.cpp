@@ -42,7 +42,7 @@ void FLogger::Open(FPath logPath)
         std::filesystem::create_directories(logPath.parent_path());
     }
 
-    Stream.open(logPath, std::ios::out | std::ios::app);
+    Stream.open(logPath, std::ios::out | std::ios::trunc);
 }
 
 void FLogger::Write(ELogLevel level, std::string_view message)

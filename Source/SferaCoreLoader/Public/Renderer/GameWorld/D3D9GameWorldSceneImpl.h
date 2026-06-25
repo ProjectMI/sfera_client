@@ -103,6 +103,7 @@ struct FD3D9GameWorldScene::Impl
     std::unordered_map<int, std::vector<uint8>> GrassMaps;
     std::unordered_set<uint64> GrassCells;
     bool GrassRefreshIncomplete = false;
+    bool GrassInitialBlockingLoad = false;
     std::vector<FSceneBatch> PlayerBatches;
     UINT PlayerVertexCount = 0;
     FSkinnedCharacterModel PlayerModel;

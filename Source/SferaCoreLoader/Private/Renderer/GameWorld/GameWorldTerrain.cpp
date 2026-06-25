@@ -371,10 +371,7 @@ DWORD FD3D9GameWorldScene::Impl::TerrainColorAt(float WorldX, float WorldZ) cons
 
 std::unique_ptr<TerrainResource> FD3D9GameWorldScene::Impl::LoadTerrainResource(const std::filesystem::path& LNDPath)
 {
-    FScopedDurationLog Scope(Logger, "gameworld.LoadTerrainResource", 3.0, LNDPath.filename().string());
-    const auto CpuStart = std::chrono::steady_clock::now();
     const auto cpu = LoadTerrainCpuResourceCached(LNDPath, Config.TileSize);
-    LogDurationProbe(Logger, "gameworld.LoadTerrainResource.cpu-cache", DurationLogMillisecondsSince(CpuStart), 2.0, LNDPath.filename().string());
     auto resource = std::make_unique<TerrainResource>();
     resource->LNDPath = cpu->LNDPath;
     resource->TexturePath = cpu->TexturePath;
@@ -401,22 +398,16 @@ std::unique_ptr<TerrainResource> FD3D9GameWorldScene::Impl::LoadTerrainResource(
     }
     else
     {
-        const auto TextureStart = std::chrono::steady_clock::now();
         resource->texture = CreateD3D9TextureFromDdsBytes(Device, cpu->TextureBytes, resource->TexturePath.string());
-        LogDurationProbe(Logger, "gameworld.LoadTerrainResource.create-texture", DurationLogMillisecondsSince(TextureStart), 1.5, resource->TexturePath.filename().string());
         DdsTextureCache.emplace(TextureKey, resource->texture);
         resource->texture->AddRef();
     }
 
     {
-        const auto GpuStart = std::chrono::steady_clock::now();
         resource->VertexBuffer = CreateManagedVertexBufferOrThrow(Device, cpu->Vertices, kWorldVertexFvf, "CreateVertexBuffer terrain");
-        LogDurationProbe(Logger, "gameworld.LoadTerrainResource.create-vb", DurationLogMillisecondsSince(GpuStart), 1.5, LNDPath.filename().string() + " vertices=" + std::to_string(cpu->Vertices.size()));
     }
     {
-        const auto GpuStart = std::chrono::steady_clock::now();
         resource->IndexBuffer = CreateManagedIndexBufferOrThrow(Device, cpu->Indices, D3DFMT_INDEX16, "CreateIndexBuffer terrain");
-        LogDurationProbe(Logger, "gameworld.LoadTerrainResource.create-ib", DurationLogMillisecondsSince(GpuStart), 1.0, LNDPath.filename().string() + " indices=" + std::to_string(cpu->Indices.size()));
     }
 
     UploadWaterMesh(*resource, cpu->WaterIndices);
@@ -484,7 +475,6 @@ void FD3D9GameWorldScene::Impl::TerrainCpuPreloadWorkerMain()
             continue;
         }
 
-        LogDurationProbeEvent(Logger, "gameworld.TerrainCpuPreloadWorker.batch", "tiles=" + std::to_string(Paths.size()));
         const float TileSize = Config.TileSize;
         for (const auto& Path : Paths)
         {
@@ -536,13 +526,11 @@ void FD3D9GameWorldScene::Impl::DrainTerrainCpuPreloadJobs(bool Wait)
         return;
     }
 
-    FScopedDurationLog Scope(Logger, "gameworld.DrainTerrainCpuPreloadJobs.poll", 1.5);
     TerrainCpuPreloadCv.notify_one();
 }
 
 void FD3D9GameWorldScene::Impl::UploadWaterMesh(TerrainResource& resource, const std::vector<uint16>& indices)
 {
-    FScopedDurationLog Scope(Logger, "gameworld.UploadWaterMesh", 1.0, "verts=" + std::to_string(resource.WaterCpuVerts.size()) + " indices=" + std::to_string(indices.size()));
     if (resource.WaterCpuVerts.empty() || indices.empty())
     {
         return;
@@ -553,7 +541,6 @@ void FD3D9GameWorldScene::Impl::UploadWaterMesh(TerrainResource& resource, const
 
 void FD3D9GameWorldScene::Impl::LoadVisibleTerrain()
 {
-    FScopedDurationLog Scope(Logger, "gameworld.LoadVisibleTerrain", 5.0, "pos=(" + FormatDurationLogValue(SpawnX) + "," + FormatDurationLogValue(SpawnZ) + ") resources=" + std::to_string(TerrainResources.size()));
     DrainTerrainCpuPreloadJobs(false);
 
     if (!WorldScene || !WorldScene->Map().Loaded)
@@ -618,9 +605,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleTerrain()
 
             if (it == TerrainResources.end())
             {
-                const auto LoadStart = std::chrono::steady_clock::now();
                 it = TerrainResources.emplace(key, LoadTerrainResource(LNDPath)).first;
-                LogDurationProbe(Logger, "gameworld.LoadVisibleTerrain.load-missing-tile", DurationLogMillisecondsSince(LoadStart), 3.0, "cell=(" + std::to_string(candidate.Row) + "," + std::to_string(candidate.Column) + ") " + LNDPath.filename().string());
             }
 
             TerrainInstance instance{it->second.get(), static_cast<float>(candidate.Row - Config.OriginRow) * Config.TileSize, static_cast<float>(Config.OriginColumn - candidate.Column) * Config.TileSize};
@@ -647,7 +632,6 @@ void FD3D9GameWorldScene::Impl::LoadVisibleTerrain()
 
 void FD3D9GameWorldScene::Impl::PreloadTerrainForCenter(int CenterRow, int CenterColumn, int Radius)
 {
-    FScopedDurationLog Scope(Logger, "gameworld.PreloadTerrainForCenter", 2.0, "center=(" + std::to_string(CenterRow) + "," + std::to_string(CenterColumn) + ") radius=" + std::to_string(Radius));
     if (!WorldScene || !WorldScene->Map().Loaded || Radius < 0)
     {
         return;
@@ -694,7 +678,6 @@ void FD3D9GameWorldScene::Impl::PreloadTerrainForCenter(int CenterRow, int Cente
 
 void FD3D9GameWorldScene::Impl::PreloadStreamingGuard()
 {
-    FScopedDurationLog Scope(Logger, "gameworld.PreloadStreamingGuard", 3.0, "pos=(" + FormatDurationLogValue(SpawnX) + "," + FormatDurationLogValue(SpawnZ) + ")");
 
     if (!WorldScene || !WorldScene->Map().Loaded || Config.TileSize <= 0.0f)
     {
@@ -871,7 +854,6 @@ bool FD3D9GameWorldScene::Impl::FlatGrassSurfaceAt(float WorldX, float WorldZ, f
 
 void FD3D9GameWorldScene::Impl::DrawTerrain()
 {
-    FScopedDurationLog Scope(Logger, RenderingReflection ? "render.reflection.DrawTerrain" : "render.DrawTerrain", 2.0, "tiles=" + std::to_string(TerrainInstances.size()));
     Device->SetFVF(kWorldVertexFvf);
     Device->SetTexture(1, TerrainMicrotexture);
     Device->SetTextureStageState(1, D3DTSS_TEXCOORDINDEX, 1);
@@ -962,7 +944,6 @@ float FD3D9GameWorldScene::Impl::WaterReflectCoeff() const
 
 void FD3D9GameWorldScene::Impl::RenderReflection()
 {
-    FScopedDurationLog Scope(Logger, "render.RenderReflection", 4.0);
     if (Config.WaterReflectionEnabled == 0 || !ReflectionSurface || !ReflectionDepth || WaterReflectCoeff() <= 0.01f)
     {
         return;
@@ -1011,7 +992,6 @@ void FD3D9GameWorldScene::Impl::RenderReflection()
 
 void FD3D9GameWorldScene::Impl::UpdateWaterWaves(TerrainResource* resource, float OriginX, float OriginZ)
 {
-    FScopedDurationLog Scope(Logger, "gameworld.UpdateWaterWaves", 1.0, resource ? ("verts=" + std::to_string(resource->WaterCpuVerts.size())) : std::string{});
     if (!resource->WaterVertexBuffer || resource->WaterCpuVerts.empty() ||
     Config.WaveScale <= 0.0f)
     {
@@ -1038,7 +1018,6 @@ void FD3D9GameWorldScene::Impl::UpdateWaterWaves(TerrainResource* resource, floa
 
 void FD3D9GameWorldScene::Impl::DrawWater()
 {
-    FScopedDurationLog Scope(Logger, RenderingReflection ? "render.reflection.DrawWater" : "render.DrawWater", 2.0);
     bool any = false;
     for (const auto& instance : TerrainInstances)
     {

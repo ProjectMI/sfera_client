@@ -75,6 +75,7 @@ void FD3D9GameWorldScene::Impl::Release()
     GrassInstances.clear();
     GrassCells.clear();
     GrassRefreshIncomplete = false;
+    GrassInitialBlockingLoad = false;
     GrassMaps.clear();
     StaticInstances.clear();
     StaticPlacementModels.clear();
@@ -563,7 +564,9 @@ bool FD3D9GameWorldScene::Impl::Initialize(
         SnapToGround();
         LoadStaticPlacements();
         LoadVisibleStaticObjects();
+        GrassInitialBlockingLoad = true;
         LoadVisibleGrass();
+        GrassInitialBlockingLoad = false;
         PreloadStreamingGuard();
         if (PlayerModelIn && PlayerModelIn->IsValid())
         {
@@ -573,6 +576,7 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     }
     catch (const std::exception& ex)
     {
+        GrassInitialBlockingLoad = false;
         AssignError(error, std::string("game world load failed: ") + ex.what());
         return false;
     }

@@ -1,16 +1,19 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
-#include "Model/ModelRepository.h"
+#include "Config/ConfigDocument.h"
 #include <string_view>
 #include <iterator>
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 #include <exception>
-#include <functional>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 
 namespace
@@ -30,6 +33,8 @@ struct StaticModelCpuResource
     std::vector<uint16> CollisionIndices;
     std::vector<StaticModelCpuBatch> Batches;
     FBox3 Bounds;
+    bool IsSkinned = false;
+    FMdlMesh BindMesh;
 };
 
 
@@ -71,6 +76,153 @@ bool BoundsInitialized(const FBox3& Bounds)
     return Bounds.Min.X <= Bounds.Max.X && Bounds.Min.Y <= Bounds.Max.Y && Bounds.Min.Z <= Bounds.Max.Z;
 }
 
+WorldVertex TransformWorldVertex(WorldVertex vertex, const D3DMATRIX& world)
+{
+    const FVector3 position{vertex.X, vertex.Y, vertex.Z};
+    const FVector3 normal{vertex.NX, vertex.NY, vertex.NZ};
+    vertex.X = position.X * world._11 + position.Y * world._21 + position.Z * world._31 + world._41;
+    vertex.Y = position.X * world._12 + position.Y * world._22 + position.Z * world._32 + world._42;
+    vertex.Z = position.X * world._13 + position.Y * world._23 + position.Z * world._33 + world._43;
+    vertex.NX = normal.X * world._11 + normal.Y * world._21 + normal.Z * world._31;
+    vertex.NY = normal.X * world._12 + normal.Y * world._22 + normal.Z * world._32;
+    vertex.NZ = normal.X * world._13 + normal.Y * world._23 + normal.Z * world._33;
+    return vertex;
+}
+
+void ReleaseWorldRenderBatches(std::vector<WorldRenderBatch>& Batches)
+{
+    for (auto& batch : Batches)
+    {
+        SafeRelease(batch.IndexBuffer);
+        SafeRelease(batch.VertexBuffer);
+    }
+    Batches.clear();
+}
+
+void ReleaseWorldRenderBatchMap(std::unordered_map<uint64, std::vector<WorldRenderBatch>>& Batches)
+{
+    for (auto& [_, list] : Batches)
+    {
+        ReleaseWorldRenderBatches(list);
+    }
+    Batches.clear();
+}
+
+template<class F>
+void ParallelFor(std::size_t Count, std::size_t ThreadCount, F&& Body)
+{
+    if (ThreadCount <= 1)
+    {
+        for (std::size_t index = 0; index < Count; ++index)
+        {
+            Body(index);
+        }
+        return;
+    }
+    std::atomic_size_t next{0};
+    std::vector<std::thread> workers;
+    workers.reserve(ThreadCount);
+    for (std::size_t threadIndex = 0; threadIndex < ThreadCount; ++threadIndex)
+    {
+        workers.emplace_back([&]()
+        {
+            for (std::size_t index = next.fetch_add(1, std::memory_order_relaxed); index < Count; index = next.fetch_add(1, std::memory_order_relaxed))
+            {
+                Body(index);
+            }
+        });
+    }
+    for (auto& worker : workers)
+    {
+        worker.join();
+    }
+}
+
+struct AccumulatedWorldBatch
+{
+    std::vector<WorldVertex> Vertices;
+    std::vector<uint32> Indices;
+    FBox3 Bounds = EmptyBounds();
+};
+
+using AccumulatedWorldBatchMap = std::unordered_map<IDirect3DTexture9*, AccumulatedWorldBatch>;
+
+void AccumulateWorldBatches(const StaticModelResource& Resource, const D3DMATRIX& World, AccumulatedWorldBatchMap& Batches, bool GrassWind = false)
+{
+    if (Resource.CpuVertices.empty() || Resource.CpuIndices.empty())
+    {
+        return;
+    }
+    const float ModelHeight = Resource.Bounds.Max.Y - Resource.Bounds.Min.Y;
+    const float InvModelHeight = ModelHeight > 0.0001f ? 1.0f / ModelHeight : 0.0f;
+    const float RootWorldY = Resource.Bounds.Max.Y * World._22 + World._42;
+    for (const auto& sourceBatch : Resource.Batches)
+    {
+        auto& output = Batches[sourceBatch.Texture];
+        const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
+        output.Vertices.reserve(output.Vertices.size() + Resource.CpuVertices.size());
+        for (const auto& source : Resource.CpuVertices)
+        {
+            WorldVertex vertex = TransformWorldVertex(source, World);
+            if (GrassWind)
+            {
+                vertex.DetailU = std::clamp((Resource.Bounds.Max.Y - source.Y) * InvModelHeight, 0.0f, 1.0f);
+                vertex.DetailV = RootWorldY;
+            }
+            ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
+            output.Vertices.push_back(vertex);
+        }
+        const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
+        output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
+        for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < Resource.CpuIndices.size(); ++index)
+        {
+            output.Indices.push_back(baseVertex + Resource.CpuIndices[index]);
+        }
+    }
+}
+
+bool UploadWorldBatches(IDirect3DDevice9* Device, AccumulatedWorldBatchMap& Source, std::vector<WorldRenderBatch>& Output)
+{
+    for (auto& [texture, source] : Source)
+    {
+        if (source.Vertices.empty() || source.Indices.empty() || !BoundsInitialized(source.Bounds))
+        {
+            continue;
+        }
+        WorldRenderBatch batch;
+        batch.Texture = texture;
+        batch.Bounds = source.Bounds;
+        batch.VertexCount = static_cast<UINT>(source.Vertices.size());
+        batch.IndexCount = static_cast<UINT>(source.Indices.size());
+        if (!TryCreateManagedVertexBuffer(Device, source.Vertices, kWorldVertexFvf, batch.VertexBuffer) || !TryCreateManagedIndexBuffer(Device, source.Indices, D3DFMT_INDEX32, batch.IndexBuffer))
+        {
+            SafeRelease(batch.IndexBuffer);
+            SafeRelease(batch.VertexBuffer);
+            continue;
+        }
+        Output.push_back(batch);
+    }
+    return !Output.empty();
+}
+
+struct FXorShift32
+{
+    uint32 State = 0;
+
+    uint32 Next()
+    {
+        State ^= State << 13;
+        State ^= State >> 17;
+        State ^= State << 5;
+        return State;
+    }
+
+    float Unit()
+    {
+        return static_cast<float>(Next() & 0xffffU) / 65535.0f;
+    }
+};
+
 std::mutex StaticModelCpuCacheMutex;
 std::unordered_map<std::string, std::shared_ptr<const StaticModelCpuResource>> StaticModelCpuCache;
 
@@ -79,24 +231,319 @@ std::string StaticModelCpuCacheKey(const std::filesystem::path& path)
     return Common::NormalizePathKey(path.lexically_normal().generic_string());
 }
 
+int FindNpcAnimationClip(const FResourceManager* Resources, const std::string& ModelName, std::string_view Key)
+{
+    if (!Resources || ModelName.empty())
+    {
+        return -1;
+    }
+    auto LoadConfig = [&](const std::string& Name)
+    {
+        return Resources->Load("params/" + Name + ".cfg");
+    };
+    auto Blob = LoadConfig(ModelName);
+    std::string ConfigName = ModelName;
+    if (!Blob.IsOk())
+    {
+        ConfigName = LowercaseAscii(ModelName);
+        Blob = LoadConfig(ConfigName);
+    }
+    if (!Blob.IsOk())
+    {
+        return -1;
+    }
+    FConfigDocument Config;
+    std::string Text(Blob.Value().Bytes.begin(), Blob.Value().Bytes.end());
+    if (!Config.Parse(std::move(Text), "params/" + ConfigName + ".cfg").IsOk())
+    {
+        return -1;
+    }
+    const auto Value = Config.FindInt(Key);
+    return Value ? static_cast<int>(*Value) : -1;
+}
+
+void ConfigureNpcAnimationClips(StaticModelResource& Resource, const FResourceManager* Resources, const std::string& ModelName)
+{
+    if (!Resource.IsSkinned)
+    {
+        return;
+    }
+    int Start = 0;
+    for (const auto Count : Resource.BindMesh.Actions)
+    {
+        Resource.ClipStart.push_back(Start);
+        Resource.ClipLength.push_back(static_cast<int>(Count));
+        Start += static_cast<int>(Count);
+    }
+    if (Resource.ClipLength.empty() && Resource.FrameCount > 1)
+    {
+        Resource.ClipStart.push_back(0);
+        Resource.ClipLength.push_back(Resource.FrameCount);
+    }
+    auto ValidClip = [&](int Clip)
+    {
+        return Clip >= 0 && static_cast<std::size_t>(Clip) < Resource.ClipLength.size() && Resource.ClipLength[static_cast<std::size_t>(Clip)] > 0 && Resource.ClipStart[static_cast<std::size_t>(Clip)] + Resource.ClipLength[static_cast<std::size_t>(Clip)] <= Resource.FrameCount;
+    };
+    const int FreeClip = FindNpcAnimationClip(Resources, ModelName, "FREE");
+    if (ValidClip(FreeClip))
+    {
+        Resource.IdleClip = FreeClip;
+    }
+    else if (!Resource.ClipLength.empty() && ValidClip(0))
+    {
+        Resource.IdleClip = 0;
+    }
+    for (const auto Key : {"FREE1", "FREE2", "FREE3"})
+    {
+        const int Clip = FindNpcAnimationClip(Resources, ModelName, Key);
+        if (ValidClip(Clip))
+        {
+            Resource.GestureClips.push_back(Clip);
+        }
+    }
+    Resource.CurrentClip = Resource.IdleClip;
+}
+
+
+D3DMATRIX MdlQuatTranslationMatrix(float W, float X, float Y, float Z, float TX, float TY, float TZ)
+{
+    const float XX = X * X;
+    const float YY = Y * Y;
+    const float ZZ = Z * Z;
+    const float XY = X * Y;
+    const float XZ = X * Z;
+    const float YZ = Y * Z;
+    const float WX = W * X;
+    const float WY = W * Y;
+    const float WZ = W * Z;
+    D3DMATRIX Matrix{};
+    Matrix._11 = 1.0f - 2.0f * (YY + ZZ);
+    Matrix._12 = 2.0f * (WZ + XY);
+    Matrix._13 = 2.0f * (XZ - WY);
+    Matrix._14 = TX;
+    Matrix._21 = 2.0f * (XY - WZ);
+    Matrix._22 = 1.0f - 2.0f * (XX + ZZ);
+    Matrix._23 = 2.0f * (YZ + WX);
+    Matrix._24 = TY;
+    Matrix._31 = 2.0f * (WY + XZ);
+    Matrix._32 = 2.0f * (YZ - WX);
+    Matrix._33 = 1.0f - 2.0f * (XX + YY);
+    Matrix._34 = TZ;
+    Matrix._44 = 1.0f;
+    return Matrix;
+}
+
+void RecomputeMdlBounds(FMdlMesh& Mesh)
+{
+    if (Mesh.Vertices.empty())
+    {
+        Mesh.Bounds = FMdlBounds{};
+        return;
+    }
+    Mesh.Bounds.MinX = Mesh.Bounds.MaxX = Mesh.Vertices.front().X;
+    Mesh.Bounds.MinY = Mesh.Bounds.MaxY = Mesh.Vertices.front().Y;
+    Mesh.Bounds.MinZ = Mesh.Bounds.MaxZ = Mesh.Vertices.front().Z;
+    for (const auto& Vertex : Mesh.Vertices)
+    {
+        Mesh.Bounds.MinX = (std::min)(Mesh.Bounds.MinX, Vertex.X);
+        Mesh.Bounds.MaxX = (std::max)(Mesh.Bounds.MaxX, Vertex.X);
+        Mesh.Bounds.MinY = (std::min)(Mesh.Bounds.MinY, Vertex.Y);
+        Mesh.Bounds.MaxY = (std::max)(Mesh.Bounds.MaxY, Vertex.Y);
+        Mesh.Bounds.MinZ = (std::min)(Mesh.Bounds.MinZ, Vertex.Z);
+        Mesh.Bounds.MaxZ = (std::max)(Mesh.Bounds.MaxZ, Vertex.Z);
+    }
+}
+
+bool ApplyMdlRestPose(FMdlMesh& Mesh, int Frame = 0)
+{
+    const std::size_t BoneCount = Mesh.Objects.size();
+    if (Mesh.Info.SkinWeightCount == 0 || BoneCount == 0 || Mesh.TransformKeys.empty())
+    {
+        return false;
+    }
+    auto BoneLocal = [&](std::size_t Bone, D3DMATRIX& Out) -> bool
+    {
+        const auto& Object = Mesh.Objects[Bone];
+        FMdlTransformKey Key;
+        if (Object.IsAnimated == 0)
+        {
+            const std::size_t KeyIndex = static_cast<std::size_t>(Object.KeyIndex);
+            if (KeyIndex >= Mesh.TransformKeys.size())
+            {
+                return false;
+            }
+            Key = Mesh.TransformKeys[KeyIndex];
+        }
+        else
+        {
+            const std::size_t Index = static_cast<std::size_t>(Object.KeyIndex) + static_cast<std::size_t>(Frame);
+            if (Index >= Mesh.SkinIndices.size())
+            {
+                return false;
+            }
+            const auto& Entry = Mesh.SkinIndices[Index];
+            const std::size_t Record = Entry.Record;
+            if (Record >= Mesh.TransformKeys.size())
+            {
+                return false;
+            }
+            const auto& A = Mesh.TransformKeys[Record];
+            if (Entry.Blend == 0 || Entry.Blend == 0xff || Record + 1 >= Mesh.TransformKeys.size())
+            {
+                Key = A;
+            }
+            else
+            {
+                const float T = static_cast<float>(Entry.Blend) / 255.0f;
+                const auto& B = Mesh.TransformKeys[Record + 1];
+                Key.X = A.X + (B.X - A.X) * T;
+                Key.Y = A.Y + (B.Y - A.Y) * T;
+                Key.Z = A.Z + (B.Z - A.Z) * T;
+                const float DotQuat = A.QW * B.QW + A.QX * B.QX + A.QY * B.QY + A.QZ * B.QZ;
+                const float Sign = DotQuat < 0.0f ? -1.0f : 1.0f;
+                float QW = A.QW + (B.QW * Sign - A.QW) * T;
+                float QX = A.QX + (B.QX * Sign - A.QX) * T;
+                float QY = A.QY + (B.QY * Sign - A.QY) * T;
+                float QZ = A.QZ + (B.QZ * Sign - A.QZ) * T;
+                const float Length = std::sqrt(QW * QW + QX * QX + QY * QY + QZ * QZ);
+                const float Inv = Length > 0.00000001f ? 1.0f / Length : 1.0f;
+                Key.QW = QW * Inv;
+                Key.QX = QX * Inv;
+                Key.QY = QY * Inv;
+                Key.QZ = QZ * Inv;
+            }
+        }
+        Out = MdlQuatTranslationMatrix(Key.QW, Key.QX, Key.QY, Key.QZ, Key.X, Key.Y, Key.Z);
+        return true;
+    };
+    std::vector<D3DMATRIX> Local(BoneCount, IdentityMatrix());
+    for (std::size_t Index = 0; Index < BoneCount; ++Index)
+    {
+        if (!BoneLocal(Index, Local[Index]))
+        {
+            return false;
+        }
+    }
+    std::vector<uint8> IsChild(BoneCount, 0);
+    auto ChildrenOf = [&](std::size_t Bone, auto&& Fn)
+    {
+        const auto& Object = Mesh.Objects[Bone];
+        for (int ChildIndex = 0; ChildIndex < Object.ConnectedBoneCount; ++ChildIndex)
+        {
+            const std::size_t Index = static_cast<std::size_t>(Object.ObjectIndexOffset) + ChildIndex;
+            if (Index < Mesh.ObjectIndices.size())
+            {
+                const uint8 Child = Mesh.ObjectIndices[Index];
+                if (Child < BoneCount)
+                {
+                    Fn(static_cast<std::size_t>(Child));
+                }
+            }
+        }
+    };
+    for (std::size_t Index = 0; Index < BoneCount; ++Index)
+    {
+        ChildrenOf(Index, [&](std::size_t Child) { IsChild[Child] = 1; });
+    }
+    std::vector<D3DMATRIX> World(BoneCount, IdentityMatrix());
+    std::vector<uint8> Done(BoneCount, 0);
+    std::vector<std::pair<std::size_t, D3DMATRIX>> Stack;
+    for (std::size_t Index = 0; Index < BoneCount; ++Index)
+    {
+        if (IsChild[Index])
+        {
+            continue;
+        }
+        Stack.push_back({Index, IdentityMatrix()});
+        while (!Stack.empty())
+        {
+            const std::pair<std::size_t, D3DMATRIX> StackItem = Stack.back();
+            Stack.pop_back();
+            const std::size_t Bone = StackItem.first;
+            const D3DMATRIX& Parent = StackItem.second;
+
+            if (Done[Bone])
+            {
+                continue;
+            }
+
+            World[Bone] = MultiplyMatrix(Parent, Local[Bone]);
+            Done[Bone] = 1;
+            ChildrenOf(Bone, [&](std::size_t Child)
+            {
+                if (!Done[Child])
+                {
+                    Stack.push_back({Child, World[Bone]});
+                }
+            });
+        }
+    }
+    std::vector<int> VertexBone(Mesh.Vertices.size(), -1);
+    for (const auto& Surface : Mesh.Surfaces)
+    {
+        if (Surface.FirstVertexIndex < 0 || Surface.VertexCount < 0)
+        {
+            continue;
+        }
+        const std::size_t Bone = static_cast<std::size_t>(Surface.ObjectIndex);
+        if (Bone >= BoneCount)
+        {
+            continue;
+        }
+        for (int VertexOffset = 0; VertexOffset < Surface.VertexCount; ++VertexOffset)
+        {
+            const std::size_t VertexIndex = static_cast<std::size_t>(Surface.FirstVertexIndex) + VertexOffset;
+            if (VertexIndex < VertexBone.size())
+            {
+                VertexBone[VertexIndex] = static_cast<int>(Bone);
+            }
+        }
+    }
+    for (std::size_t VertexIndex = 0; VertexIndex < Mesh.Vertices.size(); ++VertexIndex)
+    {
+        const int Bone = VertexBone[VertexIndex];
+        if (Bone < 0)
+        {
+            continue;
+        }
+        const D3DMATRIX& Matrix = World[static_cast<std::size_t>(Bone)];
+        auto& Vertex = Mesh.Vertices[VertexIndex];
+        const float X = Vertex.X;
+        const float Y = Vertex.Y;
+        const float Z = Vertex.Z;
+        const float NX = Vertex.NX;
+        const float NY = Vertex.NY;
+        const float NZ = Vertex.NZ;
+        Vertex.X = Matrix._11 * X + Matrix._12 * Y + Matrix._13 * Z + Matrix._14;
+        Vertex.Y = Matrix._21 * X + Matrix._22 * Y + Matrix._23 * Z + Matrix._24;
+        Vertex.Z = Matrix._31 * X + Matrix._32 * Y + Matrix._33 * Z + Matrix._34;
+        Vertex.NX = Matrix._11 * NX + Matrix._12 * NY + Matrix._13 * NZ;
+        Vertex.NY = Matrix._21 * NX + Matrix._22 * NY + Matrix._23 * NZ;
+        Vertex.NZ = Matrix._31 * NX + Matrix._32 * NY + Matrix._33 * NZ;
+    }
+    RecomputeMdlBounds(Mesh);
+    return true;
+}
+
 std::shared_ptr<const StaticModelCpuResource> BuildStaticModelCpuResource(const std::string& ModelName, const std::filesystem::path& ModelPath)
 {
     FMdlMesh MeshStorage;
     const FMdlMesh* MeshPtr = nullptr;
     const auto CacheKey = ModelPath.generic_string();
-    if (auto CachedMesh = FindCachedMdlMesh(CacheKey))
+
+    if (auto CachedMeshByPath = FindCachedMdlMesh(CacheKey))
     {
-        MeshPtr = CachedMesh.get();
+        MeshPtr = CachedMeshByPath.get();
     }
-    else if (auto CachedMesh = FindCachedMdlMesh(ModelName))
+    else if (auto CachedMeshByName = FindCachedMdlMesh(ModelName))
     {
         AliasCachedMdlMesh(CacheKey, ModelName);
-        MeshPtr = CachedMesh.get();
+        MeshPtr = CachedMeshByName.get();
     }
-    else if (auto CachedMesh = FindCachedMdlMesh(ModelName + ".mdl"))
+    else if (auto CachedMeshByMdlName = FindCachedMdlMesh(ModelName + ".mdl"))
     {
         AliasCachedMdlMesh(CacheKey, ModelName + ".mdl");
-        MeshPtr = CachedMesh.get();
+        MeshPtr = CachedMeshByMdlName.get();
     }
     else
     {
@@ -108,13 +555,26 @@ std::shared_ptr<const StaticModelCpuResource> BuildStaticModelCpuResource(const 
         MeshStorage = std::move(MeshResult.Value());
         MeshPtr = &MeshStorage;
     }
-    const FMdlMesh& mesh = *MeshPtr;
+    FMdlMesh PosedMesh;
+    const bool WillSkin = MeshPtr->Info.SkinWeightCount != 0 && !MeshPtr->Objects.empty() && !MeshPtr->TransformKeys.empty();
+    bool IsSkinned = false;
+    if (WillSkin)
+    {
+        PosedMesh = *MeshPtr;
+        IsSkinned = ApplyMdlRestPose(PosedMesh);
+    }
+    const FMdlMesh& mesh = IsSkinned ? PosedMesh : *MeshPtr;
     if (mesh.Vertices.empty() || mesh.Triangles.empty() || mesh.Surfaces.empty() || mesh.Info.Materials.empty())
     {
         throw std::runtime_error("static model has no renderable geometry: " + ModelPath.string());
     }
 
     auto resource = std::make_shared<StaticModelCpuResource>();
+    resource->IsSkinned = IsSkinned;
+    if (IsSkinned)
+    {
+        resource->BindMesh = *MeshPtr;
+    }
     resource->Vertices.reserve(mesh.Vertices.size());
     for (const auto& source : mesh.Vertices)
     {
@@ -211,11 +671,6 @@ struct StaticPlacementFile
     std::string RelativeKey;
 };
 
-bool LowerPathEndsWith(std::string_view path, std::string_view suffix)
-{
-    return path.size() >= suffix.size() && path.substr(path.size() - suffix.size()) == suffix;
-}
-
 bool StaticPathAllowed(std::string_view rel, const std::vector<std::string>& configuredDirs)
 {
     if (configuredDirs.empty())
@@ -234,106 +689,35 @@ bool StaticPathAllowed(std::string_view rel, const std::vector<std::string>& con
 
 struct ParsedStaticPlacement
 {
-    std::array<char, 20> Name{};
-    std::array<char, 20> Key{};
-    uint8 NameLength = 0;
+    std::string Name;
+    std::string Key;
     FVector3 Position;
     FVector3 Rotation;
     D3DMATRIX World{};
 };
 
-struct PlacementModelKey
-{
-    std::array<char, 20> Key{};
-    uint8 Length = 0;
-
-    bool operator==(const PlacementModelKey& other) const
-    {
-        if (Length != other.Length)
-        {
-            return false;
-        }
-        for (std::size_t i = 0; i < Length; ++i)
-        {
-            if (Key[i] != other.Key[i])
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-};
-
-struct PlacementModelKeyHash
-{
-    std::size_t operator()(const PlacementModelKey& value) const
-    {
-        std::size_t hash = 1469598103934665603ull;
-        for (std::size_t i = 0; i < value.Length; ++i)
-        {
-            hash ^= static_cast<unsigned char>(value.Key[i]);
-            hash *= 1099511628211ull;
-        }
-        return hash ^ value.Length;
-    }
-};
-
-bool FixedLowerEquals(const std::array<char, 20>& value, uint8 length, std::string_view text)
-{
-    if (length != text.size())
-    {
-        return false;
-    }
-    for (std::size_t i = 0; i < length; ++i)
-    {
-        if (value[i] != text[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool ReadFixedAsciiName(const std::vector<uint8>& data, std::size_t offset, std::size_t limit, ParsedStaticPlacement& placement)
 {
-    std::size_t length = 0;
-    while (length < limit && data[offset + length] != 0)
+    placement.Name.clear();
+    placement.Key.clear();
+    for (std::size_t i = 0; i < limit && data[offset + i] != 0; ++i)
     {
-        const auto ch = data[offset + length];
-        placement.Name[length] = static_cast<char>(ch);
-        placement.Key[length] = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-        ++length;
+        const auto ch = data[offset + i];
+        placement.Name.push_back(static_cast<char>(ch));
+        placement.Key.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
     }
-    placement.NameLength = static_cast<uint8>(length);
-    return length != 0 && !FixedLowerEquals(placement.Key, placement.NameLength, "empty");
+    return !placement.Key.empty() && placement.Key != "empty";
 }
 
-PlacementModelKey MakePlacementModelKey(const ParsedStaticPlacement& placement)
+uint32 InternPlacementModel(const ParsedStaticPlacement& placement, std::unordered_map<std::string, uint32>& ids, std::vector<StaticPlacementModel>& models)
 {
-    PlacementModelKey key;
-    key.Key = placement.Key;
-    key.Length = placement.NameLength;
-    return key;
-}
-
-std::string FixedAsciiString(const std::array<char, 20>& value, uint8 length)
-{
-    return std::string(value.data(), value.data() + static_cast<std::size_t>(length));
-}
-
-uint32 InternPlacementModel(const ParsedStaticPlacement& placement, std::unordered_map<PlacementModelKey, uint32, PlacementModelKeyHash>& ids, std::vector<StaticPlacementModel>& models)
-{
-    const auto key = MakePlacementModelKey(placement);
-    if (auto it = ids.find(key); it != ids.end())
+    if (auto it = ids.find(placement.Key); it != ids.end())
     {
         return it->second;
     }
     const auto id = static_cast<uint32>(models.size());
-    StaticPlacementModel model;
-    model.Name = FixedAsciiString(placement.Name, placement.NameLength);
-    model.Key = FixedAsciiString(placement.Key, placement.NameLength);
-    models.push_back(std::move(model));
-    ids.emplace(key, id);
+    models.push_back(StaticPlacementModel{placement.Name, placement.Key});
+    ids.emplace(placement.Key, id);
     return id;
 }
 
@@ -386,7 +770,7 @@ std::vector<StaticPlacementFile> CollectStaticPlacementFiles(const FResourceMana
     for (const auto& record : resources->Catalog().All())
     {
         const std::string rel = Common::NormalizePathKey(record.RelativePath);
-        if ((!LowerPathEndsWith(rel, ".mbd") && !LowerPathEndsWith(rel, ".mb")) || !StaticPathAllowed(rel, configuredDirs))
+        if ((!rel.ends_with(".mbd") && !rel.ends_with(".mb")) || !StaticPathAllowed(rel, configuredDirs))
         {
             continue;
         }
@@ -414,7 +798,7 @@ StaticPlacementLoadResult BuildStaticPlacementLoadResult(const std::vector<Stati
     StaticPlacementLoadResult result;
     result.Placements.reserve(total);
     result.Models.reserve(128);
-    std::unordered_map<PlacementModelKey, uint32, PlacementModelKeyHash> modelIds;
+    std::unordered_map<std::string, uint32> modelIds;
     modelIds.reserve(128);
     for (const auto& bucket : parsed)
     {
@@ -470,10 +854,35 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
     auto resource = std::make_unique<StaticModelResource>();
     resource->VertexCount = static_cast<UINT>(cpu->Vertices.size());
     resource->Bounds = cpu->Bounds;
+    resource->IsSkinned = cpu->IsSkinned;
     resource->CollisionPositions = cpu->CollisionPositions;
     resource->CollisionIndices = cpu->CollisionIndices;
     resource->CpuVertices = cpu->Vertices;
     resource->CpuIndices = cpu->Indices;
+    if (resource->IsSkinned)
+    {
+        resource->BindMesh = cpu->BindMesh;
+        resource->AnimationVertices = cpu->Vertices;
+        std::size_t MaxFrames = 0;
+        bool FirstAnimatedBone = true;
+        for (const auto& Object : resource->BindMesh.Objects)
+        {
+            if (Object.IsAnimated == 0)
+            {
+                continue;
+            }
+            if (Object.KeyIndex < 0)
+            {
+                continue;
+            }
+            const std::size_t KeyIndex = static_cast<std::size_t>(Object.KeyIndex);
+            const std::size_t AvailableFrames = resource->BindMesh.SkinIndices.size() > KeyIndex ? resource->BindMesh.SkinIndices.size() - KeyIndex : 0;
+            MaxFrames = FirstAnimatedBone ? AvailableFrames : (std::min)(MaxFrames, AvailableFrames);
+            FirstAnimatedBone = false;
+        }
+        resource->FrameCount = MaxFrames > 1 ? static_cast<int>(MaxFrames) : 1;
+        ConfigureNpcAnimationClips(*resource, AssetResources, ModelName);
+    }
 
     for (const auto& cpuBatch : cpu->Batches)
     {
@@ -484,35 +893,8 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
         resource->Batches.push_back(batch);
     }
 
-    const UINT VertexBytes = static_cast<UINT>(cpu->Vertices.size() * sizeof(WorldVertex));
-    HRESULT hr = Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &resource->VertexBuffer, nullptr);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("CreateVertexBuffer static model", hr));
-    }
-    void* VertexData = nullptr;
-    hr = resource->VertexBuffer->Lock(0, VertexBytes, &VertexData, 0);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("StaticModelVertexBuffer::Lock", hr));
-    }
-    CopyVectorBytes(VertexData, cpu->Vertices, VertexBytes);
-    resource->VertexBuffer->Unlock();
-
-    const UINT IndexBytes = static_cast<UINT>(cpu->Indices.size() * sizeof(uint16));
-    hr = Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &resource->IndexBuffer, nullptr);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("CreateIndexBuffer static model", hr));
-    }
-    void* IndexData = nullptr;
-    hr = resource->IndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("StaticModelIndexBuffer::Lock", hr));
-    }
-    CopyVectorBytes(IndexData, cpu->Indices, IndexBytes);
-    resource->IndexBuffer->Unlock();
+    resource->VertexBuffer = CreateManagedVertexBufferOrThrow(Device, cpu->Vertices, kWorldVertexFvf, "CreateVertexBuffer static model");
+    resource->IndexBuffer = CreateManagedIndexBufferOrThrow(Device, cpu->Indices, D3DFMT_INDEX16, "CreateIndexBuffer static model");
     return resource;
 }
 
@@ -574,6 +956,23 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
         {
             continue;
         }
+        if (it->second && it->second->IsSkinned)
+        {
+            float Ground = 0.0f;
+            FVector3 GroundNormal{};
+            if (TerrainSurfaceAt(placement.Position.X, placement.Position.Z, Ground, GroundNormal) && std::abs(placement.World._42 - Ground) > 0.0001f)
+            {
+                placement.Position.Y = Ground;
+                placement.World._42 = Ground;
+                placement.BoundsValid = false;
+                const uint64 CellKey = StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize);
+                if (auto BatchIt = StaticCellRenderBatches.find(CellKey); BatchIt != StaticCellRenderBatches.end())
+                {
+                    ReleaseWorldRenderBatches(BatchIt->second);
+                    StaticCellRenderBatches.erase(BatchIt);
+                }
+            }
+        }
         if (!placement.BoundsValid)
         {
             placement.Bounds = EmptyBounds();
@@ -602,23 +1001,10 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
 }
 
 
-void FD3D9GameWorldScene::Impl::ReleaseStaticBatches(std::vector<StaticRenderBatch>& Batches)
-{
-    for (auto& batch : Batches)
-    {
-        SafeRelease(batch.IndexBuffer);
-        SafeRelease(batch.VertexBuffer);
-    }
-    Batches.clear();
-}
 
 void FD3D9GameWorldScene::Impl::ClearStaticRenderBatches()
 {
-    for (auto& [_, batches] : StaticCellRenderBatches)
-    {
-        ReleaseStaticBatches(batches);
-    }
-    StaticCellRenderBatches.clear();
+    ReleaseWorldRenderBatchMap(StaticCellRenderBatches);
     VisibleStaticRenderCells.clear();
 }
 
@@ -628,13 +1014,7 @@ void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
     {
         return;
     }
-    struct AccumulatedStaticBatch
-    {
-        std::vector<WorldVertex> Vertices;
-        std::vector<uint32> Indices;
-        FBox3 Bounds = EmptyBounds();
-    };
-    std::unordered_map<IDirect3DTexture9*, AccumulatedStaticBatch> batchesByTexture;
+    AccumulatedWorldBatchMap batchesByTexture;
     for (auto& placement : StaticPlacements)
     {
         if (StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize) != CellKey || placement.ModelId >= StaticPlacementModels.size())
@@ -671,6 +1051,24 @@ void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
         {
             continue;
         }
+        if (resource->IsSkinned)
+        {
+            float Ground = 0.0f;
+            FVector3 GroundNormal{};
+            if (TerrainSurfaceAt(placement.Position.X, placement.Position.Z, Ground, GroundNormal) && std::abs(placement.World._42 - Ground) > 0.0001f)
+            {
+                placement.Position.Y = Ground;
+                placement.World._42 = Ground;
+                placement.BoundsValid = false;
+                const uint64 AdjustedCellKey = StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize);
+                if (auto BatchIt = StaticCellRenderBatches.find(AdjustedCellKey); BatchIt != StaticCellRenderBatches.end())
+                {
+                    ReleaseWorldRenderBatches(BatchIt->second);
+                    StaticCellRenderBatches.erase(BatchIt);
+                }
+            }
+            continue;
+        }
         const auto& world = placement.World;
         if (!placement.BoundsValid)
         {
@@ -682,78 +1080,13 @@ void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
             }
             placement.BoundsValid = true;
         }
-        for (const auto& sourceBatch : resource->Batches)
-        {
-            auto& output = batchesByTexture[sourceBatch.Texture];
-            const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
-            output.Vertices.reserve(output.Vertices.size() + resource->CpuVertices.size());
-            for (const auto& source : resource->CpuVertices)
-            {
-                WorldVertex vertex = source;
-                vertex.X = source.X * world._11 + source.Y * world._21 + source.Z * world._31 + world._41;
-                vertex.Y = source.X * world._12 + source.Y * world._22 + source.Z * world._32 + world._42;
-                vertex.Z = source.X * world._13 + source.Y * world._23 + source.Z * world._33 + world._43;
-                vertex.NX = source.NX * world._11 + source.NY * world._21 + source.NZ * world._31;
-                vertex.NY = source.NX * world._12 + source.NY * world._22 + source.NZ * world._32;
-                vertex.NZ = source.NX * world._13 + source.NY * world._23 + source.NZ * world._33;
-                ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
-                output.Vertices.push_back(vertex);
-            }
-            const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
-            output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
-            for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < resource->CpuIndices.size(); ++index)
-            {
-                output.Indices.push_back(baseVertex + resource->CpuIndices[index]);
-            }
-        }
+        AccumulateWorldBatches(*resource, world, batchesByTexture);
     }
-    std::vector<StaticRenderBatch> baked;
-    for (auto& [texture, source] : batchesByTexture)
+    std::vector<WorldRenderBatch> baked;
+    if (UploadWorldBatches(Device, batchesByTexture, baked))
     {
-        if (source.Vertices.empty() || source.Indices.empty() || !BoundsInitialized(source.Bounds))
-        {
-            continue;
-        }
-        StaticRenderBatch batch;
-        batch.Texture = texture;
-        batch.Bounds = source.Bounds;
-        batch.VertexCount = static_cast<UINT>(source.Vertices.size());
-        batch.IndexCount = static_cast<UINT>(source.Indices.size());
-        const UINT VertexBytes = static_cast<UINT>(source.Vertices.size() * sizeof(WorldVertex));
-        const UINT IndexBytes = static_cast<UINT>(source.Indices.size() * sizeof(uint32));
-        if (FAILED(Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &batch.VertexBuffer, nullptr)))
-        {
-            continue;
-        }
-        void* VertexData = nullptr;
-        if (FAILED(batch.VertexBuffer->Lock(0, VertexBytes, &VertexData, 0)))
-        {
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        CopyVectorBytes(VertexData, source.Vertices, VertexBytes);
-        batch.VertexBuffer->Unlock();
-        if (FAILED(Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_MANAGED, &batch.IndexBuffer, nullptr)))
-        {
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        void* IndexData = nullptr;
-        if (FAILED(batch.IndexBuffer->Lock(0, IndexBytes, &IndexData, 0)))
-        {
-            SafeRelease(batch.IndexBuffer);
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        CopyVectorBytes(IndexData, source.Indices, IndexBytes);
-        batch.IndexBuffer->Unlock();
-        baked.push_back(batch);
+        StaticCellRenderBatches.emplace(CellKey, std::move(baked));
     }
-    if (baked.empty())
-    {
-        return;
-    }
-    StaticCellRenderBatches.emplace(CellKey, std::move(baked));
 }
 
 void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
@@ -853,38 +1186,20 @@ void FD3D9GameWorldScene::PrewarmGrassModelCpuCache(const FResourceManager& reso
 
         const size_t hardware = static_cast<size_t>((std::max)(1u, std::thread::hardware_concurrency()));
         const size_t threadCount = (std::min)(std::clamp(hardware - 1, size_t{1}, size_t{8}), targets.size());
-        std::atomic_size_t next{0};
         std::atomic_size_t loaded{0};
         std::atomic_size_t failed{0};
-        std::vector<std::thread> workers;
-        workers.reserve(threadCount);
-        for (size_t threadIndex = 0; threadIndex < threadCount; ++threadIndex)
+        ParallelFor(targets.size(), threadCount, [&](std::size_t index)
         {
-            workers.emplace_back([&targets, &next, &loaded, &failed]()
+            try
             {
-                for (;;)
-                {
-                    const size_t index = next.fetch_add(1, std::memory_order_relaxed);
-                    if (index >= targets.size())
-                    {
-                        break;
-                    }
-                    try
-                    {
-                        LoadStaticModelCpuResourceCached(targets[index].first, targets[index].second);
-                        loaded.fetch_add(1, std::memory_order_relaxed);
-                    }
-                    catch (...)
-                    {
-                        failed.fetch_add(1, std::memory_order_relaxed);
-                    }
-                }
-            });
-        }
-        for (auto& worker : workers)
-        {
-            worker.join();
-        }
+                LoadStaticModelCpuResourceCached(targets[index].first, targets[index].second);
+                loaded.fetch_add(1, std::memory_order_relaxed);
+            }
+            catch (...)
+            {
+                failed.fetch_add(1, std::memory_order_relaxed);
+            }
+        });
         if (logger)
         {
             logger->Info("grass model CPU cache prewarmed: requested=" + std::to_string(targets.size()) + ", loaded=" + std::to_string(loaded.load(std::memory_order_relaxed)) + ", failed=" + std::to_string(failed.load(std::memory_order_relaxed)) + ", threads=" + std::to_string(threadCount));
@@ -896,68 +1211,6 @@ void FD3D9GameWorldScene::PrewarmGrassModelCpuCache(const FResourceManager& reso
         {
             logger->Warning(std::string("grass model CPU prewarm failed: ") + ex.what());
         }
-    }
-}
-
-void FD3D9GameWorldScene::PrewarmStaticModelCpuCache(const FResourceManager& resources, const FModelRepository& models, FLogger* logger)
-{
-    std::vector<std::pair<std::string, std::filesystem::path>> targets;
-    targets.reserve(models.Assets().size());
-    for (const auto& record : models.Assets())
-    {
-        if (record.Kind != EModelAssetKind::Mdl)
-        {
-            continue;
-        }
-        auto file = resources.Catalog().FindByLogicalName(record.LogicalName);
-        if (!file)
-        {
-            continue;
-        }
-        targets.emplace_back(record.RelativePath.stem().generic_string(), file->AbsolutePath);
-    }
-    if (targets.empty())
-    {
-        return;
-    }
-
-    const size_t hardware = static_cast<size_t>(std::max(1u, std::thread::hardware_concurrency()));
-    const size_t threadCount = std::min(std::clamp(hardware - 1, size_t{1}, size_t{8}), targets.size());
-    std::atomic_size_t next{0};
-    std::atomic_size_t loaded{0};
-    std::atomic_size_t failed{0};
-    std::vector<std::thread> workers;
-    workers.reserve(threadCount);
-    for (size_t threadIndex = 0; threadIndex < threadCount; ++threadIndex)
-    {
-        workers.emplace_back([&targets, &next, &loaded, &failed]()
-        {
-            for (;;)
-            {
-                const size_t index = next.fetch_add(1, std::memory_order_relaxed);
-                if (index >= targets.size())
-                {
-                    break;
-                }
-                try
-                {
-                    LoadStaticModelCpuResourceCached(targets[index].first, targets[index].second);
-                    loaded.fetch_add(1, std::memory_order_relaxed);
-                }
-                catch (...)
-                {
-                    failed.fetch_add(1, std::memory_order_relaxed);
-                }
-            }
-        });
-    }
-    for (auto& worker : workers)
-    {
-        worker.join();
-    }
-    if (logger)
-    {
-        logger->Info("static model render CPU cache: requested=" + std::to_string(targets.size()) + ", loaded=" + std::to_string(loaded.load(std::memory_order_relaxed)) + ", failed=" + std::to_string(failed.load(std::memory_order_relaxed)) + ", threads=" + std::to_string(threadCount));
     }
 }
 
@@ -1144,7 +1397,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
             ++it;
             continue;
         }
-        ReleaseGrassBatches(it->second);
+        ReleaseWorldRenderBatches(it->second);
         it = GrassCellRenderBatches.erase(it);
     }
 
@@ -1229,7 +1482,6 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
     }
 
     std::vector<std::vector<GrassInstance>> generated(plans.size());
-    std::atomic_size_t next{0};
     std::mutex errorMutex;
     std::string firstError;
 
@@ -1256,29 +1508,18 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 throw std::runtime_error("grass pattern has no models for type " + std::to_string(type));
             }
 
-            uint32 RandomState = (static_cast<uint32>(plan.CellX) * 0x9e3779b9U) ^ (static_cast<uint32>(plan.CellZ) * 0x85ebca6bU) ^ (static_cast<uint32>(SampleIndex) * 0xc2b2ae35U) ^ type;
-            auto NextRandom = [&RandomState]()
-            {
-                RandomState ^= RandomState << 13;
-                RandomState ^= RandomState >> 17;
-                RandomState ^= RandomState << 5;
-                return RandomState;
-            };
-            auto UnitRandom = [&NextRandom]()
-            {
-                return static_cast<float>(NextRandom() & 0xffffU) / 65535.0f;
-            };
+            FXorShift32 Random{(static_cast<uint32>(plan.CellX) * 0x9e3779b9U) ^ (static_cast<uint32>(plan.CellZ) * 0x85ebca6bU) ^ (static_cast<uint32>(SampleIndex) * 0xc2b2ae35U) ^ type};
 
             float FlatHeight = 0.0f;
             FVector3 FlatNormal{};
             if (FlatGrassSurfaceAt(sample.X, sample.Z, FlatHeight, FlatNormal))
             {
-                StaticModelResource* resource = pattern[NextRandom() % pattern.size()];
+                StaticModelResource* resource = pattern[Random.Next() % pattern.size()];
                 auto world = AlignUpMatrix(FlatNormal);
                 world._41 = sample.X;
                 world._42 = FlatHeight - resource->Bounds.Max.Y;
                 world._43 = sample.Z;
-                out.push_back(GrassInstance{resource, world, UnitRandom() * 2.0f * kPi, 0.65f + UnitRandom() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ});
                 ++FlatSampleCount;
                 FlowerType = static_cast<int>(type);
                 continue;
@@ -1292,21 +1533,21 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
             for (int detail = 0; detail < detailCount; ++detail)
             {
                 const float jitter = Config.GrassSpacing * Config.GrassJitterFraction;
-                const float DetailX = sample.X + (UnitRandom() * 2.0f - 1.0f) * jitter;
-                const float DetailZ = sample.Z + (UnitRandom() * 2.0f - 1.0f) * jitter;
+                const float DetailX = sample.X + (Random.Unit() * 2.0f - 1.0f) * jitter;
+                const float DetailZ = sample.Z + (Random.Unit() * 2.0f - 1.0f) * jitter;
                 float height = 0.0f;
                 FVector3 DetailNormal{};
                 if (!TerrainSurfaceAt(DetailX, DetailZ, height, DetailNormal))
                 {
                     continue;
                 }
-                StaticModelResource* resource = DetailResources[NextRandom() % DetailResources.size()];
-                const float Scale = Config.GrassScaleMin + UnitRandom() * (Config.GrassScaleMax - Config.GrassScaleMin);
+                StaticModelResource* resource = DetailResources[Random.Next() % DetailResources.size()];
+                const float Scale = Config.GrassScaleMin + Random.Unit() * (Config.GrassScaleMax - Config.GrassScaleMin);
                 auto world = ScaleMatrix(Scale);
                 world._41 = DetailX;
                 world._42 = height - resource->Bounds.Max.Y * Scale;
                 world._43 = DetailZ;
-                out.push_back(GrassInstance{resource, world, UnitRandom() * 2.0f * kPi, 0.65f + UnitRandom() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ});
                 AnyDetail = true;
             }
         }
@@ -1315,31 +1556,20 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
         if (FlatSampleCount == SampleTotal && !AnyDetail && FlowerType > 0 && FlowerType < static_cast<int>(FlowerPatternResources.size()) && !FlowerPatternResources[static_cast<std::size_t>(FlowerType)].empty())
         {
             const auto& flowers = FlowerPatternResources[static_cast<std::size_t>(FlowerType)];
-            uint32 FlowerState = (static_cast<uint32>(plan.CellX) * 0x27d4eb2dU) ^ (static_cast<uint32>(plan.CellZ) * 0x165667b1U) ^ 0x9e3779b9U;
-            auto FlowerNext = [&FlowerState]()
-            {
-                FlowerState ^= FlowerState << 13;
-                FlowerState ^= FlowerState >> 17;
-                FlowerState ^= FlowerState << 5;
-                return FlowerState;
-            };
-            auto FlowerUnit = [&FlowerNext]()
-            {
-                return static_cast<float>(FlowerNext() & 0xffffU) / 65535.0f;
-            };
+            FXorShift32 FlowerRandom{(static_cast<uint32>(plan.CellX) * 0x27d4eb2dU) ^ (static_cast<uint32>(plan.CellZ) * 0x165667b1U) ^ 0x9e3779b9U};
             const int flowerLimit = Config.GrassQuality >= 2 ? Config.GrassFlowerCountMax : (std::min)(Config.GrassFlowerCountMax, 3);
-            const int FlowerCount = static_cast<int>(FlowerUnit() * static_cast<float>((std::max)(0, flowerLimit)));
+            const int FlowerCount = static_cast<int>(FlowerRandom.Unit() * static_cast<float>((std::max)(0, flowerLimit)));
             for (int f = 0; f < FlowerCount; ++f)
             {
-                const float FlowerX = plan.X + FlowerUnit() * spacing;
-                const float FlowerZ = plan.Z + FlowerUnit() * spacing;
+                const float FlowerX = plan.X + FlowerRandom.Unit() * spacing;
+                const float FlowerZ = plan.Z + FlowerRandom.Unit() * spacing;
                 float FlowerH = 0.0f;
                 FVector3 FlowerNormal{};
                 if (!TerrainSurfaceAt(FlowerX, FlowerZ, FlowerH, FlowerNormal))
                 {
                     continue;
                 }
-                const int slot = static_cast<int>(FlowerUnit() * 5.0f);
+                const int slot = static_cast<int>(FlowerRandom.Unit() * 5.0f);
                 if (slot < 0 || slot >= static_cast<int>(flowers.size()))
                 {
                     continue;
@@ -1349,54 +1579,28 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 world._41 = FlowerX;
                 world._42 = FlowerH - resource->Bounds.Max.Y;
                 world._43 = FlowerZ;
-                out.push_back(GrassInstance{resource, world, FlowerUnit() * 2.0f * kPi, 0.65f + FlowerUnit() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, FlowerRandom.Unit() * 2.0f * kPi, 0.65f + FlowerRandom.Unit() * 0.35f, plan.CellX, plan.CellZ});
             }
         }
     };
 
     const size_t hardware = static_cast<size_t>((std::max)(1u, std::thread::hardware_concurrency()));
     const size_t threadCount = plans.size() < 8 ? 1 : (std::min)(std::clamp(hardware - 1, size_t{1}, size_t{8}), plans.size());
-    auto workerBody = [&]()
+    ParallelFor(plans.size(), threadCount, [&](std::size_t index)
     {
-        for (;;)
+        try
         {
-            const size_t index = next.fetch_add(1, std::memory_order_relaxed);
-            if (index >= plans.size())
+            generateCell(index);
+        }
+        catch (const std::exception& ex)
+        {
+            std::lock_guard<std::mutex> lock(errorMutex);
+            if (firstError.empty())
             {
-                break;
-            }
-            try
-            {
-                generateCell(index);
-            }
-            catch (const std::exception& ex)
-            {
-                std::lock_guard<std::mutex> lock(errorMutex);
-                if (firstError.empty())
-                {
-                    firstError = ex.what();
-                }
+                firstError = ex.what();
             }
         }
-    };
-
-    if (threadCount == 1)
-    {
-        workerBody();
-    }
-    else
-    {
-        std::vector<std::thread> workers;
-        workers.reserve(threadCount);
-        for (size_t threadIndex = 0; threadIndex < threadCount; ++threadIndex)
-        {
-            workers.emplace_back(workerBody);
-        }
-        for (auto& worker : workers)
-        {
-            worker.join();
-        }
-    }
+    });
 
     if (!firstError.empty())
     {
@@ -1460,12 +1664,6 @@ bool FD3D9GameWorldScene::Impl::CollidesWithStatic(float x, float y, float z) co
             {
                 continue;
             }
-            // Walkable (floor-facing) triangles — floors, slopes, ramps — are
-            // never collision walls: you stand/walk on them (SupportHeightAt
-            // handles the height). Only steep faces (walls) block horizontal
-            // movement. Skipping only floors *below* the feet (the old check)
-            // made the slope above your feet block you, so ramps could only be
-            // jumped onto, not walked up.
             const bool FloorFacing =
             std::abs(normal.Y) / NormalLength >= Config.CollisionFloorNormalThreshold;
             if (FloorFacing)
@@ -1531,7 +1729,6 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
             {
                 continue;
             }
-            // Plane height at (x,z): y = a.Y - (nx*(x-a.X)+nz*(z-a.Z))/ny.
             const float y = a.Y - (normal.X * (x - a.X) + normal.Z * (z - a.Z)) / normal.Y;
             if (y < MinY || y > MaxY)
             {
@@ -1556,31 +1753,185 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
     }
     return found;
 }
-
-void FD3D9GameWorldScene::Impl::DrawStaticObjects()
+bool FD3D9GameWorldScene::Impl::BeginAlphaWorldPass(const D3DMATRIX& World)
 {
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
     Device->SetRenderState(D3DRS_ALPHAREF, 0x20);
     Device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
-    const bool UseShader = WorldShadersReady;
-    const auto BatchedWorld = IdentityMatrix();
-    if (UseShader)
+    if (WorldShadersReady)
     {
         BeginBaseShader();
         SetBaseLightConstants();
-        SetBaseWorld(BatchedWorld);
+        SetBaseWorld(World);
+        return true;
     }
-    else
+    Device->SetFVF(kWorldVertexFvf);
+    Device->SetTransform(D3DTS_WORLD, &World);
+    return false;
+}
+
+void FD3D9GameWorldScene::Impl::EndAlphaWorldPass(bool UsedShader)
+{
+    if (UsedShader)
     {
-        Device->SetFVF(kWorldVertexFvf);
-        Device->SetTransform(D3DTS_WORLD, &BatchedWorld);
+        EndBaseShader();
     }
+    Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+}
+
+void FD3D9GameWorldScene::Impl::DrawWorldRenderBatches(std::vector<const WorldRenderBatch*>& DrawList, EGameWorldDrawBucket Bucket, float CullingMargin)
+{
+    if (DrawList.empty())
+    {
+        return;
+    }
+    std::sort(DrawList.begin(), DrawList.end(), [](const WorldRenderBatch* a, const WorldRenderBatch* b) { return std::less<IDirect3DTexture9*>{}(a->Texture, b->Texture); });
+    IDirect3DTexture9* boundTexture = nullptr;
+    for (const auto* batch : DrawList)
+    {
+        if (!batch || !batch->VertexBuffer || !batch->IndexBuffer || batch->VertexCount == 0 || batch->IndexCount < 3)
+        {
+            continue;
+        }
+        if (BoundsInitialized(batch->Bounds) && !IsBoundsVisibleToCamera(batch->Bounds, CullingMargin))
+        {
+            continue;
+        }
+        if (batch->Texture != boundTexture)
+        {
+            Device->SetTexture(0, batch->Texture);
+            boundTexture = batch->Texture;
+        }
+        Device->SetStreamSource(0, batch->VertexBuffer, 0, sizeof(WorldVertex));
+        Device->SetIndices(batch->IndexBuffer);
+        const UINT triangleCount = batch->IndexCount / 3;
+        Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, batch->VertexCount, 0, triangleCount);
+        RecordWorldDraw(triangleCount, Bucket);
+    }
+}
+
+
+void FD3D9GameWorldScene::Impl::UpdateNpcAnimation(float DeltaSeconds)
+{
+    const float Delta = std::clamp(DeltaSeconds, 0.0f, 0.1f);
+    constexpr float FramesPerSecond = 1.0f / kPlayerAnimSecondsPerFrame;
+    for (auto& Entry : StaticResources)
+    {
+        auto* Resource = Entry.second.get();
+        if (!Resource || !Resource->IsSkinned || Resource->IdleClip < 0 || Resource->AnimationVertices.empty() || !Resource->VertexBuffer)
+        {
+            continue;
+        }
+        if (Resource->CurrentClip < 0)
+        {
+            Resource->CurrentClip = Resource->IdleClip;
+        }
+        Resource->ClipTime += Delta;
+        bool IsIdle = Resource->CurrentClip == Resource->IdleClip;
+        int ClipIndex = Resource->CurrentClip;
+        if (ClipIndex < 0 || static_cast<std::size_t>(ClipIndex) >= Resource->ClipLength.size())
+        {
+            Resource->CurrentClip = Resource->IdleClip;
+            Resource->ClipTime = 0.0f;
+            ClipIndex = Resource->CurrentClip;
+            IsIdle = true;
+        }
+        if (ClipIndex < 0 || static_cast<std::size_t>(ClipIndex) >= Resource->ClipLength.size())
+        {
+            continue;
+        }
+        const int ClipLength = Resource->ClipLength[static_cast<std::size_t>(ClipIndex)];
+        if (ClipLength <= 0)
+        {
+            continue;
+        }
+        const float FramePosition = Resource->ClipTime * FramesPerSecond;
+        int FrameInClip = static_cast<int>(std::floor(FramePosition));
+        float FrameAlpha = FramePosition - std::floor(FramePosition);
+        if (IsIdle)
+        {
+            FrameInClip %= ClipLength;
+            if (!Resource->GestureClips.empty() && static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) < 0.3f * Delta)
+            {
+                Resource->CurrentClip = Resource->GestureClips[static_cast<std::size_t>(std::rand() % static_cast<int>(Resource->GestureClips.size()))];
+                Resource->ClipTime = 0.0f;
+                ClipIndex = Resource->CurrentClip;
+                IsIdle = false;
+                FrameInClip = 0;
+                FrameAlpha = 0.0f;
+            }
+        }
+        else if (FrameInClip >= ClipLength)
+        {
+            Resource->CurrentClip = Resource->IdleClip;
+            Resource->ClipTime = 0.0f;
+            ClipIndex = Resource->CurrentClip;
+            IsIdle = true;
+            FrameInClip = 0;
+            FrameAlpha = 0.0f;
+        }
+        if (ClipIndex < 0 || static_cast<std::size_t>(ClipIndex) >= Resource->ClipLength.size())
+        {
+            continue;
+        }
+        const int ActiveClipLength = Resource->ClipLength[static_cast<std::size_t>(ClipIndex)];
+        if (ActiveClipLength <= 0)
+        {
+            continue;
+        }
+        FrameInClip = std::clamp(FrameInClip, 0, ActiveClipLength - 1);
+        const int NextFrameInClip = IsIdle ? (FrameInClip + 1) % ActiveClipLength : (std::min)(FrameInClip + 1, ActiveClipLength - 1);
+        const int Frame = Resource->ClipStart[static_cast<std::size_t>(ClipIndex)] + FrameInClip;
+        const int NextFrame = Resource->ClipStart[static_cast<std::size_t>(ClipIndex)] + NextFrameInClip;
+        if (Frame < 0 || NextFrame < 0 || Frame >= Resource->FrameCount || NextFrame >= Resource->FrameCount)
+        {
+            continue;
+        }
+        FMdlMesh PosedA = Resource->BindMesh;
+        if (!ApplyMdlRestPose(PosedA, Frame))
+        {
+            continue;
+        }
+        FMdlMesh PosedB = Resource->BindMesh;
+        if (!ApplyMdlRestPose(PosedB, NextFrame))
+        {
+            PosedB = PosedA;
+            FrameAlpha = 0.0f;
+        }
+        Resource->LastAnimationFrame = Frame;
+        const std::size_t Count = (std::min)({Resource->AnimationVertices.size(), PosedA.Vertices.size(), PosedB.Vertices.size()});
+        for (std::size_t Index = 0; Index < Count; ++Index)
+        {
+            const auto& A = PosedA.Vertices[Index];
+            const auto& B = PosedB.Vertices[Index];
+            Resource->AnimationVertices[Index].X = A.X + (B.X - A.X) * FrameAlpha;
+            Resource->AnimationVertices[Index].Y = A.Y + (B.Y - A.Y) * FrameAlpha;
+            Resource->AnimationVertices[Index].Z = A.Z + (B.Z - A.Z) * FrameAlpha;
+            const FVector3 Normal = NormalizeVector({A.NX + (B.NX - A.NX) * FrameAlpha, A.NY + (B.NY - A.NY) * FrameAlpha, A.NZ + (B.NZ - A.NZ) * FrameAlpha});
+            Resource->AnimationVertices[Index].NX = Normal.X;
+            Resource->AnimationVertices[Index].NY = Normal.Y;
+            Resource->AnimationVertices[Index].NZ = Normal.Z;
+        }
+        void* Data = nullptr;
+        const UINT Bytes = static_cast<UINT>(Resource->AnimationVertices.size() * sizeof(WorldVertex));
+        if (SUCCEEDED(Resource->VertexBuffer->Lock(0, Bytes, &Data, 0)))
+        {
+            std::memcpy(Data, Resource->AnimationVertices.data(), Bytes);
+            Resource->VertexBuffer->Unlock();
+        }
+    }
+}
+
+
+void FD3D9GameWorldScene::Impl::DrawStaticObjects()
+{
+    const bool UseShader = BeginAlphaWorldPass(IdentityMatrix());
 
     IDirect3DTexture9* boundTexture = nullptr;
     bool hadBatchedCells = false;
     if (!StaticCellRenderBatches.empty() && !VisibleStaticRenderCells.empty())
     {
-        std::vector<const StaticRenderBatch*> drawList;
+        std::vector<const WorldRenderBatch*> drawList;
         for (const auto cell : VisibleStaticRenderCells)
         {
             const auto it = StaticCellRenderBatches.find(cell);
@@ -1591,38 +1942,25 @@ void FD3D9GameWorldScene::Impl::DrawStaticObjects()
             hadBatchedCells = true;
             for (const auto& batch : it->second)
             {
-                if (batch.VertexBuffer && batch.IndexBuffer && batch.VertexCount != 0 && batch.IndexCount >= 3 && IsBoundsVisibleToCamera(batch.Bounds, 1.0f))
-                {
-                    drawList.push_back(&batch);
-                }
+                drawList.push_back(&batch);
             }
         }
-        std::sort(drawList.begin(), drawList.end(), [](const StaticRenderBatch* a, const StaticRenderBatch* b) { return std::less<IDirect3DTexture9*>{}(a->Texture, b->Texture); });
-        for (const auto* batch : drawList)
-        {
-            if (batch->Texture != boundTexture)
-            {
-                Device->SetTexture(0, batch->Texture);
-                boundTexture = batch->Texture;
-            }
-            Device->SetStreamSource(0, batch->VertexBuffer, 0, sizeof(WorldVertex));
-            Device->SetIndices(batch->IndexBuffer);
-            const UINT triangleCount = batch->IndexCount / 3;
-            Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, batch->VertexCount, 0, triangleCount);
-            RecordWorldDraw(triangleCount, EGameWorldDrawBucket::StaticObjects);
-        }
+        DrawWorldRenderBatches(drawList, EGameWorldDrawBucket::StaticObjects, 1.0f);
     }
 
-    if (!hadBatchedCells)
     {
         const StaticModelResource* boundResource = nullptr;
         for (const auto& instance : StaticInstances)
         {
+            const auto* resource = instance.resource;
+            if (!resource || (hadBatchedCells && !resource->IsSkinned))
+            {
+                continue;
+            }
             if (!IsBoundsVisibleToCamera(instance.Bounds, 1.0f))
             {
                 continue;
             }
-            const auto* resource = instance.resource;
             if (UseShader)
             {
                 SetBaseWorld(instance.world);
@@ -1651,209 +1989,50 @@ void FD3D9GameWorldScene::Impl::DrawStaticObjects()
             }
         }
     }
-    if (UseShader)
-    {
-        EndBaseShader();
-    }
-    Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    EndAlphaWorldPass(UseShader);
 }
 
-void FD3D9GameWorldScene::Impl::ReleaseGrassBatches(std::vector<GrassRenderBatch>& Batches)
-{
-    for (auto& batch : Batches)
-    {
-        SafeRelease(batch.IndexBuffer);
-        SafeRelease(batch.VertexBuffer);
-    }
-    Batches.clear();
-}
 
 void FD3D9GameWorldScene::Impl::ClearGrassRenderBatches()
 {
-    ReleaseGrassBatches(GrassRenderBatches);
-    for (auto& [_, batches] : GrassCellRenderBatches)
-    {
-        ReleaseGrassBatches(batches);
-    }
-    GrassCellRenderBatches.clear();
+    ReleaseWorldRenderBatchMap(GrassCellRenderBatches);
 }
 
 void FD3D9GameWorldScene::Impl::BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances)
 {
     auto& existing = GrassCellRenderBatches[CellKey];
-    ReleaseGrassBatches(existing);
+    ReleaseWorldRenderBatches(existing);
     if (!Device || Instances.empty())
     {
         GrassCellRenderBatches.erase(CellKey);
         return;
     }
 
-    struct AccumulatedGrassBatch
-    {
-        std::vector<WorldVertex> Vertices;
-        std::vector<uint32> Indices;
-        FBox3 Bounds = EmptyBounds();
-    };
-
-    std::unordered_map<IDirect3DTexture9*, AccumulatedGrassBatch> batchesByTexture;
+    AccumulatedWorldBatchMap batchesByTexture;
     for (const auto& instance : Instances)
     {
-        const auto* resource = instance.resource;
-        if (!resource || resource->CpuVertices.empty() || resource->CpuIndices.empty())
+        if (instance.resource)
         {
-            continue;
-        }
-        const D3DMATRIX& world = instance.world;
-        const float ModelHeight = resource->Bounds.Max.Y - resource->Bounds.Min.Y;
-        const float InvModelHeight = ModelHeight > 0.0001f ? 1.0f / ModelHeight : 0.0f;
-        const float RootWorldY = resource->Bounds.Max.Y * world._22 + world._42;
-        for (const auto& sourceBatch : resource->Batches)
-        {
-            auto& output = batchesByTexture[sourceBatch.Texture];
-            const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
-            output.Vertices.reserve(output.Vertices.size() + resource->CpuVertices.size());
-            for (const auto& source : resource->CpuVertices)
-            {
-                WorldVertex vertex = source;
-                vertex.DetailU = std::clamp((resource->Bounds.Max.Y - source.Y) * InvModelHeight, 0.0f, 1.0f);
-                vertex.DetailV = RootWorldY;
-                vertex.X = source.X * world._11 + source.Y * world._21 + source.Z * world._31 + world._41;
-                vertex.Y = source.X * world._12 + source.Y * world._22 + source.Z * world._32 + world._42;
-                vertex.Z = source.X * world._13 + source.Y * world._23 + source.Z * world._33 + world._43;
-                vertex.NX = source.NX * world._11 + source.NY * world._21 + source.NZ * world._31;
-                vertex.NY = source.NX * world._12 + source.NY * world._22 + source.NZ * world._32;
-                vertex.NZ = source.NX * world._13 + source.NY * world._23 + source.NZ * world._33;
-                ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
-                output.Vertices.push_back(vertex);
-            }
-            const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
-            output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
-            for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < resource->CpuIndices.size(); ++index)
-            {
-                output.Indices.push_back(baseVertex + resource->CpuIndices[index]);
-            }
+            AccumulateWorldBatches(*instance.resource, instance.world, batchesByTexture, true);
         }
     }
-
-    for (auto& [texture, source] : batchesByTexture)
-    {
-        if (source.Vertices.empty() || source.Indices.empty() || !BoundsInitialized(source.Bounds))
-        {
-            continue;
-        }
-        GrassRenderBatch batch;
-        batch.Texture = texture;
-        batch.Bounds = source.Bounds;
-        batch.VertexCount = static_cast<UINT>(source.Vertices.size());
-        batch.IndexCount = static_cast<UINT>(source.Indices.size());
-        const UINT VertexBytes = static_cast<UINT>(source.Vertices.size() * sizeof(WorldVertex));
-        const UINT IndexBytes = static_cast<UINT>(source.Indices.size() * sizeof(uint32));
-        HRESULT hr = Device->CreateVertexBuffer(VertexBytes, D3DUSAGE_WRITEONLY, kWorldVertexFvf, D3DPOOL_MANAGED, &batch.VertexBuffer, nullptr);
-        if (FAILED(hr))
-        {
-            continue;
-        }
-        void* VertexData = nullptr;
-        hr = batch.VertexBuffer->Lock(0, VertexBytes, &VertexData, 0);
-        if (FAILED(hr))
-        {
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        CopyVectorBytes(VertexData, source.Vertices, VertexBytes);
-        batch.VertexBuffer->Unlock();
-
-        hr = Device->CreateIndexBuffer(IndexBytes, D3DUSAGE_WRITEONLY, D3DFMT_INDEX32, D3DPOOL_MANAGED, &batch.IndexBuffer, nullptr);
-        if (FAILED(hr))
-        {
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        void* IndexData = nullptr;
-        hr = batch.IndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
-        if (FAILED(hr))
-        {
-            SafeRelease(batch.IndexBuffer);
-            SafeRelease(batch.VertexBuffer);
-            continue;
-        }
-        CopyVectorBytes(IndexData, source.Indices, IndexBytes);
-        batch.IndexBuffer->Unlock();
-        existing.push_back(batch);
-    }
+    UploadWorldBatches(Device, batchesByTexture, existing);
     if (existing.empty())
     {
         GrassCellRenderBatches.erase(CellKey);
     }
 }
 
-void FD3D9GameWorldScene::Impl::BakeGrass()
-{
-    ClearGrassRenderBatches();
-    std::unordered_map<uint64, std::vector<GrassInstance>> byCell;
-    for (const auto& instance : GrassInstances)
-    {
-        const uint64 key = (static_cast<uint64>(static_cast<uint32>(instance.CellX)) << 32) | static_cast<uint32>(instance.CellZ);
-        byCell[key].push_back(instance);
-    }
-    for (const auto& [key, instances] : byCell)
-    {
-        BakeGrassCell(key, instances);
-    }
-}
-
 void FD3D9GameWorldScene::Impl::DrawGrass()
 {
-    if (GrassRenderBatches.empty() && GrassCellRenderBatches.empty())
+    if (GrassCellRenderBatches.empty())
     {
         return;
     }
-    Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
-    Device->SetRenderState(D3DRS_ALPHAREF, 0x20);
-    Device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+    const bool UseShader = BeginAlphaWorldPass(IdentityMatrix());
 
-    const auto world = IdentityMatrix();
-    const bool UseShader = WorldShadersReady;
-    if (UseShader)
-    {
-        BeginBaseShader();
-        SetBaseLightConstants();
-        SetBaseWorld(world);
-    }
-    else
-    {
-        Device->SetFVF(kWorldVertexFvf);
-        Device->SetTransform(D3DTS_WORLD, &world);
-    }
-
-    IDirect3DTexture9* boundTexture = nullptr;
-    auto drawBatch = [&](const GrassRenderBatch& batch)
-    {
-        if (!batch.VertexBuffer || !batch.IndexBuffer || batch.VertexCount == 0 || batch.IndexCount < 3)
-        {
-            return;
-        }
-        if (BoundsInitialized(batch.Bounds) && !IsBoundsVisibleToCamera(batch.Bounds, Config.GrassSpacing * 2.0f))
-        {
-            return;
-        }
-        if (batch.Texture != boundTexture)
-        {
-            Device->SetTexture(0, batch.Texture);
-            boundTexture = batch.Texture;
-        }
-        Device->SetStreamSource(0, batch.VertexBuffer, 0, sizeof(WorldVertex));
-        Device->SetIndices(batch.IndexBuffer);
-        const UINT triangleCount = batch.IndexCount / 3;
-        Device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, batch.VertexCount, 0, triangleCount);
-        RecordWorldDraw(triangleCount, EGameWorldDrawBucket::Grass);
-    };
-    std::vector<const GrassRenderBatch*> drawList;
-    drawList.reserve(GrassRenderBatches.size() + GrassCellRenderBatches.size() * 2);
-    for (const auto& batch : GrassRenderBatches)
-    {
-        drawList.push_back(&batch);
-    }
+    std::vector<const WorldRenderBatch*> drawList;
+    drawList.reserve(GrassCellRenderBatches.size() * 2);
     for (const auto& [_, batches] : GrassCellRenderBatches)
     {
         for (const auto& batch : batches)
@@ -1861,16 +2040,8 @@ void FD3D9GameWorldScene::Impl::DrawGrass()
             drawList.push_back(&batch);
         }
     }
-    std::sort(drawList.begin(), drawList.end(), [](const GrassRenderBatch* a, const GrassRenderBatch* b) { return std::less<IDirect3DTexture9*>{}(a->Texture, b->Texture); });
-    for (const auto* batch : drawList)
-    {
-        drawBatch(*batch);
-    }
+    DrawWorldRenderBatches(drawList, EGameWorldDrawBucket::Grass, Config.GrassSpacing * 2.0f);
 
-    if (UseShader)
-    {
-        EndBaseShader();
-    }
-    Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    EndAlphaWorldPass(UseShader);
 }
 

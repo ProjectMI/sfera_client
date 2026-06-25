@@ -234,6 +234,26 @@ namespace
             result.Frames.push_back(std::move(frame));
         }
     }
+
+    bool DecodeServerCredentialsTime(const std::vector<uint8>& Frame, float& Fraction, int32& Day, int32& Month, int32& Year)
+    {
+        if (Frame.size() != 56 || FSphereEmuProtocol::ReadU16LE(Frame, 2) != 300 || Frame[9] != 0x08 || Frame[10] != 0x40 || Frame[11] != 0x20 || Frame[12] != 0x10)
+        {
+            return false;
+        }
+        const int32 Seconds = ((Frame[13] & 0x0f) - 1) * 12;
+        const int32 Minutes = ((Frame[14] & 0x03) << 4) | (Frame[13] >> 4);
+        const int32 Hours = (Frame[14] >> 2) & 0x1f;
+        if (Seconds < 0 || Seconds >= 60 || Minutes < 0 || Minutes >= 60 || Hours < 0 || Hours >= 24)
+        {
+            return false;
+        }
+        Fraction = static_cast<float>(Hours * 3600 + Minutes * 60 + Seconds) / 86400.0f;
+        Day = ((Frame[15] & 0x0f) << 1) | ((Frame[14] >> 7) & 0x01);
+        Month = (Frame[15] >> 4) & 0x0f;
+        Year = ((((Frame[17] & 0x03) << 8) | Frame[16]) + 7800);
+        return true;
+    }
 }
 
 struct FServerSession::FImpl
@@ -242,6 +262,11 @@ struct FServerSession::FImpl
     FSocketHandle Socket;
     uint16 LocalId = 0;
     uint8 PositionSequence = 0;
+    bool HasGameTime = false;
+    float GameTimeFraction = 0.0f;
+    int32 GameDay = 0;
+    int32 GameMonth = 0;
+    int32 GameYear = 0;
 };
 
 FServerSession::FServerSession(std::unique_ptr<FImpl> impl) : Impl(std::move(impl)) {}
@@ -257,6 +282,8 @@ std::shared_ptr<FServerSession> FServerSession::Create(std::unique_ptr<FImpl> im
 FServerSession::~FServerSession() = default;
 bool FServerSession::Connected() const { return Impl && static_cast<bool>(Impl->Socket); }
 uint16 FServerSession::LocalId() const { return Impl ? Impl->LocalId : 0; }
+bool FServerSession::HasGameTime() const { return Impl && Impl->HasGameTime; }
+float FServerSession::GameTimeFraction() const { return Impl ? Impl->GameTimeFraction : 0.0f; }
 void FServerSession::Close()
 {
     if (Impl)
@@ -450,6 +477,12 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
     {
         result.NextLength = static_cast<int32>(nextFrame.size());
         result.NextOpcode = FSphereEmuProtocol::ReadU16LE(nextFrame, 2);
+        result.HasGameTime = DecodeServerCredentialsTime(nextFrame, result.GameTimeFraction, result.GameDay, result.GameMonth, result.GameYear);
+        impl->HasGameTime = result.HasGameTime;
+        impl->GameTimeFraction = result.GameTimeFraction;
+        impl->GameDay = result.GameDay;
+        impl->GameMonth = result.GameMonth;
+        impl->GameYear = result.GameYear;
     }
 
     if (result.NextOpcode == SferaProtocol::ServerFrameOpcode && nextFrame.size() >= 13 && !login.empty() && !password.empty())

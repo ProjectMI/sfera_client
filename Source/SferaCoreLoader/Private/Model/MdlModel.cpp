@@ -265,6 +265,28 @@ namespace
             mesh.TransformKeys.push_back(key);
         }
     }
+    void ReadSkinIndices(FMdlMesh& mesh, const FByteArray& data)
+    {
+        const auto* section = ModelParse::FindNamedSection(mesh.Info.Sections, "skin_indices_0x03");
+
+        if (!section)
+        {
+            return;
+        }
+
+        Binary::RequireRange(data, section->Offset, section->Size, "MDL skin indices");
+        mesh.SkinIndices.reserve(section->Count);
+
+        for (size_t i = 0; i < section->Count; ++i)
+        {
+            const size_t offset = ModelParse::RecordOffset(*section, i, "MDL record");
+            FMdlSkinIndex entry;
+            entry.Record = Binary::U16LE(data, offset + 0x00);
+            entry.Blend = Binary::U8(data, offset + 0x02);
+            mesh.SkinIndices.push_back(entry);
+        }
+    }
+
     void ReadActions(FMdlMesh& mesh, const FByteArray& data)
     {
         const auto* section = ModelParse::FindNamedSection(mesh.Info.Sections, "skin_weights_0x02");
@@ -293,6 +315,7 @@ namespace
         ReadObjects(mesh, data);
         ReadObjectIndices(mesh, data);
         ReadTransformKeys(mesh, data);
+        ReadSkinIndices(mesh, data);
         ReadActions(mesh, data);
         mesh.Bounds = ModelParse::ComputeXYZBounds<FMdlBounds>(mesh.Vertices);
         return mesh;

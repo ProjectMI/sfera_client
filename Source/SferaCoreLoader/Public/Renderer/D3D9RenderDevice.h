@@ -44,6 +44,7 @@ public:
     void Shutdown();
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
+    void SetServerGameTime(float dayFraction);
     FStatus RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
 private:
@@ -100,6 +101,9 @@ private:
     FD3D9GameWorldScene GameWorldScene;
     const FWorldScene* ActiveWorldScene = nullptr;
     const FWorldScene* FailedWorldScene = nullptr;
+    float ServerGameTime = 0.0f;
+    bool HasServerGameTime = false;
+    bool ServerGameTimePending = false;
     int32 BackBufferWidth = 0;
     int32 BackBufferHeight = 0;
     HWND DeviceWindow = nullptr;

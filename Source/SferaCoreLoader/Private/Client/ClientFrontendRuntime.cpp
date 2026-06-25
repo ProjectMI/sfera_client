@@ -528,6 +528,11 @@ void FClientFrontendRuntime::PollLoginResult()
     if (result->CharacterSelectReady)
     {
         ActiveServerSession = result->Session;
+        if (result->HasGameTime)
+        {
+            std::lock_guard<std::mutex> renderLock(RenderMutex);
+            RenderDevice.SetServerGameTime(result->GameTimeFraction);
+        }
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
             const auto& state = Ui.ActionState();
@@ -833,6 +838,11 @@ void FClientFrontendRuntime::PollCharacterResult()
     }
     else if (result->Ok)
     {
+        if (ActiveServerSession && ActiveServerSession->HasGameTime())
+        {
+            std::lock_guard<std::mutex> renderLock(RenderMutex);
+            RenderDevice.SetServerGameTime(ActiveServerSession->GameTimeFraction());
+        }
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.SetCharacterActionLocked(false);
         Ui.SetMode(EUiRuntimeMode::Game);

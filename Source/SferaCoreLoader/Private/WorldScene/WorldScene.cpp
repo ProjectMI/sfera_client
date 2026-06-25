@@ -573,19 +573,19 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
                 const std::string terrainStem = cell.TerrainStem();
                 uniqueNames.insert(NormalizeResourceKey(terrainStem.empty() ? cell.TileName : terrainStem));
 
-                if (const FWorldTerrainSizeRecord* terrain = FindTerrainSizeByName(terrainStem))
+                if (const FWorldTerrainSizeRecord* terrainByStem = FindTerrainSizeByName(terrainStem))
                 {
                     cell.TileResolved = true;
                     cell.ResolvedByTerrainSize = true;
-                    cell.TerrainSizeRecordIndex = static_cast<size_t>(terrain - TerrainRecords.data());
+                    cell.TerrainSizeRecordIndex = static_cast<size_t>(terrainByStem - TerrainRecords.data());
                     ++MapGrid.ResolvedCells;
                     ++MapGrid.ResolvedTerrainCells;
                 }
-                else if (const FWorldPatchRecord* patchRecord = FindPatchByName(terrainStem))
+                else if (const FWorldPatchRecord* patchByStem = FindPatchByName(terrainStem))
                 {
                     cell.TileResolved = true;
                     cell.ResolvedByPatchCatalog = true;
-                    cell.TileRecordIndex = static_cast<size_t>(patchRecord - PatchRecords.data());
+                    cell.TileRecordIndex = static_cast<size_t>(patchByStem - PatchRecords.data());
                     ++MapGrid.ResolvedCells;
                     ++MapGrid.PatchCatalogResolvedCells;
 
@@ -594,34 +594,25 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
                         patchCatalogSamples.push_back(terrainStem);
                     }
                 }
-                else if (const FWorldTerrainSizeRecord* terrain = FindTerrainSizeByName(cell.TileName))
+                else if (const FWorldTerrainSizeRecord* terrainByTileName = FindTerrainSizeByName(cell.TileName))
                 {
                     cell.TileResolved = true;
                     cell.ResolvedByTerrainSize = true;
-                    cell.TerrainSizeRecordIndex = static_cast<size_t>(terrain - TerrainRecords.data());
+                    cell.TerrainSizeRecordIndex = static_cast<size_t>(terrainByTileName - TerrainRecords.data());
                     ++MapGrid.ResolvedCells;
                     ++MapGrid.ResolvedTerrainCells;
                 }
-                else if (const FWorldPatchRecord* patchRecord = FindPatchByName(cell.TileName))
+                else if (const FWorldPatchRecord* patchByTileName = FindPatchByName(cell.TileName))
                 {
                     cell.TileResolved = true;
                     cell.ResolvedByPatchCatalog = true;
-                    cell.TileRecordIndex = static_cast<size_t>(patchRecord - PatchRecords.data());
+                    cell.TileRecordIndex = static_cast<size_t>(patchByTileName - PatchRecords.data());
                     ++MapGrid.ResolvedCells;
                     ++MapGrid.PatchCatalogResolvedCells;
 
                     if (patchCatalogSamples.size() < 8)
                     {
                         patchCatalogSamples.push_back(cell.TileName);
-                    }
-                }
-                else
-                {
-                    ++MapGrid.MissingTileRefs;
-
-                    if (unresolvedSamples.size() < 8)
-                    {
-                        unresolvedSamples.push_back(terrainStem.empty() ? cell.TileName : terrainStem);
                     }
                 }
             }
@@ -802,17 +793,24 @@ FWorldBinaryBlobInfo FWorldScene::AnalyzeBinaryBlob(std::string logicalName, con
     {
         bool initialized = false;
 
-        for (size_t i = 0; i + 8 <= bytes.size() && i < 8 * 1024; i += 8)
+        constexpr std::size_t recordSize = 8;
+        constexpr std::size_t sampleLimit = recordSize * 1024;
+        const std::size_t byteLimit = bytes.size() < sampleLimit ? bytes.size() : sampleLimit;
+        const std::size_t recordCount = byteLimit / recordSize;
+
+        for (std::size_t recordIndex = 0; recordIndex < recordCount; ++recordIndex)
         {
-            float x = Common::F32LEOr(bytes, i);
-            float y = Common::F32LEOr(bytes, i + 4);
+            const std::size_t offset = recordIndex * recordSize;
+
+            const float x = Common::F32LEOr(bytes, offset);
+            const float y = Common::F32LEOr(bytes, offset + 4);
 
             if (!ReasonableWorldFloat(x) || !ReasonableWorldFloat(y))
             {
                 continue;
             }
 
-            ExpandBounds(info.Bounds, {x, y}, initialized);
+            ExpandBounds(info.Bounds, { x, y }, initialized);
         }
     }
 

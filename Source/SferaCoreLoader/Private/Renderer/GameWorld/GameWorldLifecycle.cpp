@@ -1,5 +1,4 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
-#include <string_view>
 #include <unordered_map>
 
 static bool IsTerrainLndPath(const std::filesystem::path& Path)
@@ -10,11 +9,6 @@ static bool IsTerrainLndPath(const std::filesystem::path& Path)
 static std::string TerrainStemKey(const std::string& TerrainStem)
 {
     return Common::NormalizePathKey(Common::StripExtension(TerrainStem));
-}
-
-static bool LowerPathEndsWith(std::string_view path, std::string_view suffix)
-{
-    return path.size() >= suffix.size() && path.substr(path.size() - suffix.size()) == suffix;
 }
 
 FD3D9GameWorldScene::Impl::~Impl()
@@ -36,7 +30,6 @@ void FD3D9GameWorldScene::Impl::Release()
     SafeRelease(ReflectionTexture);
     SafeRelease(BaseVS);
     SafeRelease(BasePS);
-    SafeRelease(DebugPS);
     SafeRelease(WorldDecl);
     WorldShadersReady = false;
     for (auto& batch : PlayerBatches)
@@ -94,7 +87,6 @@ void FD3D9GameWorldScene::Impl::Release()
     ModelPathIndexReady = false;
     ModelTexturePathCache.clear();
     SafeRelease(Device);
-    SafeRelease(D3D);
     Initialized = false;
 }
 
@@ -130,21 +122,6 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveOptionalPath(std::string
     }
     OptionalPathCache.emplace(key, resolved);
     return resolved;
-}
-
-std::filesystem::path FD3D9GameWorldScene::Impl::ResolveOptionalPath(const std::wstring& LogicalName) const
-{
-    return ResolveOptionalPath(NarrowAscii(LogicalName));
-}
-
-std::filesystem::path FD3D9GameWorldScene::Impl::ResolveConfiguredPath(const std::wstring& LogicalName) const
-{
-    const auto path = ResolveOptionalPath(LogicalName);
-    if (!path.empty())
-    {
-        return path;
-    }
-    throw std::runtime_error("required configured asset is missing: " + NarrowAscii(LogicalName));
 }
 
 std::filesystem::path FD3D9GameWorldScene::Impl::ResolveConfiguredPath(const std::string& LogicalName) const
@@ -340,7 +317,7 @@ void FD3D9GameWorldScene::Impl::BuildModelPathIndex() const
     for (const auto& record : AssetResources->Catalog().All())
     {
         const std::string rel = Common::NormalizePathKey(record.RelativePath);
-        if (!LowerPathEndsWith(rel, ".mdl"))
+        if (!rel.ends_with(".mdl"))
         {
             continue;
         }
@@ -487,12 +464,7 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     WorldScene = &world;
     Logger = InLogger;
     Config = WorldConfig;
-    EnvironmentClearRed = Config.ClearRed;
-    EnvironmentClearGreen = Config.ClearGreen;
-    EnvironmentClearBlue = Config.ClearBlue;
-    EnvironmentCloudRed = Config.SkyRed;
-    EnvironmentCloudGreen = Config.SkyGreen;
-    EnvironmentCloudBlue = Config.SkyBlue;
+    Environment = FGameWorldSkyState{0.0f, Config.ClearRed, Config.ClearGreen, Config.ClearBlue, 110, 110, 110, 255, 245, 224, Config.SkyRed, Config.SkyGreen, Config.SkyBlue};
     SpawnX = static_cast<float>(x);
     SpawnY = static_cast<float>(y);
     SpawnZ = static_cast<float>(z);
@@ -507,8 +479,8 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     try
     {
         LoadWorldShaders();
-        TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(Config.TerrainMicrotexture));
-        SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(Config.SkyTexture));
+        TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(NarrowAscii(Config.TerrainMicrotexture)));
+        SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(NarrowAscii(Config.SkyTexture)));
         const auto WaterPath = ResolveOptionalPath("landscape/river1a_00.dds");
         if (!WaterPath.empty())
         {
@@ -664,18 +636,10 @@ void FD3D9GameWorldScene::Impl::SetGameTime(float DayFraction)
     {
         return static_cast<int>(std::lround(static_cast<float>(a) + static_cast<float>(b - a) * blend));
     };
-    EnvironmentClearRed = channel(from->ClearRed, to->ClearRed);
-    EnvironmentClearGreen = channel(from->ClearGreen, to->ClearGreen);
-    EnvironmentClearBlue = channel(from->ClearBlue, to->ClearBlue);
-    EnvironmentAmbientRed = channel(from->AmbientRed, to->AmbientRed);
-    EnvironmentAmbientGreen = channel(from->AmbientGreen, to->AmbientGreen);
-    EnvironmentAmbientBlue = channel(from->AmbientBlue, to->AmbientBlue);
-    EnvironmentSunRed = channel(from->SunRed, to->SunRed);
-    EnvironmentSunGreen = channel(from->SunGreen, to->SunGreen);
-    EnvironmentSunBlue = channel(from->SunBlue, to->SunBlue);
-    EnvironmentCloudRed = channel(from->CloudRed, to->CloudRed);
-    EnvironmentCloudGreen = channel(from->CloudGreen, to->CloudGreen);
-    EnvironmentCloudBlue = channel(from->CloudBlue, to->CloudBlue);
+    for (const auto field : {&FGameWorldSkyState::ClearRed, &FGameWorldSkyState::ClearGreen, &FGameWorldSkyState::ClearBlue, &FGameWorldSkyState::AmbientRed, &FGameWorldSkyState::AmbientGreen, &FGameWorldSkyState::AmbientBlue, &FGameWorldSkyState::SunRed, &FGameWorldSkyState::SunGreen, &FGameWorldSkyState::SunBlue, &FGameWorldSkyState::CloudRed, &FGameWorldSkyState::CloudGreen, &FGameWorldSkyState::CloudBlue})
+    {
+        Environment.*field = channel(from->*field, to->*field);
+    }
     if (Device)
     {
         ConfigureRenderState();

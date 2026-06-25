@@ -132,6 +132,18 @@ FD3D9RenderDevice::~FD3D9RenderDevice()
     Shutdown();
 }
 
+void FD3D9RenderDevice::SetServerGameTime(float dayFraction)
+{
+    ServerGameTime = dayFraction - std::floor(dayFraction);
+    HasServerGameTime = true;
+    ServerGameTimePending = true;
+    if (GameWorldScene.IsValid())
+    {
+        GameWorldScene.SetGameTime(ServerGameTime);
+        ServerGameTimePending = false;
+    }
+}
+
 FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLogger* logger)
 {
     Shutdown();
@@ -1226,6 +1238,11 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
             {
                 ActiveWorldScene = worldScene;
                 FailedWorldScene = nullptr;
+                if (HasServerGameTime)
+                {
+                    GameWorldScene.SetGameTime(ServerGameTime);
+                    ServerGameTimePending = false;
+                }
             }
             else
             {
@@ -1242,6 +1259,11 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
         if (GameWorldScene.IsValid())
         {
+            if (ServerGameTimePending && HasServerGameTime)
+            {
+                GameWorldScene.SetGameTime(ServerGameTime);
+                ServerGameTimePending = false;
+            }
             if (lookDeltaX != 0.0f || lookDeltaY != 0.0f)
             {
                 GameWorldScene.RotateView(lookDeltaX, lookDeltaY);
@@ -1282,7 +1304,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
         if (ui.Mode() == EUiRuntimeMode::CharacterSelect)
         {
-            CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, logger);
+            CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, deltaSeconds, logger);
         }
     }
 

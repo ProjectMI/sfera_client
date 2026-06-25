@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -45,7 +45,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -63,7 +63,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,6 +109,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Platform\Win64Window.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9BitmapFont.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9RenderDevice.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9TextureLoader.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9GameWorldScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\D3D9CharacterScene.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\ResourceLoader\AssetCatalog.cpp" />
@@ -130,9 +131,16 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\DdsImage.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientSettings.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\LoginClient.cpp" />
-  <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldLifecycle.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldMovement.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldObjects.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldPlayer.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldRender.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldSkinning.cpp" /><ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldTerrain.cpp" /></ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldLifecycle.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldMovement.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldObjects.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldPlayer.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldRender.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldSkinning.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldTerrain.cpp" />
+  </ItemGroup>
   <ItemGroup>
-    </ItemGroup>
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Compression\CompressionService.h" />
@@ -169,12 +177,17 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\PacketBuffer.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\TcpSocket.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Platform\Win64Window.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9TextureLoader.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9Utils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9BitmapFont.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9RenderDevice.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9GameWorldScene.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\D3D9CharacterScene.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\CharacterSceneTypes.h" /><ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\CharacterSceneTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\D3D9GameWorldSceneImpl.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldSupport.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\AssetCatalog.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceLoadHelpers.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
@@ -201,5 +214,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Common\StringUtils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Common\TextEncoding.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Common\ValueUtils.h" />
-  <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldConfig.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\SkinnedCharacterModel.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\D3D9GameWorldSceneImpl.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldTypes.h" /><ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldSupport.h" /></ItemGroup>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldConfig.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\SkinnedCharacterModel.h" />
+  </ItemGroup>
 </Project>

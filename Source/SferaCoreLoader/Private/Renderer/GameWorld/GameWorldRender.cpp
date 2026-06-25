@@ -1,5 +1,34 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
 
+namespace
+{
+constexpr int kSkyRings = 8;
+constexpr int kSkySegments = 32;
+constexpr std::size_t kSkyVertexCount = (kSkyRings + 1) * (kSkySegments + 1);
+constexpr std::size_t kSkyIndexCount = kSkyRings * kSkySegments * 6;
+
+std::array<uint16, kSkyIndexCount> BuildSkyIndices()
+{
+    std::array<uint16, kSkyIndexCount> indices{};
+    std::size_t cursor = 0;
+    for (int ring = 0; ring < kSkyRings; ++ring)
+    {
+        for (int segment = 0; segment < kSkySegments; ++segment)
+        {
+            const auto a = static_cast<uint16>(ring * (kSkySegments + 1) + segment);
+            const auto b = static_cast<uint16>(a + kSkySegments + 1);
+            indices[cursor++] = a;
+            indices[cursor++] = b;
+            indices[cursor++] = static_cast<uint16>(a + 1);
+            indices[cursor++] = static_cast<uint16>(a + 1);
+            indices[cursor++] = b;
+            indices[cursor++] = static_cast<uint16>(b + 1);
+        }
+    }
+    return indices;
+}
+}
+
 RECT FD3D9GameWorldScene::Impl::ClientRect() const
 {
     RECT rc{};
@@ -23,34 +52,6 @@ void FD3D9GameWorldScene::Impl::FillPresentParameters()
     Present.EnableAutoDepthStencil = TRUE;
     Present.AutoDepthStencilFormat = D3DFMT_D24S8;
     Present.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-}
-
-bool FD3D9GameWorldScene::Impl::CreateDevice(std::wstring& error)
-{
-    D3D = Direct3DCreate9(D3D_SDK_VERSION);
-    if (!D3D)
-    {
-        error = L"Direct3DCreate9 failed";
-        return false;
-    }
-    FillPresentParameters();
-    const std::array<DWORD, 2> Flags{D3DCREATE_HARDWARE_VERTEXPROCESSING, D3DCREATE_SOFTWARE_VERTEXPROCESSING};
-    const std::array<D3DFORMAT, 2> Depths{D3DFMT_D24S8, D3DFMT_D16};
-    HRESULT LastHr = E_FAIL;
-    for (const auto Depth : Depths)
-    {
-        Present.AutoDepthStencilFormat = Depth;
-        for (const auto Flag : Flags)
-        {
-            LastHr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, Hwnd, Flag, &Present, &Device);
-            if (SUCCEEDED(LastHr))
-            {
-                return true;
-            }
-        }
-    }
-    error = HResultText("CreateDevice", LastHr);
-    return false;
 }
 
 void FD3D9GameWorldScene::Impl::CreateReflectionTarget()
@@ -132,13 +133,6 @@ void FD3D9GameWorldScene::Impl::LoadWorldShaders()
     }
     WorldShadersReady = true;
 
-    const auto DebugPath = ResolveOptionalPath("shaders/pixel/debug_tc.psc");
-    const auto dbg = DebugPath.empty() ? FByteArray{} : ReadBinaryFile(DebugPath);
-    if (!dbg.empty())
-    {
-        const auto DebugWords = MakeShaderWords(dbg);
-        Device->CreatePixelShader(DebugWords.data(), &DebugPS);
-    }
 }
 
 void FD3D9GameWorldScene::Impl::SetVsConst(const char* name, const float* data, int Vec4Count)
@@ -154,9 +148,9 @@ void FD3D9GameWorldScene::Impl::SetBaseLightConstants()
 {
     const std::array<float, 8> Colors
     {
-        EnvironmentSunRed / 255.0f,
-        EnvironmentSunGreen / 255.0f,
-        EnvironmentSunBlue / 255.0f,
+        Environment.SunRed / 255.0f,
+        Environment.SunGreen / 255.0f,
+        Environment.SunBlue / 255.0f,
         0.0f,
         0.0f,
         0.0f,
@@ -167,9 +161,9 @@ void FD3D9GameWorldScene::Impl::SetBaseLightConstants()
 
     const std::array<float, 4> Ambient
     {
-        EnvironmentAmbientRed / 255.0f,
-        EnvironmentAmbientGreen / 255.0f,
-        EnvironmentAmbientBlue / 255.0f,
+        Environment.AmbientRed / 255.0f,
+        Environment.AmbientGreen / 255.0f,
+        Environment.AmbientBlue / 255.0f,
         1.0f
     };
     SetVsConst("gAmbientColor", Ambient.data(), 1);
@@ -217,52 +211,6 @@ bool FD3D9GameWorldScene::Impl::IsBoundsVisibleToCamera(const FBox3& Bounds, flo
     if (outside([](const ClipPoint& p) { return p.Y > p.W; })) { return false; }
     if (outside([](const ClipPoint& p) { return p.Z < 0.0f; })) { return false; }
     if (outside([](const ClipPoint& p) { return p.Z > p.W; })) { return false; }
-    return true;
-}
-
-bool FD3D9GameWorldScene::Impl::IsPointVisibleToCamera(float x, float y, float z, float Radius) const
-{
-    const FVector3 toPoint{x - CameraEye.X, y - CameraEye.Y, z - CameraEye.Z};
-    FVector3 forward{CameraTarget.X - CameraEye.X, CameraTarget.Y - CameraEye.Y, CameraTarget.Z - CameraEye.Z};
-    const float forwardLength = std::sqrt(Dot(forward, forward));
-    if (forwardLength <= 0.0001f)
-    {
-        return true;
-    }
-    const float invForwardLength = 1.0f / forwardLength;
-    forward = Scale(forward, invForwardLength);
-    const float depth = Dot(toPoint, forward);
-    if (depth < -Radius || depth > Config.FarClip + Radius)
-    {
-        return false;
-    }
-    if (depth <= Radius)
-    {
-        return true;
-    }
-    FVector3 up{0.0f, -1.0f, 0.0f};
-    FVector3 right = Cross(up, forward);
-    float rightLength = std::sqrt(Dot(right, right));
-    if (rightLength <= 0.0001f)
-    {
-        up = FVector3{0.0f, 0.0f, 1.0f};
-        right = Cross(up, forward);
-        rightLength = std::sqrt(Dot(right, right));
-        if (rightLength <= 0.0001f)
-        {
-            return true;
-        }
-    }
-    right = Scale(right, 1.0f / rightLength);
-    const FVector3 realUp = Cross(forward, right);
-    if (std::abs(Dot(toPoint, right)) > depth * FrustumTanHalfX + Radius)
-    {
-        return false;
-    }
-    if (std::abs(Dot(toPoint, realUp)) > depth * FrustumTanHalfY + Radius)
-    {
-        return false;
-    }
     return true;
 }
 
@@ -330,12 +278,15 @@ void FD3D9GameWorldScene::Impl::EndBaseShader()
 
 void FD3D9GameWorldScene::Impl::ConfigureRenderState()
 {
+    Device->SetVertexShader(nullptr);
+    Device->SetPixelShader(nullptr);
+    Device->SetVertexDeclaration(nullptr);
     Device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
     Device->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
     Device->SetRenderState(D3DRS_LIGHTING, TRUE);
     Device->SetRenderState(
     D3DRS_AMBIENT,
-    D3DCOLOR_XRGB(EnvironmentAmbientRed, EnvironmentAmbientGreen, EnvironmentAmbientBlue));
+    D3DCOLOR_XRGB(Environment.AmbientRed, Environment.AmbientGreen, Environment.AmbientBlue));
     Device->SetRenderState(D3DRS_COLORVERTEX, TRUE);
     Device->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1);
     Device->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_COLOR1);
@@ -356,11 +307,7 @@ void FD3D9GameWorldScene::Impl::ConfigureRenderState()
     Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
     Device->SetRenderState(
     D3DRS_FOGCOLOR,
-    D3DCOLOR_XRGB(EnvironmentClearRed, EnvironmentClearGreen, EnvironmentClearBlue));
-    // Use PIXEL (table) fog, not vertex fog: vertex fog requires the vertex
-    // geometry (terrain/objects/player) was getting an undefined fog factor
-    // and rendering solid fog-blue. Table fog is computed per-pixel from depth
-    // and works for both the fixed-function and shader passes.
+    D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue));
     Device->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_NONE);
     Device->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_LINEAR);
     const DWORD FogStart = FloatRenderStateValue(Config.FogStart);
@@ -375,12 +322,9 @@ void FD3D9GameWorldScene::Impl::ConfigureRenderState()
 
     D3DLIGHT9 light{};
     light.Type = D3DLIGHT_DIRECTIONAL;
-    light.Diffuse.r = static_cast<float>(EnvironmentSunRed) / 255.0f;
-    light.Diffuse.g = static_cast<float>(EnvironmentSunGreen) / 255.0f;
-    light.Diffuse.b = static_cast<float>(EnvironmentSunBlue) / 255.0f;
-    // Ambient comes solely from the global D3DRS_AMBIENT (the data-driven
-    // environment ambient). The old fixed 0.35 here double-counted ambient
-    // and washed the scene flat.
+    light.Diffuse.r = static_cast<float>(Environment.SunRed) / 255.0f;
+    light.Diffuse.g = static_cast<float>(Environment.SunGreen) / 255.0f;
+    light.Diffuse.b = static_cast<float>(Environment.SunBlue) / 255.0f;
     light.Ambient.r = light.Ambient.g = light.Ambient.b = 0.0f;
     light.Direction.x = -0.35f;
     light.Direction.y = -0.75f;
@@ -393,26 +337,14 @@ void FD3D9GameWorldScene::Impl::UpdateViewProjection()
 {
     const RECT rc = ClientRect();
     const float aspect = static_cast<float>(rc.right - rc.left) / static_cast<float>(rc.bottom - rc.top);
-    ViewAspect = aspect;
-    FrustumTanHalfY = std::tan(Config.CameraFov * kPi / 360.0f) * 1.15f;
-    FrustumTanHalfX = FrustumTanHalfY * ViewAspect * 1.15f;
-    // Sphere's renderer uses positive Y downward; the server/Godot side
-    // stores the same Position with the Y sign reversed.
-    // The first-person camera rides at the player's head bone (so the body
-    // is visible below and the near clip culls the player's own head),
-    // falling back to a fixed eye height before the model is skinned.
     FVector3 eye{SpawnX, SpawnY - Config.CameraEyeHeight, SpawnZ};
     if (PlayerEyeValid)
     {
-        // Eye offset rotates with the body (CameraYaw), keeping the lens at
-        // the face front regardless of facing.
         const float c = std::cos(CameraYaw);
         const float s = std::sin(CameraYaw);
         eye.X = SpawnX + PlayerEyeLocalX * c + PlayerEyeLocalZ * s;
         eye.Y = SpawnY + PlayerEyeLocalY;
         eye.Z = SpawnZ - PlayerEyeLocalX * s + PlayerEyeLocalZ * c;
-        // While walking, let the eye follow the head-top's vertical motion
-        // through the stride for a small up/down bob (idle stays locked).
         if (PlayerWalking)
         {
             eye.Y += (PlayerLiveCrownY - PlayerLockedCrownY) * kWalkBobScale;
@@ -437,66 +369,27 @@ void FD3D9GameWorldScene::Impl::UpdateViewProjection()
 
 void FD3D9GameWorldScene::Impl::DrawSky()
 {
-    constexpr int rings = 8;
-    constexpr int segments = 32;
-    auto& vertices = SkyVertices;
-    auto& Indices = SkyIndices;
-    vertices.clear();
-    vertices.reserve((rings + 1) * (segments + 1));
-    if (Indices.empty())
-    {
-        Indices.reserve(rings * segments * 6);
-    }
-    const DWORD color = D3DCOLOR_XRGB(EnvironmentCloudRed, EnvironmentCloudGreen, EnvironmentCloudBlue);
+    std::array<WorldVertex, kSkyVertexCount> vertices{};
+    static const auto Indices = BuildSkyIndices();
+    std::size_t vertexCursor = 0;
+    const DWORD color = D3DCOLOR_XRGB(Environment.CloudRed, Environment.CloudGreen, Environment.CloudBlue);
     const float scroll = ElapsedSeconds * Config.SkyScrollSpeed;
-    for (int ring = 0; ring <= rings; ++ring)
+    for (int ring = 0; ring <= kSkyRings; ++ring)
     {
-        const float v = static_cast<float>(ring) / static_cast<float>(rings);
+        const float v = static_cast<float>(ring) / static_cast<float>(kSkyRings);
         const float theta = v * kPi * 0.5f;
         const float radial = std::sin(theta) * Config.SkyRadius;
         const float height = std::cos(theta) * Config.SkyRadius * Config.SkyHeightScale;
-        for (int segment = 0; segment <= segments; ++segment)
+        for (int segment = 0; segment <= kSkySegments; ++segment)
         {
-            const float u = static_cast<float>(segment) / static_cast<float>(segments);
-            const float Angle = u * 2.0f * kPi;
-            vertices.push_back(WorldVertex{
-                SpawnX + std::cos(Angle) * radial,
-                SpawnY - height,
-                SpawnZ + std::sin(Angle) * radial,
-                0.0f,
-                -1.0f,
-                0.0f,
-                color,
-                u + scroll,
-                v,
-                0.0f,
-                0.0f,
-            });
-        }
-    }
-    if (Indices.empty())
-    {
-        for (int ring = 0; ring < rings; ++ring)
-        {
-            for (int segment = 0; segment < segments; ++segment)
-            {
-                const auto a = static_cast<uint16>(ring * (segments + 1) + segment);
-                const auto b = static_cast<uint16>(a + segments + 1);
-                Indices.push_back(a);
-                Indices.push_back(b);
-                Indices.push_back(static_cast<uint16>(a + 1));
-                Indices.push_back(static_cast<uint16>(a + 1));
-                Indices.push_back(b);
-                Indices.push_back(static_cast<uint16>(b + 1));
-            }
+            const float longitude = static_cast<float>(segment) / static_cast<float>(kSkySegments);
+            const float angle = longitude * 2.0f * kPi;
+            const float nx = Config.SkyRadius > 0.0f ? std::cos(angle) * radial / Config.SkyRadius : 0.0f;
+            const float nz = Config.SkyRadius > 0.0f ? std::sin(angle) * radial / Config.SkyRadius : 0.0f;
+            vertices[vertexCursor++] = WorldVertex{SpawnX + std::cos(angle) * radial, SpawnY - height, SpawnZ + std::sin(angle) * radial, 0.0f, -1.0f, 0.0f, color, 0.5f + nx * 0.5f + scroll, 0.5f + nz * 0.5f, 0.0f, 0.0f};
         }
     }
 
-    // clouds.dds is a DARK cloud texture (clouds = bright, clear sky = near
-    // black) meant to be ADDED over the sky-coloured background, not drawn
-    // opaque. The frame is already cleared to the sky colour (environment
-    // clear), so blend the tinted cloud texture additively: bright cloud
-    // texels brighten the blue sky into clouds, dark texels leave it blue.
     Device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
     Device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
     Device->SetRenderState(D3DRS_FOGENABLE, FALSE);
@@ -510,6 +403,10 @@ void FD3D9GameWorldScene::Impl::DrawSky()
     Device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+    Device->SetVertexShader(nullptr);
+    Device->SetPixelShader(nullptr);
+    Device->SetVertexDeclaration(nullptr);
+    Device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
     Device->SetFVF(kWorldVertexFvf);
     Device->SetTexture(0, SkyTexture);
     const auto identity = IdentityMatrix();
@@ -557,6 +454,10 @@ void FD3D9GameWorldScene::Impl::DrawOverlay()
     Device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
     Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+    Device->SetVertexShader(nullptr);
+    Device->SetPixelShader(nullptr);
+    Device->SetVertexDeclaration(nullptr);
+    Device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
     Device->SetFVF(kOverlayVertexFvf);
     Device->SetTexture(0, OverlayTexture);
     Device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, Quad.data(), sizeof(OverlayVertex));
@@ -636,7 +537,7 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     {
         --ReflectionUpdateCountdown;
     }
-    Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(EnvironmentClearRed, EnvironmentClearGreen, EnvironmentClearBlue), 1.0f, 0);
+    Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue), 1.0f, 0);
     DrawSky();
     DrawTerrain();
     DrawGrass();

@@ -11,10 +11,6 @@ void FD3D9GameWorldScene::Impl::SnapToGround()
 
 bool FD3D9GameWorldScene::Impl::SupportHeightAt(float x, float z, float FeetY, float& OutY, FVector3* OutNormal) const
 {
-    // Window centred on the FEET (step up or down). A surface only supports
-    // the body if it lies within this window — otherwise there is nothing to
-    // stand on here (the body should fall, not snap down to far-below terrain,
-    // which looked like falling through the model when standing on an object).
     const float ReachUp = FeetY - Config.MaxStepHeight;
     const float ReachDown = FeetY + Config.MaxStepHeight;
     bool found = false;
@@ -51,8 +47,6 @@ bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z)
 {
     if (Grounded)
     {
-        // On the ground the body rests on the support surface (step up/down
-        // onto terrain or objects within max_step_height).
         float GroundY = 0.0f;
         if (!SupportHeightAt(x, z, SpawnY, GroundY))
         {
@@ -69,10 +63,6 @@ bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z)
     }
     else
     {
-        // Airborne: keep the Jump-controlled height, just move horizontally.
-        // Do NOT require a support surface here — once you Jump higher than a
-        // step the ground falls outside the support window, and requiring it
-        // would freeze all horizontal motion mid-air ("Jump in place").
         if (CollidesWithStatic(x, SpawnY, z))
         {
             return false;
@@ -135,8 +125,6 @@ void FD3D9GameWorldScene::Impl::UpdateVertical(float DeltaSeconds)
     {
         return;  // still rising (Jump apex not reached); can't land
     }
-    // Land on the highest surface (terrain or a static object) crossed during
-    // this descent, so you can land on top of objects, not only the terrain.
     float floor = 0.0f;
     bool found = TerrainHeightAt(SpawnX, SpawnZ, SpawnY, floor);
     float obj = 0.0f;
@@ -168,16 +156,11 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const float InputLength = std::sqrt(Forward * Forward + right * right);
     const bool moving = InputLength > 0.0001f && DeltaSeconds > 0.0f;
     UpdatePlayerAnimation(DeltaSeconds, moving, input.Run);
+    UpdateNpcAnimation(DeltaSeconds);
     UpdateVertical(DeltaSeconds);
 
-    // ControlMove keeps the own character and camera facing the same way.
     SpawnAngle = -CameraYaw;
 
-    // the horizontal speed g_85B8 is reset to 0 and re-derived from the held
-    // movement keys, then the engine integrates it (the Jump only sets the
-    // vertical field 0x28C, never the horizontal). So there is no momentum/glide
-    // — releasing the keys stops you, even mid-air — but holding a direction
-    // through a Jump keeps carrying you forward (that is the "inertia").
     if (moving)
     {
         const float NormalizedForward = Forward / InputLength;
@@ -194,8 +177,6 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         VelocityZ = 0.0f;
         if (Grounded)
         {
-            // Standing still on a steep floor: gravity drags you downhill (the
-            // only time the auto-slide applies, so it never fights a climb).
             ApplySlopeSlide(DeltaSeconds);
         }
         return true;

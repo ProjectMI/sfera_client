@@ -73,6 +73,38 @@ static FSceneMatrix4 SkinMatrixFromTransform(const FSklTransform& Transform)
     return Matrix;
 }
 
+static FSklTransform SkinBlendTransform(const FSklTransform& A, const FSklTransform& B, float Alpha)
+{
+    const float T = std::clamp(Alpha, 0.0f, 1.0f);
+    FSklTransform Out;
+    Out.TX = A.TX + (B.TX - A.TX) * T;
+    Out.TY = A.TY + (B.TY - A.TY) * T;
+    Out.TZ = A.TZ + (B.TZ - A.TZ) * T;
+    const float DotQuat = A.QW * B.QW + A.QX * B.QX + A.QY * B.QY + A.QZ * B.QZ;
+    const float Sign = DotQuat < 0.0f ? -1.0f : 1.0f;
+    Out.QW = A.QW + (B.QW * Sign - A.QW) * T;
+    Out.QX = A.QX + (B.QX * Sign - A.QX) * T;
+    Out.QY = A.QY + (B.QY * Sign - A.QY) * T;
+    Out.QZ = A.QZ + (B.QZ * Sign - A.QZ) * T;
+    const float Length = std::sqrt(Out.QW * Out.QW + Out.QX * Out.QX + Out.QY * Out.QY + Out.QZ * Out.QZ);
+    if (Length <= 0.000001f)
+    {
+        Out.QW = 1.0f;
+        Out.QX = 0.0f;
+        Out.QY = 0.0f;
+        Out.QZ = 0.0f;
+    }
+    else
+    {
+        const float Inv = 1.0f / Length;
+        Out.QW *= Inv;
+        Out.QX *= Inv;
+        Out.QY *= Inv;
+        Out.QZ *= Inv;
+    }
+    return Out;
+}
+
 static FSceneMatrix4 SkinMultiply(FSceneMatrix4 A, FSceneMatrix4 B)
 {
     FSceneMatrix4 Out{};
@@ -224,10 +256,64 @@ int FSkinnedCharacterModel::BoneIndex(const char* Name) const
     return -1;
 }
 
-void SkinFrame(const FSkinnedCharacterModel& Model, std::size_t Frame, std::vector<float>& Out)
+static std::vector<FSceneMatrix4> BuildSkinMatricesInterpolated(const FSkinnedCharacterModel& Model, std::size_t FrameA, std::size_t FrameB, float Alpha)
+{
+    const auto& Skeleton = Model.Skeleton;
+
+    if (Skeleton.BoneCount <= 0 || Skeleton.FrameCount <= 0 || FrameA >= static_cast<std::size_t>(Skeleton.FrameCount) || FrameB >= static_cast<std::size_t>(Skeleton.FrameCount))
+    {
+        throw std::runtime_error("SKL frame out of range");
+    }
+
+    const std::size_t BoneCount = static_cast<std::size_t>(Skeleton.BoneCount);
+
+    if (Skeleton.Parents.size() < BoneCount || Skeleton.Transforms.size() < (std::max)(FrameA, FrameB) * BoneCount + BoneCount)
+    {
+        throw std::runtime_error("SKL data is truncated");
+    }
+
+    std::vector<FSceneMatrix4> Matrices(BoneCount);
+    std::vector<uint8> States(BoneCount, 0);
+
+    std::function<FSceneMatrix4(std::size_t)> Resolve = [&](std::size_t Bone) -> FSceneMatrix4
+    {
+        if (States[Bone] == 2)
+        {
+            return Matrices[Bone];
+        }
+
+        if (States[Bone] == 1)
+        {
+            throw std::runtime_error("SKL parent hierarchy cycle");
+        }
+
+        States[Bone] = 1;
+        const auto& TransformA = Skeleton.Transforms[FrameA * BoneCount + Bone];
+        const auto& TransformB = Skeleton.Transforms[FrameB * BoneCount + Bone];
+        FSceneMatrix4 Matrix = SkinMatrixFromTransform(SkinBlendTransform(TransformA, TransformB, Alpha));
+        const int32 Parent = Skeleton.Parents[Bone];
+
+        if (Parent >= 0)
+        {
+            Matrix = SkinMultiply(Matrix, Resolve(static_cast<std::size_t>(Parent)));
+        }
+
+        Matrices[Bone] = Matrix;
+        States[Bone] = 2;
+        return Matrix;
+    };
+
+    for (std::size_t Index = 0; Index < BoneCount; ++Index)
+    {
+        Resolve(Index);
+    }
+
+    return Matrices;
+}
+
+static void SkinWithMatrices(const FSkinnedCharacterModel& Model, std::vector<FSceneMatrix4>& Matrices, std::vector<float>& Out)
 {
     Out.clear();
-    auto Matrices = BuildSkinMatrices(Model, Frame);
 
     if (Model.RootBone >= Matrices.size())
     {
@@ -273,12 +359,7 @@ void SkinFrame(const FSkinnedCharacterModel& Model, std::size_t Frame, std::vect
             P0.Y * Weight0 + P1.Y * Weight1,
             P0.Z * Weight0 + P1.Z * Weight1
         };
-        const FVector3 NormalSource = SkinNormalize(
-        {
-            N0.X * Weight0 + N1.X * Weight1,
-            N0.Y * Weight0 + N1.Y * Weight1,
-            N0.Z * Weight0 + N1.Z * Weight1
-        });
+        const FVector3 NormalSource = SkinNormalize({N0.X * Weight0 + N1.X * Weight1, N0.Y * Weight0 + N1.Y * Weight1, N0.Z * Weight0 + N1.Z * Weight1});
         const FVector3 Normal = SkinNormalize({NormalSource.X, -NormalSource.Y, NormalSource.Z});
         float* Dest = Out.data() + Index * 8;
         Dest[0] = (SkinnedPosition.X - Model.CenterX) * Model.Scale;
@@ -290,4 +371,16 @@ void SkinFrame(const FSkinnedCharacterModel& Model, std::size_t Frame, std::vect
         Dest[6] = Source.U;
         Dest[7] = Source.V;
     }
+}
+
+void SkinFrame(const FSkinnedCharacterModel& Model, std::size_t Frame, std::vector<float>& Out)
+{
+    auto Matrices = BuildSkinMatrices(Model, Frame);
+    SkinWithMatrices(Model, Matrices, Out);
+}
+
+void SkinFrameInterpolated(const FSkinnedCharacterModel& Model, std::size_t FrameA, std::size_t FrameB, float Alpha, std::vector<float>& Out)
+{
+    auto Matrices = BuildSkinMatricesInterpolated(Model, FrameA, FrameB, Alpha);
+    SkinWithMatrices(Model, Matrices, Out);
 }

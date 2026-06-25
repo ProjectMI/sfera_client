@@ -1,4 +1,5 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
+#include <cmath>
 
 void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
 {
@@ -15,17 +16,16 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
     {
         return;
     }
-    const std::size_t LocalFrame =
-    static_cast<std::size_t>(PlayerAnimTime / kPlayerAnimSecondsPerFrame) % ActionFrames;
+    const float FramePosition = PlayerAnimTime / kPlayerAnimSecondsPerFrame;
+    const std::size_t LocalFrame = static_cast<std::size_t>(std::floor(FramePosition)) % ActionFrames;
+    const std::size_t NextLocalFrame = (LocalFrame + 1) % ActionFrames;
+    const float FrameAlpha = FramePosition - std::floor(FramePosition);
     const std::size_t frame = ActionStart + LocalFrame;
-    if (frame == PlayerLastSkinnedFrame && !PlayerVertexScratch.empty())
-    {
-        return;
-    }
+    const std::size_t nextFrame = ActionStart + NextLocalFrame;
 
     try
     {
-        SkinFrame(PlayerModel, frame, PlayerSkinScratch);
+        SkinFrameInterpolated(PlayerModel, frame, nextFrame, FrameAlpha, PlayerSkinScratch);
     } catch (...)
     {
         return;
@@ -37,8 +37,6 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
     for (std::size_t i = 0; i < VertexCount; ++i)
     {
         const float* s = PlayerSkinScratch.data() + i * 8;
-        // SkinFrame emits character-select space (+y up); the world uses
-        // +y down, so flip y on both Position and normal, matching the
         const float wy = -s[1];
         if (i == 0 || wy < CrownWorldY)
         {
@@ -61,11 +59,7 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
         PlayerVertexBuffer->Unlock();
     }
 
-    // Track the head-top each frame; the eye rides just below it.
     PlayerLiveCrownY = CrownWorldY;
-    // Lock the baseline eye height to the first skinned frame so idle body
-    // motion (breathing) does not bob the camera. The walking up/down bob is
-    // added in UpdateViewProjection from the live head-top deviation.
     if (!PlayerEyeInitialized)
     {
         PlayerLockedCrownY = CrownWorldY;
@@ -120,41 +114,10 @@ void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& mo
     }
 
     PlayerVertexCount = static_cast<UINT>(PlayerModel.Sources.size());
-    const UINT VertexBytes = static_cast<UINT>(PlayerModel.Sources.size() * sizeof(WorldVertex));
-    HRESULT hr = Device->CreateVertexBuffer(
-    VertexBytes,
-    D3DUSAGE_WRITEONLY,
-    kWorldVertexFvf,
-    D3DPOOL_MANAGED,
-    &PlayerVertexBuffer,
-    nullptr);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("CreateVertexBuffer player", hr));
-    }
+    PlayerVertexScratch.assign(PlayerModel.Sources.size(), WorldVertex{});
+    PlayerVertexBuffer = CreateManagedVertexBufferOrThrow(Device, PlayerVertexScratch, kWorldVertexFvf, "CreateVertexBuffer player");
+    PlayerIndexBuffer = CreateManagedIndexBufferOrThrow(Device, PlayerModel.Indices, D3DFMT_INDEX16, "CreateIndexBuffer player");
 
-    const UINT IndexBytes = static_cast<UINT>(PlayerModel.Indices.size() * sizeof(uint16));
-    hr = Device->CreateIndexBuffer(
-    IndexBytes,
-    D3DUSAGE_WRITEONLY,
-    D3DFMT_INDEX16,
-    D3DPOOL_MANAGED,
-    &PlayerIndexBuffer,
-    nullptr);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("CreateIndexBuffer player", hr));
-    }
-    void* IndexData = nullptr;
-    hr = PlayerIndexBuffer->Lock(0, IndexBytes, &IndexData, 0);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("PlayerIndexBuffer::Lock", hr));
-    }
-    CopyVectorBytes(IndexData, PlayerModel.Indices, IndexBytes);
-    PlayerIndexBuffer->Unlock();
-
-    // Skin the first frame so the body and eye height are IsValid immediately.
     SkinPlayerFrame();
 }
 
@@ -164,12 +127,19 @@ void FD3D9GameWorldScene::Impl::UpdatePlayerAnimation(float DeltaSeconds, bool m
     {
         return;
     }
-    // Action by movement state, using SKL Indices carried on the model
-    // per-model params reader is wired these default to idle.
+    const auto resolveAction = [&](int action) -> std::size_t
+    {
+        if (action < 0)
+        {
+            return kPlayerIdleAction;
+        }
+        const auto resolved = static_cast<std::size_t>(action);
+        return resolved < PlayerModel.ActionCount() && PlayerModel.ActionFrameCount(resolved) > 0 ? resolved : kPlayerIdleAction;
+    };
     const std::size_t desired = !moving
-    ? static_cast<std::size_t>(PlayerModel.AnimIdle)
-    : (running ? static_cast<std::size_t>(PlayerModel.AnimRun)
-    : static_cast<std::size_t>(PlayerModel.AnimWalk));
+    ? resolveAction(PlayerModel.AnimIdle)
+    : (running ? resolveAction(PlayerModel.AnimRun)
+    : resolveAction(PlayerModel.AnimWalk));
     if (desired != PlayerAction)
     {
         PlayerAction = desired;
@@ -177,8 +147,7 @@ void FD3D9GameWorldScene::Impl::UpdatePlayerAnimation(float DeltaSeconds, bool m
     }
     PlayerAnimTime += (std::max)(0.0f, DeltaSeconds);
 
-    // Snap the body's backward offset on/off with movement (no easing).
-    PlayerBodyShift = moving ? kMoveBodyBackShift : 0.0f;
+    PlayerBodyShift = !moving ? kIdleBodyBackShift : (running ? kRunBodyBackShift : kWalkBodyBackShift);
     PlayerWalking = moving;
 
     SkinPlayerFrame();
@@ -190,19 +159,13 @@ void FD3D9GameWorldScene::Impl::DrawPlayer()
     {
         return;
     }
-    // The body faces where the camera looks, so in first person it stays
-    // locked below the view as you turn (camera rides inside the head).
     auto world = RotationYMatrix(CameraYaw);
-    // Ease the body backward along the look axis while moving so the
-    // forward-leaning torso's neck cut never enters the lens.
     world._41 = SpawnX - std::sin(CameraYaw) * PlayerBodyShift;
     world._42 = SpawnY;
     world._43 = SpawnZ - std::cos(CameraYaw) * PlayerBodyShift;
     const bool UseShader = WorldShadersReady;
     if (UseShader)
     {
-        // The body is already skinned to world-posed vertices on the CPU, so
-        // the base lit+textured shader applies like any static object.
         BeginBaseShader();
         SetBaseLightConstants();
         SetBaseWorld(world);
@@ -213,11 +176,14 @@ void FD3D9GameWorldScene::Impl::DrawPlayer()
     }
     Device->SetStreamSource(0, PlayerVertexBuffer, 0, sizeof(WorldVertex));
     Device->SetIndices(PlayerIndexBuffer);
-    // Backface-cull the body so looking down does not reveal the dark
-    // interior of the torso/neck. The rest of the world draws double-sided.
     Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
     for (const auto& batch : PlayerBatches)
     {
+        if (batch.Head)
+        {
+            continue;
+        }
+
         Device->SetTexture(0, batch.Texture);
         const UINT triangleCount = batch.IndexCount / 3;
         Device->DrawIndexedPrimitive(

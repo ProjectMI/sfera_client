@@ -27,8 +27,8 @@ struct FSkinnedCharacterModel
     float MinY = 0.0f;
     float Scale = 1.0f;
     int AnimIdle = 20;
-    int AnimWalk = 2;
-    int AnimRun = 3;
+    int AnimWalk = 20;
+    int AnimRun = 20;
     std::vector<FSkinnedVertexSource> Sources;
     std::vector<uint16> Indices;
     std::vector<FSkinnedCharacterBatch> Batches;
@@ -40,3 +40,4 @@ struct FSkinnedCharacterModel
 };
 
 void SkinFrame(const FSkinnedCharacterModel& model, std::size_t frame, std::vector<float>& out);
+void SkinFrameInterpolated(const FSkinnedCharacterModel& model, std::size_t frameA, std::size_t frameB, float alpha, std::vector<float>& out);

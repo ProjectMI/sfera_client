@@ -93,6 +93,12 @@ struct FMdlTransformKey
 	float QZ = 0.0f;
 };
 
+struct FMdlSkinIndex
+{
+	uint16 Record = 0;
+	uint8 Blend = 0;
+};
+
 struct FMdlBounds 
 {
 	float MinX = 0.0f;
@@ -112,6 +118,7 @@ struct FMdlMesh
 	std::vector<FMdlObject> Objects; 
 	FByteArray ObjectIndices; 
 	std::vector<FMdlTransformKey> TransformKeys; 
+	std::vector<FMdlSkinIndex> SkinIndices;
 	std::vector<uint16> Actions;
 	FMdlBounds Bounds; 
 };

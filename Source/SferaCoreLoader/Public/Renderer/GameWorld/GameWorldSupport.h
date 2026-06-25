@@ -13,29 +13,23 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include <d3d9.h>
 #include <algorithm>
-#include <array>
 #include <bit>
 #include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
 #include <iomanip>
-#include <initializer_list>
-#include <iterator>
 #include <limits>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "Renderer/GameWorld/GameWorldTypes.h"
 #include "Renderer/D3D9Utils.h"
+#include "Renderer/D3D9TextureLoader.h"
 
 inline FByteArray ReadGameWorldFileBytes(const std::filesystem::path& path)
 {
@@ -176,102 +170,20 @@ inline D3DMATRIX TranslationMatrix(float x, float y, float z)
     return matrix;
 }
 
-inline float MatrixCell(const D3DMATRIX& Matrix, int Row, int Column)
-{
-    const int Index = Row * 4 + Column;
-
-    switch (Index)
-    {
-        case 0: return Matrix._11;
-        case 1: return Matrix._12;
-        case 2: return Matrix._13;
-        case 3: return Matrix._14;
-        case 4: return Matrix._21;
-        case 5: return Matrix._22;
-        case 6: return Matrix._23;
-        case 7: return Matrix._24;
-        case 8: return Matrix._31;
-        case 9: return Matrix._32;
-        case 10: return Matrix._33;
-        case 11: return Matrix._34;
-        case 12: return Matrix._41;
-        case 13: return Matrix._42;
-        case 14: return Matrix._43;
-        default: return Matrix._44;
-    }
-}
-
-inline void SetMatrixCell(D3DMATRIX& Matrix, int Row, int Column, float Value)
-{
-    const int Index = Row * 4 + Column;
-
-    switch (Index)
-    {
-        case 0: Matrix._11 = Value; break;
-        case 1: Matrix._12 = Value; break;
-        case 2: Matrix._13 = Value; break;
-        case 3: Matrix._14 = Value; break;
-        case 4: Matrix._21 = Value; break;
-        case 5: Matrix._22 = Value; break;
-        case 6: Matrix._23 = Value; break;
-        case 7: Matrix._24 = Value; break;
-        case 8: Matrix._31 = Value; break;
-        case 9: Matrix._32 = Value; break;
-        case 10: Matrix._33 = Value; break;
-        case 11: Matrix._34 = Value; break;
-        case 12: Matrix._41 = Value; break;
-        case 13: Matrix._42 = Value; break;
-        case 14: Matrix._43 = Value; break;
-        default: Matrix._44 = Value; break;
-    }
-}
-
 inline D3DMATRIX MultiplyMatrix(const D3DMATRIX& Left, const D3DMATRIX& Right)
 {
     D3DMATRIX Out{};
-
-    for (int Row = 0; Row < 4; ++Row)
+    const auto* left = reinterpret_cast<const float*>(&Left);
+    const auto* right = reinterpret_cast<const float*>(&Right);
+    auto* out = reinterpret_cast<float*>(&Out);
+    for (int row = 0; row < 4; ++row)
     {
-        for (int Column = 0; Column < 4; ++Column)
+        for (int column = 0; column < 4; ++column)
         {
-            float Value = 0.0f;
-
-            for (int I = 0; I < 4; ++I)
-            {
-                Value += MatrixCell(Left, Row, I) * MatrixCell(Right, I, Column);
-            }
-
-            SetMatrixCell(Out, Row, Column, Value);
+            out[row * 4 + column] = left[row * 4] * right[column] + left[row * 4 + 1] * right[4 + column] + left[row * 4 + 2] * right[8 + column] + left[row * 4 + 3] * right[12 + column];
         }
     }
-
     return Out;
-}
-
-inline D3DMATRIX TransposeMatrix(const D3DMATRIX& Matrix)
-{
-    D3DMATRIX Out{};
-
-    for (int Row = 0; Row < 4; ++Row)
-    {
-        for (int Column = 0; Column < 4; ++Column)
-        {
-            SetMatrixCell(Out, Row, Column, MatrixCell(Matrix, Column, Row));
-        }
-    }
-
-    return Out;
-}
-
-inline std::array<float, 16> MatrixConstants(const D3DMATRIX& Matrix)
-{
-    return
-    {
-        Matrix._11, Matrix._12, Matrix._13, Matrix._14,
-        Matrix._21, Matrix._22, Matrix._23, Matrix._24,
-        Matrix._31, Matrix._32, Matrix._33, Matrix._34,
-        Matrix._41, Matrix._42, Matrix._43, Matrix._44
-    };
 }
 
 template<class T>
@@ -306,9 +218,6 @@ inline std::vector<DWORD> MakeShaderWords(const FByteArray& Code)
     return Words;
 }
 
-// Parse the CTAB (constant table) embedded in a compiled D3D9 shader's comment
-// stream, returning a name -> float-constant-register map. Register assignment
-// differs per shader permutation, so constants must be looked up by name.
 inline std::unordered_map<std::string, int> ParseShaderConstants(const FByteArray& Code)
 {
     std::unordered_map<std::string, int> out;
@@ -349,7 +258,6 @@ inline std::unordered_map<std::string, int> ParseShaderConstants(const FByteArra
                     const uint16 RegIdx = static_cast<uint16>(Code[e + 6] | (Code[e + 7] << 8));
                     if (RegSet != 2)
                     {
-                        // only float (c#) registers
                         continue;
                     }
                     std::string name;
@@ -444,22 +352,7 @@ inline D3DMATRIX AlignUpMatrix(FVector3 normal)
 
 inline D3DMATRIX PlacementMatrix(const StaticPlacement& placement)
 {
-    const float cx = std::cos(placement.Rotation.X);
-    const float sx = std::sin(placement.Rotation.X);
-    const float cy = std::cos(placement.Rotation.Y);
-    const float sy = std::sin(placement.Rotation.Y);
-    const float cz = std::cos(placement.Rotation.Z);
-    const float sz = std::sin(placement.Rotation.Z);
-    D3DMATRIX matrix = IdentityMatrix();
-    matrix._11 = cy * cz - sx * sy * sz;
-    matrix._12 = cy * sz + cz * sx * sy;
-    matrix._13 = -cx * sy;
-    matrix._21 = -cx * sz;
-    matrix._22 = cx * cz;
-    matrix._23 = sx;
-    matrix._31 = cy * sx * sz + cz * sy;
-    matrix._32 = -cy * cz * sx + sy * sz;
-    matrix._33 = cx * cy;
+    D3DMATRIX matrix = MultiplyMatrix(MultiplyMatrix(RotationYMatrix(-placement.Rotation.Y), RotationXMatrix(placement.Rotation.X)), RotationZMatrix(placement.Rotation.Z));
     matrix._41 = placement.Position.X;
     matrix._42 = placement.Position.Y;
     matrix._43 = placement.Position.Z;
@@ -515,6 +408,72 @@ inline std::string HResultTextNarrow(const char* action, HRESULT hr)
     return out.str();
 }
 
+
+template<class TBuffer, class T>
+inline bool UploadVectorToBuffer(TBuffer* Buffer, const std::vector<T>& Source, UINT Bytes)
+{
+    void* data = nullptr;
+    if (FAILED(Buffer->Lock(0, Bytes, &data, 0)))
+    {
+        return false;
+    }
+    CopyVectorBytes(data, Source, Bytes);
+    Buffer->Unlock();
+    return true;
+}
+
+template<class T>
+inline IDirect3DVertexBuffer9* CreateManagedVertexBufferOrThrow(IDirect3DDevice9* Device, const std::vector<T>& Source, DWORD Fvf, const char* Label)
+{
+    IDirect3DVertexBuffer9* buffer = nullptr;
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    HRESULT hr = Device->CreateVertexBuffer(bytes, D3DUSAGE_WRITEONLY, Fvf, D3DPOOL_MANAGED, &buffer, nullptr);
+    if (FAILED(hr) || !UploadVectorToBuffer(buffer, Source, bytes))
+    {
+        SafeRelease(buffer);
+        throw std::runtime_error(HResultTextNarrow(Label, FAILED(hr) ? hr : E_FAIL));
+    }
+    return buffer;
+}
+
+template<class T>
+inline IDirect3DIndexBuffer9* CreateManagedIndexBufferOrThrow(IDirect3DDevice9* Device, const std::vector<T>& Source, D3DFORMAT Format, const char* Label)
+{
+    IDirect3DIndexBuffer9* buffer = nullptr;
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    HRESULT hr = Device->CreateIndexBuffer(bytes, D3DUSAGE_WRITEONLY, Format, D3DPOOL_MANAGED, &buffer, nullptr);
+    if (FAILED(hr) || !UploadVectorToBuffer(buffer, Source, bytes))
+    {
+        SafeRelease(buffer);
+        throw std::runtime_error(HResultTextNarrow(Label, FAILED(hr) ? hr : E_FAIL));
+    }
+    return buffer;
+}
+
+template<class T>
+inline bool TryCreateManagedVertexBuffer(IDirect3DDevice9* Device, const std::vector<T>& Source, DWORD Fvf, IDirect3DVertexBuffer9*& Out)
+{
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    if (FAILED(Device->CreateVertexBuffer(bytes, D3DUSAGE_WRITEONLY, Fvf, D3DPOOL_MANAGED, &Out, nullptr)) || !UploadVectorToBuffer(Out, Source, bytes))
+    {
+        SafeRelease(Out);
+        return false;
+    }
+    return true;
+}
+
+template<class T>
+inline bool TryCreateManagedIndexBuffer(IDirect3DDevice9* Device, const std::vector<T>& Source, D3DFORMAT Format, IDirect3DIndexBuffer9*& Out)
+{
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    if (FAILED(Device->CreateIndexBuffer(bytes, D3DUSAGE_WRITEONLY, Format, D3DPOOL_MANAGED, &Out, nullptr)) || !UploadVectorToBuffer(Out, Source, bytes))
+    {
+        SafeRelease(Out);
+        return false;
+    }
+    return true;
+}
+
 inline void AssignError(std::wstring& error, const std::string& text)
 {
     error.assign(text.begin(), text.end());
@@ -522,127 +481,7 @@ inline void AssignError(std::wstring& error, const std::string& text)
 
 inline IDirect3DTexture9* LoadDdsTexture(IDirect3DDevice9* Device, const std::filesystem::path& path)
 {
-    const auto data = ReadGameWorldFileBytes(path);
-    if (data.size() < 128 || Binary::U32LE(data, 0) != 0x20534444 ||
-    Binary::U32LE(data, 4) != 124 || Binary::U32LE(data, 76) != 32)
-    {
-        throw std::runtime_error("bad DDS file: " + path.string());
-    }
-
-    const auto height = Binary::U32LE(data, 12);
-    const auto width = Binary::U32LE(data, 16);
-    const auto MipCountRaw = Binary::U32LE(data, 28);
-    const auto PfFlags = Binary::U32LE(data, 80);
-    const auto fourcc = Binary::U32LE(data, 84);
-    const auto RgbBitCount = Binary::U32LE(data, 88);
-    const auto RMask = Binary::U32LE(data, 92);
-    const auto GMask = Binary::U32LE(data, 96);
-    const auto BMask = Binary::U32LE(data, 100);
-    const auto AMask = Binary::U32LE(data, 104);
-    if (width == 0 || height == 0)
-    {
-        throw std::runtime_error("empty DDS texture: " + path.string());
-    }
-
-    D3DFORMAT format = D3DFMT_UNKNOWN;
-    uint32 BlockBytes = 0;
-    uint32 SourcePixelBytes = 0;
-    bool ExpandRgb24 = false;
-    if ((PfFlags & 0x4) != 0)
-    {
-        if (fourcc == 0x31545844)
-        {
-            format = D3DFMT_DXT1;
-            BlockBytes = 8;
-        } else if (fourcc == 0x33545844)
-        {
-            format = D3DFMT_DXT3;
-            BlockBytes = 16;
-        } else if (fourcc == 0x35545844)
-        {
-            format = D3DFMT_DXT5;
-            BlockBytes = 16;
-        }
-    } else if ((PfFlags & 0x40U) != 0 && RgbBitCount == 32 &&
-    RMask == 0x00ff0000U && GMask == 0x0000ff00U && BMask == 0x000000ffU &&
-    ((PfFlags & 0x1U) == 0 || AMask == 0xff000000U))
-    {
-        format = D3DFMT_A8R8G8B8;
-        SourcePixelBytes = 4;
-    } else if ((PfFlags & 0x40U) != 0 && RgbBitCount == 16 &&
-    RMask == 0x0000f800U && GMask == 0x000007e0U && BMask == 0x0000001fU && AMask == 0)
-    {
-        format = D3DFMT_R5G6B5;
-        SourcePixelBytes = 2;
-    } else if ((PfFlags & 0x40U) != 0 && RgbBitCount == 24 &&
-    RMask == 0x00ff0000U && GMask == 0x0000ff00U && BMask == 0x000000ffU && AMask == 0)
-    {
-        format = D3DFMT_A8R8G8B8;
-        SourcePixelBytes = 3;
-        ExpandRgb24 = true;
-    }
-    if (format == D3DFMT_UNKNOWN)
-    {
-        throw std::runtime_error("unsupported DDS texture format: " + path.string());
-    }
-
-    const UINT MipCount = static_cast<UINT>((std::max)(uint32{1}, MipCountRaw));
-    IDirect3DTexture9* texture = nullptr;
-    HRESULT hr = Device->CreateTexture(width, height, MipCount, 0, format, D3DPOOL_MANAGED, &texture, nullptr);
-    if (FAILED(hr))
-    {
-        throw std::runtime_error(HResultTextNarrow("CreateTexture", hr));
-    }
-
-    std::size_t cursor = 128;
-    uint32 LevelWidth = width;
-    uint32 LevelHeight = height;
-    for (UINT level = 0; level < MipCount; ++level)
-    {
-        std::size_t SourcePitch = 0;
-        std::size_t SourceRows = 0;
-        if (BlockBytes != 0)
-        {
-            SourcePitch = static_cast<std::size_t>((std::max)(uint32{1}, (LevelWidth + 3) / 4)) * BlockBytes;
-            SourceRows = (std::max)(uint32{1}, (LevelHeight + 3) / 4);
-        } else
-        {
-            SourcePitch = static_cast<std::size_t>(LevelWidth) * SourcePixelBytes;
-            SourceRows = LevelHeight;
-        }
-        const std::size_t SourceBytes = SourcePitch * SourceRows;
-        Binary::RequireRange(data, cursor, SourceBytes, "DDS mip data");
-        D3DLOCKED_RECT locked{};
-        hr = texture->LockRect(level, &locked, nullptr, 0);
-        if (FAILED(hr))
-        {
-            SafeRelease(texture);
-            throw std::runtime_error(HResultTextNarrow("Texture::LockRect", hr));
-        }
-        for (std::size_t row = 0; row < SourceRows; ++row)
-        {
-            auto* dest = static_cast<uint8*>(locked.pBits) + row * locked.Pitch;
-            const auto* source = data.data() + cursor + row * SourcePitch;
-            if (ExpandRgb24)
-            {
-                for (std::size_t column = 0; column < LevelWidth; ++column)
-                {
-                    dest[column * 4] = source[column * 3];
-                    dest[column * 4 + 1] = source[column * 3 + 1];
-                    dest[column * 4 + 2] = source[column * 3 + 2];
-                    dest[column * 4 + 3] = 0xff;
-                }
-            } else
-            {
-                std::copy_n(source, SourcePitch, dest);
-            }
-        }
-        texture->UnlockRect(level);
-        cursor += SourceBytes;
-        LevelWidth = (std::max)(uint32{1}, LevelWidth / 2);
-        LevelHeight = (std::max)(uint32{1}, LevelHeight / 2);
-    }
-    return texture;
+    return CreateD3D9TextureFromDdsBytes(Device, ReadGameWorldFileBytes(path), path.string());
 }
 
 inline IDirect3DTexture9* LoadMtxTexture(IDirect3DDevice9* Device, const std::filesystem::path& path)

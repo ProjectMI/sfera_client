@@ -32,7 +32,7 @@ public:
     FD3D9CharacterScene(const FD3D9CharacterScene&) = delete;
     FD3D9CharacterScene& operator=(const FD3D9CharacterScene&) = delete;
     bool EnsureInitialized(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger);
-    bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, FLogger* logger);
+    bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, float deltaSeconds, FLogger* logger);
     FSkinnedCharacterModel ExportSkinnedModel() const;
     void Shutdown();
     bool IsReady() const { return Initialized; }
@@ -42,12 +42,13 @@ private:
     void ReleaseBuffers();
     void ReleaseCharacterResources();
     bool LoadGroundMesh(const FResourceManager& resources, std::string& error);
+    void LoadPlayerAnimationTable(const FResourceManager& resources, bool female);
     bool LoadCharacterMesh(const FResourceManager& resources, const FCharacterCreationAppearance& appearance, std::string& error);
     bool UploadGroundBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error);
     bool UploadCharacterBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error);
     bool UploadBuffers(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger, std::string& error);
     bool UpdateCharacterAppearance(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, FLogger* logger);
-    void UpdateCharacterAnimation(IDirect3DDevice9* device);
+    void UpdateCharacterAnimation(IDirect3DDevice9* device, float deltaSeconds);
     void ConfigureRenderState(IDirect3DDevice9* device);
     void SetCameraFocus(int32 focusId, bool snap);
     void UpdateCamera();
@@ -56,7 +57,9 @@ private:
     void DrawCharacter(IDirect3DDevice9* device);
     IDirect3DTexture9* LoadDdsTexture(IDirect3DDevice9* device, const FResourceManager& resources, const std::string& logicalName, FLogger* logger, std::string& error);
     std::vector<FSceneMatrix4> BuildSkeletonMatrices(size_t frame) const;
+    std::vector<FSceneMatrix4> BuildSkeletonMatrices(size_t frameA, size_t frameB, float alpha) const;
     void UpdateCharacterVerticesForFrame(size_t frame);
+    void UpdateCharacterVerticesForFrame(size_t frameA, size_t frameB, float alpha);
     bool Initialized = false;
     bool GroundUploaded = false;
     bool CharacterUploaded = false;
@@ -80,6 +83,10 @@ private:
     size_t CharacterAnimationStart = 0;
     size_t CharacterAnimationFrames = 1;
     unsigned long CharacterAnimationTick = 0;
+    float CharacterAnimationTime = 0.0f;
+    int32 CharacterAnimIdle = 20;
+    int32 CharacterAnimWalk = 20;
+    int32 CharacterAnimRun = 20;
     float CharacterAngle = Sfera::InitialCharacterSceneAngle;
     int32 CameraFocusId = -1;
     float CameraFocusX = 0.0f;

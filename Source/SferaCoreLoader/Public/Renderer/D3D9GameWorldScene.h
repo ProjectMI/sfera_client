@@ -16,7 +16,6 @@
 
 struct IDirect3DDevice9;
 class FLogger;
-class FModelRepository;
 
 struct FD3D9GameWorldRenderStats
 {
@@ -80,9 +79,7 @@ public:
     bool IsValid() const;
 
     static FGameWorldConfig DefaultConfig();
-    static void PrewarmCpuCaches(const FResourceManager& resources, const FWorldScene& world, const FGameWorldConfig& config, float spawnX, float spawnZ, FLogger* logger = nullptr);
     static void PrewarmGrassModelCpuCache(const FResourceManager& resources, const FGameWorldConfig& config, FLogger* logger = nullptr);
-    static void PrewarmStaticModelCpuCache(const FResourceManager& resources, const FModelRepository& models, FLogger* logger = nullptr);
 
 private:
     struct Impl;

@@ -14,25 +14,10 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include "WorldScene/WorldTypes.h"
 
-#include <algorithm>
-#include <array>
-#include <cctype>
-#include <cmath>
 #include <cstdint>
-#include <exception>
 #include <filesystem>
-#include <functional>
-#include <iomanip>
-#include <initializer_list>
-#include <limits>
-#include <memory>
-#include <optional>
-#include <sstream>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 constexpr DWORD kWorldVertexFvf = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX2;
@@ -43,9 +28,11 @@ constexpr std::size_t kLndTriangleBytes = 28;
 constexpr float kPi = 3.14159265358979323846f;
 constexpr std::size_t kPlayerIdleAction = 20;
 constexpr float kPlayerAnimSecondsPerFrame = 0.08f;
-constexpr float kEyeBelowCrownWorld = 0.16f;
-constexpr float kEyeForwardModel = 0.18f;
-constexpr float kMoveBodyBackShift = 0.5f;
+constexpr float kEyeBelowCrownWorld = 0.10f;
+constexpr float kEyeForwardModel = 0.36f;
+constexpr float kIdleBodyBackShift = 0.0f;
+constexpr float kWalkBodyBackShift = 0.22f;
+constexpr float kRunBodyBackShift = 0.5f;
 constexpr float kWalkBobScale = 1.0f;
 
 struct WorldVertex
@@ -132,19 +119,20 @@ struct StaticModelResource
     std::vector<WorldVertex> CpuVertices;
     std::vector<uint16> CpuIndices;
     FBox3 Bounds;
+    bool IsSkinned = false;
+    FMdlMesh BindMesh;
+    std::vector<WorldVertex> AnimationVertices;
+    std::vector<int> ClipStart;
+    std::vector<int> ClipLength;
+    std::vector<int> GestureClips;
+    int FrameCount = 1;
+    int LastAnimationFrame = -1;
+    int IdleClip = -1;
+    int CurrentClip = -1;
+    float ClipTime = 0.0f;
 };
 
-struct GrassRenderBatch
-{
-    IDirect3DTexture9* Texture = nullptr;
-    IDirect3DVertexBuffer9* VertexBuffer = nullptr;
-    IDirect3DIndexBuffer9* IndexBuffer = nullptr;
-    UINT VertexCount = 0;
-    UINT IndexCount = 0;
-    FBox3 Bounds{};
-};
-
-struct StaticRenderBatch
+struct WorldRenderBatch
 {
     IDirect3DTexture9* Texture = nullptr;
     IDirect3DVertexBuffer9* VertexBuffer = nullptr;

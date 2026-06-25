@@ -1,6 +1,4 @@
 #include "WorldScene/SpatialIndex.h"
-#include <algorithm>
-#include <cmath>
 
 void FSpatialIndex::Clear()
 {

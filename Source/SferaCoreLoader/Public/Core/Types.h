@@ -1,14 +1,9 @@
 #pragma once
+#include "Core/Pch.h"
 #if !defined(_WIN64) && !defined(_M_X64) && !defined(__x86_64__)
 #error SferaCoreLoader is Win64-only. Build the project as x64.
 #endif
 
-#include <cstdint>
-#include <filesystem>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <vector>
 
 using uint8 = std::uint8_t;
 using uint16 = std::uint16_t;

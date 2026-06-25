@@ -1,9 +1,5 @@
 #pragma once
 #include "Core/Types.h"
-#include <Windows.h>
-#include <bit>
-#include <string>
-#include <string_view>
 
 namespace Common
 {

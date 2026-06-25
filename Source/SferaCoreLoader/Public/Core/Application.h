@@ -11,7 +11,6 @@
 #include "Network/ConnectManager.h"
 #include "WorldScene/WorldScene.h"
 #include "ResourceLoader/ResourceManager.h"
-#include <memory>
 
 class FApplication 
 {

@@ -1,10 +1,6 @@
 #pragma once
 #include "Core/Logger.h"
 #include "Core/Types.h"
-#include <Windows.h>
-#include <functional>
-#include <string>
-#include <vector>
 
 struct FWindowDesc
 {

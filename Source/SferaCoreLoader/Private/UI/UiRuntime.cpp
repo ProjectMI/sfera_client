@@ -2,7 +2,6 @@
 #include "Common/SferaGameConstants.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
-#include <algorithm>
 
 FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger)
 {

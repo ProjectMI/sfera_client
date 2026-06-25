@@ -1,8 +1,5 @@
 #pragma once
 #include "Core/Types.h"
-#include <optional>
-#include <string>
-#include <vector>
 
 struct FPeImportSymbol 
 { 

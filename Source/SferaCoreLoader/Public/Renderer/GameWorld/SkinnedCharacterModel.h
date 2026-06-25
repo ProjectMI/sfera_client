@@ -2,10 +2,6 @@
 #include "Core/Types.h"
 #include "Renderer/CharacterSceneTypes.h"
 #include "Model/SklSkeleton.h"
-#include <cstdint>
-#include <filesystem>
-#include <string>
-#include <vector>
 
 struct FSkinnedCharacterBatch
 {

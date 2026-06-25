@@ -1,5 +1,4 @@
 #include "MBC/MbcNativeRegistry.h"
-#include <algorithm>
 
 void FMbcNativeRegistry::Register(std::string name, FMbcNative function)
 {

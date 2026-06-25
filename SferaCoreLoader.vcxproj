@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -46,6 +46,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/Pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)SferaCoreLoader.pch</PrecompiledHeaderOutputFile>
+      <ForcedIncludeFiles>Core/Pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -64,6 +68,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/Pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)SferaCoreLoader.pch</PrecompiledHeaderOutputFile>
+      <ForcedIncludeFiles>Core/Pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -84,7 +92,9 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Config\ConfigService.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Core\Application.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Core\Logger.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Core\Main.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\FileSystem.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\NativeFile.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\FileSystem\PathUtils.cpp" />
@@ -216,5 +226,6 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Common\ValueUtils.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldConfig.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\SkinnedCharacterModel.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\Pch.h" />
   </ItemGroup>
 </Project>

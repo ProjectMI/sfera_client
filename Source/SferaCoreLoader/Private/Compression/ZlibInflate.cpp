@@ -1,6 +1,4 @@
 #include "Compression/ZlibInflate.h"
-#include <array>
-#include <algorithm>
 
 namespace
 {

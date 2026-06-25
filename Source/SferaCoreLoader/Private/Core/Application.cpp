@@ -6,12 +6,6 @@
 #include "MBC/MbcEngineBridge.h"
 #include "Model/ModelRepository.h"
 #include "Renderer/D3D9GameWorldScene.h"
-#include <algorithm>
-#include <atomic>
-#include <memory>
-#include <exception>
-#include <optional>
-#include <thread>
 
 FApplication::FApplication() : ExecutableRoot(PathUtils::GetExecutableDirectory()), Logger(ExecutableRoot / "core_loader.log"), FileSystem(ExecutableRoot) {}
 

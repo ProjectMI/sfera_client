@@ -1,7 +1,6 @@
 #include "UI/UiRuntime.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
-#include <sstream>
 
 namespace
 {

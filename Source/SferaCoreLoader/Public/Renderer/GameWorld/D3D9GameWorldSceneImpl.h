@@ -4,7 +4,6 @@
 #include "Renderer/D3D9GameWorldScene.h"
 #include "Renderer/GameWorld/GameWorldTypes.h"
 #include "Renderer/GameWorld/GameWorldSupport.h"
-#include <memory>
 
 enum class EGameWorldDrawBucket
 {
@@ -38,6 +37,8 @@ struct FD3D9GameWorldScene::Impl
     IDirect3DVertexDeclaration9* WorldDecl = nullptr;
     IDirect3DVertexShader9* BaseVS = nullptr;
     IDirect3DPixelShader9* BasePS = nullptr;
+    IDirect3DVertexShader9* GrassVS = nullptr;
+    IDirect3DPixelShader9* GrassPS = nullptr;
     std::unordered_map<std::string, int> BaseVSConsts;
     bool WorldShadersReady = false;
     D3DMATRIX ViewMatrix{};
@@ -48,15 +49,51 @@ struct FD3D9GameWorldScene::Impl
     const FWorldScene* WorldScene = nullptr;
     FLogger* Logger = nullptr;
     FGameWorldConfig Config;
+    struct TerrainCpuPreloadJob
+    {
+        std::vector<std::wstring> Keys;
+        std::future<void> Future;
+    };
+
+    struct StaticModelCpuPreloadTarget
+    {
+        std::string ModelName;
+        std::filesystem::path ModelPath;
+        std::string Key;
+    };
+
+    struct StaticModelCpuPreloadJob
+    {
+        std::vector<std::string> Keys;
+        std::future<void> Future;
+    };
+
     std::unordered_map<std::wstring, std::unique_ptr<TerrainResource>> TerrainResources;
+    std::vector<TerrainCpuPreloadJob> TerrainCpuPreloadJobs;
+    std::vector<std::filesystem::path> PendingTerrainCpuPreloads;
+    std::unordered_set<std::wstring> QueuedTerrainCpuPreloads;
+    std::thread TerrainCpuPreloadThread;
+    std::mutex TerrainCpuPreloadMutex;
+    std::condition_variable TerrainCpuPreloadCv;
+    bool TerrainCpuPreloadStop = false;
+    bool TerrainCpuPreloadWorkerStarted = false;
     std::vector<TerrainInstance> TerrainInstances;
     std::unordered_map<uint64, TerrainInstance> TerrainInstanceLookup;
     std::unordered_map<std::string, std::unique_ptr<StaticModelResource>> StaticResources;
+    std::vector<StaticModelCpuPreloadJob> StaticModelCpuPreloadJobs;
+    std::vector<StaticModelCpuPreloadTarget> PendingStaticModelCpuPreloads;
+    std::unordered_set<std::string> QueuedStaticModelCpuPreloads;
+    std::thread StaticModelCpuPreloadThread;
+    std::mutex StaticModelCpuPreloadMutex;
+    std::condition_variable StaticModelCpuPreloadCv;
+    bool StaticModelCpuPreloadStop = false;
+    bool StaticModelCpuPreloadWorkerStarted = false;
     std::vector<StaticPlacementModel> StaticPlacementModels;
     std::vector<StaticPlacement> StaticPlacements;
     std::vector<StaticInstance> StaticInstances;
     std::vector<std::size_t> VisibleStaticPlacementIndices;
     std::vector<uint64> VisibleStaticRenderCells;
+    std::unordered_map<uint64, std::vector<std::size_t>> StaticPlacementIndicesByRenderCell;
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> StaticCellRenderBatches;
     bool StaticVisibilityPlanReady = false;
     float StaticVisibilityAnchorX = 0.0f;
@@ -65,6 +102,7 @@ struct FD3D9GameWorldScene::Impl
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> GrassCellRenderBatches;
     std::unordered_map<int, std::vector<uint8>> GrassMaps;
     std::unordered_set<uint64> GrassCells;
+    bool GrassRefreshIncomplete = false;
     std::vector<FSceneBatch> PlayerBatches;
     UINT PlayerVertexCount = 0;
     FSkinnedCharacterModel PlayerModel;
@@ -101,6 +139,8 @@ struct FD3D9GameWorldScene::Impl
     int StreamingGuardColumn = (std::numeric_limits<int>::min)();
     int StreamingGuardRowStep = (std::numeric_limits<int>::min)();
     int StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
+    std::chrono::steady_clock::time_point NextStreamingGuardTime{};
+    std::unordered_set<uint64> QueuedTerrainCpuPreloadCells;
     int GrassCenterX = (std::numeric_limits<int>::min)();
     int GrassCenterZ = (std::numeric_limits<int>::min)();
     float GrassAnchorX = 0.0f;
@@ -113,7 +153,11 @@ struct FD3D9GameWorldScene::Impl
     int OverlayHeight = 0;
     bool Initialized = false;
     mutable std::unordered_map<std::string, std::filesystem::path> OptionalPathCache;
+    mutable std::unordered_map<std::string, std::filesystem::path> TerrainLndPathByRelativeKey;
+    mutable std::unordered_map<std::string, std::filesystem::path> TerrainLndPathByStemKey;
+    mutable bool TerrainPathIndexReady = false;
     mutable std::unordered_map<std::string, std::optional<std::filesystem::path>> TerrainStemPathCache;
+    mutable std::unordered_map<std::string, std::optional<std::filesystem::path>> TerrainRelativePathCache;
     mutable std::unordered_map<std::string, std::filesystem::path> ModelPathCache;
     mutable std::unordered_map<std::string, std::filesystem::path> ModelPathIndex;
     mutable bool ModelPathIndexReady = false;
@@ -132,6 +176,8 @@ struct FD3D9GameWorldScene::Impl
     void CreateReflectionTarget();
     std::filesystem::path ResolveOptionalPath(std::string LogicalName) const;
     std::filesystem::path ResolveConfiguredPath(const std::string& LogicalName) const;
+    void BuildTerrainPathIndex() const;
+    std::optional<std::filesystem::path> TryResolveTerrainRelativePath(const std::filesystem::path& RelativePath) const;
     std::optional<std::filesystem::path> TryResolveTerrainStemPath(const std::string& TerrainStem) const;
     std::optional<std::filesystem::path> TryResolveTerrainPathFromPatch(const FWorldPatchRecord& PatchRecord) const;
     std::filesystem::path ResolveTerrainPath(const FWorldMapCell& cell) const;
@@ -146,6 +192,11 @@ struct FD3D9GameWorldScene::Impl
     std::unique_ptr<StaticModelResource> LoadStaticModelResource(
         const std::string& ModelName,
         const std::filesystem::path& ModelPath);
+    void StartStaticModelCpuPreloadWorker();
+    void StopStaticModelCpuPreloadWorker();
+    void StaticModelCpuPreloadWorkerMain();
+    void QueueStaticModelCpuPreload(const std::string& ModelName, const std::filesystem::path& ModelPath);
+    void DrainStaticModelCpuPreloadJobs(bool Wait);
     const std::vector<uint8>& LoadGrassMap(int ChunkX, int ChunkZ);
     uint8 GrassTypeAt(float WorldX, float WorldZ);
     void LoadVisibleStaticObjects();
@@ -161,6 +212,11 @@ struct FD3D9GameWorldScene::Impl
     void ClearGrassRenderBatches();
     void BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances);
     std::unique_ptr<TerrainResource> LoadTerrainResource(const std::filesystem::path& LNDPath);
+    void StartTerrainCpuPreloadWorker();
+    void StopTerrainCpuPreloadWorker();
+    void TerrainCpuPreloadWorkerMain();
+    void QueueTerrainCpuPreload(const std::filesystem::path& LNDPath);
+    void DrainTerrainCpuPreloadJobs(bool Wait);
     void LoadVisibleTerrain();
     void PreloadTerrainForCenter(int CenterRow, int CenterColumn, int Radius);
     void PreloadStreamingGuard();
@@ -168,6 +224,8 @@ struct FD3D9GameWorldScene::Impl
     void LoadWorldShaders();
     void SetVsConst(const char* name, const float* data, int Vec4Count);
     void SetBaseLightConstants();
+    void ComputeWindCircles(float Out[12]) const;
+    DWORD TerrainColorAt(float WorldX, float WorldZ) const;
     bool IsBoundsVisibleToCamera(const FBox3& Bounds, float ExtraMargin = 0.0f) const;
     void SetBaseWorld(const D3DMATRIX& world);
     void BeginBaseShader();

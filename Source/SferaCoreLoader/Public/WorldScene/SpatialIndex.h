@@ -1,7 +1,5 @@
 #pragma once
 #include "WorldScene/WorldTypes.h"
-#include <unordered_map>
-#include <unordered_set>
 
 struct FSpatialItem 
 {

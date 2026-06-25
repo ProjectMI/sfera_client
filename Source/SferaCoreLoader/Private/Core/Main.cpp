@@ -1,14 +1,4 @@
 #include "Core/Application.h"
-#include <Windows.h>
-#include <array>
-#include <bit>
-#include <exception>
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-#include <string>
 
 namespace
 {

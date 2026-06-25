@@ -1,7 +1,5 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include "Common/StringUtils.h"
-#include <algorithm>
-#include <cctype>
 
 std::string_view ToString(EResourceKind kind)
 {

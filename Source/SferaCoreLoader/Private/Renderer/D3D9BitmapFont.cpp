@@ -5,14 +5,6 @@
 #include "Common/TextEncoding.h"
 #include "Core/NumericParse.h"
 #include "FileSystem/PathUtils.h"
-#include <Windows.h>
-#include <d3d9.h>
-#include <algorithm>
-#include <cmath>
-#include <cctype>
-#include <bit>
-#include <sstream>
-#include <utility>
 
 namespace
 {

@@ -1,5 +1,4 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
-#include <cmath>
 
 void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
 {

@@ -1,6 +1,5 @@
 #pragma once
 #include "Network/NetworkTypes.h"
-#include <memory>
 
 struct FNativeTcpSocket;
 

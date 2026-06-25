@@ -1,7 +1,6 @@
 #include "FileSystem/FileSystem.h"
 #include "FileSystem/NativeFile.h"
 #include "FileSystem/PathUtils.h"
-#include <sstream>
 
 FFileSystem::FFileSystem(FPath root)
 {

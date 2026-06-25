@@ -1,8 +1,4 @@
 #pragma once
-#include <array>
-#include <cstdint>
-#include <string>
-#include <vector>
 #include "WorldScene/WorldTypes.h"
 
 struct FGameWorldSkyState
@@ -60,8 +56,14 @@ struct FGameWorldConfig
     float GrassFlatnessThreshold = 0.5f;
     float GrassFlatnessNormalY = 0.75f;
     float GrassGenerationMargin = 16.0f;
-    float GrassWindAmplitude = 0.018f;
+    float GrassWindAmplitude = 1.8f;
     float GrassWindSpeed = 1.35f;
+    float GrassGlow = 0.12f;
+    float GrassColorGain = 2.0f;
+    float GrassFadeStart = 42.0f;
+    float GrassFadeEnd = 54.0f;
+    float GrassGustRadiusScale = 0.12f;
+    float GrassBreeze = 0.30f;
     std::wstring CameraMode;
     std::wstring SkyTexture;
     float SkyRadius = 220.0f;

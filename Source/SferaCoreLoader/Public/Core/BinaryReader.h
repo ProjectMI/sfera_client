@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Types.h"
 #include "Common/BinaryData.h"
-#include <stdexcept>
 
 namespace Binary
 {

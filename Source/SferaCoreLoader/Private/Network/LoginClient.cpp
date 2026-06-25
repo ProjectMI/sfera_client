@@ -1,18 +1,5 @@
 #include "Network/LoginClient.h"
 #include "Common/ValueUtils.h"
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <Windows.h>
-#include <algorithm>
-#include <array>
-#include <bit>
-#include <cmath>
-#include <iterator>
-#include <memory>
-#include <random>
-#include <sstream>
-#include <string>
-#include <vector>
 
 namespace
 {

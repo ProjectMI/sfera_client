@@ -1,8 +1,4 @@
 #include "Core/Logger.h"
-#include <chrono>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 
 static std::string_view ToText(ELogLevel level)
 {
@@ -53,10 +49,10 @@ void FLogger::Write(ELogLevel level, std::string_view message)
 {
     std::lock_guard<std::mutex> lock(Mutex);
     std::string line = MakeTimestamp() + " [" + std::string(ToText(level)) + "] " + std::string(message);
-    std::cout << line << std::endl;
+    std::cout << line << '\n';
 
     if (Stream.is_open())
     {
-        Stream << line << std::endl;
+        Stream << line << '\n';
     }
 }

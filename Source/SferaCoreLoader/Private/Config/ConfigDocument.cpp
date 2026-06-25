@@ -1,11 +1,6 @@
 #include "Config/ConfigDocument.h"
 #include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
-#include <algorithm>
-#include <cctype>
-#include <sstream>
-#include <unordered_map>
-
 
 
 static std::string StripConfigComment(std::string line)

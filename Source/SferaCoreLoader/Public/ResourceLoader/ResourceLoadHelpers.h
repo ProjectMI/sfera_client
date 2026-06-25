@@ -1,6 +1,5 @@
 #pragma once
 #include "ResourceLoader/ResourceManager.h"
-#include <string_view>
 
 namespace ResourceLoader
 {

@@ -1,10 +1,6 @@
 #include "WorldScene/ZoningManager.h"
 #include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
-#include <algorithm>
-#include <cctype>
-#include <unordered_map>
-#include <set>
 
 static bool AllAsciiDigits(std::string_view text)
 {

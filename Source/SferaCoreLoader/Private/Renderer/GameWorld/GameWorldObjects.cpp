@@ -1,23 +1,16 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
 #include "Config/ConfigDocument.h"
-#include <string_view>
-#include <iterator>
-#include <algorithm>
-#include <atomic>
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <exception>
-#include <mutex>
-#include <thread>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
 
 
 namespace
 {
+void LowerStaticWorkerPriority()
+{
+#if defined(_WIN32)
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+#endif
+}
+
 struct StaticModelCpuBatch
 {
     UINT StartIndex = 0;
@@ -51,6 +44,11 @@ int StaticRenderCellCoord(float Value, float CellSize)
 uint64 StaticRenderCellKeyForPoint(float X, float Z, float CellSize)
 {
     return StaticRenderCellKey(StaticRenderCellCoord(X, CellSize), StaticRenderCellCoord(Z, CellSize));
+}
+
+std::pair<int, int> StaticRenderCellRange(float Center, float Radius, float CellSize)
+{
+    return {StaticRenderCellCoord(Center - Radius, CellSize), StaticRenderCellCoord(Center + Radius, CellSize)};
 }
 
 FBox3 EmptyBounds()
@@ -147,36 +145,52 @@ struct AccumulatedWorldBatch
 
 using AccumulatedWorldBatchMap = std::unordered_map<IDirect3DTexture9*, AccumulatedWorldBatch>;
 
-void AccumulateWorldBatches(const StaticModelResource& Resource, const D3DMATRIX& World, AccumulatedWorldBatchMap& Batches, bool GrassWind = false)
+void AccumulateWorldBatches(const StaticModelResource& Resource, const D3DMATRIX& World, AccumulatedWorldBatchMap& Batches, bool GrassWind = false, DWORD Tint = 0xfffffffful)
 {
     if (Resource.CpuVertices.empty() || Resource.CpuIndices.empty())
     {
         return;
     }
+    constexpr uint32 InvalidRemap = (std::numeric_limits<uint32>::max)();
     const float ModelHeight = Resource.Bounds.Max.Y - Resource.Bounds.Min.Y;
     const float InvModelHeight = ModelHeight > 0.0001f ? 1.0f / ModelHeight : 0.0f;
     const float RootWorldY = Resource.Bounds.Max.Y * World._22 + World._42;
+    std::vector<uint32> remap(Resource.CpuVertices.size(), InvalidRemap);
+    std::vector<uint16> touched;
     for (const auto& sourceBatch : Resource.Batches)
     {
         auto& output = Batches[sourceBatch.Texture];
-        const uint32 baseVertex = static_cast<uint32>(output.Vertices.size());
-        output.Vertices.reserve(output.Vertices.size() + Resource.CpuVertices.size());
-        for (const auto& source : Resource.CpuVertices)
-        {
-            WorldVertex vertex = TransformWorldVertex(source, World);
-            if (GrassWind)
-            {
-                vertex.DetailU = std::clamp((Resource.Bounds.Max.Y - source.Y) * InvModelHeight, 0.0f, 1.0f);
-                vertex.DetailV = RootWorldY;
-            }
-            ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
-            output.Vertices.push_back(vertex);
-        }
-        const uint32 endIndex = sourceBatch.StartIndex + sourceBatch.IndexCount;
+        const uint32 endIndex = (std::min)(sourceBatch.StartIndex + sourceBatch.IndexCount, static_cast<UINT>(Resource.CpuIndices.size()));
         output.Indices.reserve(output.Indices.size() + sourceBatch.IndexCount);
-        for (uint32 index = sourceBatch.StartIndex; index < endIndex && index < Resource.CpuIndices.size(); ++index)
+        touched.clear();
+        for (uint32 index = sourceBatch.StartIndex; index < endIndex; ++index)
         {
-            output.Indices.push_back(baseVertex + Resource.CpuIndices[index]);
+            const uint16 sourceIndex = Resource.CpuIndices[index];
+            if (sourceIndex >= Resource.CpuVertices.size())
+            {
+                continue;
+            }
+            uint32& mappedIndex = remap[sourceIndex];
+            if (mappedIndex == InvalidRemap)
+            {
+                const auto& source = Resource.CpuVertices[sourceIndex];
+                WorldVertex vertex = TransformWorldVertex(source, World);
+                if (GrassWind)
+                {
+                    vertex.DetailU = std::clamp((Resource.Bounds.Max.Y - source.Y) * InvModelHeight, 0.0f, 1.0f);
+                    vertex.DetailV = RootWorldY;
+                    vertex.Diffuse = Tint;
+                }
+                ExpandBounds(output.Bounds, FVector3{vertex.X, vertex.Y, vertex.Z});
+                mappedIndex = static_cast<uint32>(output.Vertices.size());
+                output.Vertices.push_back(vertex);
+                touched.push_back(sourceIndex);
+            }
+            output.Indices.push_back(mappedIndex);
+        }
+        for (const uint16 sourceIndex : touched)
+        {
+            remap[sourceIndex] = InvalidRemap;
         }
     }
 }
@@ -665,6 +679,13 @@ std::shared_ptr<const StaticModelCpuResource> LoadStaticModelCpuResourceCached(c
     return inserted ? built : it->second;
 }
 
+bool IsStaticModelCpuResourceCached(const std::filesystem::path& ModelPath)
+{
+    const auto key = StaticModelCpuCacheKey(ModelPath);
+    std::lock_guard<std::mutex> lock(StaticModelCpuCacheMutex);
+    return StaticModelCpuCache.find(key) != StaticModelCpuCache.end();
+}
+
 struct StaticPlacementFile
 {
     std::filesystem::path AbsolutePath;
@@ -823,6 +844,7 @@ StaticPlacementLoadResult BuildStaticPlacementLoadResult(const std::vector<Stati
 
 void FD3D9GameWorldScene::Impl::LoadStaticPlacements()
 {
+    FScopedDurationLog Scope(Logger, "gameworld.LoadStaticPlacements", 10.0);
     auto result = BuildStaticPlacementLoadResult(CollectStaticPlacementFiles(AssetResources, Config));
     StaticInstances.clear();
     VisibleStaticPlacementIndices.clear();
@@ -830,11 +852,19 @@ void FD3D9GameWorldScene::Impl::LoadStaticPlacements()
     ClearStaticRenderBatches();
     StaticPlacementModels = std::move(result.Models);
     StaticPlacements = std::move(result.Placements);
+    StaticPlacementIndicesByRenderCell.clear();
+    StaticPlacementIndicesByRenderCell.reserve(StaticPlacements.size() / 4 + 1);
+    for (std::size_t index = 0; index < StaticPlacements.size(); ++index)
+    {
+        const auto& placement = StaticPlacements[index];
+        StaticPlacementIndicesByRenderCell[StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize)].push_back(index);
+    }
     StaticVisibilityPlanReady = false;
 }
 
 StaticModelResource* FD3D9GameWorldScene::Impl::EnsureStaticModelResource(const std::string& ModelName)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.EnsureStaticModelResource", 3.0, ModelName);
     const auto key = LowercaseAscii(ModelName);
     auto it = StaticResources.find(key);
     if (it != StaticResources.end())
@@ -846,11 +876,128 @@ StaticModelResource* FD3D9GameWorldScene::Impl::EnsureStaticModelResource(const 
     return it->second.get();
 }
 
+void FD3D9GameWorldScene::Impl::StartStaticModelCpuPreloadWorker()
+{
+    std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+    if (StaticModelCpuPreloadWorkerStarted)
+    {
+        return;
+    }
+    StaticModelCpuPreloadStop = false;
+    StaticModelCpuPreloadWorkerStarted = true;
+    StaticModelCpuPreloadThread = std::thread([this]()
+    {
+        StaticModelCpuPreloadWorkerMain();
+    });
+}
+
+void FD3D9GameWorldScene::Impl::StopStaticModelCpuPreloadWorker()
+{
+    {
+        std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+        if (!StaticModelCpuPreloadWorkerStarted)
+        {
+            return;
+        }
+        StaticModelCpuPreloadStop = true;
+    }
+    StaticModelCpuPreloadCv.notify_all();
+    if (StaticModelCpuPreloadThread.joinable())
+    {
+        StaticModelCpuPreloadThread.join();
+    }
+    {
+        std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+        StaticModelCpuPreloadWorkerStarted = false;
+        StaticModelCpuPreloadStop = false;
+    }
+}
+
+void FD3D9GameWorldScene::Impl::StaticModelCpuPreloadWorkerMain()
+{
+    LowerStaticWorkerPriority();
+    for (;;)
+    {
+        std::vector<StaticModelCpuPreloadTarget> Targets;
+        {
+            std::unique_lock<std::mutex> lock(StaticModelCpuPreloadMutex);
+            StaticModelCpuPreloadCv.wait(lock, [this]()
+            {
+                return StaticModelCpuPreloadStop || !PendingStaticModelCpuPreloads.empty();
+            });
+            if (StaticModelCpuPreloadStop && PendingStaticModelCpuPreloads.empty())
+            {
+                break;
+            }
+            Targets.swap(PendingStaticModelCpuPreloads);
+        }
+
+        if (Targets.empty())
+        {
+            continue;
+        }
+
+        for (const auto& Target : Targets)
+        {
+            try
+            {
+                LoadStaticModelCpuResourceCached(Target.ModelName, Target.ModelPath);
+            }
+            catch (const std::exception& ex)
+            {
+                if (Logger)
+                {
+                    Logger->Warning(std::string("static model CPU preload failed: ") + ex.what());
+                }
+            }
+            {
+                std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+                QueuedStaticModelCpuPreloads.erase(Target.Key);
+            }
+        }
+    }
+}
+
+void FD3D9GameWorldScene::Impl::QueueStaticModelCpuPreload(const std::string& ModelName, const std::filesystem::path& ModelPath)
+{
+    if (ModelName.empty() || ModelPath.empty() || IsStaticModelCpuResourceCached(ModelPath))
+    {
+        return;
+    }
+
+    const auto Key = StaticModelCpuCacheKey(ModelPath);
+    {
+        std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+        if (!QueuedStaticModelCpuPreloads.insert(Key).second)
+        {
+            return;
+        }
+        PendingStaticModelCpuPreloads.push_back(StaticModelCpuPreloadTarget{ModelName, ModelPath, Key});
+    }
+    StaticModelCpuPreloadCv.notify_one();
+}
+
+void FD3D9GameWorldScene::Impl::DrainStaticModelCpuPreloadJobs(bool Wait)
+{
+    if (Wait)
+    {
+        StopStaticModelCpuPreloadWorker();
+        StaticModelCpuPreloadJobs.clear();
+        return;
+    }
+
+    FScopedDurationLog Scope(Logger, "gameworld.DrainStaticModelCpuPreloadJobs.poll", 1.5);
+    StaticModelCpuPreloadCv.notify_one();
+}
+
 std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelResource(
     const std::string& ModelName,
     const std::filesystem::path& ModelPath)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.LoadStaticModelResource", 4.0, ModelName);
+    const auto CpuStart = std::chrono::steady_clock::now();
     const auto cpu = LoadStaticModelCpuResourceCached(ModelName, ModelPath);
+    LogDurationProbe(Logger, "gameworld.LoadStaticModelResource.cpu-cache", DurationLogMillisecondsSince(CpuStart), 2.0, ModelName);
     auto resource = std::make_unique<StaticModelResource>();
     resource->VertexCount = static_cast<UINT>(cpu->Vertices.size());
     resource->Bounds = cpu->Bounds;
@@ -884,6 +1031,7 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
         ConfigureNpcAnimationClips(*resource, AssetResources, ModelName);
     }
 
+    const auto TextureStart = std::chrono::steady_clock::now();
     for (const auto& cpuBatch : cpu->Batches)
     {
         FSceneBatch batch;
@@ -892,42 +1040,65 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
         batch.Texture = LoadCachedDdsTexture(ResolveModelTexturePath(ModelPath, cpuBatch.MaterialName));
         resource->Batches.push_back(batch);
     }
+    LogDurationProbe(Logger, "gameworld.LoadStaticModelResource.textures", DurationLogMillisecondsSince(TextureStart), 2.0, ModelName + " batches=" + std::to_string(cpu->Batches.size()));
 
-    resource->VertexBuffer = CreateManagedVertexBufferOrThrow(Device, cpu->Vertices, kWorldVertexFvf, "CreateVertexBuffer static model");
-    resource->IndexBuffer = CreateManagedIndexBufferOrThrow(Device, cpu->Indices, D3DFMT_INDEX16, "CreateIndexBuffer static model");
+    {
+        const auto GpuStart = std::chrono::steady_clock::now();
+        resource->VertexBuffer = CreateManagedVertexBufferOrThrow(Device, cpu->Vertices, kWorldVertexFvf, "CreateVertexBuffer static model");
+        LogDurationProbe(Logger, "gameworld.LoadStaticModelResource.create-vb", DurationLogMillisecondsSince(GpuStart), 1.5, ModelName + " vertices=" + std::to_string(cpu->Vertices.size()));
+    }
+    {
+        const auto GpuStart = std::chrono::steady_clock::now();
+        resource->IndexBuffer = CreateManagedIndexBufferOrThrow(Device, cpu->Indices, D3DFMT_INDEX16, "CreateIndexBuffer static model");
+        LogDurationProbe(Logger, "gameworld.LoadStaticModelResource.create-ib", DurationLogMillisecondsSince(GpuStart), 1.0, ModelName + " indices=" + std::to_string(cpu->Indices.size()));
+    }
     return resource;
 }
 
 void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
 {
+    FScopedDurationLog Scope(Logger, "gameworld.LoadVisibleStaticObjects", 5.0, "placements=" + std::to_string(StaticPlacements.size()) + " resources=" + std::to_string(StaticResources.size()));
     const float RadiusSquared = Config.StaticObjectRadius * Config.StaticObjectRadius;
     const bool needsPlan = !StaticVisibilityPlanReady || std::abs(SpawnX - StaticVisibilityAnchorX) > 1.0f || std::abs(SpawnZ - StaticVisibilityAnchorZ) > 1.0f;
     if (needsPlan)
     {
+        const auto PlanStart = std::chrono::steady_clock::now();
         VisibleStaticPlacementIndices.clear();
         VisibleStaticRenderCells.clear();
         std::unordered_set<uint64> visibleCells;
         StaticVisibilityAnchorX = SpawnX;
         StaticVisibilityAnchorZ = SpawnZ;
-        for (std::size_t index = 0; index < StaticPlacements.size(); ++index)
+        const auto [MinCellX, MaxCellX] = StaticRenderCellRange(SpawnX, Config.StaticObjectRadius, Config.TileSize);
+        const auto [MinCellZ, MaxCellZ] = StaticRenderCellRange(SpawnZ, Config.StaticObjectRadius, Config.TileSize);
+        for (int cellX = MinCellX; cellX <= MaxCellX; ++cellX)
         {
-            auto& placement = StaticPlacements[index];
-            const float dx = placement.Position.X - SpawnX;
-            const float dz = placement.Position.Z - SpawnZ;
-            if (dx * dx + dz * dz > RadiusSquared)
+            for (int cellZ = MinCellZ; cellZ <= MaxCellZ; ++cellZ)
             {
-                continue;
+                const uint64 CellKey = StaticRenderCellKey(cellX, cellZ);
+                const auto cellIt = StaticPlacementIndicesByRenderCell.find(CellKey);
+                if (cellIt == StaticPlacementIndicesByRenderCell.end())
+                {
+                    continue;
+                }
+                for (const std::size_t index : cellIt->second)
+                {
+                    auto& placement = StaticPlacements[index];
+                    const float dx = placement.Position.X - SpawnX;
+                    const float dz = placement.Position.Z - SpawnZ;
+                    if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+                    {
+                        continue;
+                    }
+                    VisibleStaticPlacementIndices.push_back(index);
+                    visibleCells.insert(CellKey);
+                }
             }
-            if (placement.ModelId >= StaticPlacementModels.size())
-            {
-                continue;
-            }
-            VisibleStaticPlacementIndices.push_back(index);
-            visibleCells.insert(StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize));
         }
         VisibleStaticRenderCells.assign(visibleCells.begin(), visibleCells.end());
         StaticVisibilityPlanReady = true;
+        LogDurationProbe(Logger, "gameworld.LoadVisibleStaticObjects.plan", DurationLogMillisecondsSince(PlanStart), 2.0, "visible=" + std::to_string(VisibleStaticPlacementIndices.size()) + " cells=" + std::to_string(VisibleStaticRenderCells.size()));
     }
+    const auto ResourceStart = std::chrono::steady_clock::now();
     for (const auto placementIndex : VisibleStaticPlacementIndices)
     {
         const auto& placement = StaticPlacements[placementIndex];
@@ -942,6 +1113,8 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
             StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ModelPath));
         }
     }
+    LogDurationProbe(Logger, "gameworld.LoadVisibleStaticObjects.ensure-resources", DurationLogMillisecondsSince(ResourceStart), 2.0, "visible=" + std::to_string(VisibleStaticPlacementIndices.size()));
+    const auto InstancesStart = std::chrono::steady_clock::now();
     StaticInstances.clear();
     StaticInstances.reserve((std::min<std::size_t>)(VisibleStaticPlacementIndices.size(), 4096));
     for (const auto placementIndex : VisibleStaticPlacementIndices)
@@ -997,9 +1170,11 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
         }
         return a.world._43 < b.world._43;
     });
-    BuildVisibleStaticRenderBatches();
+    LogDurationProbe(Logger, "gameworld.LoadVisibleStaticObjects.instances", DurationLogMillisecondsSince(InstancesStart), 2.0, "instances=" + std::to_string(StaticInstances.size()));
+    // Static cell baking is intentionally not executed from streaming/update.
+    // It transforms and uploads a whole visible static-cell set and can turn a tile crossing into a 100+ ms hitch.
+    // Missing baked cells are rendered through the direct per-instance path in DrawStaticObjects().
 }
-
 
 
 void FD3D9GameWorldScene::Impl::ClearStaticRenderBatches()
@@ -1010,14 +1185,26 @@ void FD3D9GameWorldScene::Impl::ClearStaticRenderBatches()
 
 void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.BakeStaticRenderCell", 2.0, "cell=" + std::to_string(CellKey));
     if (StaticCellRenderBatches.find(CellKey) != StaticCellRenderBatches.end())
     {
         return;
     }
-    AccumulatedWorldBatchMap batchesByTexture;
-    for (auto& placement : StaticPlacements)
+    auto cellIt = StaticPlacementIndicesByRenderCell.find(CellKey);
+    if (cellIt == StaticPlacementIndicesByRenderCell.end() || cellIt->second.empty())
     {
-        if (StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize) != CellKey || placement.ModelId >= StaticPlacementModels.size())
+        StaticCellRenderBatches.emplace(CellKey, std::vector<WorldRenderBatch>{});
+        return;
+    }
+    AccumulatedWorldBatchMap batchesByTexture;
+    for (const auto placementIndex : cellIt->second)
+    {
+        if (placementIndex >= StaticPlacements.size())
+        {
+            continue;
+        }
+        auto& placement = StaticPlacements[placementIndex];
+        if (placement.ModelId >= StaticPlacementModels.size())
         {
             continue;
         }
@@ -1083,14 +1270,17 @@ void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
         AccumulateWorldBatches(*resource, world, batchesByTexture);
     }
     std::vector<WorldRenderBatch> baked;
+    const auto UploadStart = std::chrono::steady_clock::now();
     if (UploadWorldBatches(Device, batchesByTexture, baked))
     {
+        LogDurationProbe(Logger, "gameworld.BakeStaticRenderCell.upload-batches", DurationLogMillisecondsSince(UploadStart), 1.5, "cell=" + std::to_string(CellKey) + " batches=" + std::to_string(baked.size()));
         StaticCellRenderBatches.emplace(CellKey, std::move(baked));
     }
 }
 
 void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
 {
+    FScopedDurationLog Scope(Logger, "gameworld.BuildVisibleStaticRenderBatches", 4.0, "cells=" + std::to_string(VisibleStaticRenderCells.size()));
     for (const auto cell : VisibleStaticRenderCells)
     {
         BakeStaticRenderCell(cell);
@@ -1099,29 +1289,46 @@ void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
 
 void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, float CenterZ, float Radius)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.PreloadStaticResourcesAround", 2.0, "placements=" + std::to_string(StaticPlacements.size()) + " radius=" + FormatDurationLogValue(Radius));
     const float RadiusSquared = Radius * Radius;
-    for (const auto& placement : StaticPlacements)
+    const auto [MinCellX, MaxCellX] = StaticRenderCellRange(CenterX, Radius, Config.TileSize);
+    const auto [MinCellZ, MaxCellZ] = StaticRenderCellRange(CenterZ, Radius, Config.TileSize);
+    std::unordered_set<std::string> queuedModels;
+    for (int cellX = MinCellX; cellX <= MaxCellX; ++cellX)
     {
-        const float dx = placement.Position.X - CenterX;
-        const float dz = placement.Position.Z - CenterZ;
-        if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+        for (int cellZ = MinCellZ; cellZ <= MaxCellZ; ++cellZ)
         {
-            continue;
-        }
-        const auto& model = StaticPlacementModels[placement.ModelId];
-        if (model.Key.empty() || StaticResources.find(model.Key) != StaticResources.end())
-        {
-            continue;
-        }
-        try
-        {
-            StaticResources.emplace(model.Key, LoadStaticModelResource(model.Name, ResolveModelPath(model.Name)));
-        }
-        catch (const std::exception& ex)
-        {
-            if (Logger)
+            const uint64 CellKey = StaticRenderCellKey(cellX, cellZ);
+            const auto cellIt = StaticPlacementIndicesByRenderCell.find(CellKey);
+            if (cellIt == StaticPlacementIndicesByRenderCell.end())
             {
-                Logger->Warning("static guard preload skipped " + model.Name + ": " + ex.what());
+                continue;
+            }
+            for (const std::size_t placementIndex : cellIt->second)
+            {
+                const auto& placement = StaticPlacements[placementIndex];
+                const float dx = placement.Position.X - CenterX;
+                const float dz = placement.Position.Z - CenterZ;
+                if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+                {
+                    continue;
+                }
+                const auto& model = StaticPlacementModels[placement.ModelId];
+                if (model.Key.empty() || StaticResources.find(model.Key) != StaticResources.end() || !queuedModels.insert(model.Key).second)
+                {
+                    continue;
+                }
+                try
+                {
+                    QueueStaticModelCpuPreload(model.Name, ResolveModelPath(model.Name));
+                }
+                catch (const std::exception& ex)
+                {
+                    if (Logger)
+                    {
+                        Logger->Warning("static guard preload skipped " + model.Name + ": " + ex.what());
+                    }
+                }
             }
         }
     }
@@ -1317,11 +1524,13 @@ uint8 FD3D9GameWorldScene::Impl::GrassTypeAt(float WorldX, float WorldZ)
 
 void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
 {
+    FScopedDurationLog Scope(Logger, "gameworld.LoadVisibleGrass", 6.0, "quality=" + std::to_string(Config.GrassQuality) + " existing=" + std::to_string(GrassInstances.size()));
     if (Config.GrassQuality <= 0)
     {
         ClearGrassRenderBatches();
         GrassInstances.clear();
         GrassCells.clear();
+        GrassRefreshIncomplete = false;
         return;
     }
     if (Config.GrassDetailModels.empty())
@@ -1365,6 +1574,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
         return (static_cast<uint64>(static_cast<uint32>(x)) << 32) | static_cast<uint32>(z);
     };
 
+    const auto PlanStart = std::chrono::steady_clock::now();
     std::unordered_set<uint64> TargetCells;
     TargetCells.reserve(static_cast<std::size_t>((CellRadius * 2 + 1) * (CellRadius * 2 + 1)));
     for (int CellX = GrassCenterX - CellRadius; CellX <= GrassCenterX + CellRadius; ++CellX)
@@ -1418,7 +1628,6 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
             {
                 continue;
             }
-            GrassCells.insert(key);
             GrassCellPlan plan;
             plan.CellX = CellX;
             plan.CellZ = CellZ;
@@ -1431,22 +1640,49 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 const float SampleX = plan.X + SampleOffset.X;
                 const float SampleZ = plan.Z + SampleOffset.Y;
                 const uint8 type = GrassTypeAt(SampleX, SampleZ);
-                if (type > 0 && type < UsedGrassTypes.size())
-                {
-                    UsedGrassTypes[type] = true;
-                    AnyTypedGrass = true;
-                }
                 plan.Samples.push_back(GrassSamplePlan{SampleX, SampleZ, type});
             }
             plans.push_back(std::move(plan));
         }
     }
 
-    if (plans.empty() || !AnyTypedGrass)
+    LogDurationProbe(Logger, "gameworld.LoadVisibleGrass.plan", DurationLogMillisecondsSince(PlanStart), 2.0, "target-cells=" + std::to_string(TargetCells.size()) + " new-plans=" + std::to_string(plans.size()));
+    if (plans.empty())
+    {
+        GrassRefreshIncomplete = false;
+        return;
+    }
+
+    constexpr std::size_t MaxGrassCellsPerUpdate = 6;
+    if (plans.size() > MaxGrassCellsPerUpdate)
+    {
+        GrassRefreshIncomplete = true;
+        plans.resize(MaxGrassCellsPerUpdate);
+    }
+    else
+    {
+        GrassRefreshIncomplete = false;
+    }
+
+    for (const auto& plan : plans)
+    {
+        GrassCells.insert(plan.Key);
+        for (const auto& sample : plan.Samples)
+        {
+            if (sample.Type > 0 && sample.Type < UsedGrassTypes.size())
+            {
+                UsedGrassTypes[sample.Type] = true;
+                AnyTypedGrass = true;
+            }
+        }
+    }
+
+    if (!AnyTypedGrass)
     {
         return;
     }
 
+    const auto EnsureStart = std::chrono::steady_clock::now();
     auto ensureWideModel = [this](const std::wstring& name)
     {
         return EnsureStaticModelResource(NarrowAscii(name));
@@ -1480,7 +1716,9 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
     {
         DetailResources.push_back(ensureWideModel(model));
     }
+    LogDurationProbe(Logger, "gameworld.LoadVisibleGrass.ensure-models", DurationLogMillisecondsSince(EnsureStart), 2.0, "typed=" + std::to_string(AnyTypedGrass ? 1 : 0));
 
+    const auto GenerateStart = std::chrono::steady_clock::now();
     std::vector<std::vector<GrassInstance>> generated(plans.size());
     std::mutex errorMutex;
     std::string firstError;
@@ -1519,7 +1757,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 world._41 = sample.X;
                 world._42 = FlatHeight - resource->Bounds.Max.Y;
                 world._43 = sample.Z;
-                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ, TerrainColorAt(sample.X, sample.Z)});
                 ++FlatSampleCount;
                 FlowerType = static_cast<int>(type);
                 continue;
@@ -1547,7 +1785,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 world._41 = DetailX;
                 world._42 = height - resource->Bounds.Max.Y * Scale;
                 world._43 = DetailZ;
-                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, Random.Unit() * 2.0f * kPi, 0.65f + Random.Unit() * 0.35f, plan.CellX, plan.CellZ, TerrainColorAt(DetailX, DetailZ)});
                 AnyDetail = true;
             }
         }
@@ -1579,7 +1817,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
                 world._41 = FlowerX;
                 world._42 = FlowerH - resource->Bounds.Max.Y;
                 world._43 = FlowerZ;
-                out.push_back(GrassInstance{resource, world, FlowerRandom.Unit() * 2.0f * kPi, 0.65f + FlowerRandom.Unit() * 0.35f, plan.CellX, plan.CellZ});
+                out.push_back(GrassInstance{resource, world, FlowerRandom.Unit() * 2.0f * kPi, 0.65f + FlowerRandom.Unit() * 0.35f, plan.CellX, plan.CellZ, TerrainColorAt(FlowerX, FlowerZ)});
             }
         }
     };
@@ -1606,7 +1844,9 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
     {
         throw std::runtime_error(firstError);
     }
+    LogDurationProbe(Logger, "gameworld.LoadVisibleGrass.generate", DurationLogMillisecondsSince(GenerateStart), 3.0, "plans=" + std::to_string(plans.size()) + " threads=" + std::to_string(threadCount));
 
+    const auto UploadStart = std::chrono::steady_clock::now();
     std::size_t newInstances = 0;
     for (const auto& bucket : generated)
     {
@@ -1624,6 +1864,8 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
     {
         GrassInstances.insert(GrassInstances.end(), std::make_move_iterator(bucket.begin()), std::make_move_iterator(bucket.end()));
     }
+    LogDurationProbe(Logger, "gameworld.LoadVisibleGrass.upload-cells", DurationLogMillisecondsSince(UploadStart), 3.0, "new-instances=" + std::to_string(newInstances));
+    const auto SortStart = std::chrono::steady_clock::now();
     std::sort(GrassInstances.begin(), GrassInstances.end(), [](const GrassInstance& a, const GrassInstance& b)
     {
         if (a.resource != b.resource)
@@ -1636,6 +1878,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
         }
         return a.CellZ < b.CellZ;
     });
+    LogDurationProbe(Logger, "gameworld.LoadVisibleGrass.sort", DurationLogMillisecondsSince(SortStart), 1.5, "instances=" + std::to_string(GrassInstances.size()));
 }
 
 bool FD3D9GameWorldScene::Impl::CollidesWithStatic(float x, float y, float z) const
@@ -1781,6 +2024,7 @@ void FD3D9GameWorldScene::Impl::EndAlphaWorldPass(bool UsedShader)
 
 void FD3D9GameWorldScene::Impl::DrawWorldRenderBatches(std::vector<const WorldRenderBatch*>& DrawList, EGameWorldDrawBucket Bucket, float CullingMargin)
 {
+    FScopedDurationLog Scope(Logger, RenderingReflection ? "render.reflection.DrawWorldRenderBatches" : "render.DrawWorldRenderBatches", 2.0, "batches=" + std::to_string(DrawList.size()));
     if (DrawList.empty())
     {
         return;
@@ -1813,6 +2057,7 @@ void FD3D9GameWorldScene::Impl::DrawWorldRenderBatches(std::vector<const WorldRe
 
 void FD3D9GameWorldScene::Impl::UpdateNpcAnimation(float DeltaSeconds)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.UpdateNpcAnimation.inner", 8.0, "resources=" + std::to_string(StaticResources.size()));
     const float Delta = std::clamp(DeltaSeconds, 0.0f, 0.1f);
     constexpr float FramesPerSecond = 1.0f / kPlayerAnimSecondsPerFrame;
     for (auto& Entry : StaticResources)
@@ -1925,6 +2170,7 @@ void FD3D9GameWorldScene::Impl::UpdateNpcAnimation(float DeltaSeconds)
 
 void FD3D9GameWorldScene::Impl::DrawStaticObjects()
 {
+    FScopedDurationLog Scope(Logger, RenderingReflection ? "render.reflection.DrawStaticObjects" : "render.DrawStaticObjects", 3.0, "instances=" + std::to_string(StaticInstances.size()) + " cells=" + std::to_string(VisibleStaticRenderCells.size()));
     const bool UseShader = BeginAlphaWorldPass(IdentityMatrix());
 
     IDirect3DTexture9* boundTexture = nullptr;
@@ -1953,7 +2199,8 @@ void FD3D9GameWorldScene::Impl::DrawStaticObjects()
         for (const auto& instance : StaticInstances)
         {
             const auto* resource = instance.resource;
-            if (!resource || (hadBatchedCells && !resource->IsSkinned))
+            const bool BakedByCell = hadBatchedCells && StaticCellRenderBatches.find(StaticRenderCellKeyForPoint(instance.world._41, instance.world._43, Config.TileSize)) != StaticCellRenderBatches.end();
+            if (!resource || (BakedByCell && !resource->IsSkinned))
             {
                 continue;
             }
@@ -2000,6 +2247,7 @@ void FD3D9GameWorldScene::Impl::ClearGrassRenderBatches()
 
 void FD3D9GameWorldScene::Impl::BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances)
 {
+    FScopedDurationLog Scope(Logger, "gameworld.BakeGrassCell", 2.0, "cell=" + std::to_string(CellKey) + " instances=" + std::to_string(Instances.size()));
     auto& existing = GrassCellRenderBatches[CellKey];
     ReleaseWorldRenderBatches(existing);
     if (!Device || Instances.empty())
@@ -2013,7 +2261,7 @@ void FD3D9GameWorldScene::Impl::BakeGrassCell(uint64 CellKey, const std::vector<
     {
         if (instance.resource)
         {
-            AccumulateWorldBatches(*instance.resource, instance.world, batchesByTexture, true);
+            AccumulateWorldBatches(*instance.resource, instance.world, batchesByTexture, true, instance.Tint);
         }
     }
     UploadWorldBatches(Device, batchesByTexture, existing);
@@ -2025,11 +2273,78 @@ void FD3D9GameWorldScene::Impl::BakeGrassCell(uint64 CellKey, const std::vector<
 
 void FD3D9GameWorldScene::Impl::DrawGrass()
 {
+    FScopedDurationLog Scope(Logger, RenderingReflection ? "render.reflection.DrawGrass" : "render.DrawGrass", 2.0, "cells=" + std::to_string(GrassCellRenderBatches.size()));
     if (GrassCellRenderBatches.empty())
     {
         return;
     }
-    const bool UseShader = BeginAlphaWorldPass(IdentityMatrix());
+
+    Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+    Device->SetRenderState(D3DRS_ALPHAREF, 0x20);
+    Device->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+
+    const bool UseGrassShader = GrassVS && GrassPS && WorldDecl;
+    if (UseGrassShader)
+    {
+        Device->SetVertexDeclaration(WorldDecl);
+        Device->SetVertexShader(GrassVS);
+        Device->SetPixelShader(GrassPS);
+        const D3DMATRIX wvp = TransposeMatrix(ViewProjectionMatrix);
+        Device->SetVertexShaderConstantF(0, reinterpret_cast<const float*>(&wvp), 4);
+        const float sunDir[4] = {0.40452f, 0.86683f, -0.52009f, 0.0f};
+        const float sunColor[4] = {Environment.SunRed / 255.0f, Environment.SunGreen / 255.0f, Environment.SunBlue / 255.0f, Config.GrassColorGain};
+        const float ambient[4] = {Environment.AmbientRed / 255.0f, Environment.AmbientGreen / 255.0f, Environment.AmbientBlue / 255.0f, Config.GrassGlow};
+        const float wind[4] = {0.0426f, 0.0420f, ElapsedSeconds * Config.GrassWindSpeed, Config.GrassWindAmplitude};
+        const float camera[4] = {CameraEye.X, CameraEye.Y, CameraEye.Z, Config.GrassFadeStart};
+        const float fade[4] = {Config.GrassFadeEnd, 0.0f, 0.0f, 0.0f};
+        Device->SetVertexShaderConstantF(4, sunDir, 1);
+        Device->SetVertexShaderConstantF(5, sunColor, 1);
+        Device->SetVertexShaderConstantF(6, ambient, 1);
+        Device->SetVertexShaderConstantF(7, wind, 1);
+        Device->SetVertexShaderConstantF(8, camera, 1);
+        Device->SetVertexShaderConstantF(9, fade, 1);
+        float circles[12];
+        ComputeWindCircles(circles);
+        Device->SetVertexShaderConstantF(10, circles, 3);
+        const float windAngle = ElapsedSeconds * 0.05f;
+        const float control[4] = {std::cos(windAngle), std::sin(windAngle), Config.GrassGustRadiusScale, Config.GrassBreeze};
+        Device->SetVertexShaderConstantF(13, control, 1);
+    }
+    else
+    {
+        Device->SetVertexShader(nullptr);
+        Device->SetPixelShader(nullptr);
+        Device->SetVertexDeclaration(nullptr);
+        Device->SetFVF(kWorldVertexFvf);
+        const auto identity = IdentityMatrix();
+        Device->SetTransform(D3DTS_WORLD, &identity);
+        D3DMATERIAL9 material{};
+        material.Diffuse.r = material.Diffuse.g = material.Diffuse.b = material.Diffuse.a = 1.0f;
+        material.Ambient = material.Diffuse;
+        Device->SetMaterial(&material);
+        Device->SetRenderState(D3DRS_LIGHTING, TRUE);
+        Device->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
+        Device->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1);
+        Device->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_COLOR1);
+        Device->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_XRGB(Environment.AmbientRed, Environment.AmbientGreen, Environment.AmbientBlue));
+        D3DLIGHT9 light{};
+        light.Type = D3DLIGHT_DIRECTIONAL;
+        light.Diffuse.r = Environment.SunRed / 255.0f;
+        light.Diffuse.g = Environment.SunGreen / 255.0f;
+        light.Diffuse.b = Environment.SunBlue / 255.0f;
+        light.Diffuse.a = 1.0f;
+        light.Direction.x = -0.40452f;
+        light.Direction.y = -0.86683f;
+        light.Direction.z = 0.52009f;
+        Device->SetLight(0, &light);
+        Device->LightEnable(0, TRUE);
+        Device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE2X);
+        Device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+        Device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+        Device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+    }
 
     std::vector<const WorldRenderBatch*> drawList;
     drawList.reserve(GrassCellRenderBatches.size() * 2);
@@ -2040,8 +2355,16 @@ void FD3D9GameWorldScene::Impl::DrawGrass()
             drawList.push_back(&batch);
         }
     }
+    Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
+    Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
     DrawWorldRenderBatches(drawList, EGameWorldDrawBucket::Grass, Config.GrassSpacing * 2.0f);
 
-    EndAlphaWorldPass(UseShader);
+    if (!UseGrassShader)
+    {
+        Device->LightEnable(0, FALSE);
+    }
+    EndBaseShader();
+    Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    ConfigureRenderState();
 }
 

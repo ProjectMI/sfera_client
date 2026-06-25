@@ -1,6 +1,5 @@
 #include "Network/ClientProtocol.h"
 #include "Network/SphereEmuProtocol.h"
-#include <cctype>
 
 FProtocolProbeResult FClientProtocolProbe::Inspect(const FByteArray& bytes) const
 {

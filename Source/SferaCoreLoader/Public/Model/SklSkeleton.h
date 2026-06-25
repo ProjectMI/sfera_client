@@ -1,8 +1,6 @@
 #pragma once
 #include "Core/Types.h"
 #include "ResourceLoader/ResourceManager.h"
-#include <string>
-#include <vector>
 
 struct FSklTransform 
 { 

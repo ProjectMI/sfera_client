@@ -1,8 +1,6 @@
 #pragma once
 #include "Common/SferaGameConstants.h"
 #include "Core/Types.h"
-#include <array>
-#include <string>
 
 struct FCharacterSlot 
 { 

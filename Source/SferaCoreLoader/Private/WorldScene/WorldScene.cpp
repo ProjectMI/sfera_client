@@ -2,13 +2,6 @@
 #include "Common/BinaryData.h"
 #include "Common/StringUtils.h"
 #include "Core/NumericParse.h"
-#include <algorithm>
-#include <array>
-#include <cctype>
-#include <bit>
-#include <cmath>
-#include <sstream>
-#include <unordered_set>
 
 static int64 MakeSignedPairKey(int32 x, int32 y) { return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(y); }
 static bool ReasonableWorldFloat(float v) { return std::isfinite(v) && std::abs(v) < 10000000.0f; }

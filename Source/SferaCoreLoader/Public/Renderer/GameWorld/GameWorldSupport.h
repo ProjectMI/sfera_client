@@ -1,9 +1,4 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include "Common/BinaryData.h"
 #include "Common/StringUtils.h"
 #include "Core/BinaryReader.h"
@@ -11,21 +6,6 @@
 #include "FileSystem/NativeFile.h"
 #include "Model/MdlModel.h"
 #include "ResourceLoader/ResourceTypes.h"
-#include <d3d9.h>
-#include <algorithm>
-#include <bit>
-#include <cctype>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <filesystem>
-#include <iomanip>
-#include <limits>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "Renderer/GameWorld/GameWorldTypes.h"
 #include "Renderer/D3D9Utils.h"
@@ -184,6 +164,16 @@ inline D3DMATRIX MultiplyMatrix(const D3DMATRIX& Left, const D3DMATRIX& Right)
         }
     }
     return Out;
+}
+
+inline D3DMATRIX TransposeMatrix(const D3DMATRIX& Source)
+{
+    D3DMATRIX out{};
+    out._11 = Source._11; out._12 = Source._21; out._13 = Source._31; out._14 = Source._41;
+    out._21 = Source._12; out._22 = Source._22; out._23 = Source._32; out._24 = Source._42;
+    out._31 = Source._13; out._32 = Source._23; out._33 = Source._33; out._34 = Source._43;
+    out._41 = Source._14; out._42 = Source._24; out._43 = Source._34; out._44 = Source._44;
+    return out;
 }
 
 template<class T>

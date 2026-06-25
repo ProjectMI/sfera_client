@@ -1,8 +1,5 @@
 #include "MBC/MbcEngineBridge.h"
 #include "Common/StringUtils.h"
-#include <algorithm>
-#include <cctype>
-#include <utility>
 
 std::string FMbcEngineBridge::ReadSliceString(const FMbcNativeContext& ctx, const FMbcSlice& slice)
 {

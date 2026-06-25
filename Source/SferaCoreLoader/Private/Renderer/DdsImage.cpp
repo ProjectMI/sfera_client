@@ -2,8 +2,6 @@
 #include "Core/BinaryReader.h"
 #include "Core/StatusUtils.h"
 #include "ResourceLoader/ResourceLoadHelpers.h"
-#include <algorithm>
-#include <stdexcept>
 
 namespace
 {

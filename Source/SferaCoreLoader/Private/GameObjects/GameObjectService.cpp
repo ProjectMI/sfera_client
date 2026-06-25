@@ -1,5 +1,4 @@
 #include "GameObjects/GameObjectService.h"
-#include <cmath>
 
 FGameObjectService::FGameObjectService(const FResourceManager& resources) : Resources(resources) {}
 FStatus FGameObjectService::Initialize(FLogger* logger)

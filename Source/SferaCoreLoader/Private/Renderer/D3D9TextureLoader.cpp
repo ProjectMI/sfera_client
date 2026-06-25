@@ -1,9 +1,6 @@
 #include "Renderer/D3D9TextureLoader.h"
 #include "Core/BinaryReader.h"
 #include "Renderer/D3D9Utils.h"
-#include <algorithm>
-#include <stdexcept>
-#include <sstream>
 
 namespace
 {

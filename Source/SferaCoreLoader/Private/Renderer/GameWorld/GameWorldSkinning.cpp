@@ -1,11 +1,5 @@
 #include "Renderer/GameWorld/SkinnedCharacterModel.h"
 #include "Common/StringUtils.h"
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <stdexcept>
-#include <string>
-#include <vector>
 
 static float SkinDot(FVector3 A, FVector3 B)
 {

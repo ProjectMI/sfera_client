@@ -4,8 +4,6 @@
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 #include "Common/ValueUtils.h"
-#include <algorithm>
-#include <cmath>
 
 namespace
 {

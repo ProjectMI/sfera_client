@@ -1,6 +1,5 @@
 #include "MBC/MbcVirtualMachine.h"
 #include "Core/NumericParse.h"
-#include <cmath>
 
 FMbcVirtualMachine::FMbcVirtualMachine(FMbcNativeRegistry& registry) : Registry(registry) {}
 FStatus FMbcVirtualMachine::LoadProject(const FMbcProject* project)

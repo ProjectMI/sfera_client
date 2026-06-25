@@ -1,11 +1,6 @@
 #include "Platform/Win64Window.h"
 #include "Common/TextEncoding.h"
-#include <windowsx.h>
 
-#include <array>
-#include <bit>
-#include <sstream>
-#include <string>
 
 namespace
 {

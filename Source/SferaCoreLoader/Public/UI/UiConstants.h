@@ -1,6 +1,5 @@
 #pragma once
 #include "Common/SferaGameConstants.h"
-#include <cstddef>
 
 namespace SferaUi
 {

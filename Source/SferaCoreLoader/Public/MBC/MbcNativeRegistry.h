@@ -1,8 +1,6 @@
 #pragma once
 #include "Core/Types.h"
 #include "MBC/MbcTypes.h"
-#include <functional>
-#include <unordered_map>
 
 class FMbcVirtualMachine;
 

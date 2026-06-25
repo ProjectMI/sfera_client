@@ -1,5 +1,4 @@
 #include "Network/PacketBuffer.h"
-#include <algorithm>
 
 FPacketBuffer::FPacketBuffer(EPacketLengthMode mode) : Mode(mode) {}
 void FPacketBuffer::Append(const uint8* data, size_t size)

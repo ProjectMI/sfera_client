@@ -2,11 +2,6 @@
 #include "Common/BinaryData.h"
 #include "Common/TextEncoding.h"
 #include "Common/ValueUtils.h"
-#include <Windows.h>
-#include <algorithm>
-#include <bit>
-#include <cmath>
-#include <random>
 
 namespace
 {

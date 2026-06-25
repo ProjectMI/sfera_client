@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <Filter Include="Source">
@@ -526,6 +526,9 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\D3D9GameWorldSceneImpl.h">
       <Filter>Source\SferaCoreLoader\Public\Renderer\GameWorld</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Core\Pch.h">
+      <Filter>Source\SferaCoreLoader\Public\Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

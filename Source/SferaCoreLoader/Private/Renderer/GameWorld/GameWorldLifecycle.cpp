@@ -1,5 +1,4 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
-#include <unordered_map>
 
 static bool IsTerrainLndPath(const std::filesystem::path& Path)
 {
@@ -18,6 +17,14 @@ FD3D9GameWorldScene::Impl::~Impl()
 
 void FD3D9GameWorldScene::Impl::Release()
 {
+    DrainTerrainCpuPreloadJobs(true);
+    DrainStaticModelCpuPreloadJobs(true);
+    PendingTerrainCpuPreloads.clear();
+    PendingStaticModelCpuPreloads.clear();
+    QueuedTerrainCpuPreloads.clear();
+    QueuedStaticModelCpuPreloads.clear();
+    QueuedTerrainCpuPreloadCells.clear();
+
     SafeRelease(OverlayTexture);
     SafeRelease(TerrainMicrotexture);
     SafeRelease(SkyTexture);
@@ -30,6 +37,8 @@ void FD3D9GameWorldScene::Impl::Release()
     SafeRelease(ReflectionTexture);
     SafeRelease(BaseVS);
     SafeRelease(BasePS);
+    SafeRelease(GrassVS);
+    SafeRelease(GrassPS);
     SafeRelease(WorldDecl);
     WorldShadersReady = false;
     for (auto& batch : PlayerBatches)
@@ -65,10 +74,12 @@ void FD3D9GameWorldScene::Impl::Release()
     ClearGrassRenderBatches();
     GrassInstances.clear();
     GrassCells.clear();
+    GrassRefreshIncomplete = false;
     GrassMaps.clear();
     StaticInstances.clear();
     StaticPlacementModels.clear();
     StaticPlacements.clear();
+    StaticPlacementIndicesByRenderCell.clear();
     VisibleStaticPlacementIndices.clear();
     VisibleStaticRenderCells.clear();
     StaticVisibilityPlanReady = false;
@@ -80,8 +91,14 @@ void FD3D9GameWorldScene::Impl::Release()
     StreamingGuardColumn = (std::numeric_limits<int>::min)();
     StreamingGuardRowStep = (std::numeric_limits<int>::min)();
     StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
+    NextStreamingGuardTime = {};
+    QueuedTerrainCpuPreloadCells.clear();
     OptionalPathCache.clear();
+    TerrainLndPathByRelativeKey.clear();
+    TerrainLndPathByStemKey.clear();
+    TerrainPathIndexReady = false;
     TerrainStemPathCache.clear();
+    TerrainRelativePathCache.clear();
     ModelPathCache.clear();
     ModelPathIndex.clear();
     ModelPathIndexReady = false;
@@ -134,6 +151,62 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveConfiguredPath(const std
     throw std::runtime_error("required configured asset is missing: " + LogicalName);
 }
 
+void FD3D9GameWorldScene::Impl::BuildTerrainPathIndex() const
+{
+    if (TerrainPathIndexReady || !AssetResources)
+    {
+        return;
+    }
+
+    TerrainLndPathByRelativeKey.clear();
+    TerrainLndPathByStemKey.clear();
+    TerrainLndPathByRelativeKey.reserve(1024);
+    TerrainLndPathByStemKey.reserve(1024);
+    for (const auto& record : AssetResources->Catalog().All())
+    {
+        if (!IsTerrainLndPath(record.RelativePath))
+        {
+            continue;
+        }
+        const std::string relativeKey = Common::NormalizePathKey(record.RelativePath);
+        const std::string stemKey = TerrainStemKey(record.RelativePath.stem().string());
+        TerrainLndPathByRelativeKey.emplace(relativeKey, record.AbsolutePath);
+        TerrainLndPathByStemKey.emplace(stemKey, record.AbsolutePath);
+    }
+    TerrainPathIndexReady = true;
+}
+
+std::optional<std::filesystem::path> FD3D9GameWorldScene::Impl::TryResolveTerrainRelativePath(const std::filesystem::path& RelativePath) const
+{
+    if (!AssetResources || RelativePath.empty())
+    {
+        return std::nullopt;
+    }
+
+    const std::string key = Common::NormalizePathKey(RelativePath);
+    if (const auto cached = TerrainRelativePathCache.find(key); cached != TerrainRelativePathCache.end())
+    {
+        return cached->second;
+    }
+
+    BuildTerrainPathIndex();
+    if (const auto it = TerrainLndPathByRelativeKey.find(key); it != TerrainLndPathByRelativeKey.end())
+    {
+        TerrainRelativePathCache.emplace(key, it->second);
+        return it->second;
+    }
+
+    const auto direct = AssetResources->Catalog().FindByLogicalName(RelativePath.generic_string());
+    if (direct && IsTerrainLndPath(direct->RelativePath))
+    {
+        TerrainRelativePathCache.emplace(key, direct->AbsolutePath);
+        return direct->AbsolutePath;
+    }
+
+    TerrainRelativePathCache.emplace(key, std::nullopt);
+    return std::nullopt;
+}
+
 std::optional<std::filesystem::path> FD3D9GameWorldScene::Impl::TryResolveTerrainStemPath(const std::string& TerrainStem) const
 {
     if (!AssetResources || TerrainStem.empty())
@@ -147,6 +220,7 @@ std::optional<std::filesystem::path> FD3D9GameWorldScene::Impl::TryResolveTerrai
         return cached->second;
     }
 
+    BuildTerrainPathIndex();
     const std::array<std::string, 6> logicalCandidates
     {{
         "landscape/" + TerrainStem + ".lnd",
@@ -159,27 +233,18 @@ std::optional<std::filesystem::path> FD3D9GameWorldScene::Impl::TryResolveTerrai
 
     for (const auto& logicalName : logicalCandidates)
     {
-        const auto path = ResolveOptionalPath(logicalName);
-        if (!path.empty() && IsTerrainLndPath(path))
+        const std::string key = Common::NormalizePathKey(logicalName);
+        if (const auto it = TerrainLndPathByRelativeKey.find(key); it != TerrainLndPathByRelativeKey.end())
         {
-            TerrainStemPathCache.emplace(stemKey, path);
-            return path;
+            TerrainStemPathCache.emplace(stemKey, it->second);
+            return it->second;
         }
     }
 
-    for (const auto& record : AssetResources->Catalog().All())
+    if (const auto it = TerrainLndPathByStemKey.find(stemKey); it != TerrainLndPathByStemKey.end())
     {
-        if (!IsTerrainLndPath(record.RelativePath))
-        {
-            continue;
-        }
-
-        const std::string recordStem = TerrainStemKey(record.RelativePath.stem().string());
-        if (recordStem == stemKey)
-        {
-            TerrainStemPathCache.emplace(stemKey, record.AbsolutePath);
-            return record.AbsolutePath;
-        }
+        TerrainStemPathCache.emplace(stemKey, it->second);
+        return it->second;
     }
 
     TerrainStemPathCache.emplace(stemKey, std::nullopt);
@@ -190,8 +255,7 @@ std::optional<std::filesystem::path> FD3D9GameWorldScene::Impl::TryResolveTerrai
 {
     FPath candidate = PatchRecord.RelativePath;
     candidate.replace_extension(".lnd");
-    const auto sibling = ResolveOptionalPath(candidate.generic_string());
-    if (!sibling.empty() && IsTerrainLndPath(sibling))
+    if (const auto sibling = TryResolveTerrainRelativePath(candidate))
     {
         return sibling;
     }
@@ -222,6 +286,10 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveTerrainPath(const FWorld
     {
         FPath lndPath = terrain.RelativePath;
         lndPath.replace_extension(".lnd");
+        if (const auto terrainPath = TryResolveTerrainRelativePath(lndPath))
+        {
+            return *terrainPath;
+        }
         return ResolveConfiguredPath(lndPath.generic_string());
     };
 
@@ -464,6 +532,10 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     WorldScene = &world;
     Logger = InLogger;
     Config = WorldConfig;
+    QueuedTerrainCpuPreloadCells.reserve(2048);
+    PendingTerrainCpuPreloads.reserve(256);
+    StartTerrainCpuPreloadWorker();
+    StartStaticModelCpuPreloadWorker();
     Environment = FGameWorldSkyState{0.0f, Config.ClearRed, Config.ClearGreen, Config.ClearBlue, 110, 110, 110, 255, 245, 224, Config.SkyRed, Config.SkyGreen, Config.SkyBlue};
     SpawnX = static_cast<float>(x);
     SpawnY = static_cast<float>(y);
@@ -478,6 +550,7 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     FillPresentParameters();
     try
     {
+        BuildTerrainPathIndex();
         LoadWorldShaders();
         TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(NarrowAscii(Config.TerrainMicrotexture)));
         SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(NarrowAscii(Config.SkyTexture)));

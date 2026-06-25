@@ -1,11 +1,5 @@
 #pragma once
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <d3d9.h>
 
 #include "Core/Logger.h"
 #include "Core/Types.h"
@@ -14,11 +8,6 @@
 #include "ResourceLoader/ResourceTypes.h"
 #include "WorldScene/WorldTypes.h"
 
-#include <cstdint>
-#include <filesystem>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 constexpr DWORD kWorldVertexFvf = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX2;
 constexpr DWORD kOverlayVertexFvf = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
@@ -66,6 +55,7 @@ struct TerrainCpuResource
 {
     std::filesystem::path LNDPath;
     std::filesystem::path TexturePath;
+    FByteArray TextureBytes;
     std::vector<WorldVertex> Vertices;
     std::vector<FVector3> Positions;
     std::vector<uint16> Indices;
@@ -73,6 +63,9 @@ struct TerrainCpuResource
     std::vector<std::vector<uint32>> SurfaceCells;
     std::vector<WorldVertex> WaterVertices;
     std::vector<uint16> WaterIndices;
+    int TextureWidth = 0;
+    int TextureHeight = 0;
+    std::vector<uint16> TexturePixels;
     FBox3 Bounds{};
     float WaterHeight = 0.0f;
     bool HasWater = false;
@@ -98,6 +91,9 @@ struct TerrainResource
     float WaterHeight = 0.0f;
     bool HasWater = false;
     std::vector<WorldVertex> WaterCpuVerts;
+    int TextureWidth = 0;
+    int TextureHeight = 0;
+    std::vector<uint16> TexturePixels;
     FBox3 Bounds{};
 };
 
@@ -179,4 +175,5 @@ struct GrassInstance
     float WindScale = 1.0f;
     int CellX = 0;
     int CellZ = 0;
+    DWORD Tint = 0xfffffffful;
 };

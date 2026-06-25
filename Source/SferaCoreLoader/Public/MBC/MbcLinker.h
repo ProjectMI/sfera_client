@@ -1,6 +1,5 @@
 #pragma once
 #include "MBC/MbcModule.h"
-#include <unordered_map>
 
 struct FMbcFunctionSignature
 {

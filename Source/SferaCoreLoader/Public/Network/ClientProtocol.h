@@ -1,7 +1,5 @@
 #pragma once
 #include "Core/Types.h"
-#include <string>
-#include <vector>
 
 struct FProtocolProbeResult 
 {

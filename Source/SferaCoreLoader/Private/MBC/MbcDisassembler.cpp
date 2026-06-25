@@ -1,6 +1,4 @@
 #include "MBC/MbcDisassembler.h"
-#include <iomanip>
-#include <sstream>
 
 static std::string Hex(uint32 value)
 {

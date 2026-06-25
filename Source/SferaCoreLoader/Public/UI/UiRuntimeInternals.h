@@ -2,9 +2,6 @@
 #include "UI/UiRuntime.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
-#include <algorithm>
-#include <cwctype>
-#include <utility>
 
 struct FUiRuntimeInternals
 {

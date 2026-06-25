@@ -1,8 +1,6 @@
 #pragma once
 #include "FileSystem/FileSystem.h"
 #include "ResourceLoader/ResourceTypes.h"
-#include <array>
-#include <unordered_map>
 
 class FAssetCatalog 
 {

@@ -1,18 +1,9 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include "Core/Types.h"
 #include "Renderer/GameWorld/GameWorldConfig.h"
 #include "Renderer/GameWorld/SkinnedCharacterModel.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "WorldScene/WorldScene.h"
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
 
 struct IDirect3DDevice9;
 class FLogger;

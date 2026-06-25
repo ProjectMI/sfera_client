@@ -1,5 +1,3 @@
-#include <string_view>
-#include <array>
 #include "Renderer/D3D9RenderDevice.h"
 #include "Renderer/D3D9Utils.h"
 #include "Common/StringUtils.h"
@@ -7,15 +5,6 @@
 #include "Renderer/DdsImage.h"
 #include "FileSystem/PathUtils.h"
 #include "ResourceLoader/ResourceTypes.h"
-#include <Windows.h>
-#include <d3d9.h>
-#include <algorithm>
-#include <cmath>
-#include <cctype>
-#include <cstdint>
-#include <bit>
-#include <chrono>
-#include <cstdio>
 
 namespace
 {
@@ -165,24 +154,29 @@ FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLog
     pp.EnableAutoDepthStencil = TRUE;
     pp.AutoDepthStencilFormat = D3DFMT_D24S8;
     pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-    HRESULT hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
-
-    if (FAILED(hr))
+    auto CreateDeviceWithCurrentPresentation = [&]()
     {
-        pp.AutoDepthStencilFormat = D3DFMT_D16;
-        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
-    }
+        pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+        HRESULT result = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
+        if (FAILED(result))
+        {
+            pp.AutoDepthStencilFormat = D3DFMT_D16;
+            result = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp, &Device);
+        }
+        if (FAILED(result))
+        {
+            result = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &Device);
+        }
+        return result;
+    };
 
-    if (FAILED(hr))
-    {
-        hr = D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &Device);
-    }
+    const HRESULT hr = CreateDeviceWithCurrentPresentation();
 
     if (FAILED(hr)) { Shutdown(); return FStatus::Error(EStatusCode::RuntimeError, "IDirect3D9::CreateDevice failed: hr=" + std::to_string(static_cast<long>(hr))); }
 
     if (logger)
     {
-        logger->Info("D3D9 device initialized borderless windowed: backbuffer=" + std::to_string(BackBufferWidth) + "x" + std::to_string(BackBufferHeight));
+        logger->Info("D3D9 device initialized borderless windowed: backbuffer=" + std::to_string(BackBufferWidth) + "x" + std::to_string(BackBufferHeight) + ", present=display-paced, pacing=present");
     }
 
     FStatus d3dx = EnsureD3DX(logger);
@@ -1200,6 +1194,7 @@ void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, con
 
 FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger)
 {
+    FScopedDurationLog FrameProbe(logger, "frame.RenderUiDesktop", 18.0, "mode=" + std::to_string(static_cast<int>(ui.Mode())) + " delta=" + FormatDurationLogValue(static_cast<double>(deltaSeconds) * 1000.0));
     const auto frameStart = std::chrono::steady_clock::now();
     if (!Device) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 device is not initialized"); }
 
@@ -1275,6 +1270,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
             }
 
             std::wstring worldUpdateError;
+            FScopedDurationLog Probe(logger, "frame.GameWorldScene.Update", 20.0);
             if (!GameWorldScene.Update(deltaSeconds, gameInput, worldUpdateError) && logger)
             {
                 logger->Warning("D3D9 game world Update failed: " + Common::WideToUtf8(worldUpdateError));
@@ -1288,7 +1284,9 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     {
         resources, ui, logger, scale
     };
+    const auto BeginSceneStart = std::chrono::steady_clock::now();
     HRESULT hr = Device->BeginScene();
+    LogDurationProbe(logger, "d3d.BeginScene", DurationLogMillisecondsSince(BeginSceneStart), 5.0);
 
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 BeginScene failed: hr=" + std::to_string(static_cast<long>(hr))); }
 
@@ -1296,6 +1294,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
     if (ui.Mode() == EUiRuntimeMode::Game && worldScene && GameWorldScene.IsValid())
     {
+        FScopedDurationLog Probe(logger, "frame.GameWorldScene.RenderInsideScene", 8.0);
         GameWorldScene.RenderInsideScene(rect);
     }
     else
@@ -1348,8 +1347,14 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
         currentWorldStatsPtr = &currentWorldStats;
     }
     DrawRenderStatsOverlay(ctx, rect, currentWorldStatsPtr);
-    Device->EndScene();
+    {
+        const auto EndSceneStart = std::chrono::steady_clock::now();
+        Device->EndScene();
+        LogDurationProbe(logger, "d3d.EndScene", DurationLogMillisecondsSince(EndSceneStart), 5.0);
+    }
+    const auto PresentStart = std::chrono::steady_clock::now();
     hr = Device->Present(nullptr, nullptr, nullptr, nullptr);
+    LogDurationProbe(logger, "d3d.Present", DurationLogMillisecondsSince(PresentStart), 20.0);
 
     if (hr == D3DERR_DEVICELOST || hr == D3DERR_DEVICENOTRESET) { return FStatus::Ok(); }
 

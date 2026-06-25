@@ -1,5 +1,4 @@
 #include "FileSystem/NativeFile.h"
-#include <fstream>
 
 TResult<FByteArray> FNativeFile::ReadAllBytes(const FPath& path)
 {

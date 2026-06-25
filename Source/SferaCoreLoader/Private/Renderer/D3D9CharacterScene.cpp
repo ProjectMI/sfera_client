@@ -8,18 +8,6 @@
 #include "Model/SklSkeleton.h"
 #include "Common/StringUtils.h"
 #include "Config/ConfigDocument.h"
-#include <Windows.h>
-#include <d3d9.h>
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cctype>
-#include <bit>
-#include <functional>
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <unordered_map>
 
 constexpr unsigned long FVF_SCENE = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1;
 constexpr size_t CHARACTER_FREE_ACTION = 20;

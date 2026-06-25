@@ -1,10 +1,5 @@
 #include "FileSystem/PathUtils.h"
 #include "Common/StringUtils.h"
-#include <Windows.h>
-#include <algorithm>
-#include <array>
-#include <cctype>
-#include <iterator>
 
 namespace PathUtils
 {

@@ -1,7 +1,6 @@
 #include "Compression/SphrCodec.h"
 #include "Common/BinaryData.h"
 #include "Compression/ZlibInflate.h"
-#include <array>
 
 FSphrProbe FSphrCodec::Probe(const FByteArray& bytes)
 {

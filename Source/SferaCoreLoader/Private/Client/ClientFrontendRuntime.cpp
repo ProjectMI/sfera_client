@@ -1,15 +1,5 @@
 #include "Client/ClientFrontendRuntime.h"
 #include "Common/TextEncoding.h"
-#include <Windows.h>
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <thread>
-#include <system_error>
-#include <vector>
 
 FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), Session(Logger) {}
 FClientFrontendRuntime::~FClientFrontendRuntime()
@@ -24,6 +14,22 @@ std::wstring FClientFrontendRuntime::Utf8ToWide(const std::string& text)
 
 namespace
 {
+    float SecondsBetween(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end)
+    {
+        const auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        return static_cast<float>(microseconds) / 1000000.0f;
+    }
+
+    float ClampFrameDelta(float seconds)
+    {
+        if (!std::isfinite(seconds) || seconds <= 0.0f)
+        {
+            return 0.0f;
+        }
+
+        return std::clamp(seconds, 0.0f, 0.1f);
+    }
+
     std::filesystem::path SavedLoginPath()
     {
         std::array<wchar_t, MAX_PATH> buffer{};
@@ -869,9 +875,7 @@ FStatus FClientFrontendRuntime::RunEventLoop()
     }
 
     LastPaint = std::chrono::steady_clock::now();
-    auto lastRender = std::chrono::steady_clock::now() - std::chrono::milliseconds(100);
-    auto nextRender = std::chrono::steady_clock::now();
-    constexpr auto GameFrameInterval = std::chrono::microseconds(14286);
+    auto LastFrameStart = std::chrono::steady_clock::now();
 
     while (Window.IsOpen() && Window.PumpMessages())
     {
@@ -909,44 +913,40 @@ FStatus FClientFrontendRuntime::RunEventLoop()
         UpdateStageFromSession();
         PollLoginResult();
         PollCharacterResult();
-        auto now = std::chrono::steady_clock::now();
         bool gameMode = false;
+        bool characterSelectMode = false;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            gameMode = Ui.Mode() == EUiRuntimeMode::Game;
+            const EUiRuntimeMode mode = Ui.Mode();
+            gameMode = mode == EUiRuntimeMode::Game;
+            characterSelectMode = mode == EUiRuntimeMode::CharacterSelect;
         }
-        const bool renderDue = now >= nextRender;
-        const bool repaintDue = RepaintDirty && !gameMode;
 
-        if (D3DInitialized.load() && (renderDue || repaintDue))
+        const bool animatedMode = gameMode || characterSelectMode;
+        const bool repaintDue = RepaintDirty && !animatedMode;
+        const bool shouldRender = D3DInitialized.load() && (animatedMode || repaintDue);
+
+        if (shouldRender)
         {
+            const auto frameStart = std::chrono::steady_clock::now();
             float lookDeltaX = 0.0f;
             float lookDeltaY = 0.0f;
             bool jumpRequested = false;
             FGameMovementInput gameInput = BuildGameMovementInput(input, client, lookDeltaX, lookDeltaY, jumpRequested);
-            const float deltaSeconds = std::clamp(static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(now - lastRender).count()) / 1000000.0f, 0.0f, 0.1f);
+            const float deltaSeconds = ClampFrameDelta(SecondsBetween(LastFrameStart, frameStart));
+            LastFrameStart = frameStart;
             RenderFrame(deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested);
-            lastRender = now;
-            if (renderDue)
-            {
-                nextRender += GameFrameInterval;
-                if (nextRender < now - GameFrameInterval)
-                {
-                    nextRender = now + GameFrameInterval;
-                }
-            }
-            else
-            {
-                nextRender = now + GameFrameInterval;
-            }
             RepaintDirty = false;
         }
-        else if (RepaintDirty && !gameMode)
+        else if (RepaintDirty && !animatedMode)
         {
             RequestRepaintThrottled();
+            Sleep(1);
         }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        else
+        {
+            MsgWaitForMultipleObjectsEx(0, nullptr, 1, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+        }
     }
 
     if (Log)

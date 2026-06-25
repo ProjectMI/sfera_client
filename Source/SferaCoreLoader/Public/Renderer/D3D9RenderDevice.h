@@ -6,11 +6,6 @@
 #include "Renderer/D3D9GameWorldScene.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
-#include <Windows.h>
-#include <array>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 struct IDirect3D9;
 struct IDirect3DDevice9;

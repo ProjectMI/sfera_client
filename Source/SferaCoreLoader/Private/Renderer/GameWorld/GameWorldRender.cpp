@@ -133,6 +133,28 @@ void FD3D9GameWorldScene::Impl::LoadWorldShaders()
     }
     WorldShadersReady = true;
 
+    try
+    {
+        const auto GrassVSPath = ResolveOptionalPath("shaders/custom/grass_wind.vsc");
+        const auto GrassPSPath = ResolveOptionalPath("shaders/custom/grass_wind.psc");
+        const auto GrassVSCode = GrassVSPath.empty() ? FByteArray{} : ReadGameWorldFileBytes(GrassVSPath);
+        const auto GrassPSCode = GrassPSPath.empty() ? FByteArray{} : ReadGameWorldFileBytes(GrassPSPath);
+        if (!GrassVSCode.empty() && !GrassPSCode.empty())
+        {
+            const auto GrassVSWords = MakeShaderWords(GrassVSCode);
+            const auto GrassPSWords = MakeShaderWords(GrassPSCode);
+            if (FAILED(Device->CreateVertexShader(GrassVSWords.data(), &GrassVS)) || FAILED(Device->CreatePixelShader(GrassPSWords.data(), &GrassPS)))
+            {
+                SafeRelease(GrassVS);
+                SafeRelease(GrassPS);
+            }
+        }
+    }
+    catch (...)
+    {
+        SafeRelease(GrassVS);
+        SafeRelease(GrassPS);
+    }
 }
 
 void FD3D9GameWorldScene::Impl::SetVsConst(const char* name, const float* data, int Vec4Count)
@@ -261,6 +283,21 @@ void FD3D9GameWorldScene::Impl::SetBaseWorld(const D3DMATRIX& world)
         Local[2] *= InvLength;
     }
     SetVsConst("gDirLightToLightDirL", Local.data(), 2);
+}
+
+void FD3D9GameWorldScene::Impl::ComputeWindCircles(float Out[12]) const
+{
+    static constexpr float RadiusX[6] = {34.0f, 22.0f, 41.0f, 17.0f, 29.0f, 12.0f};
+    static constexpr float RadiusZ[6] = {28.0f, 39.0f, 15.0f, 33.0f, 20.0f, 44.0f};
+    static constexpr float SpeedA[6] = {0.13f, 0.19f, 0.11f, 0.23f, 0.16f, 0.27f};
+    static constexpr float SpeedB[6] = {0.17f, 0.09f, 0.21f, 0.14f, 0.25f, 0.12f};
+    static constexpr float PhaseA[6] = {0.0f, 1.1f, 2.3f, 3.7f, 4.9f, 5.5f};
+    static constexpr float PhaseB[6] = {1.7f, 0.4f, 5.1f, 2.8f, 3.3f, 0.9f};
+    for (int i = 0; i < 6; ++i)
+    {
+        Out[i * 2] = SpawnX + RadiusX[i] * std::sin(ElapsedSeconds * SpeedA[i] + PhaseA[i]);
+        Out[i * 2 + 1] = SpawnZ + RadiusZ[i] * std::sin(ElapsedSeconds * SpeedB[i] + PhaseB[i]);
+    }
 }
 
 void FD3D9GameWorldScene::Impl::BeginBaseShader()
@@ -518,11 +555,15 @@ void FD3D9GameWorldScene::Impl::Resize()
 
 void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
 {
+    FScopedDurationLog Scope(Logger, "render.GameWorldScene", 10.0);
     if (!Initialized || !Device)
     {
         return;
     }
-    UpdateViewProjection();
+    {
+        FScopedDurationLog Probe(Logger, "render.UpdateViewProjection", 1.0);
+        UpdateViewProjection();
+    }
     ResetRenderStats();
     if (ReflectionWarmupFrames > 0)
     {
@@ -537,7 +578,11 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     {
         --ReflectionUpdateCountdown;
     }
-    Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue), 1.0f, 0);
+    {
+        const auto ClearStart = std::chrono::steady_clock::now();
+        Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue), 1.0f, 0);
+        LogDurationProbe(Logger, "render.DeviceClear", DurationLogMillisecondsSince(ClearStart), 1.0);
+    }
     DrawSky();
     DrawTerrain();
     DrawGrass();

@@ -1,6 +1,5 @@
 #include "MBC/MbcTypes.h"
 #include "Common/BinaryData.h"
-#include <stdexcept>
 
 namespace Mbc
 {

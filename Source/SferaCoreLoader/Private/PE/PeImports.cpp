@@ -1,9 +1,5 @@
 #include "PE/PeImports.h"
 #include "Core/BinaryReader.h"
-#include <algorithm>
-#include <sstream>
-#include <stdexcept>
-#include <utility>
 
 namespace
 {

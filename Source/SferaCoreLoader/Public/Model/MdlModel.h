@@ -1,10 +1,6 @@
 #pragma once
 #include "Core/Types.h"
 #include "ResourceLoader/ResourceManager.h"
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
 
 struct FMdlSection 
 { 

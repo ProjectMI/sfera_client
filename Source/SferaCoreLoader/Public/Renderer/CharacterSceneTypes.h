@@ -2,8 +2,6 @@
 
 #include "Core/Types.h"
 #include "WorldScene/WorldTypes.h"
-#include <array>
-#include <string>
 
 struct IDirect3DTexture9;
 

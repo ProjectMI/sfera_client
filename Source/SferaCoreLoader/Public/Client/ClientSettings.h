@@ -2,8 +2,6 @@
 #include "Config/ConfigService.h"
 #include "Network/NetworkTypes.h"
 #include "UI/UiRuntime.h"
-#include <optional>
-#include <string>
 
 struct FClientSettings 
 {

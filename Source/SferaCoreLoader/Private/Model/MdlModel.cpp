@@ -4,12 +4,6 @@
 #include "Core/StatusUtils.h"
 #include "Model/ModelParseUtils.h"
 #include "ResourceLoader/ResourceLoadHelpers.h"
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <stdexcept>
-#include <unordered_map>
-#include <utility>
 
 namespace
 {

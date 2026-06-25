@@ -3,8 +3,6 @@
 #include "Core/StatusUtils.h"
 #include "Model/ModelParseUtils.h"
 #include "ResourceLoader/ResourceLoadHelpers.h"
-#include <algorithm>
-#include <stdexcept>
 
 namespace
 {

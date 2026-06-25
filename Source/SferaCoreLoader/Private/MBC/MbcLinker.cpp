@@ -1,7 +1,6 @@
 #include "MBC/MbcLinker.h"
 #include "Common/StringUtils.h"
 #include "MBC/MbcTypes.h"
-#include <algorithm>
 
 static bool HasImportStubPayload(const FMbcModule& module, uint32 codeOffset, uint32& payload)
 {

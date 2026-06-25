@@ -1,9 +1,5 @@
 #include "Model/ModelRepository.h"
 #include "Common/StringUtils.h"
-#include <algorithm>
-#include <atomic>
-#include <thread>
-#include <vector>
 std::string_view ToString(EModelAssetKind kind)
 {
     switch (kind)

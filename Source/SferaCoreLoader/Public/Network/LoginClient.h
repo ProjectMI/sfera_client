@@ -1,11 +1,6 @@
 #pragma once
 #include "Network/NetworkTypes.h"
 #include "Network/SphereEmuProtocol.h"
-#include <array>
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <vector>
 
 using FCharacterSlotInfo = FCharacterSlot;
 struct FLoginProbeResult;

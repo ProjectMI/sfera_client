@@ -26,6 +26,7 @@ namespace
     std::string StemLower(const FPath& path) { return Common::ToLower(path.stem().string()); }
     unsigned long Argb(unsigned char a, unsigned char r, unsigned char g, unsigned char b) { return (static_cast<unsigned long>(a) << 24) | (static_cast<unsigned long>(r) << 16) | (static_cast<unsigned long>(g) << 8) | static_cast<unsigned long>(b); }
     unsigned long ColorToArgb(const FUiColor& color) { return Argb(static_cast<unsigned char>(std::clamp(color.A, 0, 255)), static_cast<unsigned char>(std::clamp(color.R, 0, 255)), static_cast<unsigned char>(std::clamp(color.G, 0, 255)), static_cast<unsigned char>(std::clamp(color.B, 0, 255))); }
+    unsigned long ApplyAlpha(unsigned long color, float alpha) { const int a = std::clamp(static_cast<int>(static_cast<float>((color >> 24) & 0xff) * std::clamp(alpha, 0.0f, 1.0f)), 0, 255); return (color & 0x00fffffful) | (static_cast<unsigned long>(a) << 24); }
     int ColorR(unsigned long color) { return static_cast<int>((color >> 16) & 0xff); }
     int ColorG(unsigned long color) { return static_cast<int>((color >> 8) & 0xff); }
     int ColorB(unsigned long color) { return static_cast<int>(color & 0xff); }
@@ -99,9 +100,9 @@ namespace
     bool IsTextLikeControl(const FUiControlDef& control) { return Common::EqualsNoCase(control.ClassId, "TEXT") || Common::EqualsNoCase(control.ClassId, "TEXTLIST") || Common::EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
     std::string TextForControl(const FUiRuntime& ui, const FUiWindowDef& window, const FUiControlDef& control)
     {
-        if (ui.Mode() == EUiRuntimeMode::CharacterSelect && Common::EqualsNoCase(window.Name, "pick_person")) { return ui.CharacterControlText(control); }
+        if (ui.Mode() == EUiRuntimeMode::CharacterSelect && Common::EqualsNoCase(window.Name, "pick_person")) { return ui.Character().CharacterControlText(control); }
 
-        if (ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.ModalControlText(control); }
+        if (ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.Character().ModalControlText(control); }
 
         return control.TextKey.empty() ? std::string{} : ui.ResolveText(control.TextKey);
     }
@@ -130,6 +131,26 @@ void FD3D9RenderDevice::SetServerGameTime(float dayFraction)
     {
         GameWorldScene.SetGameTime(ServerGameTime);
         ServerGameTimePending = false;
+    }
+}
+
+void FD3D9RenderDevice::SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position)
+{
+    InitialGameWorldPosition = position;
+    if (GameWorldScene.IsValid())
+    {
+        GameWorldScene.Shutdown();
+        ActiveWorldScene = nullptr;
+        FailedWorldScene = nullptr;
+    }
+}
+
+void FD3D9RenderDevice::ApplyServerGameWorldPosition(const FGameWorldPosition& position)
+{
+    InitialGameWorldPosition = position;
+    if (GameWorldScene.IsValid())
+    {
+        GameWorldScene.SetPlayerWorldPosition(position);
     }
 }
 
@@ -466,7 +487,7 @@ FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& 
     return &result.first->second;
 }
 
-void FD3D9RenderDevice::DrawSolidRect(float x, float y, float w, float h, unsigned long color)
+void FD3D9RenderDevice::DrawSolidRect(float x, float y, float w, float h, unsigned long color, float alpha)
 {
     if (!Device || w <= 0.0f || h <= 0.0f) { return; }
 
@@ -474,6 +495,7 @@ void FD3D9RenderDevice::DrawSolidRect(float x, float y, float w, float h, unsign
     float y1 = SnapPixel(y);
     float x2 = SnapPixel(x + SnapSize(w));
     float y2 = SnapPixel(y + SnapSize(h));
+    color = ApplyAlpha(color, alpha);
     FUiVertex v[4] =
     {
         {
@@ -694,7 +716,7 @@ void FD3D9RenderDevice::DrawTextRect(FDrawContext& ctx, const FUiRectF& rect, co
     Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 }
 
-void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect)
+void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha)
 {
     if (control.Hidden) { return; }
 
@@ -708,7 +730,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
     {
         if (!Common::EqualsNoCase(control.ImageName, "black") && !control.ImageName.empty())
         {
-            DrawSprite(ctx, window, control.ImageName, r.W > 0.0f && r.H > 0.0f ? r : windowRect);
+            DrawSprite(ctx, window, control.ImageName, r.W > 0.0f && r.H > 0.0f ? r : windowRect, alpha);
         }
 
         return;
@@ -716,12 +738,12 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
     if (Common::EqualsNoCase(control.ClassId, "BUTTON"))
     {
-        const bool modalDisabled = ctx.Ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.IsModalActionAllowed(control);
+        const bool modalDisabled = ctx.Ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.Character().IsModalActionAllowed(control);
         std::string sprite = SelectButtonSprite(control, state);
 
         if (!sprite.empty())
         {
-            DrawSprite(ctx, window, sprite, r);
+            DrawSprite(ctx, window, sprite, r, alpha);
         }
 
         std::string text = TextForControl(ctx.Ui, window, control);
@@ -729,7 +751,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         if (!text.empty())
         {
             unsigned long color = ColorToArgb((control.Disabled || modalDisabled) ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor));
-            DrawTextRect(ctx, r, text, color, true, control.Font >= 0 ? control.Font : window.Font);
+            DrawTextRect(ctx, r, text, ApplyAlpha(color, alpha), true, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
@@ -754,7 +776,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
         if (!sprite.empty())
         {
-            DrawSprite(ctx, window, sprite, r);
+            DrawSprite(ctx, window, sprite, r, alpha);
         }
 
         return;
@@ -762,11 +784,11 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
     if (Common::EqualsNoCase(control.ClassId, "RADIOBUTTON"))
     {
-        std::string sprite = ctx.Ui.SelectedCharacterSlot() == control.Id - 63 ? control.CheckedImage : control.UncheckedImage;
+        std::string sprite = ctx.Ui.Character().SelectedSlotIndex() == control.Id - 63 ? control.CheckedImage : control.UncheckedImage;
 
         if (!sprite.empty())
         {
-            DrawSprite(ctx, window, sprite, FUiRectF{r.X + static_cast<float>(control.ImageOffset.X) * ctx.Scale, r.Y + static_cast<float>(control.ImageOffset.Y) * ctx.Scale, r.W, r.H});
+            DrawSprite(ctx, window, sprite, FUiRectF{r.X + static_cast<float>(control.ImageOffset.X) * ctx.Scale, r.Y + static_cast<float>(control.ImageOffset.Y) * ctx.Scale, r.W, r.H}, alpha);
         }
 
         std::string text = TextForControl(ctx.Ui, window, control);
@@ -774,7 +796,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         if (!text.empty())
         {
             unsigned long color = ColorToArgb(control.Disabled ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor));
-            DrawTextRect(ctx, r, text, color, false, control.Font >= 0 ? control.Font : window.Font);
+            DrawTextRect(ctx, r, text, ApplyAlpha(color, alpha), false, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
@@ -813,8 +835,8 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         const bool hotRight = state.HoverControlId == control.Id && state.SpinHoverDirection > 0;
         const bool pressedLeft = state.PressedControlId == control.Id && state.SpinPressedDirection < 0;
         const bool pressedRight = state.PressedControlId == control.Id && state.SpinPressedDirection > 0;
-        DrawSprite(ctx, window, SelectSubButtonSprite(leftButton, control.Disabled, hotLeft, pressedLeft, "sl_normal", "sl_focus", "sl_push", "sl_disabled"), left);
-        DrawSprite(ctx, window, SelectSubButtonSprite(rightButton, control.Disabled, hotRight, pressedRight, "sr_normal", "sr_focus", "sr_push", "sr_disabled"), right);
+        DrawSprite(ctx, window, SelectSubButtonSprite(leftButton, control.Disabled, hotLeft, pressedLeft, "sl_normal", "sl_focus", "sl_push", "sl_disabled"), left, alpha);
+        DrawSprite(ctx, window, SelectSubButtonSprite(rightButton, control.Disabled, hotRight, pressedRight, "sr_normal", "sr_focus", "sr_push", "sr_disabled"), right, alpha);
         return;
     }
 
@@ -824,12 +846,12 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
         if (!fill.empty())
         {
-            DrawSpriteTinted(ctx, window, fill, r, Argb(128, 0x14, 0x14, 0x14));
+            DrawSpriteTinted(ctx, window, fill, r, ApplyAlpha(Argb(128, 0x14, 0x14, 0x14), alpha));
         }
 
         if (!control.SlotBorderImage.empty())
         {
-            DrawSpriteTinted(ctx, window, control.SlotBorderImage, r, Argb(255, 0x9e, 0x7c, 0x6a));
+            DrawSpriteTinted(ctx, window, control.SlotBorderImage, r, ApplyAlpha(Argb(255, 0x9e, 0x7c, 0x6a), alpha));
         }
 
         return;
@@ -852,10 +874,10 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
             color = Argb(210, 70, 170, 60);
         }
 
-        const float ratio = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.CharacterProgressRatio(control.Id) : 1.0f;
-        DrawSolidRect(r.X, r.Y, r.W, r.H, Argb(210, 30, 28, 24));
-        DrawSolidRect(r.X, r.Y, r.W * std::clamp(ratio, 0.0f, 1.0f), r.H, color);
-        std::string status = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.CharacterProgressText(control) : std::string{};
+        const float ratio = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressRatio(control.Id) : 1.0f;
+        DrawSolidRect(r.X, r.Y, r.W, r.H, Argb(210, 30, 28, 24), alpha);
+        DrawSolidRect(r.X, r.Y, r.W * std::clamp(ratio, 0.0f, 1.0f), r.H, color, alpha);
+        std::string status = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressText(control) : std::string{};
 
         if (!status.empty() && !control.StatusShow.empty())
         {
@@ -863,7 +885,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
             {
                 r.X + static_cast<float>(control.StatusPos.X) * ctx.Scale, r.Y + static_cast<float>(control.StatusPos.Y) * ctx.Scale, std::max(44.0f * ctx.Scale, r.W), 12.0f * ctx.Scale
             };
-            DrawTextRect(ctx, sr, status, ColorToArgb(control.TextColor), (control.Id == 41 || control.Id == 42) ? true : control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
+            DrawTextRect(ctx, sr, status, ApplyAlpha(ColorToArgb(control.TextColor), alpha), (control.Id == 41 || control.Id == 42) ? true : control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
@@ -892,12 +914,12 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
         if (!text.empty())
         {
-            DrawTextRect(ctx, r, text, ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
+            DrawTextRect(ctx, r, text, ApplyAlpha(ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), alpha), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
         }
 
         if (state.FocusedControlId == control.Id)
         {
-            DrawSolidRect(r.X, r.Y + r.H - 1.0f, r.W, 1.0f, Argb(190, 237, 208, 161));
+            DrawSolidRect(r.X, r.Y + r.H - 1.0f, r.W, 1.0f, Argb(190, 237, 208, 161), alpha);
         }
 
         return;
@@ -909,18 +931,18 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
         if (!text.empty())
         {
-            DrawTextRect(ctx, r, text, ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
+            DrawTextRect(ctx, r, text, ApplyAlpha(ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), alpha), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
     }
 }
 
-bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst)
+bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha)
 {
     if (!window.DrawNone && !window.DrawSpriteName.empty())
     {
-        DrawSprite(ctx, window, window.DrawSpriteName, dst);
+        DrawSprite(ctx, window, window.DrawSpriteName, dst, alpha);
     }
 
     std::string title = window.TextKey.empty() ? std::string{} : ctx.Ui.ResolveText(window.TextKey);
@@ -940,12 +962,12 @@ bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window
             };
         }
 
-        DrawTextRect(ctx, tr, title, ColorToArgb(window.TextColor), false, window.Font);
+        DrawTextRect(ctx, tr, title, ApplyAlpha(ColorToArgb(window.TextColor), alpha), false, window.Font);
     }
 
     for (const auto& control : window.Controls)
     {
-        DrawControl(ctx, window, control, dst);
+        DrawControl(ctx, window, control, dst, alpha);
     }
 
     return true;
@@ -957,17 +979,18 @@ void FD3D9RenderDevice::DrawModalDialog(FDrawContext& ctx, const RECT& rect)
 
     const int width = std::max(1, static_cast<int>(rect.right - rect.left));
     const int height = std::max(1, static_cast<int>(rect.bottom - rect.top));
-    DrawSolidRect(static_cast<float>(rect.left), static_cast<float>(rect.top), static_cast<float>(width), static_cast<float>(height), Argb(120, 0, 0, 0));
+    const float alpha = ctx.Ui.ModalAnimationAlpha();
+    DrawSolidRect(static_cast<float>(rect.left), static_cast<float>(rect.top), static_cast<float>(width), static_cast<float>(height), Argb(120, 0, 0, 0), alpha);
     const FUiWindowDef& window = ctx.Ui.ActiveModalWindow();
 
     if (window.Name.empty()) { return; }
 
-    FUiRectF wr = ctx.Ui.BuildWindowRect(window, rect);
-    DrawWindow(ctx, window, wr);
+    FUiRectF wr = ctx.Ui.BuildAnimatedModalRect(rect);
+    DrawWindow(ctx, window, wr, alpha);
 
     if (!ctx.Ui.ModalMessage().empty() && window.Controls.empty())
     {
-        DrawTextRect(ctx, FUiRectF{wr.X + 18.0f * ctx.Scale, wr.Y + wr.H * 0.38f, wr.W - 36.0f * ctx.Scale, 44.0f * ctx.Scale}, ctx.Ui.ModalMessage(), Argb(235, 237, 208, 161), true, window.Font);
+        DrawTextRect(ctx, FUiRectF{wr.X + 18.0f * ctx.Scale, wr.Y + wr.H * 0.38f, wr.W - 36.0f * ctx.Scale, 44.0f * ctx.Scale}, ctx.Ui.ModalMessage(), ApplyAlpha(Argb(235, 237, 208, 161), alpha), true, window.Font);
     }
 }
 
@@ -1228,7 +1251,8 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
             const auto playerModel = CharacterScene.ExportSkinnedModel();
             const auto* playerModelPtr = playerModel.IsValid() ? &playerModel : nullptr;
 
-            if (GameWorldScene.Initialize(DeviceWindow, Device, resources, *worldScene, worldConfig, 0.0, 0.0, 0.0, 0.0, worldError, logger, playerModelPtr))
+            const FGameWorldPosition spawn = InitialGameWorldPosition.value_or(FGameWorldPosition{SferaProtocol::DefaultServerSpawnX, SferaProtocol::DefaultServerSpawnY, SferaProtocol::DefaultServerSpawnZ, SferaProtocol::DefaultServerSpawnAngle});
+            if (GameWorldScene.Initialize(DeviceWindow, Device, resources, *worldScene, worldConfig, spawn.X, spawn.Y, spawn.Z, spawn.Angle, worldError, logger, playerModelPtr))
             {
                 ActiveWorldScene = worldScene;
                 FailedWorldScene = nullptr;
@@ -1276,7 +1300,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
         }
     }
 
-    const FUiRectF design = ui.BuildDesignRect(rect);
+    const FUiRectF design = ui.Input().BuildDesignRect(rect);
     const float scale = design.W / static_cast<float>(std::max(1, ui.DesignWidth()));
     FDrawContext ctx
     {
@@ -1298,7 +1322,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
         if (ui.Mode() == EUiRuntimeMode::CharacterSelect)
         {
-            CharacterScene.Draw(Device, resources, ui.SelectedCharacterSceneAppearance(), ui.CharacterSceneAngle(), ui.CharacterCameraFocusId(), rect, deltaSeconds, logger);
+            CharacterScene.Draw(Device, resources, ui.Character().SelectedCharacterSceneAppearance(), ui.Character().SceneAngle(), ui.Character().SceneCameraFocusId(), rect, deltaSeconds, logger);
         }
     }
 
@@ -1307,13 +1331,13 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     if (ui.Mode() == EUiRuntimeMode::Login)
     {
         backgroundDrawn = DrawTextureResource(ctx, ui.LoginBackgroundTexture(), design);
-        DrawWindow(ctx, ui.ConnectionWindow(), ui.BuildConnectionRect(rect));
+        DrawWindow(ctx, ui.ConnectionWindow(), ui.Input().BuildConnectionRect(rect));
     }
     else if (ui.Mode() == EUiRuntimeMode::CharacterSelect)
     {
         if (!ui.PickPersonWindow().Name.empty())
         {
-            DrawWindow(ctx, ui.PickPersonWindow(), ui.BuildWindowRect(ui.PickPersonWindow(), rect));
+            DrawWindow(ctx, ui.PickPersonWindow(), ui.Input().BuildWindowRect(ui.PickPersonWindow(), rect));
         }
     }
     else
@@ -1323,7 +1347,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
         for (size_t i = 0; i < gameWindows.size(); ++i)
         {
             if (i < gameVisibility.size() && !gameVisibility[i]) { continue; }
-            DrawWindow(ctx, gameWindows[i], ui.BuildWindowRect(gameWindows[i], rect));
+            DrawWindow(ctx, gameWindows[i], ui.Input().BuildWindowRect(gameWindows[i], rect));
         }
 
         if (gameWindows.empty())

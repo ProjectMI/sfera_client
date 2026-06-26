@@ -1,3 +1,4 @@
+#include "UI/UiRuntimeInput.h"
 #include "UI/UiRuntime.h"
 #include "UI/UiRuntimeInternals.h"
 #include "Common/SferaGameConstants.h"
@@ -26,7 +27,44 @@ const FUiControlDef* HitTestControls(const FUiWindowDef& window, const FUiRectF&
 }
 }
 
-FUiRectF FUiRuntime::BuildDesignRect(const RECT& clientRect) const
+
+#define Actions Runtime.Actions
+#define ActiveCharacterEditId Runtime.ActiveCharacterEditId
+#define Appearance Runtime.Appearance
+#define Bootstrap Runtime.Bootstrap
+#define CharacterActionLocked Runtime.CharacterActionLocked
+#define CharacterNameEdits Runtime.CharacterNameEdits
+#define CharacterSpinDelta Runtime.CharacterSpinDelta
+#define Connection Runtime.Connection
+#define CurrentMode Runtime.CurrentMode
+#define GameChat Runtime.GameChat
+#define Modal Runtime.Modal
+#define ModalClosing Runtime.ModalClosing
+#define ModalEditText Runtime.ModalEditText
+#define PickPerson Runtime.PickPerson
+#define Ready Runtime.Ready
+#define SceneAngle Runtime.SceneAngle
+#define SceneCameraFocusId Runtime.SceneCameraFocusId
+#define SceneRotateDragActive Runtime.SceneRotateDragActive
+#define SceneRotateLastX Runtime.SceneRotateLastX
+#define SelectedSlot Runtime.SelectedSlot
+#define ActiveModalWindow Runtime.ActiveModalWindow
+#define BuildAnimatedModalRect Runtime.BuildAnimatedModalRect
+#define ClearModalState Runtime.ClearModalState
+#define CharacterAppearanceOptionCount Runtime.CharacterRuntime.CharacterAppearanceOptionCount
+#define ClampCharacterAppearance Runtime.CharacterRuntime.ClampCharacterAppearance
+#define DismissModal Runtime.DismissModal
+#define ModalEditMatchesSelectedCharacter Runtime.CharacterRuntime.ModalEditMatchesSelectedCharacter
+#define SelectedCharacterCanCreate Runtime.CharacterRuntime.SelectedCharacterCanCreate
+#define SelectedCharacterPresent Runtime.CharacterRuntime.SelectedCharacterPresent
+#define ShowCreateConfirmation Runtime.ShowCreateConfirmation
+#define ShowDeleteConfirmation Runtime.ShowDeleteConfirmation
+#define ShowExitConfirmation Runtime.ShowExitConfirmation
+#define SyncCharacterSelectControls Runtime.CharacterRuntime.SyncCharacterSelectControls
+
+FUiRuntimeInput::FUiRuntimeInput(FUiRuntime& runtime) : Runtime(runtime) {}
+
+FUiRectF FUiRuntimeInput::BuildDesignRect(const RECT& clientRect) const
 {
     const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
@@ -40,7 +78,7 @@ FUiRectF FUiRuntime::BuildDesignRect(const RECT& clientRect) const
     };
 }
 
-FUiRectF FUiRuntime::BuildConnectionRect(const RECT& clientRect) const
+FUiRectF FUiRuntimeInput::BuildConnectionRect(const RECT& clientRect) const
 {
     FUiRectF design = BuildDesignRect(clientRect);
     const float w = static_cast<float>(Connection.Rect.W);
@@ -51,7 +89,7 @@ FUiRectF FUiRuntime::BuildConnectionRect(const RECT& clientRect) const
     };
 }
 
-FUiRectF FUiRuntime::BuildWindowRect(const FUiWindowDef& window, const RECT& clientRect) const
+FUiRectF FUiRuntimeInput::BuildWindowRect(const FUiWindowDef& window, const RECT& clientRect) const
 {
     const int width = std::max(1, static_cast<int>(clientRect.right - clientRect.left));
     const int height = std::max(1, static_cast<int>(clientRect.bottom - clientRect.top));
@@ -86,7 +124,7 @@ FUiRectF FUiRuntime::BuildWindowRect(const FUiWindowDef& window, const RECT& cli
     };
 }
 
-const FUiControlDef* FUiRuntime::HitTestConnection(int32 x, int32 y, const RECT& clientRect) const
+const FUiControlDef* FUiRuntimeInput::HitTestConnection(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready) { return nullptr; }
     FUiRectF wr = BuildConnectionRect(clientRect);
@@ -94,25 +132,25 @@ const FUiControlDef* FUiRuntime::HitTestConnection(int32 x, int32 y, const RECT&
     return HitTestControls(Connection, wr, x, y, scale, false);
 }
 
-const FUiControlDef* FUiRuntime::HitTestCharacterSelect(int32 x, int32 y, const RECT& clientRect) const
+const FUiControlDef* FUiRuntimeInput::HitTestCharacterSelect(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready || PickPerson.Name.empty()) { return nullptr; }
     return HitTestControls(PickPerson, BuildWindowRect(PickPerson, clientRect), x, y, 1.0f, true);
 }
 
-const FUiControlDef* FUiRuntime::HitTestModal(int32 x, int32 y, const RECT& clientRect) const
+const FUiControlDef* FUiRuntimeInput::HitTestModal(int32 x, int32 y, const RECT& clientRect) const
 {
     if (!Ready || Modal == EUiModalDialog::None) { return nullptr; }
     const FUiWindowDef& window = ActiveModalWindow();
     if (window.Name.empty()) { return nullptr; }
-    return HitTestControls(window, BuildWindowRect(window, clientRect), x, y, 1.0f, false);
+    return ModalClosing ? nullptr : HitTestControls(window, BuildAnimatedModalRect(clientRect), x, y, 1.0f, false);
 }
 
-bool FUiRuntime::IsEditControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "EDIT"); }
-bool FUiRuntime::IsCheckControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "CHECKBOX") || control.Id == SferaUi::SavePasswordId; }
-bool FUiRuntime::IsButtonControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "BUTTON"); }
+bool FUiRuntimeInput::IsEditControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "EDIT"); }
+bool FUiRuntimeInput::IsCheckControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "CHECKBOX") || control.Id == SferaUi::SavePasswordId; }
+bool FUiRuntimeInput::IsButtonControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "BUTTON"); }
 
-int32 FUiRuntime::CharacterFocusForControl(int32 controlId) const
+int32 FUiRuntimeInput::CharacterFocusForControl(int32 controlId) const
 {
     if (SferaUi::IsCharacterAppearanceControl(controlId)) { return controlId; }
 
@@ -121,14 +159,14 @@ int32 FUiRuntime::CharacterFocusForControl(int32 controlId) const
     return 0;
 }
 
-bool FUiRuntime::PointInsidePickPersonWindow(int32 x, int32 y, const RECT& clientRect) const
+bool FUiRuntimeInput::PointInsidePickPersonWindow(int32 x, int32 y, const RECT& clientRect) const
 {
     if (PickPerson.Name.empty()) { return false; }
 
     return FUiRuntimeInternals::Contains(BuildWindowRect(PickPerson, clientRect), x, y);
 }
 
-int32 FUiRuntime::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const
+int32 FUiRuntimeInput::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32 x, int32 y, const RECT& clientRect) const
 {
     FUiRectF wr = BuildWindowRect(PickPerson, clientRect);
     const float controlX = wr.X + static_cast<float>(control.Rect.X);
@@ -150,7 +188,7 @@ int32 FUiRuntime::CharacterSpinDeltaForPoint(const FUiControlDef& control, int32
     return static_cast<float>(x) < controlX + width * 0.5f ? -1 : 1;
 }
 
-void FUiRuntime::ActivateControl(const FUiControlDef& control, FLogger* logger)
+void FUiRuntimeInput::ActivateControl(const FUiControlDef& control, FLogger* logger)
 {
     Actions.LastControlId = control.Id;
 
@@ -184,7 +222,7 @@ void FUiRuntime::ActivateControl(const FUiControlDef& control, FLogger* logger)
     }
 }
 
-void FUiRuntime::ActivateCharacterControl(const FUiControlDef& control, FLogger* logger)
+void FUiRuntimeInput::ActivateCharacterControl(const FUiControlDef& control, FLogger* logger)
 {
     Actions.LastControlId = control.Id;
 
@@ -267,7 +305,7 @@ void FUiRuntime::ActivateCharacterControl(const FUiControlDef& control, FLogger*
     }
 }
 
-void FUiRuntime::ActivateModalControl(const FUiControlDef& control, FLogger* logger)
+void FUiRuntimeInput::ActivateModalControl(const FUiControlDef& control, FLogger* logger)
 {
     Actions.LastControlId = control.Id;
     const EUiModalDialog current = Modal;
@@ -337,7 +375,7 @@ void FUiRuntime::ActivateModalControl(const FUiControlDef& control, FLogger* log
     }
 }
 
-bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clientRect, FLogger* logger)
+bool FUiRuntimeInput::HandleInputFrame(const FInputSnapshot& input, const RECT& clientRect, FLogger* logger)
 {
     if (!Ready) { return false; }
 
@@ -516,14 +554,13 @@ bool FUiRuntime::HandleInputFrame(const FInputSnapshot& input, const RECT& clien
     return changed;
 }
 
-void FUiRuntime::SetMode(EUiRuntimeMode mode)
+void FUiRuntimeInput::SetMode(EUiRuntimeMode mode)
 {
     CurrentMode = mode;
     Actions.HoverControlId = 0;
     Actions.PressedControlId = 0;
     Actions.LastAction.clear();
-    Modal = EUiModalDialog::None;
-    ModalText.clear();
+    ClearModalState();
     SceneRotateDragActive = false;
     Actions.SpinHoverDirection = 0;
     Actions.SpinPressedDirection = 0;

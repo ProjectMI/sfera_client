@@ -1,4 +1,6 @@
 #include "Renderer/GameWorld/D3D9GameWorldSceneImpl.h"
+#include <cmath>
+#include <limits>
 
 void FD3D9GameWorldScene::Impl::SnapToGround()
 {
@@ -7,6 +9,38 @@ void FD3D9GameWorldScene::Impl::SnapToGround()
     {
         SpawnY = height;
     }
+}
+
+void FD3D9GameWorldScene::Impl::SetPlayerWorldPosition(const FGameWorldPosition& Position)
+{
+    if (!std::isfinite(Position.X) || !std::isfinite(Position.Y) || !std::isfinite(Position.Z) || !std::isfinite(Position.Angle))
+    {
+        return;
+    }
+
+    if (std::abs(Position.X) > 20000.0 || std::abs(Position.Y) > 20000.0 || std::abs(Position.Z) > 20000.0)
+    {
+        return;
+    }
+
+    SpawnX = static_cast<float>(Position.X);
+    SpawnY = static_cast<float>(Position.Y);
+    SpawnZ = static_cast<float>(Position.Z);
+    SpawnAngle = static_cast<float>(Position.Angle);
+    CameraYaw = -SpawnAngle;
+    VelocityX = 0.0f;
+    VelocityY = 0.0f;
+    VelocityZ = 0.0f;
+    Grounded = true;
+
+    TerrainCenterRow = -1;
+    TerrainCenterColumn = -1;
+    StreamingGuardRow = (std::numeric_limits<int>::min)();
+    StreamingGuardColumn = (std::numeric_limits<int>::min)();
+    StaticVisibilityPlanReady = false;
+    GrassAnchorValid = false;
+    GrassCenterX = (std::numeric_limits<int>::min)();
+    GrassCenterZ = (std::numeric_limits<int>::min)();
 }
 
 bool FD3D9GameWorldScene::Impl::SupportHeightAt(float x, float z, float FeetY, float& OutY, FVector3* OutNormal) const
@@ -45,31 +79,90 @@ bool FD3D9GameWorldScene::Impl::SupportHeightAt(float x, float z, float FeetY, f
 
 bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z)
 {
+    return TryMoveTo(x, z, SpawnY, SpawnY);
+}
+
+bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z, float fromY, float toY)
+{
+    const bool contoursReady = HasContourCollision();
+    if (CollidesWithContours(SpawnX, SpawnZ, x, z, Config.PlayerCollisionRadius))
+    {
+        return false;
+    }
+
     if (Grounded)
     {
         float GroundY = 0.0f;
         if (!SupportHeightAt(x, z, SpawnY, GroundY))
         {
+            if (CollidesWithModelContacts(SpawnX, SpawnZ, x, SpawnY, z))
+            {
+                VelocityY = (std::max)(VelocityY, 0.0f);
+                Grounded = false;
+                return false;
+            }
+            if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
+            {
+                VelocityY = (std::max)(VelocityY, 0.0f);
+                Grounded = false;
+                return false;
+            }
+            SpawnX = x;
+            SpawnZ = z;
+            VelocityY = (std::max)(VelocityY, 0.0f);
+            Grounded = false;
+            return true;
+        }
+
+        const float deltaY = GroundY - SpawnY;
+        if (deltaY < -Config.MaxStepHeight)
+        {
             return false;
         }
-        if (std::abs(GroundY - SpawnY) > Config.MaxStepHeight ||
-            CollidesWithStatic(x, GroundY, z))
+        if (deltaY > Config.MaxStepHeight)
+        {
+            if (CollidesWithModelContacts(SpawnX, SpawnZ, x, SpawnY, z))
+            {
+                VelocityY = (std::max)(VelocityY, 0.0f);
+                Grounded = false;
+                return false;
+            }
+            if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
+            {
+                VelocityY = (std::max)(VelocityY, 0.0f);
+                Grounded = false;
+                return false;
+            }
+            SpawnX = x;
+            SpawnZ = z;
+            VelocityY = (std::max)(VelocityY, 0.0f);
+            Grounded = false;
+            return true;
+        }
+        if (CollidesWithModelContacts(SpawnX, SpawnZ, x, GroundY, z))
+        {
+            return false;
+        }
+        if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, GroundY, z))
         {
             return false;
         }
         SpawnX = x;
         SpawnY = GroundY;
         SpawnZ = z;
+        return true;
     }
-    else
+
+    if (CollidesWithModelContactsSwept(SpawnX, fromY, SpawnZ, x, toY, z, true))
     {
-        if (CollidesWithStatic(x, SpawnY, z))
-        {
-            return false;
-        }
-        SpawnX = x;
-        SpawnZ = z;
+        return false;
     }
+    if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
+    {
+        return false;
+    }
+    SpawnX = x;
+    SpawnZ = z;
     return true;
 }
 
@@ -92,6 +185,14 @@ void FD3D9GameWorldScene::Impl::ApplySlopeSlide(float DeltaSeconds)
     FVector3 n{};
     if (!SupportHeightAt(SpawnX, SpawnZ, SpawnY, FloorY, &n))
     {
+        VelocityY = (std::max)(VelocityY, 0.0f);
+        Grounded = false;
+        return;
+    }
+    if (FloorY - SpawnY > Config.MaxStepHeight)
+    {
+        VelocityY = (std::max)(VelocityY, 0.0f);
+        Grounded = false;
         return;
     }
     const float ny = std::abs(n.Y);
@@ -159,9 +260,7 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     {
         UpdateNpcAnimation(DeltaSeconds);
     }
-    {
-        UpdateVertical(DeltaSeconds);
-    }
+    RequestCollisionSnapshotAround(SpawnX, SpawnZ);
 
     SpawnAngle = -CameraYaw;
 
@@ -183,6 +282,10 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         {
             ApplySlopeSlide(DeltaSeconds);
         }
+        if (!Grounded)
+        {
+            UpdateVertical(DeltaSeconds);
+        }
         return true;
     }
 
@@ -194,6 +297,9 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const float DispX = VelocityX * DeltaSeconds;
     const float DispZ = VelocityZ * DeltaSeconds;
     const float distance = std::sqrt(DispX * DispX + DispZ * DispZ);
+    const bool AirborneAtMoveStart = !Grounded;
+    const float MoveStartY = SpawnY;
+    const float MoveEndY = AirborneAtMoveStart ? SpawnY + (VelocityY + Config.JumpGravity * DeltaSeconds) * DeltaSeconds : SpawnY;
     const int MovementSteps = (std::max)(1, static_cast<int>(std::ceil(distance / Config.MovementCollisionStep)));
     const float StepX = DispX / static_cast<float>(MovementSteps);
     const float StepZ = DispZ / static_cast<float>(MovementSteps);
@@ -202,19 +308,23 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         {
             const float PreviousX = SpawnX;
             const float PreviousZ = SpawnZ;
-            if (TryMoveTo(PreviousX + StepX, PreviousZ + StepZ))
+            const float PreviousY = AirborneAtMoveStart ? MoveStartY + (MoveEndY - MoveStartY) * (static_cast<float>(step) / static_cast<float>(MovementSteps)) : SpawnY;
+            const float TargetY = AirborneAtMoveStart ? MoveStartY + (MoveEndY - MoveStartY) * (static_cast<float>(step + 1) / static_cast<float>(MovementSteps)) : SpawnY;
+            if (TryMoveTo(PreviousX + StepX, PreviousZ + StepZ, PreviousY, TargetY))
             {
                 continue;
             }
-            const bool MovedX = TryMoveTo(PreviousX + StepX, PreviousZ);
+            const bool MovedX = TryMoveTo(PreviousX + StepX, PreviousZ, PreviousY, TargetY);
             const float SlideX = SpawnX;
             const float SlideZ = SpawnZ;
-            if (!TryMoveTo(SlideX, SlideZ + StepZ) && !MovedX)
+            if (!TryMoveTo(SlideX, SlideZ + StepZ, PreviousY, TargetY) && !MovedX)
             {
                 break;
             }
         }
     }
+
+    UpdateVertical(DeltaSeconds);
 
     const int CenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
     const int CenterColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
@@ -284,7 +394,3 @@ void FD3D9GameWorldScene::Impl::RotateView(float MouseDx, float MouseDy)
     SpawnAngle = -CameraYaw;
 }
 
-FGameWorldPosition FD3D9GameWorldScene::Impl::Position() const
-{
-    return FGameWorldPosition{SpawnX, SpawnY, SpawnZ, SpawnAngle};
-}

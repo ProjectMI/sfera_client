@@ -58,12 +58,12 @@ public:
     bool SetGrassQuality(int quality, std::wstring& error);
     void SetFog(float start, float end);
     void SetGameTime(float dayFraction);
+    void SetPlayerWorldPosition(const FGameWorldPosition& position);
     float CurrentGameTime() const;
     float CameraFacing() const;
     bool Update(float deltaSeconds, const FGameMovementInput& input, std::wstring& error);
     void RotateView(float mouseDx, float mouseDy);
     void Jump();
-    FGameWorldPosition Position() const;
     void Resize();
     void RenderInsideScene(const RECT& viewport);
     FD3D9GameWorldRenderStats RenderStats() const;

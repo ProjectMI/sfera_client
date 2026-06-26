@@ -56,6 +56,14 @@ void FD3D9GameWorldScene::SetGameTime(float dayFraction)
     ImplPtr->SetGameTime(dayFraction);
 }
 
+void FD3D9GameWorldScene::SetPlayerWorldPosition(const FGameWorldPosition& position)
+{
+    if (ImplPtr)
+    {
+        ImplPtr->SetPlayerWorldPosition(position);
+    }
+}
+
 float FD3D9GameWorldScene::CurrentGameTime() const
 {
     return ImplPtr ? ImplPtr->GameTimeFraction : 0.0f;
@@ -79,11 +87,6 @@ void FD3D9GameWorldScene::RotateView(float mouseDx, float mouseDy)
 void FD3D9GameWorldScene::Jump()
 {
     ImplPtr->Jump();
-}
-
-FGameWorldPosition FD3D9GameWorldScene::Position() const
-{
-    return ImplPtr->Position();
 }
 
 void FD3D9GameWorldScene::Resize()

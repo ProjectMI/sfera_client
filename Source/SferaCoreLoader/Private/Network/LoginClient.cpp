@@ -222,6 +222,32 @@ namespace
         }
     }
 
+
+    void ReadActionFramesBurst(SOCKET socket, FCharacterActionResult& result, int32 maxFrames, int32 firstTimeoutMs)
+    {
+        std::vector<uint8> frame;
+        if (result.PacketCount < maxFrames && RecvFrame(socket, frame, firstTimeoutMs))
+        {
+            ++result.PacketCount;
+            result.ByteCount += static_cast<int32>(frame.size());
+            result.Frames.push_back(std::move(frame));
+        }
+        ReadAvailableFrames(socket, result, maxFrames);
+    }
+
+    void HarvestServerWorldPosition(FCharacterActionResult& result, uint16 localId)
+    {
+        std::optional<FServerWorldPosition> fallback;
+        for (const auto& frame : result.Frames)
+        {
+            auto position = FSphereEmuProtocol::TryParseServerWorldPosition(frame, localId);
+            if (!position) { continue; }
+            if (!fallback || position->CharacterEntity) { fallback = position; }
+            if (position->EntityId == localId) { result.ServerPosition = position; return; }
+        }
+        if (!result.ServerPosition && fallback) { result.ServerPosition = fallback; }
+    }
+
     bool DecodeServerCredentialsTime(const std::vector<uint8>& Frame, float& Fraction, int32& Day, int32& Month, int32& Year)
     {
         if (Frame.size() != 56 || FSphereEmuProtocol::ReadU16LE(Frame, 2) != 300 || Frame[9] != 0x08 || Frame[10] != 0x40 || Frame[11] != 0x20 || Frame[12] != 0x10)
@@ -248,7 +274,6 @@ struct FServerSession::FImpl
     FWsaSession Wsa;
     FSocketHandle Socket;
     uint16 LocalId = 0;
-    uint8 PositionSequence = 0;
     bool HasGameTime = false;
     float GameTimeFraction = 0.0f;
     int32 GameDay = 0;
@@ -289,7 +314,8 @@ FCharacterActionResult FServerSession::SelectCharacter(int32 slot, int32 timeout
 
     if (!SendAll(Impl->Socket.Get(), packet)) { result.Message = WsaErrorText("character select send failed"); return result; }
 
-    ReadActionFrames(Impl->Socket.Get(), result, 1, timeoutMs);
+    ReadActionFramesBurst(Impl->Socket.Get(), result, 16, timeoutMs);
+    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = result.PacketCount > 0;
     std::ostringstream out;
     out << "selected slot " << (Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount) + 1) << "; character packets=" << result.PacketCount << " bytes=" << result.ByteCount;
@@ -384,10 +410,12 @@ FCharacterActionResult FServerSession::SendIngameAck(int32 timeoutMs)
 
     if (!SendAll(Impl->Socket.Get(), packet)) { result.Message = WsaErrorText("ingame ACK send failed"); return result; }
 
-    ReadActionFrames(Impl->Socket.Get(), result, 8, timeoutMs);
+    ReadActionFramesBurst(Impl->Socket.Get(), result, 32, timeoutMs);
+    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = true;
     std::ostringstream out;
     out << "ingame ACK sent; world packets=" << result.PacketCount << " bytes=" << result.ByteCount;
+    if (result.ServerPosition) { out << "; spawn=(" << result.ServerPosition->X << "," << result.ServerPosition->Y << "," << result.ServerPosition->Z << ") angle=" << result.ServerPosition->Angle; }
     result.Message = out.str();
     return result;
 }
@@ -399,19 +427,9 @@ FCharacterActionResult FServerSession::PollFrames(int32 maxFrames)
     if (!Connected()) { result.Message = "character session is closed"; return result; }
 
     ReadAvailableFrames(Impl->Socket.Get(), result, std::max(1, maxFrames));
+    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = true;
     return result;
-}
-
-bool FServerSession::SendPosition(double x, double y, double z, double angle, std::string& error)
-{
-    if (!Connected()) { error = "character session is closed"; return false; }
-
-    const auto packet = FSphereEmuProtocol::BuildPositionPacket(Impl->LocalId, ++Impl->PositionSequence, x, y, z, angle);
-
-    if (!SendAll(Impl->Socket.Get(), packet)) { error = WsaErrorText("position send failed"); return false; }
-
-    return true;
 }
 
 FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring& login, const std::wstring& password, const FCharacterAppearanceRules& appearanceRules, int32 timeoutMs)

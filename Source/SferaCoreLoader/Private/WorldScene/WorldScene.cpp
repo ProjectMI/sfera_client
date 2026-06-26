@@ -520,9 +520,11 @@ void FWorldScene::LoadContours(FLogger* logger)
         Contours.Records.push_back(std::move(rec));
     }
 
+    Contours.BuildIndex();
+
     if (logger)
     {
-        logger->Info("WorldScene contours loaded: records=" + std::to_string(Contours.Records.size()) + ", invalid=" + std::to_string(Contours.InvalidRecords) + ", record_size=0x418");
+        logger->Info("WorldScene contours loaded: records=" + std::to_string(Contours.Records.size()) + ", invalid=" + std::to_string(Contours.InvalidRecords) + ", indexed_cells=" + std::to_string(Contours.IndexCells.size()) + ", record_size=0x418");
     }
 }
 

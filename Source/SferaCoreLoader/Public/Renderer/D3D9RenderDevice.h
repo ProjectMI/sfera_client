@@ -40,6 +40,8 @@ public:
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
     void SetServerGameTime(float dayFraction);
+    void SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position);
+    void ApplyServerGameWorldPosition(const FGameWorldPosition& position);
     FStatus RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
 private:
@@ -54,8 +56,8 @@ private:
     bool DrawTextureResource(FDrawContext& ctx, std::string_view textureName, const FUiRectF& dst, float alpha = 1.0f);
     bool DrawSprite(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, float alpha = 1.0f);
     bool DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, unsigned long color);
-    bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst);
-    void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect);
+    bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha = 1.0f);
+    void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha = 1.0f);
     struct FFrameStats
     {
         bool Initialized = false;
@@ -80,7 +82,7 @@ private:
     void DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& ui, const FUiRectF& designRect);
     void DrawRenderStatsOverlay(FDrawContext& ctx, const RECT& clientRect, const FD3D9GameWorldRenderStats* worldStats);
     void UpdateFrameStats(double frameMilliseconds);
-    void DrawSolidRect(float x, float y, float w, float h, unsigned long color);
+    void DrawSolidRect(float x, float y, float w, float h, unsigned long color, float alpha = 1.0f);
     void DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, unsigned long color);
     void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color);
     void DrawTextureQuadUv(IDirect3DTexture9* texture, float x, float y, float w, float h, const FUiTexCoord* coords, int32 textureWidth, int32 textureHeight, unsigned long color);
@@ -99,6 +101,7 @@ private:
     float ServerGameTime = 0.0f;
     bool HasServerGameTime = false;
     bool ServerGameTimePending = false;
+    std::optional<FGameWorldPosition> InitialGameWorldPosition;
     int32 BackBufferWidth = 0;
     int32 BackBufferHeight = 0;
     HWND DeviceWindow = nullptr;

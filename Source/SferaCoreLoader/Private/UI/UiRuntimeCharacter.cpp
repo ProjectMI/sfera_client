@@ -1,3 +1,4 @@
+#include "UI/UiRuntimeCharacter.h"
 #include "UI/UiRuntime.h"
 #include "UI/UiRuntimeInternals.h"
 #include "Common/SferaGameConstants.h"
@@ -5,7 +6,25 @@
 #include "Common/TextEncoding.h"
 #include "Common/ValueUtils.h"
 
-void FUiRuntime::ApplyCharacterDeleted(int32 slot)
+
+#define Actions Runtime.Actions
+#define ActiveCharacterEditId Runtime.ActiveCharacterEditId
+#define Appearance Runtime.Appearance
+#define AppearanceRules Runtime.AppearanceRules
+#define Bootstrap Runtime.Bootstrap
+#define CharacterActionLocked Runtime.CharacterActionLocked
+#define CharacterNameEdits Runtime.CharacterNameEdits
+#define CharacterSlotState Runtime.CharacterSlotState
+#define Modal Runtime.Modal
+#define ModalEditText Runtime.ModalEditText
+#define ModalText Runtime.ModalText
+#define PickPerson Runtime.PickPerson
+#define SelectedSlot Runtime.SelectedSlot
+#define ResolveText Runtime.ResolveText
+
+FUiRuntimeCharacter::FUiRuntimeCharacter(FUiRuntime& runtime) : Runtime(runtime) {}
+
+void FUiRuntimeCharacter::ApplyCharacterDeleted(int32 slot)
 {
     const int32 index = Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount);
     FCharacterSlotInfo& info = CharacterSlotState[static_cast<size_t>(index)];
@@ -19,7 +38,7 @@ void FUiRuntime::ApplyCharacterDeleted(int32 slot)
     SyncCharacterSelectControls();
 }
 
-void FUiRuntime::ApplyCharacterCreated(int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance)
+void FUiRuntimeCharacter::ApplyCharacterCreated(int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance)
 {
     const int32 index = Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount);
     FCharacterSlotInfo& info = CharacterSlotState[static_cast<size_t>(index)];
@@ -62,7 +81,7 @@ void FUiRuntime::ApplyCharacterCreated(int32 slot, const std::wstring& name, con
     SyncCharacterSelectControls();
 }
 
-std::wstring FUiRuntime::DefaultCharacterNameForSlot(int32 slot) const
+std::wstring FUiRuntimeCharacter::DefaultCharacterNameForSlot(int32 slot) const
 {
     std::wstring name;
 
@@ -102,14 +121,14 @@ std::wstring FUiRuntime::DefaultCharacterNameForSlot(int32 slot) const
     return name;
 }
 
-void FUiRuntime::SetCharacterAppearanceRules(const FCharacterAppearanceRules& rules)
+void FUiRuntimeCharacter::SetCharacterAppearanceRules(const FCharacterAppearanceRules& rules)
 {
     AppearanceRules = rules;
     ClampCharacterAppearance();
     SyncCharacterSelectControls();
 }
 
-int32 FUiRuntime::CharacterAppearanceOptionCount(int32 controlId) const
+int32 FUiRuntimeCharacter::CharacterAppearanceOptionCount(int32 controlId) const
 {
     const bool female = Appearance.Gender != 0;
 
@@ -124,7 +143,7 @@ int32 FUiRuntime::CharacterAppearanceOptionCount(int32 controlId) const
     }
 }
 
-void FUiRuntime::ClampCharacterAppearance()
+void FUiRuntimeCharacter::ClampCharacterAppearance()
 {
     Appearance.Gender = Common::ClampIndexToCount(Appearance.Gender, CharacterAppearanceOptionCount(SferaUi::CharacterGenderControlId));
     Appearance.Face = Common::ClampIndexToCount(Appearance.Face, CharacterAppearanceOptionCount(SferaUi::CharacterFaceControlId));
@@ -133,22 +152,37 @@ void FUiRuntime::ClampCharacterAppearance()
     Appearance.Tattoo = Common::ClampIndexToCount(Appearance.Tattoo, CharacterAppearanceOptionCount(SferaUi::CharacterTattooControlId));
 }
 
-int32 FUiRuntime::SelectedSlotIndex() const
+int32 FUiRuntimeCharacter::SelectedSlotIndex() const
 {
     return Common::ClampIndexToCount(SelectedSlot, Sfera::CharacterSlotCount);
 }
 
-const FCharacterSlotInfo& FUiRuntime::SelectedSlotInfo() const
+const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& FUiRuntimeCharacter::Slots() const
+{
+    return CharacterSlotState;
+}
+
+int32 FUiRuntimeCharacter::SceneCameraFocusId() const
+{
+    return Runtime.SceneCameraFocusId;
+}
+
+float FUiRuntimeCharacter::SceneAngle() const
+{
+    return Runtime.SceneAngle;
+}
+
+const FCharacterSlotInfo& FUiRuntimeCharacter::SelectedSlotInfo() const
 {
     return CharacterSlotState[static_cast<size_t>(SelectedSlotIndex())];
 }
 
-FCharacterSlotInfo& FUiRuntime::MutableSelectedSlotInfo()
+FCharacterSlotInfo& FUiRuntimeCharacter::MutableSelectedSlotInfo()
 {
     return CharacterSlotState[static_cast<size_t>(SelectedSlotIndex())];
 }
 
-void FUiRuntime::SetCharacterSlots(const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& slots)
+void FUiRuntimeCharacter::SetCharacterSlots(const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& slots)
 {
     CharacterSlotState = slots;
     int32 firstSelectable = 0;
@@ -190,13 +224,13 @@ void FUiRuntime::SetCharacterSlots(const std::array<FCharacterSlotInfo, Sfera::C
     SyncCharacterSelectControls();
 }
 
-void FUiRuntime::SetCharacterActionLocked(bool locked)
+void FUiRuntimeCharacter::SetCharacterActionLocked(bool locked)
 {
     CharacterActionLocked = locked;
     SyncCharacterSelectControls();
 }
 
-FUiControlDef* FUiRuntime::MutableCharacterControlById(int32 id)
+FUiControlDef* FUiRuntimeCharacter::MutableCharacterControlById(int32 id)
 {
     for (FUiControlDef& control : PickPerson.Controls)
     {
@@ -209,7 +243,7 @@ FUiControlDef* FUiRuntime::MutableCharacterControlById(int32 id)
     return nullptr;
 }
 
-const FUiControlDef* FUiRuntime::CharacterControlById(int32 id) const
+const FUiControlDef* FUiRuntimeCharacter::CharacterControlById(int32 id) const
 {
     for (const FUiControlDef& control : PickPerson.Controls)
     {
@@ -222,7 +256,7 @@ const FUiControlDef* FUiRuntime::CharacterControlById(int32 id) const
     return nullptr;
 }
 
-void FUiRuntime::SyncCharacterSelectControls()
+void FUiRuntimeCharacter::SyncCharacterSelectControls()
 {
     if (PickPerson.Name.empty()) { return; }
 
@@ -278,24 +312,24 @@ void FUiRuntime::SyncCharacterSelectControls()
     }
 }
 
-bool FUiRuntime::SelectedCharacterPresent() const
+bool FUiRuntimeCharacter::SelectedCharacterPresent() const
 {
     return SelectedSlotInfo().Present;
 }
 
-bool FUiRuntime::SelectedCharacterCanCreate() const
+bool FUiRuntimeCharacter::SelectedCharacterCanCreate() const
 {
     return SelectedSlotInfo().CanCreate;
 }
 
-std::wstring FUiRuntime::SelectedCharacterName() const
+std::wstring FUiRuntimeCharacter::SelectedCharacterName() const
 {
     const int32 slot = SelectedSlotIndex();
     const auto& info = SelectedSlotInfo();
     return info.Present ? info.Name : CharacterNameEdits[static_cast<size_t>(slot)];
 }
 
-FCharacterCreationAppearance FUiRuntime::SelectedCharacterAppearance(const FCharacterAppearanceRules& rules) const
+FCharacterCreationAppearance FUiRuntimeCharacter::SelectedCharacterAppearance(const FCharacterAppearanceRules& rules) const
 {
     FCharacterCreationAppearance out;
     out.ModelBase = rules.ModelBase;
@@ -307,7 +341,7 @@ FCharacterCreationAppearance FUiRuntime::SelectedCharacterAppearance(const FChar
     return out;
 }
 
-FCharacterCreationAppearance FUiRuntime::SelectedCharacterSceneAppearance() const
+FCharacterCreationAppearance FUiRuntimeCharacter::SelectedCharacterSceneAppearance() const
 {
     const auto& info = SelectedSlotInfo();
     FCharacterCreationAppearance out;
@@ -333,7 +367,7 @@ FCharacterCreationAppearance FUiRuntime::SelectedCharacterSceneAppearance() cons
     return out;
 }
 
-std::string FUiRuntime::EmptyCharacterSlotText() const
+std::string FUiRuntimeCharacter::EmptyCharacterSlotText() const
 {
     if (Bootstrap.Lang == 1) { return "Empty"; }
 
@@ -342,7 +376,7 @@ std::string FUiRuntime::EmptyCharacterSlotText() const
     return "Пусто";
 }
 
-std::string FUiRuntime::CharacterGenderText(bool female) const
+std::string FUiRuntimeCharacter::CharacterGenderText(bool female) const
 {
     if (female) { return Bootstrap.Lang == 1 ? "Female" : "Жен."; }
 
@@ -350,7 +384,7 @@ std::string FUiRuntime::CharacterGenderText(bool female) const
     return text.empty() ? (Bootstrap.Lang == 1 ? "Male" : "Муж.") : text;
 }
 
-int32 FUiRuntime::CharacterTextValue(int32 id) const
+int32 FUiRuntimeCharacter::CharacterTextValue(int32 id) const
 {
     const auto& slot = SelectedSlotInfo();
     const bool occupied = slot.Present;
@@ -375,7 +409,7 @@ int32 FUiRuntime::CharacterTextValue(int32 id) const
     }
 }
 
-float FUiRuntime::CharacterProgressRatio(int32 controlId) const
+float FUiRuntimeCharacter::CharacterProgressRatio(int32 controlId) const
 {
     const auto& slot = SelectedSlotInfo();
     const bool occupied = slot.Present;
@@ -399,14 +433,14 @@ float FUiRuntime::CharacterProgressRatio(int32 controlId) const
     return 1.0f;
 }
 
-bool FUiRuntime::ModalEditMatchesSelectedCharacter() const
+bool FUiRuntimeCharacter::ModalEditMatchesSelectedCharacter() const
 {
     if (Modal != EUiModalDialog::CharacterDelete) { return true; }
 
     return FUiRuntimeInternals::Utf8EqualsWideNoCase(ModalEditText, SelectedCharacterName());
 }
 
-std::string FUiRuntime::CharacterTitleText() const
+std::string FUiRuntimeCharacter::CharacterTitleText() const
 {
     const auto& slot = SelectedSlotInfo();
 
@@ -425,7 +459,7 @@ std::string FUiRuntime::CharacterTitleText() const
     return title + " (" + std::to_string(std::max(1, slot.TitleLevel)) + ")";
 }
 
-std::string FUiRuntime::CharacterDegreeText() const
+std::string FUiRuntimeCharacter::CharacterDegreeText() const
 {
     const auto& slot = SelectedSlotInfo();
 
@@ -444,7 +478,7 @@ std::string FUiRuntime::CharacterDegreeText() const
     return degree + " (" + std::to_string(std::max(1, slot.DegreeLevel)) + ")";
 }
 
-std::string FUiRuntime::CharacterKarmaText() const
+std::string FUiRuntimeCharacter::CharacterKarmaText() const
 {
     const auto& slot = SelectedSlotInfo();
 
@@ -474,7 +508,7 @@ std::string FUiRuntime::CharacterKarmaText() const
     }
 }
 
-std::string FUiRuntime::CharacterProgressText(const FUiControlDef& control) const
+std::string FUiRuntimeCharacter::CharacterProgressText(const FUiControlDef& control) const
 {
     const auto& slot = SelectedSlotInfo();
 
@@ -498,7 +532,7 @@ std::string FUiRuntime::CharacterProgressText(const FUiControlDef& control) cons
     return {};
 }
 
-std::string FUiRuntime::ModalControlText(const FUiControlDef& control) const
+std::string FUiRuntimeCharacter::ModalControlText(const FUiControlDef& control) const
 {
     if (Modal == EUiModalDialog::CharacterDelete)
     {
@@ -512,14 +546,14 @@ std::string FUiRuntime::ModalControlText(const FUiControlDef& control) const
     return control.TextKey.empty() ? std::string{} : ResolveText(control.TextKey);
 }
 
-bool FUiRuntime::IsModalActionAllowed(const FUiControlDef& control) const
+bool FUiRuntimeCharacter::IsModalActionAllowed(const FUiControlDef& control) const
 {
     if (Modal == EUiModalDialog::CharacterDelete && control.Id == SferaUi::DeleteConfirmButtonId) { return ModalEditMatchesSelectedCharacter(); }
 
     return !control.Disabled;
 }
 
-std::string FUiRuntime::CharacterControlText(const FUiControlDef& control) const
+std::string FUiRuntimeCharacter::CharacterControlText(const FUiControlDef& control) const
 {
     if (SferaUi::IsCharacterSlotRadio(control.Id))
     {

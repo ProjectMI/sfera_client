@@ -3,46 +3,48 @@
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 
+FUiRuntime::FUiRuntime() : CharacterRuntime(*this), InputRuntime(*this) {}
+
 FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger)
 {
     Bootstrap = desc;
-    auto strings = LoadUiStringTableFromResource(resources, Bootstrap.StringsResource);
+    auto strings = DocumentParser.LoadStringTableFromResource(resources, Bootstrap.StringsResource);
 
     if (!strings.IsOk()) { return strings.Status(); }
 
-    auto connection = LoadUiWindowFromResource(resources, Bootstrap.ConnectionWindowResource);
+    auto connection = DocumentParser.LoadWindowFromResource(resources, Bootstrap.ConnectionWindowResource);
 
     if (!connection.IsOk()) { return connection.Status(); }
 
-    auto pickPerson = LoadUiWindowFromResource(resources, Bootstrap.PickPersonWindowResource);
+    auto pickPerson = DocumentParser.LoadWindowFromResource(resources, Bootstrap.PickPersonWindowResource);
 
     if (!pickPerson.IsOk() && logger)
     {
         logger->Warning("character-select UI is not available: " + pickPerson.Status().Message());
     }
 
-    auto createPerson = LoadUiWindowFromResource(resources, Bootstrap.CreatePersonWindowResource);
+    auto createPerson = DocumentParser.LoadWindowFromResource(resources, Bootstrap.CreatePersonWindowResource);
 
     if (!createPerson.IsOk() && logger)
     {
         logger->Warning("create-character UI is not available: " + createPerson.Status().Message());
     }
 
-    auto deleteCharacter = LoadUiWindowFromResource(resources, Bootstrap.DeleteCharacterWindowResource);
+    auto deleteCharacter = DocumentParser.LoadWindowFromResource(resources, Bootstrap.DeleteCharacterWindowResource);
 
     if (!deleteCharacter.IsOk() && logger)
     {
         logger->Warning("delete-character UI is not available: " + deleteCharacter.Status().Message());
     }
 
-    auto connectMessage = LoadUiWindowFromResource(resources, Bootstrap.ConnectMessageWindowResource);
+    auto connectMessage = DocumentParser.LoadWindowFromResource(resources, Bootstrap.ConnectMessageWindowResource);
 
     if (!connectMessage.IsOk() && logger)
     {
         logger->Warning("confirmation UI is not available: " + connectMessage.Status().Message());
     }
 
-    auto message = LoadUiWindowFromResource(resources, Bootstrap.MessageWindowResource);
+    auto message = DocumentParser.LoadWindowFromResource(resources, Bootstrap.MessageWindowResource);
 
     if (!message.IsOk() && logger)
     {
@@ -111,7 +113,7 @@ FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBoots
     const std::vector<std::string> initiallyVisible = {"system_left", "system_right", "chat_st2", "chat_sys"};
     for (const auto& resourceName : gameWindowResources)
     {
-        auto gameWindow = LoadUiWindowFromResource(resources, resourceName);
+        auto gameWindow = DocumentParser.LoadWindowFromResource(resources, resourceName);
         if (!gameWindow.IsOk())
         {
             if (logger) { logger->Warning("game UI window is not available: " + resourceName + "; " + gameWindow.Status().Message()); }
@@ -217,6 +219,7 @@ void FUiRuntime::SetLoginCredentials(std::string login, std::string password, bo
 void FUiRuntime::ShowExitConfirmation()
 {
     Modal = EUiModalDialog::CharacterExit;
+    ResetModalAnimation();
     ModalText = Bootstrap.Lang == 1 ? "Exit to login screen?" : "Выйти на экран логина?";
     ModalEditText.clear();
     Actions.LastAction = "character_exit_dialog";
@@ -225,6 +228,7 @@ void FUiRuntime::ShowExitConfirmation()
 void FUiRuntime::ShowCreateConfirmation()
 {
     Modal = EUiModalDialog::CharacterCreate;
+    ResetModalAnimation();
     ModalText = Bootstrap.Lang == 1 ? "Create this character?" : "Создать этого персонажа?";
     ModalEditText.clear();
     Actions.LastAction = "character_create_dialog";
@@ -233,18 +237,103 @@ void FUiRuntime::ShowCreateConfirmation()
 void FUiRuntime::ShowDeleteConfirmation()
 {
     Modal = EUiModalDialog::CharacterDelete;
-    const std::string name = Common::WideToUtf8(SelectedCharacterName());
+    ResetModalAnimation();
+    const std::string name = Common::WideToUtf8(CharacterRuntime.SelectedCharacterName());
     ModalText = Bootstrap.Lang == 1 ? "Type character name to delete: " + name : "Введите имя персонажа для удаления: " + name;
     ModalEditText.clear();
     Actions.FocusedControlId = SferaUi::DeleteConfirmEditId;
     Actions.LastAction = "character_delete_dialog";
 }
 
-void FUiRuntime::DismissModal()
+void FUiRuntime::ResetModalAnimation()
+{
+    ModalClosing = false;
+    ModalAnimationTime = 0.0f;
+}
+
+void FUiRuntime::ClearModalState()
 {
     Modal = EUiModalDialog::None;
+    ModalClosing = false;
+    ModalAnimationTime = 0.0f;
     ModalText.clear();
     ModalEditText.clear();
     Actions.PressedControlId = 0;
 }
 
+const FUiPopupAnimationDesc& FUiRuntime::ActiveModalAnimation() const
+{
+    static const FUiPopupAnimationDesc none{};
+    if (Modal == EUiModalDialog::None) { return none; }
+    const FUiWindowDef& window = ActiveModalWindow();
+    return ModalClosing ? window.HideEffect : window.ShowEffect;
+}
+
+void FUiRuntime::DismissModal()
+{
+    if (Modal == EUiModalDialog::None) { return; }
+    const FUiPopupAnimationDesc& effect = ActiveModalAnimation();
+    if (!ModalClosing && effect.IsValid())
+    {
+        ModalClosing = true;
+        ModalAnimationTime = 0.0f;
+        Actions.PressedControlId = 0;
+        return;
+    }
+    ClearModalState();
+}
+
+void FUiRuntime::Tick(float deltaSeconds)
+{
+    if (Modal == EUiModalDialog::None) { return; }
+    const FUiPopupAnimationDesc& effect = ActiveModalAnimation();
+    if (!effect.IsValid())
+    {
+        if (ModalClosing) { ClearModalState(); }
+        return;
+    }
+    ModalAnimationTime += std::clamp(deltaSeconds, 0.0f, 0.1f);
+    if (ModalClosing && ModalAnimationTime >= effect.Duration)
+    {
+        ClearModalState();
+    }
+}
+
+float FUiRuntime::ModalAnimationProgress() const
+{
+    if (Modal == EUiModalDialog::None) { return 1.0f; }
+    const FUiPopupAnimationDesc& effect = ActiveModalAnimation();
+    if (!effect.IsValid()) { return 1.0f; }
+    return std::clamp(ModalAnimationTime / std::max(0.001f, effect.Duration), 0.0f, 1.0f);
+}
+
+float FUiRuntime::ModalAnimationAlpha() const
+{
+    const FUiPopupAnimationDesc& effect = ActiveModalAnimation();
+    if (!effect.IsValid()) { return 1.0f; }
+    const float progress = ModalAnimationProgress();
+    const float eased = progress * progress * (3.0f - 2.0f * progress);
+    if (effect.Effect == EUiPopupEffect::AlphaIn || effect.Effect == EUiPopupEffect::AlphaOut)
+    {
+        return ModalClosing ? 1.0f - eased : eased;
+    }
+    return 1.0f;
+}
+
+FUiRectF FUiRuntime::BuildAnimatedModalRect(const RECT& clientRect) const
+{
+    const FUiWindowDef& window = ActiveModalWindow();
+    FUiRectF rect = InputRuntime.BuildWindowRect(window, clientRect);
+    const FUiPopupAnimationDesc& effect = ActiveModalAnimation();
+    if (!effect.IsValid()) { return rect; }
+    const float progress = ModalAnimationProgress();
+    const float eased = progress * progress * (3.0f - 2.0f * progress);
+    const float amount = ModalClosing ? eased : 1.0f - eased;
+    const float moveX = effect.OffsetX != 0.0f ? std::abs(effect.OffsetX) : rect.W;
+    const float moveY = effect.OffsetY != 0.0f ? std::abs(effect.OffsetY) : rect.H;
+    if (effect.Effect == EUiPopupEffect::MoveLeft) { rect.X -= moveX * amount; }
+    else if (effect.Effect == EUiPopupEffect::MoveRight) { rect.X += moveX * amount; }
+    else if (effect.Effect == EUiPopupEffect::MoveTop) { rect.Y -= moveY * amount; }
+    else if (effect.Effect == EUiPopupEffect::MoveBottom) { rect.Y += moveY * amount; }
+    return rect;
+}

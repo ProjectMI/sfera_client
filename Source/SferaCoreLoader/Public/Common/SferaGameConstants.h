@@ -39,4 +39,8 @@ constexpr uint8 ClientActionByte = 0x04;
 constexpr uint8 CreateCharacterAction = 0x05;
 constexpr uint8 DeleteCharacterAction = 0x0d;
 constexpr uint8 SlotWireStride = 4;
+constexpr double DefaultServerSpawnX = 80.0;
+constexpr double DefaultServerSpawnY = 150.0;
+constexpr double DefaultServerSpawnZ = 200.0;
+constexpr double DefaultServerSpawnAngle = 0.75;
 }

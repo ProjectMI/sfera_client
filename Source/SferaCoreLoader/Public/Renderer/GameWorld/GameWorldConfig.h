@@ -104,7 +104,6 @@ struct FGameWorldConfig
     float WaveCellStep = 8.33f;
     float WaveSpeed = 1.5f;
     int WaterReflectionEnabled = 1;
-    int PositionSendIntervalMs = 100;
     float NearClip = 0.2f;
     float FarClip = 260.0f;
     float FogStart = 70.0f;

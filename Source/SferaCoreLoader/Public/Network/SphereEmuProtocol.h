@@ -44,6 +44,16 @@ struct FCharacterSlot
     int32 Karma = Sfera::DefaultKarma; 
 };
 
+struct FServerWorldPosition
+{
+    uint64 EntityId = 0;
+    bool CharacterEntity = false;
+    double X = 0.0;
+    double Y = 0.0;
+    double Z = 0.0;
+    double Angle = 0.0;
+};
+
 struct FCharacterCreationAppearance
 {
     bool Female = false; 
@@ -78,7 +88,8 @@ public:
     static FByteArray BuildCreateCharacterPacket(uint16 localId, int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance);
     static FByteArray BuildDeleteCharacterPacket(uint16 localId, int32 slot);
     static FByteArray BuildIngameAckPacket(uint16 localId);
-    static FByteArray BuildPositionPacket(uint16 localId, uint8 sequence, double x, double y, double z, double angle);
+    static std::optional<FServerWorldPosition> TryParseServerWorldPosition(const FByteArray& frame);
+    static std::optional<FServerWorldPosition> TryParseServerWorldPosition(const FByteArray& frame, uint16 preferredEntityId);
     static FByteArray EncodeClientPacket(const FByteArray& decoded);
     static std::string MakeCharacterName(const std::wstring& login);
     static std::array<uint8, 5> BuildCharacterCreationBytes(const FCharacterCreationAppearance& appearance);

@@ -1,7 +1,8 @@
 #pragma once
-#include "UI/UiRuntime.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
+#include "Platform/Win64Window.h"
+#include "UI/UiTypes.h"
 
 struct FUiRuntimeInternals
 {

@@ -1,4 +1,5 @@
-#include "UI/UiRuntime.h"
+#include "UI/UiDocumentParser.h"
+#include "UI/UiRuntimeParser.h"
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 
@@ -43,6 +44,44 @@ namespace
         FUiColor color = defaultValue;
         input >> color.R >> color.G >> color.B >> color.A;
         return color;
+    }
+
+    std::string ParseQuoted(std::string_view line);
+    std::string TailAfterQuoted(std::string_view line);
+
+    EUiPopupEffect ParsePopupEffectName(std::string value)
+    {
+        value = Common::ToLower(std::move(value));
+        if (value == "alpha_in") { return EUiPopupEffect::AlphaIn; }
+        if (value == "alpha_out") { return EUiPopupEffect::AlphaOut; }
+        if (value == "move_left") { return EUiPopupEffect::MoveLeft; }
+        if (value == "move_right") { return EUiPopupEffect::MoveRight; }
+        if (value == "move_top") { return EUiPopupEffect::MoveTop; }
+        if (value == "move_bottom") { return EUiPopupEffect::MoveBottom; }
+        return EUiPopupEffect::None;
+    }
+
+    FUiPopupAnimationDesc ParsePopupAnimation(std::string_view line)
+    {
+        FUiLineCommand command(line);
+        std::string effectName;
+        command.Input >> effectName;
+        const bool quoted = !effectName.empty() && effectName.front() == '"';
+        if (quoted) { effectName = ParseQuoted(line); }
+        FUiPopupAnimationDesc effect;
+        effect.Effect = ParsePopupEffectName(effectName);
+        if (effect.Effect == EUiPopupEffect::None) { return effect; }
+        if (quoted)
+        {
+            std::istringstream tail(TailAfterQuoted(line));
+            tail >> effect.Duration >> effect.OffsetX >> effect.OffsetY;
+        }
+        else
+        {
+            command.Input >> effect.Duration >> effect.OffsetX >> effect.OffsetY;
+        }
+        if (effect.Duration <= 0.0f) { effect.Duration = 0.20f; }
+        return effect;
     }
 
     std::vector<std::string> LinesOf(const std::string& text)
@@ -189,11 +228,13 @@ namespace
         else if (command.Key == "cannotcross") { window.CanNotCross = ParseBool(command.Input, window.CanNotCross); }
         else if (command.Key == "cangotop") { window.CanGoTop = ParseBool(command.Input, window.CanGoTop); }
         else if (command.Key == "escapehandle") { window.EscapeHandle = ParseBool(command.Input, window.EscapeHandle); }
+        else if (command.Key == "showeffect") { window.ShowEffect = ParsePopupAnimation(line); }
+        else if (command.Key == "hideeffect") { window.HideEffect = ParsePopupAnimation(line); }
         else if (command.Key == "drawmethod") { window.DrawNone = line.find("NONE") != std::string_view::npos; window.DrawSpriteName = ParseQuoted(line); }
     }
 }
 
-TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& resources, std::string_view logicalName)
+TResult<FUiStringTable> FUiDocumentParser::LoadStringTableFromResource(const FResourceManager& resources, std::string_view logicalName) const
 {
     auto text = LoadUiText(resources, logicalName);
     if (!text.IsOk()) { return text.Status(); }
@@ -212,7 +253,7 @@ TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& re
     return strings;
 }
 
-TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources, std::string_view logicalName)
+TResult<FUiWindowDef> FUiDocumentParser::LoadWindowFromResource(const FResourceManager& resources, std::string_view logicalName) const
 {
     auto text = LoadUiText(resources, logicalName);
     if (!text.IsOk()) { return text.Status(); }
@@ -288,4 +329,15 @@ TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources
 
     if (window.Name.empty()) { return FStatus::Error(EStatusCode::InvalidData, "UI window has no windowName: " + std::string(logicalName)); }
     return window;
+}
+
+
+TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& resources, std::string_view logicalName)
+{
+    return FUiDocumentParser{}.LoadStringTableFromResource(resources, logicalName);
+}
+
+TResult<FUiWindowDef> LoadUiWindowFromResource(const FResourceManager& resources, std::string_view logicalName)
+{
+    return FUiDocumentParser{}.LoadWindowFromResource(resources, logicalName);
 }

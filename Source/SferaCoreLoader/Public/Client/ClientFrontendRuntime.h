@@ -50,6 +50,7 @@ private:
     void LoadSavedLogin();
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
+    void PollServerWorldUpdates();
     FLoginProbeResult RefreshCharacterSelectSession(const std::wstring& login, const std::wstring& password, int32 timeoutMs);
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
@@ -90,4 +91,6 @@ private:
     bool LastGameMouseValid = false;
     int32 LastGameMouseX = 0;
     int32 LastGameMouseY = 0;
+    std::chrono::steady_clock::time_point LastServerWorldPoll = std::chrono::steady_clock::now();
+    std::optional<FGameWorldPosition> LastAppliedServerWorldPosition;
 };

@@ -160,14 +160,85 @@ struct FWorldContourDatabase
 	std::vector<FWorldContourRecord> Records; 
 	FBox2 Bounds; 
 	size_t InvalidRecords = 0; 
+	float IndexCellSize = 64.0f; 
+	mutable bool IndexBuilt = false; 
+	mutable std::unordered_map<int64, std::vector<uint32>> IndexCells; 
+
+	static int32 FloorCell(float value, float cellSize) 
+	{ 
+		return static_cast<int32>(std::floor(value / cellSize)); 
+	} 
+
+	static int64 CellKey(int32 x, int32 y) 
+	{ 
+		return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(y); 
+	} 
+
+	void BuildIndex() const 
+	{ 
+		IndexCells.clear(); 
+		if (!Loaded || Records.empty() || IndexCellSize <= 1.0f) 
+		{ 
+			IndexBuilt = true; 
+			return; 
+		} 
+		for (const auto& r : Records) 
+		{ 
+			if (!r.Bounds.IsValid()) 
+			{ 
+				continue; 
+			} 
+			const int32 minX = FloorCell(r.Bounds.Min.X, IndexCellSize); 
+			const int32 maxX = FloorCell(r.Bounds.Max.X, IndexCellSize); 
+			const int32 minY = FloorCell(r.Bounds.Min.Y, IndexCellSize); 
+			const int32 maxY = FloorCell(r.Bounds.Max.Y, IndexCellSize); 
+			for (int32 y = minY; y <= maxY; ++y) 
+			{ 
+				for (int32 x = minX; x <= maxX; ++x) 
+				{ 
+					IndexCells[CellKey(x, y)].push_back(r.Index); 
+				} 
+			} 
+		} 
+		IndexBuilt = true; 
+	} 
+
 	std::vector<uint32> Query(FBox2 area) const 
 	{ 
 		std::vector<uint32> out; 
-		for (const auto& r : Records) 
+		if (!Loaded || Records.empty() || !area.IsValid()) 
 		{ 
-			if (r.Bounds.Intersects(area)) 
+			return out; 
+		} 
+		if (!IndexBuilt) 
+		{ 
+			BuildIndex(); 
+		} 
+		std::unordered_set<uint32> seen; 
+		const int32 minX = FloorCell(area.Min.X, IndexCellSize); 
+		const int32 maxX = FloorCell(area.Max.X, IndexCellSize); 
+		const int32 minY = FloorCell(area.Min.Y, IndexCellSize); 
+		const int32 maxY = FloorCell(area.Max.Y, IndexCellSize); 
+		for (int32 y = minY; y <= maxY; ++y) 
+		{ 
+			for (int32 x = minX; x <= maxX; ++x) 
 			{ 
-				out.push_back(r.Index); 
+				auto bucket = IndexCells.find(CellKey(x, y)); 
+				if (bucket == IndexCells.end()) 
+				{ 
+					continue; 
+				} 
+				for (uint32 id : bucket->second) 
+				{ 
+					if (id >= Records.size() || !seen.insert(id).second) 
+					{ 
+						continue; 
+					} 
+					if (Records[id].Bounds.Intersects(area)) 
+					{ 
+						out.push_back(id); 
+					} 
+				} 
 			} 
 		} 
 		return out; 

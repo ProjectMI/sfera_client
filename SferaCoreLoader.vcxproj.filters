@@ -500,6 +500,24 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntime.h">
       <Filter>Source\SferaCoreLoader\Public\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeParser.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeInput.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeCharacter.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiDocumentParser.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeState.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiTypes.h">
+      <Filter>Source\SferaCoreLoader\Public\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeInternals.h">
       <Filter>Source\SferaCoreLoader\Public\UI</Filter>
     </ClInclude>

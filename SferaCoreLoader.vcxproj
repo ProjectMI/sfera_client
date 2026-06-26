@@ -203,6 +203,12 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\ResourceLoader\ResourceTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeInternals.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntime.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeParser.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeInput.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeCharacter.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiDocumentParser.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiRuntimeState.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\UI\UiConstants.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\SpatialIndex.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\WorldScene\WorldScene.h" />

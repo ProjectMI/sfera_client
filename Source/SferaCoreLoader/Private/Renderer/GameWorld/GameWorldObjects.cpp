@@ -51,6 +51,26 @@ std::pair<int, int> StaticRenderCellRange(float Center, float Radius, float Cell
     return {StaticRenderCellCoord(Center - Radius, CellSize), StaticRenderCellCoord(Center + Radius, CellSize)};
 }
 
+constexpr float kModelCollisionCellSize = 8.0f;
+
+bool BoundsIntersectsArea2D(const FBox3& bounds, const FBox2& area)
+{
+    return area.IsValid() && bounds.Min.X <= area.Max.X && bounds.Max.X >= area.Min.X && bounds.Min.Z <= area.Max.Y && bounds.Max.Z >= area.Min.Y;
+}
+
+bool AreaContainsArea(const FBox2& outer, const FBox2& inner)
+{
+    return outer.IsValid() && inner.IsValid() && inner.Min.X >= outer.Min.X && inner.Max.X <= outer.Max.X && inner.Min.Y >= outer.Min.Y && inner.Max.Y <= outer.Max.Y;
+}
+
+bool TriangleIntersectsArea2D(const PreparedModelCollisionTriangle& tri, const FBox2& area)
+{
+    return area.IsValid() && tri.Bounds.Min.X <= area.Max.X && tri.Bounds.Max.X >= area.Min.X && tri.Bounds.Min.Z <= area.Max.Y && tri.Bounds.Max.Z >= area.Min.Y;
+}
+
+constexpr float kCollisionWorkerActiveRadius = 14.0f;
+constexpr float kCollisionWorkerRefreshDistance = 3.5f;
+
 FBox3 EmptyBounds()
 {
     FBox3 Bounds;
@@ -846,6 +866,8 @@ void FD3D9GameWorldScene::Impl::LoadStaticPlacements()
 {
     auto result = BuildStaticPlacementLoadResult(CollectStaticPlacementFiles(AssetResources, Config));
     StaticInstances.clear();
+    ModelCollisionProxies.clear();
+    ModelCollisionProxyCells.clear();
     VisibleStaticPlacementIndices.clear();
     VisibleStaticRenderCells.clear();
     ClearStaticRenderBatches();
@@ -1152,6 +1174,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
         }
         return a.world._43 < b.world._43;
     });
+    RebuildModelCollisionProxies();
     // Static cell baking is intentionally not executed from streaming/update.
     // It transforms and uploads a whole visible static-cell set and can turn a tile crossing into a 100+ ms hitch.
     // Missing baked cells are rendered through the direct per-instance path in DrawStaticObjects().
@@ -1846,6 +1869,522 @@ void FD3D9GameWorldScene::Impl::LoadVisibleGrass()
     });
 }
 
+void FD3D9GameWorldScene::Impl::StartCollisionWorker()
+{
+    std::lock_guard<std::mutex> lock(CollisionWorkerMutex);
+    if (CollisionWorkerStarted)
+    {
+        return;
+    }
+    CollisionWorkerStop = false;
+    CollisionWorkerRequestPending = false;
+    CollisionWorkerRebuildSource = false;
+    CollisionWorkerPendingInstances.clear();
+    CollisionWorkerThread = std::thread([this]() { CollisionWorkerMain(); });
+    CollisionWorkerStarted = true;
+}
+
+void FD3D9GameWorldScene::Impl::StopCollisionWorker()
+{
+    {
+        std::lock_guard<std::mutex> lock(CollisionWorkerMutex);
+        if (!CollisionWorkerStarted)
+        {
+            return;
+        }
+        CollisionWorkerStop = true;
+        CollisionWorkerRequestPending = true;
+    }
+    CollisionWorkerCv.notify_all();
+    if (CollisionWorkerThread.joinable())
+    {
+        CollisionWorkerThread.join();
+    }
+    {
+        std::lock_guard<std::mutex> lock(CollisionWorkerMutex);
+        CollisionWorkerStarted = false;
+        CollisionWorkerStop = false;
+        CollisionWorkerRequestPending = false;
+        CollisionWorkerRebuildSource = false;
+        CollisionWorkerPendingInstances.clear();
+    }
+    {
+        std::lock_guard<std::mutex> lock(ActiveCollisionSnapshotMutex);
+        ActiveCollisionSnapshot.reset();
+    }
+}
+
+void FD3D9GameWorldScene::Impl::CollisionWorkerMain()
+{
+    LowerStaticWorkerPriority();
+    std::vector<PreparedModelCollisionTriangle> sourceTriangles;
+    std::vector<PreparedModelCollisionCapsule> sourceCapsules;
+    uint64 sourceGeneration = 0;
+    for (;;)
+    {
+        bool rebuildSource = false;
+        uint64 requestGeneration = 0;
+        float focusX = 0.0f;
+        float focusZ = 0.0f;
+        std::vector<ModelCollisionWorkerInstance> instances;
+        {
+            std::unique_lock<std::mutex> lock(CollisionWorkerMutex);
+            CollisionWorkerCv.wait(lock, [&]() { return CollisionWorkerStop || CollisionWorkerRequestPending; });
+            if (CollisionWorkerStop)
+            {
+                break;
+            }
+            rebuildSource = CollisionWorkerRebuildSource;
+            requestGeneration = CollisionWorkerPendingGeneration;
+            focusX = CollisionWorkerPendingFocusX;
+            focusZ = CollisionWorkerPendingFocusZ;
+            if (rebuildSource)
+            {
+                instances = std::move(CollisionWorkerPendingInstances);
+                CollisionWorkerPendingInstances.clear();
+            }
+            CollisionWorkerRequestPending = false;
+            CollisionWorkerRebuildSource = false;
+        }
+        if (rebuildSource)
+        {
+            sourceTriangles.clear();
+            sourceCapsules.clear();
+            sourceGeneration = requestGeneration;
+            std::size_t expectedTriangles = 0;
+            for (const auto& instance : instances)
+            {
+                if (!instance.Resource || instance.Proxy.Capsule2D || instance.Resource->IsSkinned)
+                {
+                    continue;
+                }
+                expectedTriangles += instance.Resource->CollisionIndices.size() / 3;
+            }
+            sourceTriangles.reserve(expectedTriangles);
+            sourceCapsules.reserve(instances.size() / 4 + 1);
+            for (const auto& instance : instances)
+            {
+                if (!instance.Resource || !instance.Bounds.IsValid())
+                {
+                    continue;
+                }
+                if (instance.Proxy.Capsule2D || instance.Resource->IsSkinned)
+                {
+                    PreparedModelCollisionCapsule capsule;
+                    capsule.Bounds = instance.Proxy.Bounds;
+                    capsule.CenterX = instance.Proxy.CenterX;
+                    capsule.CenterZ = instance.Proxy.CenterZ;
+                    capsule.Radius = instance.Proxy.Radius;
+                    sourceCapsules.push_back(capsule);
+                    continue;
+                }
+                const auto& positions = instance.Resource->CollisionPositions;
+                const auto& indices = instance.Resource->CollisionIndices;
+                if (positions.empty() || indices.empty())
+                {
+                    continue;
+                }
+                for (std::size_t t = 0; t + 2 < indices.size(); t += 3)
+                {
+                    const auto ia = static_cast<std::size_t>(indices[t]);
+                    const auto ib = static_cast<std::size_t>(indices[t + 1]);
+                    const auto ic = static_cast<std::size_t>(indices[t + 2]);
+                    if (ia >= positions.size() || ib >= positions.size() || ic >= positions.size())
+                    {
+                        continue;
+                    }
+                    PreparedModelCollisionTriangle tri;
+                    tri.A = TransformPoint(positions[ia], instance.World);
+                    tri.B = TransformPoint(positions[ib], instance.World);
+                    tri.C = TransformPoint(positions[ic], instance.World);
+                    const FVector3 normal = Cross(Subtract(tri.B, tri.A), Subtract(tri.C, tri.A));
+                    const float normalLength = std::sqrt(Dot(normal, normal));
+                    if (normalLength <= 0.00001f)
+                    {
+                        continue;
+                    }
+                    const float invNormalLength = 1.0f / normalLength;
+                    tri.Normal = FVector3{normal.X * invNormalLength, normal.Y * invNormalLength, normal.Z * invNormalLength};
+                    tri.Walkable = std::abs(tri.Normal.Y) >= Config.CollisionFloorNormalThreshold;
+                    tri.Bounds = EmptyBounds();
+                    ExpandBounds(tri.Bounds, tri.A);
+                    ExpandBounds(tri.Bounds, tri.B);
+                    ExpandBounds(tri.Bounds, tri.C);
+                    sourceTriangles.push_back(tri);
+                }
+            }
+        }
+        FBox2 activeArea;
+        activeArea.Min = FVector2{focusX - kCollisionWorkerActiveRadius, focusZ - kCollisionWorkerActiveRadius};
+        activeArea.Max = FVector2{focusX + kCollisionWorkerActiveRadius, focusZ + kCollisionWorkerActiveRadius};
+        auto snapshot = std::make_shared<PreparedModelCollisionSnapshot>();
+        snapshot->SourceGeneration = sourceGeneration;
+        snapshot->Area = activeArea;
+        snapshot->Triangles.reserve(sourceTriangles.size() / 8 + 64);
+        snapshot->Capsules.reserve(sourceCapsules.size());
+        for (const auto& tri : sourceTriangles)
+        {
+            if (TriangleIntersectsArea2D(tri, activeArea))
+            {
+                snapshot->Triangles.push_back(tri);
+            }
+        }
+        for (const auto& capsule : sourceCapsules)
+        {
+            if (BoundsIntersectsArea2D(capsule.Bounds, activeArea))
+            {
+                snapshot->Capsules.push_back(capsule);
+            }
+        }
+        {
+            std::lock_guard<std::mutex> lock(ActiveCollisionSnapshotMutex);
+            ActiveCollisionSnapshot = std::move(snapshot);
+        }
+    }
+}
+
+void FD3D9GameWorldScene::Impl::QueueCollisionWorkerRebuild()
+{
+    std::vector<ModelCollisionWorkerInstance> instances;
+    instances.reserve(ModelCollisionProxies.size());
+    for (const auto& proxy : ModelCollisionProxies)
+    {
+        if (proxy.InstanceIndex >= StaticInstances.size())
+        {
+            continue;
+        }
+        const auto& instance = StaticInstances[proxy.InstanceIndex];
+        if (!instance.resource || !instance.Bounds.IsValid())
+        {
+            continue;
+        }
+        ModelCollisionWorkerInstance workerInstance;
+        workerInstance.Resource = instance.resource;
+        workerInstance.World = instance.world;
+        workerInstance.Bounds = instance.Bounds;
+        workerInstance.Proxy = proxy;
+        instances.push_back(workerInstance);
+    }
+    const uint64 generation = ++ModelCollisionSourceGeneration;
+    {
+        std::lock_guard<std::mutex> lock(CollisionWorkerMutex);
+        if (!CollisionWorkerStarted)
+        {
+            return;
+        }
+        CollisionWorkerPendingInstances = std::move(instances);
+        CollisionWorkerPendingGeneration = generation;
+        CollisionWorkerPendingFocusX = SpawnX;
+        CollisionWorkerPendingFocusZ = SpawnZ;
+        CollisionWorkerRebuildSource = true;
+        CollisionWorkerRequestPending = true;
+    }
+    CollisionWorkerCv.notify_one();
+}
+
+void FD3D9GameWorldScene::Impl::RequestCollisionSnapshotAround(float CenterX, float CenterZ)
+{
+    if (!CollisionWorkerStarted)
+    {
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(ActiveCollisionSnapshotMutex);
+        if (ActiveCollisionSnapshot && ActiveCollisionSnapshot->SourceGeneration == ModelCollisionSourceGeneration)
+        {
+            const float snapshotCenterX = (ActiveCollisionSnapshot->Area.Min.X + ActiveCollisionSnapshot->Area.Max.X) * 0.5f;
+            const float snapshotCenterZ = (ActiveCollisionSnapshot->Area.Min.Y + ActiveCollisionSnapshot->Area.Max.Y) * 0.5f;
+            const float dx = CenterX - snapshotCenterX;
+            const float dz = CenterZ - snapshotCenterZ;
+            if (dx * dx + dz * dz <= kCollisionWorkerRefreshDistance * kCollisionWorkerRefreshDistance)
+            {
+                return;
+            }
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(CollisionWorkerMutex);
+        if (!CollisionWorkerStarted || CollisionWorkerStop)
+        {
+            return;
+        }
+        CollisionWorkerPendingGeneration = ModelCollisionSourceGeneration;
+        CollisionWorkerPendingFocusX = CenterX;
+        CollisionWorkerPendingFocusZ = CenterZ;
+        CollisionWorkerRequestPending = true;
+    }
+    CollisionWorkerCv.notify_one();
+}
+
+std::shared_ptr<const PreparedModelCollisionSnapshot> FD3D9GameWorldScene::Impl::GetActiveCollisionSnapshot(FBox2 area) const
+{
+    std::lock_guard<std::mutex> lock(ActiveCollisionSnapshotMutex);
+    if (!ActiveCollisionSnapshot || ActiveCollisionSnapshot->SourceGeneration != ModelCollisionSourceGeneration || !AreaContainsArea(ActiveCollisionSnapshot->Area, area))
+    {
+        return nullptr;
+    }
+    return ActiveCollisionSnapshot;
+}
+
+void FD3D9GameWorldScene::Impl::RebuildModelCollisionProxies()
+{
+    ModelCollisionProxies.clear();
+    ModelCollisionProxyCells.clear();
+    ModelCollisionProxies.reserve(StaticInstances.size());
+    for (std::size_t index = 0; index < StaticInstances.size(); ++index)
+    {
+        const auto& instance = StaticInstances[index];
+        if (!instance.resource || !instance.Bounds.IsValid())
+        {
+            continue;
+        }
+        const float width = instance.Bounds.Max.X - instance.Bounds.Min.X;
+        const float depth = instance.Bounds.Max.Z - instance.Bounds.Min.Z;
+        const float height = instance.Bounds.Max.Y - instance.Bounds.Min.Y;
+        if (width < 0.05f || depth < 0.05f || height < 0.10f)
+        {
+            continue;
+        }
+        ModelCollisionProxy proxy;
+        proxy.Bounds = instance.Bounds;
+        proxy.InstanceIndex = index;
+        proxy.SkinnedActor = instance.resource->IsSkinned;
+        proxy.Capsule2D = instance.resource->IsSkinned;
+        proxy.CenterX = (instance.Bounds.Min.X + instance.Bounds.Max.X) * 0.5f;
+        proxy.CenterZ = (instance.Bounds.Min.Z + instance.Bounds.Max.Z) * 0.5f;
+        proxy.Radius = 0.0f;
+        if (proxy.Capsule2D)
+        {
+            proxy.CenterX = instance.world._41;
+            proxy.CenterZ = instance.world._43;
+            proxy.Radius = std::clamp((std::max)(width, depth) * 0.18f, 0.24f, Config.PlayerCollisionRadius * 1.15f);
+            proxy.Bounds.Min.X = proxy.CenterX - proxy.Radius;
+            proxy.Bounds.Max.X = proxy.CenterX + proxy.Radius;
+            proxy.Bounds.Min.Z = proxy.CenterZ - proxy.Radius;
+            proxy.Bounds.Max.Z = proxy.CenterZ + proxy.Radius;
+        }
+        const std::size_t proxyIndex = ModelCollisionProxies.size();
+        ModelCollisionProxies.push_back(proxy);
+        const float inflate = Config.PlayerCollisionRadius + 0.05f;
+        const int minCellX = StaticRenderCellCoord(proxy.Bounds.Min.X - inflate, kModelCollisionCellSize);
+        const int maxCellX = StaticRenderCellCoord(proxy.Bounds.Max.X + inflate, kModelCollisionCellSize);
+        const int minCellZ = StaticRenderCellCoord(proxy.Bounds.Min.Z - inflate, kModelCollisionCellSize);
+        const int maxCellZ = StaticRenderCellCoord(proxy.Bounds.Max.Z + inflate, kModelCollisionCellSize);
+        for (int cellZ = minCellZ; cellZ <= maxCellZ; ++cellZ)
+        {
+            for (int cellX = minCellX; cellX <= maxCellX; ++cellX)
+            {
+                ModelCollisionProxyCells[StaticRenderCellKey(cellX, cellZ)].push_back(proxyIndex);
+            }
+        }
+    }
+    QueueCollisionWorkerRebuild();
+}
+
+std::vector<std::size_t> FD3D9GameWorldScene::Impl::QueryModelCollisionProxies(FBox2 area) const
+{
+    std::vector<std::size_t> result;
+    if (ModelCollisionProxies.empty() || !area.IsValid())
+    {
+        return result;
+    }
+    const int minCellX = StaticRenderCellCoord(area.Min.X, kModelCollisionCellSize);
+    const int maxCellX = StaticRenderCellCoord(area.Max.X, kModelCollisionCellSize);
+    const int minCellZ = StaticRenderCellCoord(area.Min.Y, kModelCollisionCellSize);
+    const int maxCellZ = StaticRenderCellCoord(area.Max.Y, kModelCollisionCellSize);
+    for (int cellZ = minCellZ; cellZ <= maxCellZ; ++cellZ)
+    {
+        for (int cellX = minCellX; cellX <= maxCellX; ++cellX)
+        {
+            const auto cell = ModelCollisionProxyCells.find(StaticRenderCellKey(cellX, cellZ));
+            if (cell == ModelCollisionProxyCells.end())
+            {
+                continue;
+            }
+            for (const std::size_t proxyIndex : cell->second)
+            {
+                if (proxyIndex >= ModelCollisionProxies.size() || std::find(result.begin(), result.end(), proxyIndex) != result.end())
+                {
+                    continue;
+                }
+                if (BoundsIntersectsArea2D(ModelCollisionProxies[proxyIndex].Bounds, area))
+                {
+                    result.push_back(proxyIndex);
+                }
+            }
+        }
+    }
+    return result;
+}
+
+bool FD3D9GameWorldScene::Impl::CollidesWithModelContacts(float fromX, float fromZ, float x, float y, float z) const
+{
+    return CollidesWithModelContactsSwept(fromX, y, fromZ, x, y, z, false);
+}
+
+bool FD3D9GameWorldScene::Impl::CollidesWithModelContactsSwept(float fromX, float fromY, float fromZ, float toX, float toY, float toZ, bool includeWalkableSurfaces) const
+{
+    const float radius = Config.PlayerCollisionRadius;
+    const float radiusSquared = radius * radius;
+    const float fromTopY = fromY - Config.PlayerCollisionHeight;
+    const float toTopY = toY - Config.PlayerCollisionHeight;
+    const float bodyTopY = (std::min)(fromTopY, toTopY);
+    const float bodyBottomY = (std::max)(fromY, toY);
+    FBox2 area;
+    area.Min = FVector2{(std::min)(fromX, toX) - radius - 0.05f, (std::min)(fromZ, toZ) - radius - 0.05f};
+    area.Max = FVector2{(std::max)(fromX, toX) + radius + 0.05f, (std::max)(fromZ, toZ) + radius + 0.05f};
+    const float dx = toX - fromX;
+    const float dy = toY - fromY;
+    const float dz = toZ - fromZ;
+    const float sweepLength = std::sqrt(dx * dx + dy * dy + dz * dz);
+    const float sampleStep = (std::max)(radius * 0.75f, 0.05f);
+    const int sweepSamples = (std::max)(1, (std::min)(4, static_cast<int>(std::ceil(sweepLength / sampleStep))));
+    auto enteringOrCrossing = [](float start, float sample, float limit) -> bool
+    {
+        return start > limit || sample < start - 0.0001f;
+    };
+    auto testCapsule = [&](float centerX, float centerZ, float proxyRadius) -> bool
+    {
+        const float limit = radius + proxyRadius;
+        const float limitSquared = limit * limit;
+        const float startDx = fromX - centerX;
+        const float startDz = fromZ - centerZ;
+        const float startDistance = startDx * startDx + startDz * startDz;
+        const float pathDistance = PointSegmentDistanceSquared2D(centerX, centerZ, FVector2{fromX, fromZ}, FVector2{toX, toZ});
+        if (pathDistance <= limitSquared)
+        {
+            const float endDx = toX - centerX;
+            const float endDz = toZ - centerZ;
+            const float endDistance = endDx * endDx + endDz * endDz;
+            return startDistance > limitSquared || endDistance < startDistance - 0.0001f || pathDistance < startDistance - 0.0001f;
+        }
+        return false;
+    };
+    auto testTriangle = [&](const FVector3& a, const FVector3& b, const FVector3& c, const FVector3& unitNormal, bool walkableSurface) -> bool
+    {
+        if (walkableSurface && !includeWalkableSurfaces)
+        {
+            return false;
+        }
+        if (walkableSurface && toY > fromY && PointInTriangleXz(toX, toZ, a, b, c))
+        {
+            const float planeY = a.Y - (unitNormal.X * (toX - a.X) + unitNormal.Z * (toZ - a.Z)) / unitNormal.Y;
+            if (planeY >= fromY - 0.05f && planeY <= toY + 0.05f)
+            {
+                return false;
+            }
+        }
+        const float triMinY = (std::min)(a.Y, (std::min)(b.Y, c.Y)) - radius;
+        const float triMaxY = (std::max)(a.Y, (std::max)(b.Y, c.Y)) + radius;
+        if (bodyBottomY < triMinY || bodyTopY > triMaxY)
+        {
+            return false;
+        }
+        for (float offset = radius; offset < Config.PlayerCollisionHeight; offset += radius)
+        {
+            const FVector3 startCenter{fromX, fromY - offset, fromZ};
+            const float startDistance = PointTriangleDistanceSquared(startCenter, a, b, c);
+            for (int sample = 1; sample <= sweepSamples; ++sample)
+            {
+                const float t = static_cast<float>(sample) / static_cast<float>(sweepSamples);
+                const FVector3 center{fromX + dx * t, fromY + dy * t - offset, fromZ + dz * t};
+                const float distance = PointTriangleDistanceSquared(center, a, b, c);
+                if (distance <= radiusSquared && enteringOrCrossing(startDistance, distance, radiusSquared))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    if (auto snapshot = GetActiveCollisionSnapshot(area))
+    {
+        for (const auto& capsule : snapshot->Capsules)
+        {
+            if (bodyBottomY < capsule.Bounds.Min.Y - 0.05f || bodyTopY > capsule.Bounds.Max.Y + 0.05f)
+            {
+                continue;
+            }
+            if (testCapsule(capsule.CenterX, capsule.CenterZ, capsule.Radius))
+            {
+                return true;
+            }
+        }
+        for (const auto& tri : snapshot->Triangles)
+        {
+            if (!TriangleIntersectsArea2D(tri, area) || bodyBottomY < tri.Bounds.Min.Y - radius || bodyTopY > tri.Bounds.Max.Y + radius)
+            {
+                continue;
+            }
+            if (testTriangle(tri.A, tri.B, tri.C, tri.Normal, tri.Walkable))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    const auto candidates = QueryModelCollisionProxies(area);
+    for (const std::size_t proxyIndex : candidates)
+    {
+        const auto& proxy = ModelCollisionProxies[proxyIndex];
+        if (bodyBottomY < proxy.Bounds.Min.Y - 0.05f || bodyTopY > proxy.Bounds.Max.Y + 0.05f)
+        {
+            continue;
+        }
+        if (proxy.Capsule2D)
+        {
+            if (testCapsule(proxy.CenterX, proxy.CenterZ, proxy.Radius))
+            {
+                return true;
+            }
+            continue;
+        }
+        if (proxy.InstanceIndex >= StaticInstances.size())
+        {
+            continue;
+        }
+        const auto& instance = StaticInstances[proxy.InstanceIndex];
+        if (!instance.resource || instance.resource->CollisionPositions.empty() || instance.resource->CollisionIndices.empty())
+        {
+            continue;
+        }
+        if (!BoundsIntersectsArea2D(instance.Bounds, area) || bodyBottomY < instance.Bounds.Min.Y - radius || bodyTopY > instance.Bounds.Max.Y + radius)
+        {
+            continue;
+        }
+        const auto& positions = instance.resource->CollisionPositions;
+        const auto& indices = instance.resource->CollisionIndices;
+        for (std::size_t triangle = 0; triangle + 2 < indices.size(); triangle += 3)
+        {
+            const FVector3 a = TransformPoint(positions[indices[triangle]], instance.world);
+            const FVector3 b = TransformPoint(positions[indices[triangle + 1]], instance.world);
+            const FVector3 c = TransformPoint(positions[indices[triangle + 2]], instance.world);
+            const float triMinX = (std::min)(a.X, (std::min)(b.X, c.X)) - radius;
+            const float triMaxX = (std::max)(a.X, (std::max)(b.X, c.X)) + radius;
+            const float triMinZ = (std::min)(a.Z, (std::min)(b.Z, c.Z)) - radius;
+            const float triMaxZ = (std::max)(a.Z, (std::max)(b.Z, c.Z)) + radius;
+            if (area.Max.X < triMinX || area.Min.X > triMaxX || area.Max.Y < triMinZ || area.Min.Y > triMaxZ)
+            {
+                continue;
+            }
+            const FVector3 normal = Cross(Subtract(b, a), Subtract(c, a));
+            const float normalLength = std::sqrt(Dot(normal, normal));
+            if (normalLength <= 0.00001f)
+            {
+                continue;
+            }
+            const float invNormalLength = 1.0f / normalLength;
+            const FVector3 unitNormal{normal.X * invNormalLength, normal.Y * invNormalLength, normal.Z * invNormalLength};
+            const bool walkableSurface = std::abs(unitNormal.Y) >= Config.CollisionFloorNormalThreshold;
+            if (testTriangle(a, b, c, unitNormal, walkableSurface))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool FD3D9GameWorldScene::Impl::CollidesWithStatic(float x, float y, float z) const
 {
     const float radius = Config.PlayerCollisionRadius;
@@ -1891,6 +2430,98 @@ bool FD3D9GameWorldScene::Impl::CollidesWithStatic(float x, float y, float z) co
     return false;
 }
 
+bool FD3D9GameWorldScene::Impl::HasContourCollision() const
+{
+    if (!WorldScene)
+    {
+        return false;
+    }
+    const auto& contours = WorldScene->ContourDatabase();
+    return contours.Loaded && !contours.Records.empty();
+}
+
+float FD3D9GameWorldScene::Impl::PointSegmentDistanceSquared2D(float px, float pz, FVector2 a, FVector2 b)
+{
+    const float vx = b.X - a.X;
+    const float vz = b.Y - a.Y;
+    const float wx = px - a.X;
+    const float wz = pz - a.Y;
+    const float len = vx * vx + vz * vz;
+    if (len <= 0.000001f)
+    {
+        return wx * wx + wz * wz;
+    }
+    const float t = std::clamp((wx * vx + wz * vz) / len, 0.0f, 1.0f);
+    const float dx = px - (a.X + vx * t);
+    const float dz = pz - (a.Y + vz * t);
+    return dx * dx + dz * dz;
+}
+
+bool FD3D9GameWorldScene::Impl::CollidesWithContours(float fromX, float fromZ, float toX, float toZ, float radius) const
+{
+    if (!WorldScene)
+    {
+        return false;
+    }
+    const auto& contours = WorldScene->ContourDatabase();
+    if (!contours.Loaded || contours.Records.empty())
+    {
+        return false;
+    }
+    const float skin = 0.025f;
+    const float testRadius = radius + skin;
+    const float limit = testRadius * testRadius;
+    FBox2 area;
+    area.Min = FVector2{(std::min)(fromX, toX) - testRadius, (std::min)(fromZ, toZ) - testRadius};
+    area.Max = FVector2{(std::max)(fromX, toX) + testRadius, (std::max)(fromZ, toZ) + testRadius};
+    const auto candidates = contours.Query(area);
+    for (uint32 id : candidates)
+    {
+        if (id >= contours.Records.size())
+        {
+            continue;
+        }
+        const auto& record = contours.Records[id];
+        const auto& points = record.Points;
+        if (points.size() < 2)
+        {
+            continue;
+        }
+        auto testEdge = [&](int32 aIndex, int32 bIndex) -> bool
+        {
+            if (aIndex < 0 || bIndex < 0 || aIndex == bIndex || static_cast<std::size_t>(aIndex) >= points.size() || static_cast<std::size_t>(bIndex) >= points.size())
+            {
+                return false;
+            }
+            const FVector2 a = points[static_cast<std::size_t>(aIndex)];
+            const FVector2 b = points[static_cast<std::size_t>(bIndex)];
+            const float previous = PointSegmentDistanceSquared2D(fromX, fromZ, a, b);
+            const float next = PointSegmentDistanceSquared2D(toX, toZ, a, b);
+            return next <= limit && (previous > limit || next < previous - 0.0001f);
+        };
+        for (std::size_t i = 1; i < points.size(); ++i)
+        {
+            if (testEdge(static_cast<int32>(i - 1), static_cast<int32>(i)))
+            {
+                return true;
+            }
+        }
+        for (std::size_t i = 0; i < points.size(); ++i)
+        {
+            const int32 forward = i < record.ForwardLinks.size() ? record.ForwardLinks[i] : -1;
+            const int32 current = static_cast<int32>(i);
+            const int32 last = static_cast<int32>(points.size() - 1);
+            const bool closesContour = current == last && forward == 0;
+            const bool followsContour = forward == current + 1;
+            if ((closesContour || followsContour) && testEdge(current, forward))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool FD3D9GameWorldScene::Impl::PointInTriangleXz(float px, float pz, const FVector3& a, const FVector3& b, const FVector3& c)
 {
     const float d1 = (px - b.X) * (a.Z - b.Z) - (a.X - b.X) * (pz - b.Z);
@@ -1912,13 +2543,57 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
     bool found = false;
     float best = MaxY;
     FVector3 BestNormal{0.0f, -1.0f, 0.0f};
-    for (const auto& instance : StaticInstances)
+    FBox2 area;
+    area.Min = FVector2{x - Config.PlayerCollisionRadius, z - Config.PlayerCollisionRadius};
+    area.Max = FVector2{x + Config.PlayerCollisionRadius, z + Config.PlayerCollisionRadius};
+    if (auto snapshot = GetActiveCollisionSnapshot(area))
     {
-        if (x < instance.Bounds.Min.X || x > instance.Bounds.Max.X ||
-        z < instance.Bounds.Min.Z || z > instance.Bounds.Max.Z ||
-        instance.Bounds.Min.Y > MaxY || instance.Bounds.Max.Y < MinY)
+        for (const auto& tri : snapshot->Triangles)
         {
-            continue;
+            if (!tri.Walkable || !TriangleIntersectsArea2D(tri, area))
+            {
+                continue;
+            }
+            if (x < tri.Bounds.Min.X || x > tri.Bounds.Max.X || z < tri.Bounds.Min.Z || z > tri.Bounds.Max.Z || tri.Bounds.Min.Y > MaxY || tri.Bounds.Max.Y < MinY)
+            {
+                continue;
+            }
+            if (!PointInTriangleXz(x, z, tri.A, tri.B, tri.C))
+            {
+                continue;
+            }
+            const float y = tri.A.Y - (tri.Normal.X * (x - tri.A.X) + tri.Normal.Z * (z - tri.A.Z)) / tri.Normal.Y;
+            if (y < MinY || y > MaxY)
+            {
+                continue;
+            }
+            if (!found || y < best)
+            {
+                best = y;
+                found = true;
+                BestNormal = tri.Normal;
+            }
+        }
+        if (found)
+        {
+            OutY = best;
+            if (OutNormal)
+            {
+                *OutNormal = BestNormal;
+            }
+        }
+        return found;
+    }
+    const auto proxyCandidates = QueryModelCollisionProxies(area);
+    auto testInstance = [&](const StaticInstance& instance)
+    {
+        if (!instance.resource || instance.resource->IsSkinned)
+        {
+            return;
+        }
+        if (x < instance.Bounds.Min.X || x > instance.Bounds.Max.X || z < instance.Bounds.Min.Z || z > instance.Bounds.Max.Z || instance.Bounds.Min.Y > MaxY || instance.Bounds.Max.Y < MinY)
+        {
+            return;
         }
         const auto& positions = instance.resource->CollisionPositions;
         const auto& Indices = instance.resource->CollisionIndices;
@@ -1931,7 +2606,7 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
             const float len = std::sqrt(Dot(normal, normal));
             if (len <= 0.00001f || std::abs(normal.Y) / len < Config.CollisionFloorNormalThreshold)
             {
-                continue;  // only walkable (floor-facing) triangles
+                continue;
             }
             if (!PointInTriangleXz(x, z, a, b, c))
             {
@@ -1950,6 +2625,28 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
                 BestNormal = FVector3{normal.X * inv, normal.Y * inv, normal.Z * inv};
             }
         }
+    };
+    if (!proxyCandidates.empty())
+    {
+        for (const std::size_t proxyIndex : proxyCandidates)
+        {
+            if (proxyIndex >= ModelCollisionProxies.size())
+            {
+                continue;
+            }
+            const auto& proxy = ModelCollisionProxies[proxyIndex];
+            if (proxy.InstanceIndex < StaticInstances.size())
+            {
+                testInstance(StaticInstances[proxy.InstanceIndex]);
+            }
+        }
+    }
+    else if (ModelCollisionProxies.empty())
+    {
+        for (const auto& instance : StaticInstances)
+        {
+            testInstance(instance);
+        }
     }
     if (found)
     {
@@ -1961,6 +2658,7 @@ bool FD3D9GameWorldScene::Impl::StaticFloorHeightAt(
     }
     return found;
 }
+
 bool FD3D9GameWorldScene::Impl::BeginAlphaWorldPass(const D3DMATRIX& World)
 {
     Device->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);

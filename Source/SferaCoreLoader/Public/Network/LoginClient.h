@@ -12,6 +12,7 @@ struct FCharacterActionResult
     int32 PacketCount = 0;
     int32 ByteCount = 0;
     std::vector<std::vector<uint8>> Frames;
+    std::optional<FServerWorldPosition> ServerPosition;
     std::string Message;
 };
 
@@ -27,7 +28,6 @@ public:
     FCharacterActionResult SendIngameAck(int32 timeoutMs = 2500);
     FCharacterActionResult PollFrames(int32 maxFrames = 32);
     void Close();
-    bool SendPosition(double x, double y, double z, double angle, std::string& error);
     bool Connected() const;
     uint16 LocalId() const;
     bool HasGameTime() const;

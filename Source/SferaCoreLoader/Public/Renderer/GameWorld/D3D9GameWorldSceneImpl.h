@@ -91,6 +91,22 @@ struct FD3D9GameWorldScene::Impl
     std::vector<StaticPlacementModel> StaticPlacementModels;
     std::vector<StaticPlacement> StaticPlacements;
     std::vector<StaticInstance> StaticInstances;
+    std::vector<ModelCollisionProxy> ModelCollisionProxies;
+    std::unordered_map<uint64, std::vector<std::size_t>> ModelCollisionProxyCells;
+    uint64 ModelCollisionSourceGeneration = 0;
+    std::thread CollisionWorkerThread;
+    std::mutex CollisionWorkerMutex;
+    std::condition_variable CollisionWorkerCv;
+    bool CollisionWorkerStop = false;
+    bool CollisionWorkerStarted = false;
+    bool CollisionWorkerRequestPending = false;
+    bool CollisionWorkerRebuildSource = false;
+    uint64 CollisionWorkerPendingGeneration = 0;
+    float CollisionWorkerPendingFocusX = 0.0f;
+    float CollisionWorkerPendingFocusZ = 0.0f;
+    std::vector<ModelCollisionWorkerInstance> CollisionWorkerPendingInstances;
+    mutable std::mutex ActiveCollisionSnapshotMutex;
+    std::shared_ptr<const PreparedModelCollisionSnapshot> ActiveCollisionSnapshot;
     std::vector<std::size_t> VisibleStaticPlacementIndices;
     std::vector<uint64> VisibleStaticRenderCells;
     std::unordered_map<uint64, std::vector<std::size_t>> StaticPlacementIndicesByRenderCell;
@@ -236,7 +252,20 @@ struct FD3D9GameWorldScene::Impl
     bool TerrainSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const;
     bool FlatGrassSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const;
     void SnapToGround();
+    void RebuildModelCollisionProxies();
+    void StartCollisionWorker();
+    void StopCollisionWorker();
+    void CollisionWorkerMain();
+    void QueueCollisionWorkerRebuild();
+    void RequestCollisionSnapshotAround(float CenterX, float CenterZ);
+    std::shared_ptr<const PreparedModelCollisionSnapshot> GetActiveCollisionSnapshot(FBox2 area) const;
+    std::vector<std::size_t> QueryModelCollisionProxies(FBox2 area) const;
+    bool CollidesWithModelContacts(float fromX, float fromZ, float x, float y, float z) const;
+    bool CollidesWithModelContactsSwept(float fromX, float fromY, float fromZ, float toX, float toY, float toZ, bool includeWalkableSurfaces) const;
     bool CollidesWithStatic(float x, float y, float z) const;
+    bool HasContourCollision() const;
+    bool CollidesWithContours(float fromX, float fromZ, float toX, float toZ, float radius) const;
+    static float PointSegmentDistanceSquared2D(float px, float pz, FVector2 a, FVector2 b);
     static bool PointInTriangleXz(float px, float pz, const FVector3& a, const FVector3& b, const FVector3& c);
     bool StaticFloorHeightAt(
         float x,
@@ -247,6 +276,7 @@ struct FD3D9GameWorldScene::Impl
         FVector3* OutNormal = nullptr) const;
     bool SupportHeightAt(float x, float z, float FeetY, float& OutY, FVector3* OutNormal = nullptr) const;
     bool TryMoveTo(float x, float z);
+    bool TryMoveTo(float x, float z, float fromY, float toY);
     void Jump();
     void ApplySlopeSlide(float DeltaSeconds);
     void UpdateVertical(float DeltaSeconds);
@@ -282,9 +312,9 @@ struct FD3D9GameWorldScene::Impl
     void SetFog(float start, float end);
     bool SetGrassQuality(int quality, std::wstring& error);
     void SetGameTime(float DayFraction);
+    void SetPlayerWorldPosition(const FGameWorldPosition& Position);
     bool Update(float DeltaSeconds, const FGameMovementInput& input, std::wstring& error);
     void RotateView(float MouseDx, float MouseDy);
-    FGameWorldPosition Position() const;
     void Resize();
     void RenderInsideScene(const RECT&);
 };

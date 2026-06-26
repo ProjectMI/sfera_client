@@ -88,29 +88,6 @@ namespace
 
         return -1;
     }
-    void WriteClientCoordinate(FByteArray& packet, size_t offset, double value)
-    {
-        constexpr double fractionBase = 8388608.0;
-        uint32 fraction = 0;
-        int32 scale = 126;
-        bool negative = false;
-
-        if (std::abs(value) > 0.0000001)
-        {
-            negative = value < 0.0;
-            const double absolute = std::abs(value);
-            const int32 exponent = static_cast<int32>(std::floor(std::log2(absolute)));
-            scale = std::clamp(exponent + 127, 0, 255);
-            const double normalized = absolute / std::ldexp(1.0, exponent);
-            fraction = static_cast<uint32>((normalized - 1.0) * fractionBase) & 0x7fffffU;
-        }
-
-        packet[offset] = static_cast<uint8>((packet[offset] & 0x3fU) | ((fraction & 0x3U) << 6));
-        packet[offset + 1] = static_cast<uint8>((fraction >> 2) & 0xffU);
-        packet[offset + 2] = static_cast<uint8>((fraction >> 10) & 0xffU);
-        packet[offset + 3] = static_cast<uint8>(((fraction >> 18) & 0x1fU) | ((scale & 0x7) << 5));
-        packet[offset + 4] = static_cast<uint8>((packet[offset + 4] & 0xc0U) | ((scale >> 3) & 0x1fU) | (negative ? 0x20U : 0U));
-    }
     uint32 ReadBitsLE(const FByteArray& data, int32 bitOffset, int32 bitCount)
     {
         uint32 value = 0;
@@ -133,6 +110,79 @@ namespace
 
         return value;
     }
+    double DecodeServerCoordinateAt(const FByteArray& frame, size_t offset)
+    {
+        if (offset + 4 > frame.size())
+        {
+            return 0.0;
+        }
+
+        const int32 scale = frame[offset + 3] & 0x7f;
+        if (scale == 58)
+        {
+            return 0.0;
+        }
+
+        const int32 sign = (frame[offset + 3] & 0x80) != 0 ? -1 : 1;
+        const bool oddStep = (frame[offset + 2] & 0x80) != 0;
+        const int32 encoded = ((frame[offset + 2] & 0x7f) << 16) | (frame[offset + 1] << 8) | frame[offset];
+        constexpr double fractionBase = 8388608.0;
+        const double mantissa = 1.0 + static_cast<double>(encoded) / fractionBase;
+        int32 exponent = 0;
+
+        if (scale < 69)
+        {
+            const int32 steps = 2 * (69 - scale) - (oddStep ? 1 : 0);
+            exponent = 11 - steps;
+        }
+        else
+        {
+            const int32 steps = 2 * (scale - 69) + (oddStep ? 1 : 0);
+            exponent = 11 + steps;
+        }
+
+        return static_cast<double>(sign) * mantissa * std::pow(2.0, exponent);
+    }
+
+    bool IsSaneWorldCoordinate(double value)
+    {
+        return std::isfinite(value) && std::abs(value) < 20000.0;
+    }
+
+    std::optional<FServerWorldPosition> TryExtractSpawnMarkerPosition(const FByteArray& frame)
+    {
+        constexpr std::array<uint8, 4> marker{0x1a, 0x98, 0x18, 0x19};
+        if (frame.size() < marker.size() + 16)
+        {
+            return std::nullopt;
+        }
+
+        for (size_t i = 0; i + marker.size() + 16 <= frame.size(); ++i)
+        {
+            if (frame[i] != marker[0] || frame[i + 1] != marker[1] || frame[i + 2] != marker[2] || frame[i + 3] != marker[3])
+            {
+                continue;
+            }
+
+            const size_t coords = i + marker.size();
+            FServerWorldPosition position;
+            position.CharacterEntity = true;
+            position.X = DecodeServerCoordinateAt(frame, coords);
+            position.Y = DecodeServerCoordinateAt(frame, coords + 4);
+            position.Z = DecodeServerCoordinateAt(frame, coords + 8);
+            position.Angle = DecodeServerCoordinateAt(frame, coords + 12);
+
+            if (!IsSaneWorldCoordinate(position.X) || !IsSaneWorldCoordinate(position.Y) || !IsSaneWorldCoordinate(position.Z) || !std::isfinite(position.Angle))
+            {
+                return std::nullopt;
+            }
+
+            return position;
+        }
+
+        return std::nullopt;
+    }
+
     int32 ReadPacked14(const FByteArray& data, size_t offset)
     {
         if (offset + 1 >= data.size())
@@ -379,23 +429,15 @@ FByteArray FSphereEmuProtocol::BuildIngameAckPacket(uint16 localId)
     packet[10] = SferaProtocol::ServerFamilyByte;
     return packet;
 }
-FByteArray FSphereEmuProtocol::BuildPositionPacket(uint16 localId, uint8 sequence, double x, double y, double z, double angle)
+std::optional<FServerWorldPosition> FSphereEmuProtocol::TryParseServerWorldPosition(const FByteArray& frame)
 {
-    constexpr uint16 length = 0x26;
-    FByteArray packet(length, 0);
-    WriteU16LE(packet, 0, length);
-    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
-    packet[6] = SferaProtocol::ClientActionByte;
-    packet[9] = SferaProtocol::ServerChannelByte;
-    packet[10] = SferaProtocol::ServerFamilyByte;
-    packet[11] = static_cast<uint8>((localId >> 8) & 0xff);
-    packet[12] = static_cast<uint8>(localId & 0xff);
-    packet[17] = sequence;
-    WriteClientCoordinate(packet, 21, x);
-    WriteClientCoordinate(packet, 25, y);
-    WriteClientCoordinate(packet, 29, z);
-    WriteClientCoordinate(packet, 33, angle);
-    return packet;
+    return TryExtractSpawnMarkerPosition(frame);
+}
+
+std::optional<FServerWorldPosition> FSphereEmuProtocol::TryParseServerWorldPosition(const FByteArray& frame, uint16 preferredEntityId)
+{
+    (void)preferredEntityId;
+    return TryExtractSpawnMarkerPosition(frame);
 }
 FByteArray FSphereEmuProtocol::EncodeClientPacket(const FByteArray& decoded)
 {

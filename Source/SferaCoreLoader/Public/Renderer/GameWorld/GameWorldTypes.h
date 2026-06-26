@@ -161,6 +161,51 @@ struct StaticInstance
     FBox3 Bounds;
 };
 
+struct ModelCollisionProxy
+{
+    FBox3 Bounds;
+    std::size_t InstanceIndex = 0;
+    float CenterX = 0.0f;
+    float CenterZ = 0.0f;
+    float Radius = 0.0f;
+    bool Capsule2D = false;
+    bool SkinnedActor = false;
+};
+
+struct ModelCollisionWorkerInstance
+{
+    StaticModelResource* Resource = nullptr;
+    D3DMATRIX World{};
+    FBox3 Bounds{};
+    ModelCollisionProxy Proxy{};
+};
+
+struct PreparedModelCollisionTriangle
+{
+    FVector3 A{};
+    FVector3 B{};
+    FVector3 C{};
+    FVector3 Normal{};
+    FBox3 Bounds{};
+    bool Walkable = false;
+};
+
+struct PreparedModelCollisionCapsule
+{
+    FBox3 Bounds{};
+    float CenterX = 0.0f;
+    float CenterZ = 0.0f;
+    float Radius = 0.0f;
+};
+
+struct PreparedModelCollisionSnapshot
+{
+    uint64 SourceGeneration = 0;
+    FBox2 Area{};
+    std::vector<PreparedModelCollisionTriangle> Triangles;
+    std::vector<PreparedModelCollisionCapsule> Capsules;
+};
+
 struct StaticPlacementLoadResult
 {
     std::vector<StaticPlacementModel> Models;

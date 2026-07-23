@@ -104,6 +104,7 @@ struct FD3D9GameWorldScene::Impl
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> StaticCellRenderBatches;
     bool StaticVisibilityPlanReady = false;
     float StaticVisibilityAnchorX = 0.0f;
+    float StaticVisibilityAnchorY = 0.0f;
     float StaticVisibilityAnchorZ = 0.0f;
     std::vector<GrassInstance> GrassInstances;
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> GrassCellRenderBatches;
@@ -216,7 +217,7 @@ struct FD3D9GameWorldScene::Impl
     bool BeginAlphaWorldPass(const D3DMATRIX& World);
     void EndAlphaWorldPass(bool UsedShader);
     void DrawWorldRenderBatches(std::vector<const WorldRenderBatch*>& DrawList, EGameWorldDrawBucket Bucket, float CullingMargin);
-    void PreloadStaticResourcesAround(float CenterX, float CenterZ, float Radius);
+    void PreloadStaticResourcesAround(float CenterX, float CenterY, float CenterZ, float Radius);
     void LoadVisibleGrass();
     void ClearGrassRenderBatches();
     void BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances);

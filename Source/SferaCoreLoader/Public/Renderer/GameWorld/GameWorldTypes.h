@@ -214,6 +214,8 @@ struct StaticPlacementLoadResult
 {
     std::vector<StaticPlacementModel> Models;
     std::vector<StaticPlacement> Placements;
+    std::size_t SkippedRuntimeActorPlaceholders = 0;
+    std::size_t SkippedTechnicalMarkers = 0;
 };
 
 struct GrassInstance

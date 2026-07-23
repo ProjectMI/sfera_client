@@ -23,6 +23,7 @@ struct FGameWorldConfig
     bool Ok = false;
     std::vector<std::wstring> ModelDirs;
     std::vector<std::wstring> StaticObjectDirs;
+    bool StaticObjectRecursive = false;
     std::array<std::vector<std::wstring>, 31> GrassPatterns{};
     std::array<std::vector<std::wstring>, 31> GrassFlowerPatterns{};
     std::vector<std::wstring> GrassDetailModels;

@@ -837,7 +837,7 @@ void FD3D9GameWorldScene::Impl::PreloadStreamingGuard()
         PreloadTerrainForCenter(CenterRow + RowStep, CenterColumn + ColumnStep, GuardRadius);
     }
     const float StaticGuardRadius = Config.StaticObjectRadius + Config.TileSize;
-    PreloadStaticResourcesAround(SpawnX, SpawnZ, StaticGuardRadius);
+    PreloadStaticResourcesAround(SpawnX, SpawnY, SpawnZ, StaticGuardRadius);
 }
 
 bool FD3D9GameWorldScene::Impl::TerrainHeightAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight) const

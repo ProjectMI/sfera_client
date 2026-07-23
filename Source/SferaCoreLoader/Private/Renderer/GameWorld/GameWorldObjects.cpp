@@ -982,7 +982,7 @@ struct StaticPlacementFile
     std::string RelativeKey;
 };
 
-bool StaticPathAllowed(std::string_view rel, const std::vector<std::string>& configuredDirs)
+bool StaticPathAllowed(std::string_view rel, const std::vector<std::string>& configuredDirs, bool recursive)
 {
     if (configuredDirs.empty())
     {
@@ -990,12 +990,25 @@ bool StaticPathAllowed(std::string_view rel, const std::vector<std::string>& con
     }
     for (const auto& dir : configuredDirs)
     {
-        if (rel == dir || rel.starts_with(dir + "/"))
+        if (rel == dir)
+        {
+            return true;
+        }
+        const std::string prefix = dir + "/";
+        if (rel.starts_with(prefix) && (recursive || rel.find('/', prefix.size()) == std::string_view::npos))
         {
             return true;
         }
     }
     return false;
+}
+
+bool StaticPlacementInRange(const FVector3& position, float centerX, float centerY, float centerZ, float radiusSquared)
+{
+    const float dx = position.X - centerX;
+    const float dy = position.Y - centerY;
+    const float dz = position.Z - centerZ;
+    return dx * dx + dy * dy + dz * dz <= radiusSquared;
 }
 
 struct ParsedStaticPlacement
@@ -1065,6 +1078,36 @@ std::vector<ParsedStaticPlacement> ParseStaticPlacementFile(const StaticPlacemen
     return placements;
 }
 
+bool StartsWithNumberedPlacementName(std::string_view key, std::string_view prefix)
+{
+    return key.size() > prefix.size() && key.starts_with(prefix) && std::isdigit(static_cast<unsigned char>(key[prefix.size()]));
+}
+
+enum class EStaticPlacementKind
+{
+    Renderable,
+    RuntimeActorPlaceholder,
+    TechnicalMarker
+};
+
+bool IsDoorMarkerPlacementName(std::string_view key)
+{
+    return key == "edoor" || key == "edoor2" || key == "edoor_i" || key == "edoor2_i";
+}
+
+EStaticPlacementKind ClassifyStaticPlacement(std::string_view key)
+{
+    if (key == "char19" || IsDoorMarkerPlacementName(key))
+    {
+        return EStaticPlacementKind::RuntimeActorPlaceholder;
+    }
+    if (StartsWithNumberedPlacementName(key, "m_way") || key == "m_enter" || StartsWithNumberedPlacementName(key, "pyram") || StartsWithNumberedPlacementName(key, "tn3_light") || StartsWithNumberedPlacementName(key, "start") || key == "finish")
+    {
+        return EStaticPlacementKind::TechnicalMarker;
+    }
+    return EStaticPlacementKind::Renderable;
+}
+
 std::vector<StaticPlacementFile> CollectStaticPlacementFiles(const FResourceManager* resources, const FGameWorldConfig& config)
 {
     if (!resources)
@@ -1081,7 +1124,7 @@ std::vector<StaticPlacementFile> CollectStaticPlacementFiles(const FResourceMana
     for (const auto& record : resources->Catalog().All())
     {
         const std::string rel = Common::NormalizePathKey(record.RelativePath);
-        if ((!rel.ends_with(".mbd") && !rel.ends_with(".mb")) || !StaticPathAllowed(rel, configuredDirs))
+        if ((!rel.ends_with(".mbd") && !rel.ends_with(".mb")) || !StaticPathAllowed(rel, configuredDirs, config.StaticObjectRecursive))
         {
             continue;
         }
@@ -1115,6 +1158,17 @@ StaticPlacementLoadResult BuildStaticPlacementLoadResult(const std::vector<Stati
     {
         for (const auto& source : bucket)
         {
+            const EStaticPlacementKind kind = ClassifyStaticPlacement(source.Key);
+            if (kind == EStaticPlacementKind::RuntimeActorPlaceholder)
+            {
+                ++result.SkippedRuntimeActorPlaceholders;
+                continue;
+            }
+            if (kind == EStaticPlacementKind::TechnicalMarker)
+            {
+                ++result.SkippedTechnicalMarkers;
+                continue;
+            }
             StaticPlacement placement;
             placement.ModelId = InternPlacementModel(source, modelIds, result.Models);
             placement.Position = source.Position;
@@ -1153,6 +1207,10 @@ void FD3D9GameWorldScene::Impl::LoadStaticPlacements()
         StaticPlacementIndicesByRenderCell[StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize)].push_back(index);
     }
     StaticVisibilityPlanReady = false;
+    if (Logger)
+    {
+        Logger->Info("Static placements loaded=" + std::to_string(StaticPlacements.size()) + ", models=" + std::to_string(StaticPlacementModels.size()) + ", skipped_runtime_actor_placeholders=" + std::to_string(result.SkippedRuntimeActorPlaceholders) + ", skipped_technical_markers=" + std::to_string(result.SkippedTechnicalMarkers));
+    }
 }
 
 StaticModelResource* FD3D9GameWorldScene::Impl::EnsureStaticModelResource(const std::string& ModelName)
@@ -1339,13 +1397,15 @@ std::unique_ptr<StaticModelResource> FD3D9GameWorldScene::Impl::LoadStaticModelR
 void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
 {
     const float RadiusSquared = Config.StaticObjectRadius * Config.StaticObjectRadius;
-    const bool needsPlan = !StaticVisibilityPlanReady || std::abs(SpawnX - StaticVisibilityAnchorX) > 1.0f || std::abs(SpawnZ - StaticVisibilityAnchorZ) > 1.0f;
+    const float VerticalRefreshDistance = (std::max)(1.0f, Config.StaticObjectRadius * 0.1f);
+    const bool needsPlan = !StaticVisibilityPlanReady || std::abs(SpawnX - StaticVisibilityAnchorX) > 1.0f || std::abs(SpawnY - StaticVisibilityAnchorY) > VerticalRefreshDistance || std::abs(SpawnZ - StaticVisibilityAnchorZ) > 1.0f;
     if (needsPlan)
     {
         VisibleStaticPlacementIndices.clear();
         VisibleStaticRenderCells.clear();
         std::unordered_set<uint64> visibleCells;
         StaticVisibilityAnchorX = SpawnX;
+        StaticVisibilityAnchorY = SpawnY;
         StaticVisibilityAnchorZ = SpawnZ;
         const auto [MinCellX, MaxCellX] = StaticRenderCellRange(SpawnX, Config.StaticObjectRadius, Config.TileSize);
         const auto [MinCellZ, MaxCellZ] = StaticRenderCellRange(SpawnZ, Config.StaticObjectRadius, Config.TileSize);
@@ -1362,9 +1422,7 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
                 for (const std::size_t index : cellIt->second)
                 {
                     auto& placement = StaticPlacements[index];
-                    const float dx = placement.Position.X - SpawnX;
-                    const float dz = placement.Position.Z - SpawnZ;
-                    if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+                    if (!StaticPlacementInRange(placement.Position, SpawnX, SpawnY, SpawnZ, RadiusSquared) || placement.ModelId >= StaticPlacementModels.size())
                     {
                         continue;
                     }
@@ -1403,23 +1461,6 @@ void FD3D9GameWorldScene::Impl::LoadVisibleStaticObjects()
         if (it == StaticResources.end())
         {
             continue;
-        }
-        if (it->second && it->second->IsSkinned)
-        {
-            float Ground = 0.0f;
-            FVector3 GroundNormal{};
-            if (TerrainSurfaceAt(placement.Position.X, placement.Position.Z, Ground, GroundNormal) && std::abs(placement.World._42 - Ground) > 0.0001f)
-            {
-                placement.Position.Y = Ground;
-                placement.World._42 = Ground;
-                placement.BoundsValid = false;
-                const uint64 CellKey = StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize);
-                if (auto BatchIt = StaticCellRenderBatches.find(CellKey); BatchIt != StaticCellRenderBatches.end())
-                {
-                    ReleaseWorldRenderBatches(BatchIt->second);
-                    StaticCellRenderBatches.erase(BatchIt);
-                }
-            }
         }
         if (!placement.BoundsValid)
         {
@@ -1514,20 +1555,6 @@ void FD3D9GameWorldScene::Impl::BakeStaticRenderCell(uint64 CellKey)
         }
         if (resource->IsSkinned)
         {
-            float Ground = 0.0f;
-            FVector3 GroundNormal{};
-            if (TerrainSurfaceAt(placement.Position.X, placement.Position.Z, Ground, GroundNormal) && std::abs(placement.World._42 - Ground) > 0.0001f)
-            {
-                placement.Position.Y = Ground;
-                placement.World._42 = Ground;
-                placement.BoundsValid = false;
-                const uint64 AdjustedCellKey = StaticRenderCellKeyForPoint(placement.Position.X, placement.Position.Z, Config.TileSize);
-                if (auto BatchIt = StaticCellRenderBatches.find(AdjustedCellKey); BatchIt != StaticCellRenderBatches.end())
-                {
-                    ReleaseWorldRenderBatches(BatchIt->second);
-                    StaticCellRenderBatches.erase(BatchIt);
-                }
-            }
             continue;
         }
         const auto& world = placement.World;
@@ -1558,7 +1585,7 @@ void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
     }
 }
 
-void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, float CenterZ, float Radius)
+void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, float CenterY, float CenterZ, float Radius)
 {
     const float RadiusSquared = Radius * Radius;
     const auto [MinCellX, MaxCellX] = StaticRenderCellRange(CenterX, Radius, Config.TileSize);
@@ -1577,9 +1604,7 @@ void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, floa
             for (const std::size_t placementIndex : cellIt->second)
             {
                 const auto& placement = StaticPlacements[placementIndex];
-                const float dx = placement.Position.X - CenterX;
-                const float dz = placement.Position.Z - CenterZ;
-                if (dx * dx + dz * dz > RadiusSquared || placement.ModelId >= StaticPlacementModels.size())
+                if (!StaticPlacementInRange(placement.Position, CenterX, CenterY, CenterZ, RadiusSquared) || placement.ModelId >= StaticPlacementModels.size())
                 {
                     continue;
                 }

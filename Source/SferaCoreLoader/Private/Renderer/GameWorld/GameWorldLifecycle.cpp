@@ -19,7 +19,6 @@ void FD3D9GameWorldScene::Impl::Release()
 {
     DrainTerrainCpuPreloadJobs(true);
     DrainStaticModelCpuPreloadJobs(true);
-    StopCollisionWorker();
     PendingTerrainCpuPreloads.clear();
     PendingStaticModelCpuPreloads.clear();
     QueuedTerrainCpuPreloads.clear();
@@ -79,9 +78,13 @@ void FD3D9GameWorldScene::Impl::Release()
     GrassInitialBlockingLoad = false;
     GrassMaps.clear();
     StaticInstances.clear();
-    ModelCollisionProxies.clear();
-    ModelCollisionProxyCells.clear();
-    ModelCollisionSourceGeneration = 0;
+    StaticCollisionInstances.clear();
+    StaticCollisionCells.clear();
+    LargeStaticCollisionInstances.clear();
+    StaticCollisionVisitMarks.clear();
+    StaticCollisionInstanceScratch.clear();
+    StaticCollisionTriangleScratch.clear();
+    StaticCollisionVisitGeneration = 0;
     StaticPlacementModels.clear();
     StaticPlacements.clear();
     StaticPlacementIndicesByRenderCell.clear();
@@ -541,7 +544,6 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     PendingTerrainCpuPreloads.reserve(256);
     StartTerrainCpuPreloadWorker();
     StartStaticModelCpuPreloadWorker();
-    StartCollisionWorker();
     Environment = FGameWorldSkyState{0.0f, Config.ClearRed, Config.ClearGreen, Config.ClearBlue, 110, 110, 110, 255, 245, 224, Config.SkyRed, Config.SkyGreen, Config.SkyBlue};
     SpawnX = static_cast<float>(x);
     SpawnY = static_cast<float>(y);
@@ -556,7 +558,6 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     FillPresentParameters();
     try
     {
-        const_cast<FWorldScene&>(world).EnsureContoursLoaded(InLogger);
         BuildTerrainPathIndex();
         LoadWorldShaders();
         TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(NarrowAscii(Config.TerrainMicrotexture)));
@@ -570,6 +571,7 @@ bool FD3D9GameWorldScene::Impl::Initialize(
         SnapToGround();
         LoadStaticPlacements();
         LoadVisibleStaticObjects();
+        SnapToGround();
         GrassInitialBlockingLoad = true;
         LoadVisibleGrass();
         GrassInitialBlockingLoad = false;

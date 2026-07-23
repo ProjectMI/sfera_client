@@ -64,7 +64,7 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
         PlayerLockedCrownY = CrownWorldY;
         PlayerEyeLocalX = 0.0f;
         PlayerEyeLocalY = CrownWorldY + kEyeBelowCrownWorld;
-        PlayerEyeLocalZ = kEyeForwardModel;
+        PlayerEyeLocalZ = 0.0f;
         PlayerEyeValid = true;
         PlayerEyeInitialized = true;
     }
@@ -159,9 +159,10 @@ void FD3D9GameWorldScene::Impl::DrawPlayer()
         return;
     }
     auto world = RotationYMatrix(CameraYaw);
-    world._41 = SpawnX - std::sin(CameraYaw) * PlayerBodyShift;
+    const float VisualBackShift = kPlayerVisualBackShift + PlayerBodyShift;
+    world._41 = SpawnX - std::sin(CameraYaw) * VisualBackShift;
     world._42 = SpawnY;
-    world._43 = SpawnZ - std::cos(CameraYaw) * PlayerBodyShift;
+    world._43 = SpawnZ - std::cos(CameraYaw) * VisualBackShift;
     const bool UseShader = WorldShadersReady;
     if (UseShader)
     {

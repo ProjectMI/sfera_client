@@ -80,6 +80,18 @@ FBox3 TranslatedTerrainBounds(const TerrainInstance& instance)
     return bounds;
 }
 
+FBox3 TranslatedWaterBounds(const TerrainInstance& instance, float waveMargin)
+{
+    FBox3 bounds = instance.resource && instance.resource->WaterBounds.IsValid() ? instance.resource->WaterBounds : instance.resource ? instance.resource->Bounds : FBox3{};
+    bounds.Min.X += instance.OriginX;
+    bounds.Max.X += instance.OriginX;
+    bounds.Min.Y -= waveMargin;
+    bounds.Max.Y += waveMargin;
+    bounds.Min.Z += instance.OriginZ;
+    bounds.Max.Z += instance.OriginZ;
+    return bounds;
+}
+
 bool TerrainSampleAtInstance(const TerrainInstance& instance, float tileSize, float WorldX, float WorldZ, float ReferenceY, bool ClosestToReference, float& OutHeight, FVector3* OutNormal)
 {
     if (!instance.resource)
@@ -107,7 +119,9 @@ bool TerrainSampleAtInstance(const TerrainInstance& instance, float tileSize, fl
             return;
         }
         const float distance = ClosestToReference ? std::abs(height - ReferenceY) : -height;
-        if (!Found || distance < BestDistance)
+        const bool Closer = distance < BestDistance - 0.0001f;
+        const bool EqualUpperSurface = ClosestToReference && std::abs(distance - BestDistance) <= 0.0001f && height < BestHeight;
+        if (!Found || Closer || EqualUpperSurface)
         {
             BestDistance = distance;
             BestHeight = height;
@@ -202,57 +216,141 @@ void ReadTerrainTexturePixels(TerrainCpuResource& resource)
     for (std::size_t i = 0; i < pixelCount; ++i) { resource.TexturePixels[i] = Binary::U16LE(data, 128 + i * 2); }
 }
 
+struct WaterSample
+{
+    WorldVertex Vertex{};
+    float Coverage = 0.0f;
+};
+
+void ResetBounds(FBox3& bounds)
+{
+    bounds.Min = FVector3{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    bounds.Max = FVector3{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+}
+
+void ExpandBounds(FBox3& bounds, const WorldVertex& vertex)
+{
+    bounds.Min.X = (std::min)(bounds.Min.X, vertex.X);
+    bounds.Min.Y = (std::min)(bounds.Min.Y, vertex.Y);
+    bounds.Min.Z = (std::min)(bounds.Min.Z, vertex.Z);
+    bounds.Max.X = (std::max)(bounds.Max.X, vertex.X);
+    bounds.Max.Y = (std::max)(bounds.Max.Y, vertex.Y);
+    bounds.Max.Z = (std::max)(bounds.Max.Z, vertex.Z);
+}
+
+WaterSample WaterBoundaryVertex(const WaterSample& a, const WaterSample& b)
+{
+    const WorldVertex& wet = a.Coverage >= 0.5f ? a.Vertex : b.Vertex;
+    WorldVertex vertex = wet;
+    vertex.X = (a.Vertex.X + b.Vertex.X) * 0.5f;
+    vertex.Z = (a.Vertex.Z + b.Vertex.Z) * 0.5f;
+    vertex.U = (a.Vertex.U + b.Vertex.U) * 0.5f;
+    vertex.V = (a.Vertex.V + b.Vertex.V) * 0.5f;
+    return WaterSample{vertex, 0.5f};
+}
+
+void EmitWaterPolygon(TerrainCpuResource& resource, const WaterSample* polygon, std::size_t count)
+{
+    if (count < 3 || resource.WaterVertices.size() + count > std::numeric_limits<uint16>::max()) { return; }
+    const auto base = static_cast<uint16>(resource.WaterVertices.size());
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        resource.WaterVertices.push_back(polygon[i].Vertex);
+        ExpandBounds(resource.WaterBounds, polygon[i].Vertex);
+    }
+    for (std::size_t i = 1; i + 1 < count; ++i)
+    {
+        resource.WaterIndices.push_back(base);
+        resource.WaterIndices.push_back(static_cast<uint16>(base + i));
+        resource.WaterIndices.push_back(static_cast<uint16>(base + i + 1));
+    }
+}
+
+void EmitClippedWaterTriangle(TerrainCpuResource& resource, const WaterSample& a, const WaterSample& b, const WaterSample& c)
+{
+    const std::array<WaterSample, 3> input{a, b, c};
+    std::array<WaterSample, 4> polygon{};
+    std::size_t count = 0;
+    WaterSample previous = input.back();
+    bool previousInside = previous.Coverage >= 0.5f;
+    for (const WaterSample& current : input)
+    {
+        const bool currentInside = current.Coverage >= 0.5f;
+        if (currentInside != previousInside) { polygon[count++] = WaterBoundaryVertex(previous, current); }
+        if (currentInside) { polygon[count++] = current; }
+        previous = current;
+        previousInside = currentInside;
+    }
+    EmitWaterPolygon(resource, polygon.data(), count);
+}
+
+void EmitWaterQuad(TerrainCpuResource& resource, const WaterSample& s00, const WaterSample& s01, const WaterSample& s10, const WaterSample& s11)
+{
+    if (resource.WaterVertices.size() + 4 > std::numeric_limits<uint16>::max()) { return; }
+    const std::array<WaterSample, 4> vertices{s00, s01, s10, s11};
+    const auto base = static_cast<uint16>(resource.WaterVertices.size());
+    for (const WaterSample& sample : vertices)
+    {
+        resource.WaterVertices.push_back(sample.Vertex);
+        ExpandBounds(resource.WaterBounds, sample.Vertex);
+    }
+    resource.WaterIndices.insert(resource.WaterIndices.end(), {base, static_cast<uint16>(base + 1), static_cast<uint16>(base + 2), static_cast<uint16>(base + 2), static_cast<uint16>(base + 1), static_cast<uint16>(base + 3)});
+}
+
 void ReadWaterCpuMesh(TerrainCpuResource& resource, const std::filesystem::path& LNDPath, float tileSize)
 {
     auto WTRPath = LNDPath;
     WTRPath.replace_extension(".wtr");
-    if (!std::filesystem::exists(WTRPath))
-    {
-        return;
-    }
+    if (!std::filesystem::exists(WTRPath)) { return; }
     const auto data = ReadGameWorldFileBytes(WTRPath);
     constexpr int kGrid = 12;
-    if (data.size() < static_cast<std::size_t>(kGrid) * kGrid * 2 * 4)
-    {
-        return;
-    }
-    auto height = [&](int r, int c) { return Binary::F32LE(data, (static_cast<std::size_t>(r) * kGrid + c) * 2 * 4); };
-    auto IsWater = [&](int r, int c) { return Binary::I32LE(data, (static_cast<std::size_t>(r) * kGrid + c) * 2 * 4 + 4) != 0; };
+    constexpr float kDryHeight = 900.0f;
+    constexpr float kTextureScale = 12.5f;
+    if (data.size() < static_cast<std::size_t>(kGrid) * kGrid * 8) { return; }
     const float step = tileSize / static_cast<float>(kGrid - 1);
+    std::array<WaterSample, kGrid * kGrid> samples{};
+    std::vector<float> waterHeights;
+    waterHeights.reserve(samples.size());
+    constexpr std::size_t kCellCount = static_cast<std::size_t>(kGrid - 1) * (kGrid - 1);
+    resource.WaterVertices.reserve(kCellCount * 8);
+    resource.WaterIndices.reserve(kCellCount * 12);
+    ResetBounds(resource.WaterBounds);
+    for (int r = 0; r < kGrid; ++r)
+    {
+        for (int c = 0; c < kGrid; ++c)
+        {
+            const std::size_t offset = (static_cast<std::size_t>(r) * kGrid + c) * 8;
+            const float h = Binary::F32LE(data, offset);
+            const bool isWater = Binary::I32LE(data, offset + 4) != 0 && std::isfinite(h) && h < kDryHeight;
+            const float x = c * step;
+            const float z = r * step;
+            samples[static_cast<std::size_t>(r) * kGrid + c] = WaterSample{WorldVertex{x, h, z, 0.0f, -1.0f, 0.0f, 0xffffffff, x / kTextureScale, z / kTextureScale, 0.0f, 0.0f}, isWater ? 1.0f : 0.0f};
+            if (isWater) { waterHeights.push_back(h); }
+        }
+    }
+    auto sample = [&](int r, int c) -> const WaterSample& { return samples[static_cast<std::size_t>(r) * kGrid + c]; };
     for (int r = 0; r < kGrid - 1; ++r)
     {
         for (int c = 0; c < kGrid - 1; ++c)
         {
-            if (!IsWater(r, c) || !IsWater(r, c + 1) || !IsWater(r + 1, c) || !IsWater(r + 1, c + 1))
+            const WaterSample& s00 = sample(r, c);
+            const WaterSample& s01 = sample(r, c + 1);
+            const WaterSample& s10 = sample(r + 1, c);
+            const WaterSample& s11 = sample(r + 1, c + 1);
+            const int waterCount = static_cast<int>(s00.Coverage + s01.Coverage + s10.Coverage + s11.Coverage);
+            if (waterCount == 0) { continue; }
+            if (waterCount == 4) { EmitWaterQuad(resource, s00, s01, s10, s11); }
+            else
             {
-                continue;
+                EmitClippedWaterTriangle(resource, s00, s01, s10);
+                EmitClippedWaterTriangle(resource, s10, s01, s11);
             }
-            const float h00 = height(r, c), h01 = height(r, c + 1);
-            const float h10 = height(r + 1, c), h11 = height(r + 1, c + 1);
-            const auto base = static_cast<uint16>(resource.WaterVertices.size());
-            auto push = [&](int rr, int cc, float h)
-            {
-                const float x = cc * step;
-                const float z = rr * step;
-                resource.WaterVertices.push_back(WorldVertex{x, h, z, 0.0f, -1.0f, 0.0f, 0xffffffff, x / 12.5f, z / 12.5f, 0.0f, 0.0f});
-            };
-            push(r, c, h00);
-            push(r, c + 1, h01);
-            push(r + 1, c, h10);
-            push(r + 1, c + 1, h11);
-            resource.WaterIndices.push_back(base);
-            resource.WaterIndices.push_back(static_cast<uint16>(base + 1));
-            resource.WaterIndices.push_back(static_cast<uint16>(base + 2));
-            resource.WaterIndices.push_back(static_cast<uint16>(base + 2));
-            resource.WaterIndices.push_back(static_cast<uint16>(base + 1));
-            resource.WaterIndices.push_back(static_cast<uint16>(base + 3));
         }
     }
-    if (!resource.WaterVertices.empty())
-    {
-        resource.HasWater = true;
-        resource.WaterHeight = resource.WaterVertices.front().Y;
-    }
+    if (resource.WaterIndices.empty()) { return; }
+    std::sort(waterHeights.begin(), waterHeights.end());
+    resource.WaterHeight = waterHeights.empty() ? resource.WaterVertices.front().Y : waterHeights[waterHeights.size() / 2];
+    resource.HasWater = true;
 }
 
 std::shared_ptr<const TerrainCpuResource> BuildTerrainCpuResource(const std::filesystem::path& LNDPath, float tileSize)
@@ -390,6 +488,7 @@ std::unique_ptr<TerrainResource> FD3D9GameWorldScene::Impl::LoadTerrainResource(
     resource->TextureHeight = cpu->TextureHeight;
     resource->TexturePixels = cpu->TexturePixels;
     resource->Bounds = cpu->Bounds;
+    resource->WaterBounds = cpu->WaterBounds;
     const auto TextureKey = resource->TexturePath.lexically_normal().wstring();
     if (auto TextureIt = DdsTextureCache.find(TextureKey); TextureIt != DdsTextureCache.end())
     {
@@ -773,6 +872,106 @@ bool FD3D9GameWorldScene::Impl::TerrainHeightAt(float WorldX, float WorldZ, floa
     }
     return false;
 }
+bool FD3D9GameWorldScene::Impl::TerrainSurfaceNearAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight, FVector3& OutNormal) const
+{
+    float BestHeight = ReferenceY;
+    float BestDistance = (std::numeric_limits<float>::max)();
+    FVector3 BestNormal{};
+    bool Found = false;
+    auto Consider = [&](const TerrainInstance& Instance, float SampleX, float SampleZ)
+    {
+        float Height = 0.0f;
+        FVector3 Normal{};
+        if (!TerrainSampleAtInstance(Instance, Config.TileSize, SampleX, SampleZ, ReferenceY, true, Height, &Normal))
+        {
+            return false;
+        }
+        const float OffsetX = SampleX - WorldX;
+        const float OffsetZ = SampleZ - WorldZ;
+        if (OffsetX != 0.0f || OffsetZ != 0.0f)
+        {
+            if (std::abs(Normal.Y) <= 0.05f)
+            {
+                return false;
+            }
+            const float ProjectedHeight = Height + (Normal.X * OffsetX + Normal.Z * OffsetZ) / Normal.Y;
+            if (std::abs(ProjectedHeight - Height) > (std::max)(Config.CollisionSkin * 2.0f, 0.05f))
+            {
+                return false;
+            }
+            Height = ProjectedHeight;
+        }
+        const float Distance = std::abs(Height - ReferenceY);
+        if (Found && Distance > BestDistance + 0.0001f)
+        {
+            return true;
+        }
+        if (Found && std::abs(Distance - BestDistance) <= 0.0001f && Height >= BestHeight)
+        {
+            return true;
+        }
+        BestHeight = Height;
+        BestDistance = Distance;
+        BestNormal = Normal;
+        Found = true;
+        return true;
+    };
+    auto Sample = [&](float SampleX, float SampleZ)
+    {
+        const int TileX = TerrainTileCoord(SampleX, Config.TileSize);
+        const int TileZ = TerrainTileCoord(SampleZ, Config.TileSize);
+        auto SampleTile = [&](int OffsetX, int OffsetZ)
+        {
+            if (auto It = TerrainInstanceLookup.find(TerrainTileKey(TileX + OffsetX, TileZ + OffsetZ)); It != TerrainInstanceLookup.end())
+            {
+                return Consider(It->second, SampleX, SampleZ);
+            }
+            return false;
+        };
+        const bool PrimaryFound = SampleTile(0, 0);
+        const float LocalX = SampleX - static_cast<float>(TileX) * Config.TileSize;
+        const float LocalZ = SampleZ - static_cast<float>(TileZ) * Config.TileSize;
+        const float Seam = (std::max)(Config.CollisionSkin, 0.01f);
+        const int MinOffsetX = !PrimaryFound || LocalX <= Seam ? -1 : 0;
+        const int MaxOffsetX = !PrimaryFound || LocalX >= Config.TileSize - Seam ? 1 : 0;
+        const int MinOffsetZ = !PrimaryFound || LocalZ <= Seam ? -1 : 0;
+        const int MaxOffsetZ = !PrimaryFound || LocalZ >= Config.TileSize - Seam ? 1 : 0;
+        for (int OffsetZ = MinOffsetZ; OffsetZ <= MaxOffsetZ; ++OffsetZ)
+        {
+            for (int OffsetX = MinOffsetX; OffsetX <= MaxOffsetX; ++OffsetX)
+            {
+                if (OffsetX != 0 || OffsetZ != 0)
+                {
+                    SampleTile(OffsetX, OffsetZ);
+                }
+            }
+        }
+    };
+    Sample(WorldX, WorldZ);
+    if (!Found)
+    {
+        const float Probe = std::clamp(Config.CollisionSkin * 0.25f, 0.002f, 0.01f);
+        Sample(WorldX + Probe, WorldZ);
+        Sample(WorldX - Probe, WorldZ);
+        Sample(WorldX, WorldZ + Probe);
+        Sample(WorldX, WorldZ - Probe);
+    }
+    if (!Found)
+    {
+        for (const auto& Instance : TerrainInstances)
+        {
+            Consider(Instance, WorldX, WorldZ);
+        }
+    }
+    if (!Found)
+    {
+        return false;
+    }
+    OutHeight = BestHeight;
+    OutNormal = BestNormal;
+    return true;
+}
+
 bool FD3D9GameWorldScene::Impl::TerrainSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const
 {
     const int tileX = TerrainTileCoord(WorldX, Config.TileSize);
@@ -1010,7 +1209,7 @@ void FD3D9GameWorldScene::Impl::UpdateWaterWaves(TerrainResource* resource, floa
     {
         WorldVertex v = resource->WaterCpuVerts[i];
         const float phase = (OriginX + v.X) * kx + (OriginZ + v.Z) * kz + TimePhase;
-        v.Y = resource->WaterHeight + (std::sin(phase) + Config.WaveAmp) * Config.WaveScale;
+        v.Y += std::sin(phase) * Config.WaveAmp * Config.WaveScale;
         out[i] = v;
     }
     resource->WaterVertexBuffer->Unlock();
@@ -1021,7 +1220,7 @@ void FD3D9GameWorldScene::Impl::DrawWater()
     bool any = false;
     for (const auto& instance : TerrainInstances)
     {
-        if (instance.resource && instance.resource->WaterIndexCount > 0 && instance.resource->WaterVertexBuffer && instance.resource->WaterIndexBuffer && IsBoundsVisibleToCamera(TranslatedTerrainBounds(instance), Config.TileSize * 0.1f))
+        if (instance.resource && instance.resource->WaterIndexCount > 0 && instance.resource->WaterVertexBuffer && instance.resource->WaterIndexBuffer && IsBoundsVisibleToCamera(TranslatedWaterBounds(instance, std::abs(Config.WaveAmp * Config.WaveScale)), Config.TileSize * 0.02f))
         {
             any = true;
             break;
@@ -1088,7 +1287,7 @@ void FD3D9GameWorldScene::Impl::DrawWater()
         {
             continue;
         }
-        if (!IsBoundsVisibleToCamera(TranslatedTerrainBounds(instance), Config.TileSize * 0.1f))
+        if (!IsBoundsVisibleToCamera(TranslatedWaterBounds(instance, std::abs(Config.WaveAmp * Config.WaveScale)), Config.TileSize * 0.02f))
         {
             continue;
         }

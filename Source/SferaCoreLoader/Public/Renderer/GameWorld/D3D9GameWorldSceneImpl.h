@@ -91,22 +91,13 @@ struct FD3D9GameWorldScene::Impl
     std::vector<StaticPlacementModel> StaticPlacementModels;
     std::vector<StaticPlacement> StaticPlacements;
     std::vector<StaticInstance> StaticInstances;
-    std::vector<ModelCollisionProxy> ModelCollisionProxies;
-    std::unordered_map<uint64, std::vector<std::size_t>> ModelCollisionProxyCells;
-    uint64 ModelCollisionSourceGeneration = 0;
-    std::thread CollisionWorkerThread;
-    std::mutex CollisionWorkerMutex;
-    std::condition_variable CollisionWorkerCv;
-    bool CollisionWorkerStop = false;
-    bool CollisionWorkerStarted = false;
-    bool CollisionWorkerRequestPending = false;
-    bool CollisionWorkerRebuildSource = false;
-    uint64 CollisionWorkerPendingGeneration = 0;
-    float CollisionWorkerPendingFocusX = 0.0f;
-    float CollisionWorkerPendingFocusZ = 0.0f;
-    std::vector<ModelCollisionWorkerInstance> CollisionWorkerPendingInstances;
-    mutable std::mutex ActiveCollisionSnapshotMutex;
-    std::shared_ptr<const PreparedModelCollisionSnapshot> ActiveCollisionSnapshot;
+    std::vector<StaticCollisionInstance> StaticCollisionInstances;
+    std::unordered_map<uint64, std::vector<std::size_t>> StaticCollisionCells;
+    std::vector<std::size_t> LargeStaticCollisionInstances;
+    mutable std::vector<uint32> StaticCollisionVisitMarks;
+    mutable uint32 StaticCollisionVisitGeneration = 0;
+    mutable std::vector<std::size_t> StaticCollisionInstanceScratch;
+    mutable std::vector<uint32> StaticCollisionTriangleScratch;
     std::vector<std::size_t> VisibleStaticPlacementIndices;
     std::vector<uint64> VisibleStaticRenderCells;
     std::unordered_map<uint64, std::vector<std::size_t>> StaticPlacementIndicesByRenderCell;
@@ -144,6 +135,7 @@ struct FD3D9GameWorldScene::Impl
     float VelocityX = 0.0f;
     float VelocityZ = 0.0f;
     bool Grounded = true;
+    bool PlayerCollisionNeedsRecovery = false;
     float SpawnZ = 0.0f;
     float SpawnAngle = 0.0f;
     float CameraYaw = 0.0f;
@@ -249,23 +241,15 @@ struct FD3D9GameWorldScene::Impl
     void EndBaseShader();
     void ConfigureRenderState();
     bool TerrainHeightAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight) const;
+    bool TerrainSurfaceNearAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight, FVector3& OutNormal) const;
     bool TerrainSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const;
     bool FlatGrassSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const;
     void SnapToGround();
-    void RebuildModelCollisionProxies();
-    void StartCollisionWorker();
-    void StopCollisionWorker();
-    void CollisionWorkerMain();
-    void QueueCollisionWorkerRebuild();
-    void RequestCollisionSnapshotAround(float CenterX, float CenterZ);
-    std::shared_ptr<const PreparedModelCollisionSnapshot> GetActiveCollisionSnapshot(FBox2 area) const;
-    std::vector<std::size_t> QueryModelCollisionProxies(FBox2 area) const;
-    bool CollidesWithModelContacts(float fromX, float fromZ, float x, float y, float z) const;
-    bool CollidesWithModelContactsSwept(float fromX, float fromY, float fromZ, float toX, float toY, float toZ, bool includeWalkableSurfaces) const;
-    bool CollidesWithStatic(float x, float y, float z) const;
-    bool HasContourCollision() const;
-    bool CollidesWithContours(float fromX, float fromZ, float toX, float toZ, float radius) const;
-    static float PointSegmentDistanceSquared2D(float px, float pz, FVector2 a, FVector2 b);
+    void RebuildStaticCollisionIndex();
+    void QueryStaticCollisionInstances(const FBox3& Area, std::vector<std::size_t>& OutInstances) const;
+    void QueryStaticCollisionTriangles(const StaticCollisionInstance& Instance, const FBox3& Area, std::vector<uint32>& OutTriangles) const;
+    bool CapsuleOverlapsStatic(float X, float FeetY, float Z, FGameWorldCollisionHit* OutHit = nullptr, bool IgnoreSupportingFloor = true) const;
+    bool RecoverFromPenetration();
     static bool PointInTriangleXz(float px, float pz, const FVector3& a, const FVector3& b, const FVector3& c);
     bool StaticFloorHeightAt(
         float x,
@@ -275,8 +259,7 @@ struct FD3D9GameWorldScene::Impl
         float& OutY,
         FVector3* OutNormal = nullptr) const;
     bool SupportHeightAt(float x, float z, float FeetY, float& OutY, FVector3* OutNormal = nullptr) const;
-    bool TryMoveTo(float x, float z);
-    bool TryMoveTo(float x, float z, float fromY, float toY);
+    bool TryMoveTo(float x, float z, FGameWorldCollisionHit* OutHit = nullptr);
     void Jump();
     void ApplySlopeSlide(float DeltaSeconds);
     void UpdateVertical(float DeltaSeconds);

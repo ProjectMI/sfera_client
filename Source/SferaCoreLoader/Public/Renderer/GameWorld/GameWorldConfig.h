@@ -84,9 +84,13 @@ struct FGameWorldConfig
     float PlayerCollisionRadius = 0.32f;
     float PlayerCollisionHeight = 1.8f;
     float MaxStepHeight = 0.6f;
-    float MovementCollisionStep = 0.2f;
-    float CollisionFloorNormalThreshold = 0.2f;
-    float SlopeSlideNormalY = 0.72f;
+    float GroundSnapHeight = 0.45f;
+    float MovementCollisionStep = 0.12f;
+    float MaxMovementDeltaSeconds = 0.10f;
+    float MaxSimulationStepSeconds = 0.0333333f;
+    float CollisionSkin = 0.025f;
+    float CollisionFloorNormalThreshold = 0.65f;
+    float SlopeSlideNormalY = 0.65f;
     float SlopeSlideFactor = 0.6f;
     float JumpImpulse = -5.0f;
     float JumpGravity = 9.8f;

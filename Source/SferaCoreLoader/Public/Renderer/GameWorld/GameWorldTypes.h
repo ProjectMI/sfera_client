@@ -18,7 +18,7 @@ constexpr float kPi = 3.14159265358979323846f;
 constexpr std::size_t kPlayerIdleAction = 20;
 constexpr float kPlayerAnimSecondsPerFrame = 0.08f;
 constexpr float kEyeBelowCrownWorld = 0.10f;
-constexpr float kEyeForwardModel = 0.36f;
+constexpr float kPlayerVisualBackShift = 0.36f;
 constexpr float kIdleBodyBackShift = 0.0f;
 constexpr float kWalkBodyBackShift = 0.22f;
 constexpr float kRunBodyBackShift = 0.5f;
@@ -67,6 +67,7 @@ struct TerrainCpuResource
     int TextureHeight = 0;
     std::vector<uint16> TexturePixels;
     FBox3 Bounds{};
+    FBox3 WaterBounds{};
     float WaterHeight = 0.0f;
     bool HasWater = false;
 };
@@ -95,6 +96,7 @@ struct TerrainResource
     int TextureHeight = 0;
     std::vector<uint16> TexturePixels;
     FBox3 Bounds{};
+    FBox3 WaterBounds{};
 };
 
 struct TerrainInstance
@@ -104,14 +106,43 @@ struct TerrainInstance
     float OriginZ = 0.0f;
 };
 
+struct StaticCollisionTriangle
+{
+    FVector3 A{};
+    FVector3 B{};
+    FVector3 C{};
+    FVector3 Center{};
+    FBox3 Bounds{};
+};
+
+struct StaticCollisionBvhNode
+{
+    FBox3 Bounds{};
+    uint32 First = 0;
+    uint32 Count = 0;
+    uint32 Left = 0;
+    uint32 Right = 0;
+
+    bool IsLeaf() const
+    {
+        return Count != 0;
+    }
+};
+
+struct StaticCollisionMesh
+{
+    std::vector<StaticCollisionTriangle> Triangles;
+    std::vector<uint32> TriangleOrder;
+    std::vector<StaticCollisionBvhNode> Nodes;
+};
+
 struct StaticModelResource
 {
     IDirect3DVertexBuffer9* VertexBuffer = nullptr;
     IDirect3DIndexBuffer9* IndexBuffer = nullptr;
     UINT VertexCount = 0;
     std::vector<FSceneBatch> Batches;
-    std::vector<FVector3> CollisionPositions;
-    std::vector<uint16> CollisionIndices;
+    std::shared_ptr<const StaticCollisionMesh> CollisionMesh;
     std::vector<WorldVertex> CpuVertices;
     std::vector<uint16> CpuIndices;
     FBox3 Bounds;
@@ -161,49 +192,22 @@ struct StaticInstance
     FBox3 Bounds;
 };
 
-struct ModelCollisionProxy
-{
-    FBox3 Bounds;
-    std::size_t InstanceIndex = 0;
-    float CenterX = 0.0f;
-    float CenterZ = 0.0f;
-    float Radius = 0.0f;
-    bool Capsule2D = false;
-    bool SkinnedActor = false;
-};
-
-struct ModelCollisionWorkerInstance
+struct StaticCollisionInstance
 {
     StaticModelResource* Resource = nullptr;
     D3DMATRIX World{};
-    FBox3 Bounds{};
-    ModelCollisionProxy Proxy{};
-};
-
-struct PreparedModelCollisionTriangle
-{
-    FVector3 A{};
-    FVector3 B{};
-    FVector3 C{};
-    FVector3 Normal{};
-    FBox3 Bounds{};
-    bool Walkable = false;
-};
-
-struct PreparedModelCollisionCapsule
-{
+    D3DMATRIX InverseWorld{};
     FBox3 Bounds{};
     float CenterX = 0.0f;
     float CenterZ = 0.0f;
     float Radius = 0.0f;
+    bool Capsule = false;
 };
 
-struct PreparedModelCollisionSnapshot
+struct FGameWorldCollisionHit
 {
-    uint64 SourceGeneration = 0;
-    FBox2 Area{};
-    std::vector<PreparedModelCollisionTriangle> Triangles;
-    std::vector<PreparedModelCollisionCapsule> Capsules;
+    FVector3 Normal{};
+    float Penetration = 0.0f;
 };
 
 struct StaticPlacementLoadResult

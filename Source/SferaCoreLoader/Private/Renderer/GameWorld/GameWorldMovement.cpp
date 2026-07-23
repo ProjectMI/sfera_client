@@ -4,10 +4,12 @@
 
 void FD3D9GameWorldScene::Impl::SnapToGround()
 {
-    float height = 0.0f;
-    if (TerrainHeightAt(SpawnX, SpawnZ, SpawnY, height))
+    float GroundY = SpawnY;
+    if (SupportHeightAt(SpawnX, SpawnZ, SpawnY, GroundY))
     {
-        SpawnY = height;
+        SpawnY = GroundY;
+        VelocityY = 0.0f;
+        Grounded = true;
     }
 }
 
@@ -17,12 +19,10 @@ void FD3D9GameWorldScene::Impl::SetPlayerWorldPosition(const FGameWorldPosition&
     {
         return;
     }
-
     if (std::abs(Position.X) > 20000.0 || std::abs(Position.Y) > 20000.0 || std::abs(Position.Z) > 20000.0)
     {
         return;
     }
-
     SpawnX = static_cast<float>(Position.X);
     SpawnY = static_cast<float>(Position.Y);
     SpawnZ = static_cast<float>(Position.Z);
@@ -31,8 +31,9 @@ void FD3D9GameWorldScene::Impl::SetPlayerWorldPosition(const FGameWorldPosition&
     VelocityX = 0.0f;
     VelocityY = 0.0f;
     VelocityZ = 0.0f;
-    Grounded = true;
-
+    Grounded = false;
+    PlayerCollisionNeedsRecovery = true;
+    SnapToGround();
     TerrainCenterRow = -1;
     TerrainCenterColumn = -1;
     StreamingGuardRow = (std::numeric_limits<int>::min)();
@@ -43,127 +44,230 @@ void FD3D9GameWorldScene::Impl::SetPlayerWorldPosition(const FGameWorldPosition&
     GrassCenterZ = (std::numeric_limits<int>::min)();
 }
 
-bool FD3D9GameWorldScene::Impl::SupportHeightAt(float x, float z, float FeetY, float& OutY, FVector3* OutNormal) const
+bool FD3D9GameWorldScene::Impl::SupportHeightAt(float X, float Z, float FeetY, float& OutY, FVector3* OutNormal) const
 {
-    const float ReachUp = FeetY - Config.MaxStepHeight;
-    const float ReachDown = FeetY + Config.MaxStepHeight;
-    bool found = false;
-    float floor = 0.0f;
-    FVector3 normal{0.0f, -1.0f, 0.0f};
-    float terrain = 0.0f;
-    FVector3 TerrainNormal{};
-    if (TerrainSurfaceAt(x, z, terrain, TerrainNormal) && terrain >= ReachUp && terrain <= ReachDown)
+    const float MinY = FeetY - Config.MaxStepHeight;
+    const float MaxY = FeetY + Config.GroundSnapHeight;
+    bool Found = false;
+    float BestY = MaxY;
+    FVector3 BestNormal{0.0f, 1.0f, 0.0f};
+    auto ConsiderSupport = [&](float Height, const FVector3& Normal)
     {
-        floor = terrain;
-        normal = TerrainNormal;
-        found = true;
-    }
-    float obj = 0.0f;
-    FVector3 ObjNormal{};
-    if (StaticFloorHeightAt(x, z, ReachUp, ReachDown, obj, &ObjNormal) && (!found || obj < floor))
-    {
-        floor = obj;  // stand on the object surface (higher than terrain)
-        normal = ObjNormal;
-        found = true;
-    }
-    if (found)
-    {
-        OutY = floor;
-        if (OutNormal)
+        if (Found && Height >= BestY)
         {
-            *OutNormal = normal;
+            return;
         }
+        Found = true;
+        BestY = Height;
+        BestNormal = Normal;
+    };
+    float TerrainY = 0.0f;
+    FVector3 TerrainNormal{};
+    if (TerrainSurfaceNearAt(X, Z, FeetY, TerrainY, TerrainNormal) && TerrainY >= MinY && TerrainY <= MaxY)
+    {
+        ConsiderSupport(TerrainY, TerrainNormal);
     }
-    return found;
-}
-
-bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z)
-{
-    return TryMoveTo(x, z, SpawnY, SpawnY);
-}
-
-bool FD3D9GameWorldScene::Impl::TryMoveTo(float x, float z, float fromY, float toY)
-{
-    const bool contoursReady = HasContourCollision();
-    if (CollidesWithContours(SpawnX, SpawnZ, x, z, Config.PlayerCollisionRadius))
+    float StaticY = 0.0f;
+    FVector3 StaticNormal{};
+    if (StaticFloorHeightAt(X, Z, MinY, MaxY, StaticY, &StaticNormal))
+    {
+        ConsiderSupport(StaticY, StaticNormal);
+    }
+    if (!Found)
     {
         return false;
     }
-
-    if (Grounded)
+    OutY = BestY;
+    if (OutNormal)
     {
-        float GroundY = 0.0f;
-        if (!SupportHeightAt(x, z, SpawnY, GroundY))
-        {
-            if (CollidesWithModelContacts(SpawnX, SpawnZ, x, SpawnY, z))
-            {
-                VelocityY = (std::max)(VelocityY, 0.0f);
-                Grounded = false;
-                return false;
-            }
-            if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
-            {
-                VelocityY = (std::max)(VelocityY, 0.0f);
-                Grounded = false;
-                return false;
-            }
-            SpawnX = x;
-            SpawnZ = z;
-            VelocityY = (std::max)(VelocityY, 0.0f);
-            Grounded = false;
-            return true;
-        }
+        *OutNormal = BestNormal;
+    }
+    return true;
+}
 
-        const float deltaY = GroundY - SpawnY;
-        if (deltaY < -Config.MaxStepHeight)
+bool FD3D9GameWorldScene::Impl::TryMoveTo(float X, float Z, FGameWorldCollisionHit* OutHit)
+{
+    const float StartX = SpawnX;
+    const float StartY = SpawnY;
+    const float StartZ = SpawnZ;
+    const float DeltaX = X - StartX;
+    const float DeltaZ = Z - StartZ;
+    const float DistanceSquared = DeltaX * DeltaX + DeltaZ * DeltaZ;
+    FGameWorldCollisionHit BlockingHit{};
+    bool HasBlockingHit = false;
+    auto RememberHit = [&](const FGameWorldCollisionHit& Hit)
+    {
+        if (!HasBlockingHit || Hit.Penetration > BlockingHit.Penetration)
+        {
+            BlockingHit = Hit;
+            HasBlockingHit = true;
+        }
+    };
+    auto TerrainPenetrates = [&](float FeetY, bool IgnoreRisingWalkableSupport, FGameWorldCollisionHit* Hit)
+    {
+        float TerrainY = 0.0f;
+        FVector3 TerrainNormal{};
+        if (!TerrainSurfaceNearAt(X, Z, FeetY, TerrainY, TerrainNormal) || FeetY <= TerrainY + Config.CollisionSkin)
         {
             return false;
         }
-        if (deltaY > Config.MaxStepHeight)
+        const float Penetration = FeetY - TerrainY;
+        const bool Walkable = std::abs(TerrainNormal.Y) >= Config.CollisionFloorNormalThreshold;
+        const float RisingAllowance = Config.CollisionSkin + (std::max)(0.0f, -VelocityY) * Config.MaxSimulationStepSeconds;
+        if (IgnoreRisingWalkableSupport && VelocityY < 0.0f && Walkable && Penetration <= RisingAllowance)
         {
-            if (CollidesWithModelContacts(SpawnX, SpawnZ, x, SpawnY, z))
+            return false;
+        }
+        if (Hit)
+        {
+            Hit->Normal = FVector3{TerrainNormal.X, 0.0f, TerrainNormal.Z};
+            Hit->Penetration = Penetration;
+        }
+        return true;
+    };
+    auto VerticalPathClear = [&](float PathX, float PathZ, float FromY, float ToY, FGameWorldCollisionHit* Hit)
+    {
+        const float Distance = std::abs(ToY - FromY);
+        const float StepSize = (std::max)(0.05f, (std::min)(Config.MovementCollisionStep, Config.PlayerCollisionRadius * 0.5f));
+        const int StepCount = (std::max)(1, static_cast<int>(std::ceil(Distance / StepSize)));
+        for (int Step = 1; Step <= StepCount; ++Step)
+        {
+            const float CandidateY = FromY + (ToY - FromY) * static_cast<float>(Step) / static_cast<float>(StepCount);
+            if (CapsuleOverlapsStatic(PathX, CandidateY, PathZ, Hit, true))
             {
-                VelocityY = (std::max)(VelocityY, 0.0f);
-                Grounded = false;
                 return false;
             }
-            if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
+        }
+        return true;
+    };
+    auto CommitGrounded = [&](float FeetY)
+    {
+        SpawnX = X;
+        SpawnY = FeetY;
+        SpawnZ = Z;
+        VelocityY = 0.0f;
+        Grounded = true;
+        return true;
+    };
+    if (!Grounded)
+    {
+        FGameWorldCollisionHit Hit{};
+        if (TerrainPenetrates(StartY, true, &Hit) || CapsuleOverlapsStatic(X, StartY, Z, &Hit, true))
+        {
+            if (OutHit)
             {
-                VelocityY = (std::max)(VelocityY, 0.0f);
-                Grounded = false;
-                return false;
+                *OutHit = Hit;
             }
-            SpawnX = x;
-            SpawnZ = z;
-            VelocityY = (std::max)(VelocityY, 0.0f);
-            Grounded = false;
-            return true;
-        }
-        if (CollidesWithModelContacts(SpawnX, SpawnZ, x, GroundY, z))
-        {
             return false;
         }
-        if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, GroundY, z))
-        {
-            return false;
-        }
-        SpawnX = x;
-        SpawnY = GroundY;
-        SpawnZ = z;
+        SpawnX = X;
+        SpawnZ = Z;
         return true;
     }
-
-    if (CollidesWithModelContactsSwept(SpawnX, fromY, SpawnZ, x, toY, z, true))
+    float SupportY = StartY;
+    FVector3 SupportNormal{0.0f, 1.0f, 0.0f};
+    const bool HasSupport = SupportHeightAt(X, Z, StartY, SupportY, &SupportNormal);
+    const bool HasWalkableSupport = HasSupport && std::abs(SupportNormal.Y) >= Config.CollisionFloorNormalThreshold;
+    if (HasSupport)
     {
-        return false;
+        const float Rise = StartY - SupportY;
+        const float Drop = SupportY - StartY;
+        if (HasWalkableSupport && Rise <= Config.MaxStepHeight + Config.CollisionSkin && Drop <= Config.GroundSnapHeight + Config.CollisionSkin)
+        {
+            FGameWorldCollisionHit Hit{};
+            if (!TerrainPenetrates(SupportY, false, &Hit) && !CapsuleOverlapsStatic(X, SupportY, Z, &Hit, true))
+            {
+                return CommitGrounded(SupportY);
+            }
+            RememberHit(Hit);
+        }
+        if (!HasWalkableSupport)
+        {
+            FGameWorldCollisionHit SlopeHit{};
+            SlopeHit.Normal = FVector3{SupportNormal.X, 0.0f, SupportNormal.Z};
+            SlopeHit.Penetration = Config.CollisionSkin;
+            RememberHit(SlopeHit);
+        }
+        if (SupportY > StartY + Config.CollisionSkin)
+        {
+            FGameWorldCollisionHit StepDownHit{};
+            if (!TerrainPenetrates(StartY, false, &StepDownHit) && !CapsuleOverlapsStatic(X, StartY, Z, &StepDownHit, true))
+            {
+                SpawnX = X;
+                SpawnZ = Z;
+                VelocityY = 0.0f;
+                return true;
+            }
+            RememberHit(StepDownHit);
+        }
     }
-    if (!contoursReady && ModelCollisionProxies.empty() && CollidesWithStatic(x, SpawnY, z))
+    if (DistanceSquared > 0.0000001f)
     {
-        return false;
+        const float Distance = std::sqrt(DistanceSquared);
+        const float DirectionX = DeltaX / Distance;
+        const float DirectionZ = DeltaZ / Distance;
+        const float LiftY = StartY - Config.MaxStepHeight - Config.CollisionSkin;
+        FGameWorldCollisionHit LiftHit{};
+        if (VerticalPathClear(StartX, StartZ, StartY, LiftY, &LiftHit) && !CapsuleOverlapsStatic(X, LiftY, Z, &LiftHit, true))
+        {
+            bool FoundStep = false;
+            float StepY = StartY;
+            float BestRise = (std::numeric_limits<float>::max)();
+            const float ProbeRadius = (std::max)(Config.PlayerCollisionRadius - Config.CollisionSkin, 0.05f);
+            for (int ProbeIndex = 1; ProbeIndex <= 4; ++ProbeIndex)
+            {
+                const float ProbeDistance = ProbeRadius * (0.25f + static_cast<float>(ProbeIndex) * 0.22f);
+                const float ProbeX = X + DirectionX * ProbeDistance;
+                const float ProbeZ = Z + DirectionZ * ProbeDistance;
+                float CandidateY = StartY;
+                FVector3 CandidateNormal{};
+                if (!SupportHeightAt(ProbeX, ProbeZ, StartY, CandidateY, &CandidateNormal) || std::abs(CandidateNormal.Y) < Config.CollisionFloorNormalThreshold)
+                {
+                    continue;
+                }
+                const float Rise = StartY - CandidateY;
+                if (Rise < -Config.CollisionSkin || Rise > Config.MaxStepHeight + Config.CollisionSkin || Rise >= BestRise)
+                {
+                    continue;
+                }
+                FGameWorldCollisionHit StepHit{};
+                if (TerrainPenetrates(CandidateY, false, &StepHit) || CapsuleOverlapsStatic(X, CandidateY, Z, &StepHit, true))
+                {
+                    RememberHit(StepHit);
+                    continue;
+                }
+                FoundStep = true;
+                StepY = CandidateY;
+                BestRise = Rise;
+            }
+            if (FoundStep)
+            {
+                return CommitGrounded(StepY);
+            }
+        }
+        else
+        {
+            RememberHit(LiftHit);
+        }
     }
-    SpawnX = x;
-    SpawnZ = z;
-    return true;
+    if (!HasSupport)
+    {
+        FGameWorldCollisionHit Hit{};
+        if (!TerrainPenetrates(StartY, false, &Hit) && !CapsuleOverlapsStatic(X, StartY, Z, &Hit, true))
+        {
+            SpawnX = X;
+            SpawnZ = Z;
+            Grounded = false;
+            VelocityY = (std::max)(VelocityY, 0.0f);
+            return true;
+        }
+        RememberHit(Hit);
+    }
+    if (OutHit)
+    {
+        *OutHit = BlockingHit;
+    }
+    return false;
 }
 
 void FD3D9GameWorldScene::Impl::Jump()
@@ -181,151 +285,292 @@ void FD3D9GameWorldScene::Impl::ApplySlopeSlide(float DeltaSeconds)
     {
         return;
     }
-    float FloorY = 0.0f;
-    FVector3 n{};
-    if (!SupportHeightAt(SpawnX, SpawnZ, SpawnY, FloorY, &n))
-    {
-        VelocityY = (std::max)(VelocityY, 0.0f);
-        Grounded = false;
-        return;
-    }
-    if (FloorY - SpawnY > Config.MaxStepHeight)
-    {
-        VelocityY = (std::max)(VelocityY, 0.0f);
-        Grounded = false;
-        return;
-    }
-    const float ny = std::abs(n.Y);
-    if (ny >= Config.SlopeSlideNormalY || ny <= 0.0001f)
-    {
-        return;  // gentle enough to stand on (or degenerate)
-    }
-    const float g = Config.JumpGravity;
-    const float tx = -g * n.Y * n.X;
-    const float tz = -g * n.Y * n.Z;
-    const float hlen = std::sqrt(tx * tx + tz * tz);
-    if (hlen < 1e-4f)
+    float TerrainY = 0.0f;
+    FVector3 Normal{};
+    if (!TerrainSurfaceNearAt(SpawnX, SpawnZ, SpawnY, TerrainY, Normal))
     {
         return;
     }
-    const float speed = g * std::sqrt((std::max)(0.0f, 1.0f - ny * ny)) * Config.SlopeSlideFactor;
-    const float disp = speed * DeltaSeconds;
-    TryMoveTo(SpawnX + (tx / hlen) * disp, SpawnZ + (tz / hlen) * disp);
+    const float NormalY = std::abs(Normal.Y);
+    if (NormalY >= Config.SlopeSlideNormalY || NormalY <= 0.0001f)
+    {
+        return;
+    }
+    const float DownhillX = -Normal.X / NormalY;
+    const float DownhillZ = -Normal.Z / NormalY;
+    const float HorizontalLength = std::sqrt(DownhillX * DownhillX + DownhillZ * DownhillZ);
+    if (HorizontalLength <= 0.0001f)
+    {
+        return;
+    }
+    const float SlopeStrength = std::sqrt((std::max)(0.0f, 1.0f - NormalY * NormalY));
+    const float Distance = Config.JumpGravity * SlopeStrength * Config.SlopeSlideFactor * DeltaSeconds;
+    TryMoveTo(SpawnX + DownhillX / HorizontalLength * Distance, SpawnZ + DownhillZ / HorizontalLength * Distance);
 }
 
 void FD3D9GameWorldScene::Impl::UpdateVertical(float DeltaSeconds)
 {
-    if (Grounded || DeltaSeconds <= 0.0f)
+    if (DeltaSeconds <= 0.0f)
     {
         return;
     }
-    VelocityY += Config.JumpGravity * DeltaSeconds;
-    const float PrevY = SpawnY;
-    SpawnY += VelocityY * DeltaSeconds;
-    if (VelocityY < 0.0f)
+    if (Grounded)
     {
-        return;  // still rising (Jump apex not reached); can't land
+        float GroundY = SpawnY;
+        if (SupportHeightAt(SpawnX, SpawnZ, SpawnY, GroundY))
+        {
+            if (!CapsuleOverlapsStatic(SpawnX, GroundY, SpawnZ, nullptr, true))
+            {
+                SpawnY = GroundY;
+                VelocityY = 0.0f;
+                return;
+            }
+            if (!CapsuleOverlapsStatic(SpawnX, SpawnY, SpawnZ, nullptr, true))
+            {
+                VelocityY = 0.0f;
+                return;
+            }
+        }
+        Grounded = false;
     }
-    float floor = 0.0f;
-    bool found = TerrainHeightAt(SpawnX, SpawnZ, SpawnY, floor);
-    float obj = 0.0f;
-    if (StaticFloorHeightAt(SpawnX, SpawnZ, PrevY - 0.05f, SpawnY + 0.05f, obj) &&
-    (!found || obj < floor))
+    const float PreviousY = SpawnY;
+    const float NewVelocityY = VelocityY + Config.JumpGravity * DeltaSeconds;
+    const float TargetY = SpawnY + (VelocityY + NewVelocityY) * 0.5f * DeltaSeconds;
+    if (NewVelocityY < 0.0f)
     {
-        floor = obj;
-        found = true;
+        const float Distance = std::abs(TargetY - PreviousY);
+        const float StepSize = (std::max)(0.05f, (std::min)(Config.MovementCollisionStep, Config.PlayerCollisionRadius * 0.5f));
+        const int StepCount = (std::max)(1, static_cast<int>(std::ceil(Distance / StepSize)));
+        float SafeY = PreviousY;
+        for (int Step = 1; Step <= StepCount; ++Step)
+        {
+            const float CandidateY = PreviousY + (TargetY - PreviousY) * static_cast<float>(Step) / static_cast<float>(StepCount);
+            if (!CapsuleOverlapsStatic(SpawnX, CandidateY, SpawnZ, nullptr, true))
+            {
+                SafeY = CandidateY;
+                continue;
+            }
+            float Low = SafeY;
+            float High = CandidateY;
+            for (int Iteration = 0; Iteration < 6; ++Iteration)
+            {
+                const float Middle = (Low + High) * 0.5f;
+                if (CapsuleOverlapsStatic(SpawnX, Middle, SpawnZ, nullptr, true))
+                {
+                    High = Middle;
+                }
+                else
+                {
+                    Low = Middle;
+                }
+            }
+            SpawnY = Low;
+            VelocityY = 0.0f;
+            return;
+        }
+        SpawnY = TargetY;
+        VelocityY = NewVelocityY;
+        return;
     }
-    if (found && SpawnY >= floor)
+    bool FoundFloor = false;
+    float FloorY = TargetY;
+    float TerrainY = 0.0f;
+    FVector3 TerrainNormal{};
+    if (TerrainSurfaceNearAt(SpawnX, SpawnZ, PreviousY, TerrainY, TerrainNormal) && PreviousY > TerrainY + Config.CollisionSkin)
     {
-        SpawnY = floor;
+        SpawnY = TerrainY;
         VelocityY = 0.0f;
         Grounded = true;
+        return;
     }
+    const float MinFloorY = PreviousY - Config.CollisionSkin;
+    const float MaxFloorY = TargetY + Config.CollisionSkin;
+    if (TerrainSurfaceNearAt(SpawnX, SpawnZ, PreviousY, TerrainY, TerrainNormal) && TerrainY >= MinFloorY && TerrainY <= MaxFloorY)
+    {
+        FoundFloor = true;
+        FloorY = TerrainY;
+    }
+    float StaticY = 0.0f;
+    if (StaticFloorHeightAt(SpawnX, SpawnZ, MinFloorY, MaxFloorY, StaticY) && (!FoundFloor || StaticY < FloorY))
+    {
+        FoundFloor = true;
+        FloorY = StaticY;
+    }
+    if (FoundFloor && !CapsuleOverlapsStatic(SpawnX, FloorY, SpawnZ, nullptr, true))
+    {
+        SpawnY = FloorY;
+        VelocityY = 0.0f;
+        Grounded = true;
+        return;
+    }
+    const float Distance = TargetY - PreviousY;
+    const float StepSize = (std::max)(0.05f, (std::min)(Config.MovementCollisionStep, Config.PlayerCollisionRadius * 0.5f));
+    const int StepCount = (std::max)(1, static_cast<int>(std::ceil(std::abs(Distance) / StepSize)));
+    float SafeY = PreviousY;
+    for (int Step = 1; Step <= StepCount; ++Step)
+    {
+        const float CandidateY = PreviousY + Distance * static_cast<float>(Step) / static_cast<float>(StepCount);
+        FGameWorldCollisionHit Hit{};
+        if (!CapsuleOverlapsStatic(SpawnX, CandidateY, SpawnZ, &Hit, false))
+        {
+            SafeY = CandidateY;
+            continue;
+        }
+        float Low = SafeY;
+        float High = CandidateY;
+        for (int Iteration = 0; Iteration < 6; ++Iteration)
+        {
+            const float Middle = (Low + High) * 0.5f;
+            if (CapsuleOverlapsStatic(SpawnX, Middle, SpawnZ, nullptr, false))
+            {
+                High = Middle;
+            }
+            else
+            {
+                Low = Middle;
+            }
+        }
+        SpawnY = Low;
+        VelocityY = 0.0f;
+        Grounded = Hit.Normal.Y <= -Config.CollisionFloorNormalThreshold;
+        if (Grounded)
+        {
+            float ContactY = SpawnY;
+            if (SupportHeightAt(SpawnX, SpawnZ, SpawnY, ContactY) && !CapsuleOverlapsStatic(SpawnX, ContactY, SpawnZ, nullptr, true))
+            {
+                SpawnY = ContactY;
+            }
+        }
+        return;
+    }
+    SpawnY = TargetY;
+    VelocityY = NewVelocityY;
 }
 
-bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementInput& input, std::wstring& error)
+bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementInput& Input, std::wstring& Error)
 {
     if (!Initialized)
     {
-        error = L"game world scene is not initialized";
+        Error = L"game world scene is not initialized";
         return false;
     }
-    ElapsedSeconds += (std::max)(0.0f, DeltaSeconds);
-    SetGameTime(GameTimeFraction + (std::max)(0.0f, DeltaSeconds) * 12.0f / 86400.0f);
-    const float Forward = (input.Forward ? 1.0f : 0.0f) - (input.Backward ? 1.0f : 0.0f);
-    const float right = (input.StrafeRight ? 1.0f : 0.0f) - (input.StrafeLeft ? 1.0f : 0.0f);
-    const float InputLength = std::sqrt(Forward * Forward + right * right);
-    const bool moving = InputLength > 0.0001f && DeltaSeconds > 0.0f;
-    UpdatePlayerAnimation(DeltaSeconds, moving, input.Run);
-    {
-        UpdateNpcAnimation(DeltaSeconds);
-    }
-    RequestCollisionSnapshotAround(SpawnX, SpawnZ);
-
+    DeltaSeconds = std::clamp(DeltaSeconds, 0.0f, (std::max)(0.01f, Config.MaxMovementDeltaSeconds));
+    ElapsedSeconds += DeltaSeconds;
+    SetGameTime(GameTimeFraction + DeltaSeconds * 12.0f / 86400.0f);
+    const float Forward = (Input.Forward ? 1.0f : 0.0f) - (Input.Backward ? 1.0f : 0.0f);
+    const float Right = (Input.StrafeRight ? 1.0f : 0.0f) - (Input.StrafeLeft ? 1.0f : 0.0f);
+    const float InputLength = std::sqrt(Forward * Forward + Right * Right);
+    const bool Moving = InputLength > 0.0001f && DeltaSeconds > 0.0f;
+    UpdatePlayerAnimation(DeltaSeconds, Moving, Input.Run);
+    UpdateNpcAnimation(DeltaSeconds);
     SpawnAngle = -CameraYaw;
-
-    if (moving)
+    const int CollisionCenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
+    const int CollisionCenterColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
+    if (CollisionCenterRow != TerrainCenterRow || CollisionCenterColumn != TerrainCenterColumn)
+    {
+        try
+        {
+            LoadVisibleTerrain();
+            LoadVisibleStaticObjects();
+        }
+        catch (const std::exception& Exception)
+        {
+            AssignError(Error, std::string("game world collision streaming failed: ") + Exception.what());
+            return false;
+        }
+    }
+    if (PlayerCollisionNeedsRecovery)
+    {
+        RecoverFromPenetration();
+    }
+    if (Moving)
     {
         const float NormalizedForward = Forward / InputLength;
-        const float NormalizedRight = right / InputLength;
-        const float speed = Config.WalkSpeed * (input.Run ? Config.RunMultiplier : 1.0f);
-        VelocityX = (std::sin(CameraYaw) * NormalizedForward +
-        std::cos(CameraYaw) * NormalizedRight) * speed;
-        VelocityZ = (std::cos(CameraYaw) * NormalizedForward -
-        std::sin(CameraYaw) * NormalizedRight) * speed;
+        const float NormalizedRight = Right / InputLength;
+        const float Speed = Config.WalkSpeed * (Input.Run ? Config.RunMultiplier : 1.0f);
+        VelocityX = (std::sin(CameraYaw) * NormalizedForward + std::cos(CameraYaw) * NormalizedRight) * Speed;
+        VelocityZ = (std::cos(CameraYaw) * NormalizedForward - std::sin(CameraYaw) * NormalizedRight) * Speed;
+        const float DisplacementX = VelocityX * DeltaSeconds;
+        const float DisplacementZ = VelocityZ * DeltaSeconds;
+        const float Distance = std::sqrt(DisplacementX * DisplacementX + DisplacementZ * DisplacementZ);
+        const float CollisionStep = (std::max)(0.05f, (std::min)(Config.MovementCollisionStep, Config.PlayerCollisionRadius * 0.5f));
+        const int DistanceStepCount = (std::max)(1, static_cast<int>(std::ceil(Distance / CollisionStep)));
+        const float SimulationStepSeconds = (std::max)(0.005f, Config.MaxSimulationStepSeconds);
+        const int TimeStepCount = (std::max)(1, static_cast<int>(std::ceil(DeltaSeconds / SimulationStepSeconds)));
+        const int StepCount = (std::max)(DistanceStepCount, TimeStepCount);
+        const float StepX = DisplacementX / static_cast<float>(StepCount);
+        const float StepZ = DisplacementZ / static_cast<float>(StepCount);
+        const float StepSeconds = DeltaSeconds / static_cast<float>(StepCount);
+        for (int Step = 0; Step < StepCount; ++Step)
+        {
+            const float StartX = SpawnX;
+            const float StartZ = SpawnZ;
+            FGameWorldCollisionHit Hit;
+            bool Moved = TryMoveTo(StartX + StepX, StartZ + StepZ, &Hit);
+            if (!Moved)
+            {
+                float NormalX = Hit.Normal.X;
+                float NormalZ = Hit.Normal.Z;
+                const float NormalLength = std::sqrt(NormalX * NormalX + NormalZ * NormalZ);
+                if (NormalLength > 0.0001f)
+                {
+                    NormalX /= NormalLength;
+                    NormalZ /= NormalLength;
+                    if (NormalX * StepX + NormalZ * StepZ > 0.0f)
+                    {
+                        NormalX = -NormalX;
+                        NormalZ = -NormalZ;
+                    }
+                    const float IntoSurface = StepX * NormalX + StepZ * NormalZ;
+                    const float SlideX = StepX - NormalX * (std::min)(IntoSurface, 0.0f);
+                    const float SlideZ = StepZ - NormalZ * (std::min)(IntoSurface, 0.0f);
+                    Moved = SlideX * SlideX + SlideZ * SlideZ > 0.0000001f && TryMoveTo(StartX + SlideX, StartZ + SlideZ);
+                }
+            }
+            if (!Moved)
+            {
+                const bool MoveXFirst = std::abs(StepX) >= std::abs(StepZ);
+                if (MoveXFirst)
+                {
+                    Moved = TryMoveTo(StartX + StepX, StartZ);
+                    if (Moved)
+                    {
+                        TryMoveTo(SpawnX, SpawnZ + StepZ);
+                    }
+                    else
+                    {
+                        Moved = TryMoveTo(StartX, StartZ + StepZ);
+                    }
+                }
+                else
+                {
+                    Moved = TryMoveTo(StartX, StartZ + StepZ);
+                    if (Moved)
+                    {
+                        TryMoveTo(SpawnX + StepX, SpawnZ);
+                    }
+                    else
+                    {
+                        Moved = TryMoveTo(StartX + StepX, StartZ);
+                    }
+                }
+            }
+            UpdateVertical(StepSeconds);
+        }
     }
     else
     {
         VelocityX = 0.0f;
         VelocityZ = 0.0f;
-        if (Grounded)
+        const float SimulationStepSeconds = (std::max)(0.005f, Config.MaxSimulationStepSeconds);
+        const int StepCount = (std::max)(1, static_cast<int>(std::ceil(DeltaSeconds / SimulationStepSeconds)));
+        const float StepSeconds = DeltaSeconds / static_cast<float>(StepCount);
+        for (int Step = 0; Step < StepCount; ++Step)
         {
-            ApplySlopeSlide(DeltaSeconds);
-        }
-        if (!Grounded)
-        {
-            UpdateVertical(DeltaSeconds);
-        }
-        return true;
-    }
-
-    if (DeltaSeconds <= 0.0f)
-    {
-        return true;
-    }
-
-    const float DispX = VelocityX * DeltaSeconds;
-    const float DispZ = VelocityZ * DeltaSeconds;
-    const float distance = std::sqrt(DispX * DispX + DispZ * DispZ);
-    const bool AirborneAtMoveStart = !Grounded;
-    const float MoveStartY = SpawnY;
-    const float MoveEndY = AirborneAtMoveStart ? SpawnY + (VelocityY + Config.JumpGravity * DeltaSeconds) * DeltaSeconds : SpawnY;
-    const int MovementSteps = (std::max)(1, static_cast<int>(std::ceil(distance / Config.MovementCollisionStep)));
-    const float StepX = DispX / static_cast<float>(MovementSteps);
-    const float StepZ = DispZ / static_cast<float>(MovementSteps);
-    {
-        for (int step = 0; step < MovementSteps; ++step)
-        {
-            const float PreviousX = SpawnX;
-            const float PreviousZ = SpawnZ;
-            const float PreviousY = AirborneAtMoveStart ? MoveStartY + (MoveEndY - MoveStartY) * (static_cast<float>(step) / static_cast<float>(MovementSteps)) : SpawnY;
-            const float TargetY = AirborneAtMoveStart ? MoveStartY + (MoveEndY - MoveStartY) * (static_cast<float>(step + 1) / static_cast<float>(MovementSteps)) : SpawnY;
-            if (TryMoveTo(PreviousX + StepX, PreviousZ + StepZ, PreviousY, TargetY))
-            {
-                continue;
-            }
-            const bool MovedX = TryMoveTo(PreviousX + StepX, PreviousZ, PreviousY, TargetY);
-            const float SlideX = SpawnX;
-            const float SlideZ = SpawnZ;
-            if (!TryMoveTo(SlideX, SlideZ + StepZ, PreviousY, TargetY) && !MovedX)
-            {
-                break;
-            }
+            ApplySlopeSlide(StepSeconds);
+            UpdateVertical(StepSeconds);
         }
     }
-
-    UpdateVertical(DeltaSeconds);
-
     const int CenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
     const int CenterColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
     bool GrassLoadedThisFrame = false;
@@ -336,36 +581,34 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         {
             LoadVisibleTerrain();
             LoadVisibleStaticObjects();
+            RecoverFromPenetration();
             if (Config.GrassQuality > 0)
             {
                 LoadVisibleGrass();
                 GrassLoadedThisFrame = true;
             }
             StreamingUpdatedThisFrame = true;
-        } catch (const std::exception& ex)
+        }
+        catch (const std::exception& Exception)
         {
-            AssignError(error, std::string("game world terrain update failed: ") + ex.what());
+            AssignError(Error, std::string("game world terrain update failed: ") + Exception.what());
             return false;
         }
     }
     const float GrassDx = SpawnX - GrassAnchorX;
     const float GrassDz = SpawnZ - GrassAnchorZ;
-    if (Config.GrassQuality > 0 &&
-    !GrassLoadedThisFrame &&
-    (GrassRefreshIncomplete ||
-    !GrassAnchorValid ||
-    GrassDx * GrassDx + GrassDz * GrassDz >=
-    Config.GrassGenerationMargin * Config.GrassGenerationMargin))
+    if (Config.GrassQuality > 0 && !GrassLoadedThisFrame && (GrassRefreshIncomplete || !GrassAnchorValid || GrassDx * GrassDx + GrassDz * GrassDz >= Config.GrassGenerationMargin * Config.GrassGenerationMargin))
     {
         try
         {
             LoadVisibleGrass();
             GrassLoadedThisFrame = true;
-        } catch (const std::exception& ex)
+        }
+        catch (const std::exception& Exception)
         {
             if (Logger)
             {
-                Logger->Warning(std::string("game world grass update skipped: ") + ex.what());
+                Logger->Warning(std::string("game world grass update skipped: ") + Exception.what());
             }
         }
     }
@@ -387,10 +630,6 @@ void FD3D9GameWorldScene::Impl::RotateView(float MouseDx, float MouseDy)
     {
         CameraYaw += 2.0f * kPi;
     }
-    CameraPitch = std::clamp(
-    CameraPitch - MouseDy * Config.CameraPitchSpeed,
-    Config.CameraMinPitch,
-    Config.CameraMaxPitch);
+    CameraPitch = std::clamp(CameraPitch - MouseDy * Config.CameraPitchSpeed, Config.CameraMinPitch, Config.CameraMaxPitch);
     SpawnAngle = -CameraYaw;
 }
-

@@ -447,6 +447,105 @@ void FD3D9GameWorldScene::Impl::UpdateVertical(float DeltaSeconds)
     VelocityY = NewVelocityY;
 }
 
+void FD3D9GameWorldScene::Impl::UpdateWeather(float DeltaSeconds)
+{
+    if (!Config.WeatherEnabled || WeatherScenarios.empty() || WeatherSequence.empty())
+    {
+        WeatherTransitionBlend = 0.0f;
+        WeatherRain = 0.0f;
+        WeatherCloudCover = 0.0f;
+        WeatherFog = 0.0f;
+        WeatherWind = 0.35f;
+        WeatherSkyScrollScale = 1.0f;
+        ApplyWeatherEnvironment();
+        return;
+    }
+
+    WeatherScenarioElapsed += (std::max)(DeltaSeconds, 0.0f);
+    bool scenarioChanged = false;
+    for (;;)
+    {
+        const std::size_t sequenceIndex = WeatherSequencePosition % WeatherSequence.size();
+        const float duration = WeatherScenarios[WeatherSequence[sequenceIndex]].Duration;
+        if (WeatherScenarioElapsed < duration || duration <= 0.0f)
+        {
+            break;
+        }
+        WeatherScenarioElapsed -= duration;
+        WeatherSequencePosition = (WeatherSequencePosition + 1) % WeatherSequence.size();
+        scenarioChanged = true;
+    }
+    if (scenarioChanged)
+    {
+        RefreshWeatherSkyTextures();
+    }
+
+    struct FSample
+    {
+        float Rain = 0.0f;
+        float Cloud = 0.0f;
+        float Fog = 0.0f;
+        float Wind = 0.35f;
+        float Scroll = 1.0f;
+    };
+    auto sampleScenario = [](const WeatherScenario& scenario, float time)
+    {
+        FSample sample;
+        sample.Rain = scenario.Rain;
+        sample.Cloud = scenario.CloudCover;
+        sample.Fog = scenario.Fog;
+        sample.Wind = scenario.Wind;
+        sample.Scroll = scenario.SkyScrollScale;
+        if (scenario.Keyframes.empty())
+        {
+            return sample;
+        }
+        const WeatherKeyframe* from = &scenario.Keyframes.front();
+        const WeatherKeyframe* to = from;
+        for (const auto& frame : scenario.Keyframes)
+        {
+            if (frame.Time <= time)
+            {
+                from = &frame;
+                to = &frame;
+                continue;
+            }
+            to = &frame;
+            break;
+        }
+        float blend = 0.0f;
+        if (to != from && to->Time > from->Time)
+        {
+            blend = std::clamp((time - from->Time) / (to->Time - from->Time), 0.0f, 1.0f);
+        }
+        auto mix = [blend](float left, float right) { return left + (right - left) * blend; };
+        sample.Rain = mix(from->Rain, to->Rain);
+        sample.Fog = (std::max)(sample.Rain * 0.65f, mix(from->Fog, to->Fog));
+        sample.Wind = (std::max)(0.35f + sample.Rain * 0.65f, mix(from->Wind, to->Wind));
+        const float fromCloud = from->Cloud >= 0.0f ? from->Cloud : scenario.CloudCover;
+        const float toCloud = to->Cloud >= 0.0f ? to->Cloud : scenario.CloudCover;
+        sample.Cloud = (std::max)(mix(fromCloud, toCloud), sample.Rain * 0.9f);
+        return sample;
+    };
+
+    const std::size_t currentSequence = WeatherSequencePosition % WeatherSequence.size();
+    const std::size_t nextSequence = (currentSequence + 1) % WeatherSequence.size();
+    const auto& currentScenario = WeatherScenarios[WeatherSequence[currentSequence]];
+    const auto& nextScenario = WeatherScenarios[WeatherSequence[nextSequence]];
+    const float transitionDuration = (std::min)(Config.WeatherTransitionSeconds, currentScenario.Duration * 0.3f);
+    const float transitionStart = currentScenario.Duration - transitionDuration;
+    WeatherTransitionBlend = transitionDuration > 0.0f ? std::clamp((WeatherScenarioElapsed - transitionStart) / transitionDuration, 0.0f, 1.0f) : 0.0f;
+    const FSample current = sampleScenario(currentScenario, WeatherScenarioElapsed);
+    const FSample next = sampleScenario(nextScenario, 0.0f);
+    auto mix = [this](float left, float right) { return left + (right - left) * WeatherTransitionBlend; };
+    WeatherRain = std::clamp(mix(current.Rain, next.Rain), 0.0f, 1.0f);
+    WeatherCloudCover = std::clamp(mix(current.Cloud, next.Cloud), 0.0f, 1.0f);
+    WeatherFog = std::clamp(mix(current.Fog, next.Fog), 0.0f, 1.0f);
+    WeatherWind = std::clamp(mix(current.Wind, next.Wind), 0.15f, 2.0f);
+    WeatherSkyScrollScale = std::clamp(mix(current.Scroll, next.Scroll), 0.0f, 4.0f);
+    ApplyWeatherEnvironment();
+}
+
 bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementInput& Input, std::wstring& Error)
 {
     if (!Initialized)
@@ -457,6 +556,7 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     DeltaSeconds = std::clamp(DeltaSeconds, 0.0f, (std::max)(0.01f, Config.MaxMovementDeltaSeconds));
     ElapsedSeconds += DeltaSeconds;
     SetGameTime(GameTimeFraction + DeltaSeconds * 12.0f / 86400.0f);
+    UpdateWeather(DeltaSeconds);
     const float Forward = (Input.Forward ? 1.0f : 0.0f) - (Input.Backward ? 1.0f : 0.0f);
     const float Right = (Input.StrafeRight ? 1.0f : 0.0f) - (Input.StrafeLeft ? 1.0f : 0.0f);
     const float InputLength = std::sqrt(Forward * Forward + Right * Right);

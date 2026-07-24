@@ -5,7 +5,6 @@ enum class EResourceKind
 { 
 	Unknown, 
 	Config, 
-	Mbc, 
 	Ui, 
 	Texture,
 	Model,

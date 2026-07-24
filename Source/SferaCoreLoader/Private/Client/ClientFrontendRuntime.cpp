@@ -1,9 +1,9 @@
 #include "Client/ClientFrontendRuntime.h"
 #include "Common/SferaGameConstants.h"
 #include "Common/TextEncoding.h"
-#include <cmath>
+#include "Common/StringUtils.h"
 
-FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), Session(Logger) {}
+FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), NetworkComponent(Logger) {}
 FClientFrontendRuntime::~FClientFrontendRuntime()
 {
     Shutdown();
@@ -144,50 +144,13 @@ void FClientFrontendRuntime::StoreSavedLogin(bool enabled, const std::string& lo
 
 void FClientFrontendRuntime::CloseActiveServerSession()
 {
-    if (CharacterThread.joinable())
-    {
-        CharacterThread.join();
-    }
-
-    if (ActiveServerSession)
-    {
-        ActiveServerSession->Close();
-    }
-
-    ActiveServerSession.reset();
+    NetworkComponent.CloseActiveSession();
+    ClanRuntime.Reset();
+    MapRuntime.Reset();
     LastAppliedServerWorldPosition.reset();
-    CharacterActionInProgress.store(false);
 }
 
-FLoginProbeResult FClientFrontendRuntime::RefreshCharacterSelectSession(const std::wstring& login, const std::wstring& password, int32 timeoutMs)
-{
-    FLoginProbeResult result;
 
-    if (!Endpoint) { result.Message = "endpoint not configured"; return result; }
-
-    const FEndpoint endpoint = *Endpoint;
-    const FCharacterAppearanceRules rules = AppearanceRules;
-    constexpr int delays[] =
-    {
-        150, 350, 700
-    };
-
-    for (int attempt = 0; attempt < 3; ++attempt)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(delays[attempt]));
-        result = ProbeLoginServer(endpoint, login, password, rules, timeoutMs);
-
-        if (result.CharacterSelectReady && result.Session)
-        {
-            std::ostringstream out;
-            out << result.Message << "; refresh attempt=" << (attempt + 1);
-            result.Message = out.str();
-            return result;
-        }
-    }
-
-    return result;
-}
 
 FStatus FClientFrontendRuntime::CreateShell(const FClientSettings& settings)
 {
@@ -231,20 +194,10 @@ void FClientFrontendRuntime::ShowShell()
 void FClientFrontendRuntime::ConfigureNetwork(const FClientFrontendDesc& desc)
 {
     Settings = desc.Settings;
-    Endpoint = desc.Endpoint;
-    {
-        std::lock_guard<std::mutex> lock(SessionMutex);
-        Session.Configure(Endpoint);
-    }
-
-    if (Endpoint)
-    {
-        AddStatusLine("network: endpoint configured " + Endpoint->Host + ":" + std::to_string(Endpoint->Port));
-    }
-    else
-    {
-        AddStatusLine("network: endpoint not found");
-    }
+    NetworkConnectTimeoutMs = desc.NetworkConnectTimeoutMs;
+    NetworkComponent.Configure(desc.Endpoint);
+    if (desc.Endpoint) { AddStatusLine("network: endpoint configured " + desc.Endpoint->Host + ":" + std::to_string(desc.Endpoint->Port)); }
+    else { AddStatusLine("network: endpoint not found"); }
 }
 
 void FClientFrontendRuntime::SetStage(std::string stage, float progress)
@@ -337,22 +290,31 @@ void FClientFrontendRuntime::StartNetworkProbe(const FClientFrontendDesc& desc)
 
 void FClientFrontendRuntime::PollServerWorldUpdates()
 {
-    std::shared_ptr<FServerSession> session = ActiveServerSession;
-    if (!session || !session->Connected()) { return; }
-
+    if (!NetworkComponent.HasActiveSession()) { return; }
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         if (Ui.Mode() != EUiRuntimeMode::Game) { return; }
     }
 
     const auto now = std::chrono::steady_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - LastServerWorldPoll).count() < 50)
-    {
-        return;
-    }
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - LastServerWorldPoll).count() < 50) { return; }
     LastServerWorldPoll = now;
-
-    FCharacterActionResult world = session->PollFrames(32);
+    FCharacterActionResult world = NetworkComponent.PollWorldFrames(32);
+    const bool clanChanged = ClanRuntime.InspectFrames(world.Frames);
+    if (MapRuntime.InspectFrames(world.Frames))
+    {
+        const FMapRuntimeState& map = MapRuntime.State();
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.SetMapDescriptor(map.SpriteName, map.Projection, map.HasProjection);
+        RepaintDirty = true;
+    }
+    if (clanChanged)
+    {
+        const FClanRuntimeState& clan = ClanRuntime.State();
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.SetClanAvailable(clan.Available);
+        RepaintDirty = true;
+    }
     if (!world.ServerPosition) { return; }
 
     FGameWorldPosition position;
@@ -360,30 +322,23 @@ void FClientFrontendRuntime::PollServerWorldUpdates()
     position.Y = world.ServerPosition->Y;
     position.Z = world.ServerPosition->Z;
     position.Angle = world.ServerPosition->Angle;
-
-    if (!std::isfinite(position.X) || !std::isfinite(position.Y) || !std::isfinite(position.Z) ||
-        std::abs(position.X) > 20000.0 || std::abs(position.Y) > 20000.0 || std::abs(position.Z) > 20000.0)
+    if (!std::isfinite(position.X) || !std::isfinite(position.Y) || !std::isfinite(position.Z) || std::abs(position.X) > 20000.0 || std::abs(position.Y) > 20000.0 || std::abs(position.Z) > 20000.0)
     {
-        if (Log)
-        {
-            Log->Warning("server world position rejected: out of sane bounds");
-        }
+        if (Log) { Log->Warning("server world position rejected: out of sane bounds"); }
         return;
     }
 
-    bool meaningfulUpdate = !LastAppliedServerWorldPosition ||
-        std::abs(LastAppliedServerWorldPosition->X - position.X) > 0.05 ||
-        std::abs(LastAppliedServerWorldPosition->Y - position.Y) > 0.05 ||
-        std::abs(LastAppliedServerWorldPosition->Z - position.Z) > 0.05 ||
-        std::abs(LastAppliedServerWorldPosition->Angle - position.Angle) > 0.01;
-
+    const bool meaningfulUpdate = !LastAppliedServerWorldPosition || std::abs(LastAppliedServerWorldPosition->X - position.X) > 0.05 || std::abs(LastAppliedServerWorldPosition->Y - position.Y) > 0.05 || std::abs(LastAppliedServerWorldPosition->Z - position.Z) > 0.05 || std::abs(LastAppliedServerWorldPosition->Angle - position.Angle) > 0.01;
     if (!meaningfulUpdate) { return; }
-
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.ApplyServerGameWorldPosition(position);
     }
     LastAppliedServerWorldPosition = position;
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.SetMapPlayerPosition(position.X, position.Z);
+    }
 }
 
 void FClientFrontendRuntime::RenderFrame(float deltaSeconds, FGameMovementInput gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested)
@@ -399,8 +354,9 @@ void FClientFrontendRuntime::RenderFrame(float deltaSeconds, FGameMovementInput 
     FStatus status;
     {
         std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
-        Ui.Tick(deltaSeconds);
         std::lock_guard<std::mutex> renderLock(RenderMutex);
+        Ui.SetCompassHeading(RenderDevice.GameWorldCameraFacing());
+        Ui.Tick(deltaSeconds);
         status = RenderDevice.RenderUiDesktop(*RenderResources, RenderWorldScene, Ui, client, deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested, Log);
     }
 
@@ -429,6 +385,13 @@ FGameMovementInput FClientFrontendRuntime::BuildGameMovementInput(const FInputSn
         return movement;
     }
 
+    if (Ui.HasModalDialog() || Ui.IsGameTextInputFocused())
+    {
+        GameLookMode = false;
+        LastGameMouseValid = false;
+        return movement;
+    }
+
     movement.Forward = keyDown('W') || keyDown(VK_UP);
     movement.Backward = keyDown('S') || keyDown(VK_DOWN);
     movement.StrafeLeft = keyDown('A') || keyDown(VK_LEFT);
@@ -453,6 +416,7 @@ FGameMovementInput FClientFrontendRuntime::BuildGameMovementInput(const FInputSn
         const int centerY = (clientRect.bottom - clientRect.top) / 2;
         lookDeltaX = static_cast<float>(input.MouseX - centerX);
         lookDeltaY = static_cast<float>(input.MouseY - centerY);
+        if (Ui.IsGameControlChecked("control_options", 4)) { lookDeltaY = -lookDeltaY; }
         if (lookDeltaX != 0.0f || lookDeltaY != 0.0f)
         {
             POINT center{centerX, centerY};
@@ -465,12 +429,19 @@ FGameMovementInput FClientFrontendRuntime::BuildGameMovementInput(const FInputSn
         return movement;
     }
 
+    if (Ui.ActionState().HoverWindowIndex >= 0)
+    {
+        LastGameMouseValid = false;
+        return movement;
+    }
+
     if (input.RightButton)
     {
         if (LastGameMouseValid)
         {
             lookDeltaX = static_cast<float>(input.MouseX - LastGameMouseX);
             lookDeltaY = static_cast<float>(input.MouseY - LastGameMouseY);
+            if (Ui.IsGameControlChecked("control_options", 4)) { lookDeltaY = -lookDeltaY; }
         }
         LastGameMouseX = input.MouseX;
         LastGameMouseY = input.MouseY;
@@ -487,60 +458,183 @@ FGameMovementInput FClientFrontendRuntime::BuildGameMovementInput(const FInputSn
 void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
 {
     if (action.empty()) { return; }
-
     AddStatusLine("ui: " + action);
-
-    if (action == "quit_requested") { Shutdown(); return; }
-
-    if (action == "save_login_on") { std::lock_guard<std::recursive_mutex> lock(UiMutex); StoreSavedLogin(true, Ui.ActionState().LoginText, Ui.ActionState().PasswordText); return; }
-
-    if (action == "save_login_off")
+    const FClientUiCommand command = UiActions.Decode(action);
+    switch (command.Action)
+    {
+    case EClientUiAction::Quit: Shutdown(); break;
+    case EClientUiAction::SaveLoginOn:
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        StoreSavedLogin(true, Ui.ActionState().LoginText, Ui.ActionState().PasswordText);
+        break;
+    }
+    case EClientUiAction::SaveLoginOff:
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         StoreSavedLogin(false, {}, {});
-        return;
+        break;
     }
-
-    if (action == "login_requested") { BeginLoginRequest(); return; }
-
-    if (action == "registration_requested") { AddStatusLine(Settings.RegistrationUrl.empty() ? "registration: URL absent in connectn.cfg" : "registration: " + Settings.RegistrationUrl); return; }
-
-    if (action.rfind("character_slot_", 0) == 0) { AddStatusLine("character: selected slot " + action.substr(15)); return; }
-
-    if (action == "character_enter_requested") { BeginCharacterEnterRequest(); return; }
-
-    if (action == "character_create_confirmed") { BeginCharacterCreateRequest(); return; }
-
-    if (action == "character_create_dialog" || action == "character_delete_dialog" || action == "character_exit_dialog") { RepaintDirty = true; return; }
-
-    if (action == "character_create_cancelled" || action == "character_delete_cancelled" || action == "character_back_cancelled" || action == "modal_closed") { RepaintDirty = true; return; }
-
-    if (action == "character_delete_name_required") { AddStatusLine("character: type selected character name to confirm delete"); RepaintDirty = true; return; }
-
-    if (action == "character_back_requested") { std::lock_guard<std::recursive_mutex> lock(UiMutex); Ui.ShowExitConfirmation(); RepaintDirty = true; return; }
-
-    if (action == "character_back_confirmed")
+    case EClientUiAction::Login: BeginLoginRequest(); break;
+    case EClientUiAction::Registration: AddStatusLine(Settings.RegistrationUrl.empty() ? "registration: URL absent in connectn.cfg" : "registration: " + Settings.RegistrationUrl); break;
+    case EClientUiAction::CharacterSlotSelected: AddStatusLine("character: selected slot " + std::to_string(command.Value)); break;
+    case EClientUiAction::CharacterEnter: BeginCharacterEnterRequest(); break;
+    case EClientUiAction::CharacterCreateConfirmed: BeginCharacterCreateRequest(); break;
+    case EClientUiAction::CharacterDialogChanged: RepaintDirty = true; break;
+    case EClientUiAction::CharacterDeleteNameRequired: AddStatusLine("character: type selected character name to confirm delete"); RepaintDirty = true; break;
+    case EClientUiAction::CharacterBackRequested:
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.ShowExitConfirmation();
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::CharacterBackConfirmed:
     {
         CloseActiveServerSession();
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.Character().SetCharacterActionLocked(false);
+        Ui.Input().SetMode(EUiRuntimeMode::Login);
+        Ui.SetStage("login screen ready", 1.0f);
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::CharacterDeleteRequested:
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.ShowDeleteConfirmation();
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::CharacterDeleteConfirmed: BeginCharacterDeleteRequest(); break;
+    case EClientUiAction::WindowCommand:
+    {
+        bool currentlyOpen = false;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-            Ui.Input().SetMode(EUiRuntimeMode::Login);
-            Ui.SetStage("login screen ready", 1.0f);
+            currentlyOpen = Ui.IsGameWindowVisible(command.WindowName);
         }
-        SetStage("login screen ready", 1.0f);
-        return;
+        const bool targetOpen = command.WindowOperation == EUiWindowOperation::Open || (command.WindowOperation == EUiWindowOperation::Toggle && !currentlyOpen);
+        const FUiWindowTransition transition = targetOpen ? UiWindows.Open(command.WindowName, command.Value) : UiWindows.Close(command.WindowName);
+        bool changed = false;
+        {
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            changed = Ui.SetGameWindowVisible(command.WindowName, targetOpen);
+        }
+        if (changed || transition.Changed) { AddStatusLine("ui window " + command.WindowName + (transition.Open ? ": opened" : ": closed")); RepaintDirty = true; }
+        break;
     }
-
-    if (action == "character_delete_requested") { std::lock_guard<std::recursive_mutex> lock(UiMutex); Ui.ShowDeleteConfirmation(); RepaintDirty = true; return; }
-
-    if (action == "character_delete_confirmed") { BeginCharacterDeleteRequest(); return; }
+    case EClientUiAction::WindowReplace:
+    {
+        bool changed = false;
+        {
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            changed = Ui.SetGameWindowVisible(command.WindowName, false) || changed;
+            changed = Ui.SetGameWindowVisible(command.SecondaryWindowName, true) || changed;
+        }
+        const FUiWindowTransition closeTransition = UiWindows.Close(command.WindowName);
+        const FUiWindowTransition openTransition = UiWindows.Open(command.SecondaryWindowName, command.Value);
+        if (changed || closeTransition.Changed || openTransition.Changed) { AddStatusLine("ui window: " + command.WindowName + " -> " + command.SecondaryWindowName); RepaintDirty = true; }
+        break;
+    }
+    case EClientUiAction::GameControl:
+    {
+        if ((Common::EqualsNoCase(command.WindowName, "statinfo") || Common::EqualsNoCase(command.WindowName, "statinfo_n")) && command.Value == 25)
+        {
+            std::array<int32, 8> deltas{};
+            {
+                std::lock_guard<std::recursive_mutex> lock(UiMutex);
+                deltas = Ui.PendingStatAllocation();
+            }
+            if (std::any_of(deltas.begin(), deltas.end(), [](int32 value) { return value != 0; }) && NetworkComponent.SendStatAllocation(deltas))
+            {
+                std::lock_guard<std::recursive_mutex> lock(UiMutex);
+                Ui.CommitPendingStatAllocation();
+                AddStatusLine("character: stat allocation sent");
+            }
+            else if (std::any_of(deltas.begin(), deltas.end(), [](int32 value) { return value != 0; })) { AddStatusLine("character: stat allocation failed"); }
+            RepaintDirty = true;
+            break;
+        }
+        if (Common::EqualsNoCase(command.WindowName, "system_right") && command.Value == 6)
+        {
+            std::string target;
+            std::string other;
+            {
+                std::lock_guard<std::recursive_mutex> lock(UiMutex);
+                target = Ui.IsClanAvailable() ? "clan" : "newclan";
+                other = target == "clan" ? "newclan" : "clan";
+                Ui.SetGameWindowVisible(other, false);
+                Ui.ToggleGameWindow(target);
+            }
+            UiWindows.Close(other);
+            if (UiWindows.IsOpen(target)) { UiWindows.Close(target); }
+            else { UiWindows.Open(target); }
+            AddStatusLine("ui window " + target + ": toggled");
+            RepaintDirty = true;
+            break;
+        }
+        AddStatusLine("ui control: " + command.WindowName + "#" + std::to_string(command.Value));
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::GameHelp:
+    {
+        {
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            Ui.SetHelpTopic(command.Payload.empty() ? command.WindowName : command.Payload);
+            Ui.SetGameWindowVisible("help", true);
+        }
+        UiWindows.Open("help");
+        AddStatusLine(command.Payload.empty() ? "help: " + command.WindowName : "help: " + command.Payload);
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::GameChatSubmit:
+    {
+        std::string message;
+        std::string sender;
+        uint8 channel = 10;
+        {
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            message = Ui.GameChatDraft();
+            sender = Common::WideToUtf8(Ui.Character().SelectedCharacterName());
+            channel = Ui.GameChatChannel();
+        }
+        if (!message.empty() && NetworkComponent.SendChatMessage(channel, message))
+        {
+            std::lock_guard<std::recursive_mutex> lock(UiMutex);
+            Ui.AppendGameChatLine((sender.empty() ? std::string("Вы") : sender) + ": " + message, Ui.GameChatModeIndex());
+            Ui.ClearGameChatDraft();
+            AddStatusLine("chat: message sent, channel=" + std::to_string(channel));
+        }
+        else if (!message.empty()) { AddStatusLine("chat: send failed"); }
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::GameLeaveRequested:
+    {
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.ShowGameExitConfirmation();
+        RepaintDirty = true;
+        break;
+    }
+    case EClientUiAction::GameLeaveConfirmed:
+    {
+        CloseActiveServerSession();
+        UiWindows.Reset();
+        std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.Input().SetMode(EUiRuntimeMode::Login);
+        Ui.SetStage("login screen ready", 1.0f);
+        RepaintDirty = true;
+        break;
+    }
+    default: break;
+    }
 }
 
 void FClientFrontendRuntime::BeginLoginRequest()
 {
-    if (LoginInProgress.exchange(true)) { return; }
-
     std::string login;
     std::string password;
     {
@@ -548,56 +642,28 @@ void FClientFrontendRuntime::BeginLoginRequest()
         login = Ui.ActionState().LoginText;
         password = Ui.ActionState().PasswordText;
     }
-
-    if (!Endpoint) { LoginInProgress.store(false); AddStatusLine("network: endpoint not configured"); SetStage("login failed", 1.0f); return; }
-
-    if (login.empty() || password.empty()) { LoginInProgress.store(false); AddStatusLine("login: enter account and password"); SetStage("waiting for login", 1.0f); return; }
-
-    if (LoginThread.joinable())
-    {
-        LoginThread.join();
-    }
-
-    SetStage("connecting to " + Endpoint->Host + ":" + std::to_string(Endpoint->Port), 1.0f);
-    const FEndpoint endpoint = *Endpoint;
-    const std::wstring wideLogin = Utf8ToWide(login);
-    const std::wstring widePassword = Utf8ToWide(password);
-    const FCharacterAppearanceRules rules = AppearanceRules;
-    LoginThread = std::thread([this, endpoint, wideLogin, widePassword, rules]()
-    {
-        FLoginProbeResult result = ProbeLoginServer(endpoint, wideLogin, widePassword, rules, 2500);
-        {
-            std::lock_guard<std::mutex> lock(LoginMutex);
-            PendingLoginResult = std::move(result);
-        }
-        LoginInProgress.store(false);
-    });
+    const std::optional<FEndpoint> endpoint = NetworkComponent.Endpoint();
+    if (!endpoint) { AddStatusLine("network: endpoint not configured"); SetStage("login failed", 1.0f); return; }
+    if (login.empty() || password.empty()) { AddStatusLine("login: enter account and password"); SetStage("waiting for login", 1.0f); return; }
+    if (!NetworkComponent.BeginLogin(Utf8ToWide(login), Utf8ToWide(password), AppearanceRules, static_cast<int32>(NetworkConnectTimeoutMs))) { AddStatusLine("login: request is already in progress"); return; }
+    SetStage("connecting to " + endpoint->Host + ":" + std::to_string(endpoint->Port), 1.0f);
 }
 
 void FClientFrontendRuntime::PollLoginResult()
 {
-    std::optional<FLoginProbeResult> result;
-    {
-        std::lock_guard<std::mutex> lock(LoginMutex);
-
-        if (PendingLoginResult)
-        {
-            result = std::move(PendingLoginResult);
-            PendingLoginResult.reset();
-        }
-    }
-
+    std::optional<FLoginProbeResult> result = NetworkComponent.PollLogin();
     if (!result) { return; }
-
     AddStatusLine("network: " + result->Message);
-
     if (result->CharacterSelectReady)
     {
-        ActiveServerSession = result->Session;
         if (result->HasGameTime)
         {
-            std::lock_guard<std::mutex> renderLock(RenderMutex);
-            RenderDevice.SetServerGameTime(result->GameTimeFraction);
+            {
+                std::lock_guard<std::mutex> renderLock(RenderMutex);
+                RenderDevice.SetServerGameTime(result->GameTimeFraction);
+            }
+            std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
+            Ui.SetServerGameTime(result->GameTimeFraction, result->GameDay, result->GameMonth, result->GameYear);
         }
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
@@ -607,68 +673,29 @@ void FClientFrontendRuntime::PollLoginResult()
             Ui.Input().SetMode(EUiRuntimeMode::CharacterSelect);
             Ui.SetStage("character select ready", 1.0f);
         }
-        RepaintDirty = true;
     }
-    else if (result->Connected)
-    {
-        SetStage("server answered", 1.0f);
-    }
-    else
-    {
-        SetStage("login failed", 1.0f);
-    }
-
-    if (Log)
-    {
-        Log->Info("login probe result: " + result->Message);
-    }
-
+    else if (result->Connected) { SetStage("server answered", 1.0f); }
+    else { SetStage("login failed", 1.0f); }
+    if (Log) { Log->Info("login probe result: " + result->Message); }
     RepaintDirty = true;
 }
 
 void FClientFrontendRuntime::BeginCharacterEnterRequest()
 {
-    if (CharacterActionInProgress.exchange(true)) { return; }
-
-    std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool Present = false;
+    bool present = false;
     bool canCreate = false;
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.Character().SelectedSlotIndex();
-        Present = Ui.Character().SelectedCharacterPresent();
+        present = Ui.Character().SelectedCharacterPresent();
         canCreate = Ui.Character().SelectedCharacterCanCreate();
         Ui.Character().SetCharacterActionLocked(true);
     }
-
-    if (!session || !session->Connected())
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: server session is not active");
-        return;
-    }
-
-    if (!Present)
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine(canCreate ? "character: creation requires confirmation" : "character: selected slot is unavailable");
-        return;
-    }
-
-    if (CharacterThread.joinable())
-    {
-        CharacterThread.join();
-    }
-
+    auto unlock = [this]() { std::lock_guard<std::recursive_mutex> lock(UiMutex); Ui.Character().SetCharacterActionLocked(false); };
+    if (!NetworkComponent.HasActiveSession()) { unlock(); AddStatusLine("character: server session is not active"); return; }
+    if (!present) { unlock(); AddStatusLine(canCreate ? "character: creation requires confirmation" : "character: selected slot is unavailable"); return; }
+    if (!NetworkComponent.BeginCharacterEnter(slot, static_cast<int32>(NetworkConnectTimeoutMs))) { unlock(); AddStatusLine("character: another action is already in progress"); return; }
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.SetInitialGameWorldPosition(std::nullopt);
@@ -676,223 +703,69 @@ void FClientFrontendRuntime::BeginCharacterEnterRequest()
     LastAppliedServerWorldPosition.reset();
     LastServerWorldPoll = std::chrono::steady_clock::now();
     SetStage("entering world", 1.0f);
-    CharacterThread = std::thread([this, session, slot]()
-    {
-        FCharacterActionResult selected = session->SelectCharacter(slot, 2500);
-        FCharacterActionResult ack;
-
-        if (selected.Ok)
-        {
-            ack = session->SendIngameAck(2500);
-            if (!ack.ServerPosition && selected.ServerPosition) { ack.ServerPosition = selected.ServerPosition; }
-            FCharacterActionResult lateWorld = session->PollFrames(32);
-            if (!ack.ServerPosition && lateWorld.ServerPosition) { ack.ServerPosition = lateWorld.ServerPosition; }
-            ack.Message = selected.Message + "; " + ack.Message + "; late world packets=" + std::to_string(lateWorld.PacketCount);
-        }
-        else
-        {
-            ack = selected;
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(CharacterMutex);
-            PendingCharacterResult = std::move(ack);
-            PendingCharacterRefreshResult.reset();
-            PendingCharacterActionKind = 0;
-        }
-        CharacterActionInProgress.store(false);
-    });
 }
 
 void FClientFrontendRuntime::BeginCharacterCreateRequest()
 {
-    if (CharacterActionInProgress.exchange(true)) { return; }
-
-    std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool Present = false;
+    bool present = false;
     bool canCreate = false;
     std::wstring name;
     FCharacterCreationAppearance appearance;
-    std::string loginText;
-    std::string passwordText;
+    std::string login;
+    std::string password;
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.Character().SelectedSlotIndex();
-        Present = Ui.Character().SelectedCharacterPresent();
+        present = Ui.Character().SelectedCharacterPresent();
         canCreate = Ui.Character().SelectedCharacterCanCreate();
         name = Ui.Character().SelectedCharacterName();
         appearance = Ui.Character().SelectedCharacterAppearance(AppearanceRules);
-        loginText = Ui.ActionState().LoginText;
-        passwordText = Ui.ActionState().PasswordText;
+        login = Ui.ActionState().LoginText;
+        password = Ui.ActionState().PasswordText;
         Ui.Character().SetCharacterActionLocked(true);
     }
-
-    if (!session || !session->Connected())
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: server session is not active");
-        return;
-    }
-
-    if (Present || !canCreate)
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: selected slot is not creatable");
-        return;
-    }
-
-    if (name.empty())
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: name is empty");
-        return;
-    }
-
-    if (CharacterThread.joinable())
-    {
-        CharacterThread.join();
-    }
-
+    auto unlock = [this]() { std::lock_guard<std::recursive_mutex> lock(UiMutex); Ui.Character().SetCharacterActionLocked(false); };
+    if (!NetworkComponent.HasActiveSession()) { unlock(); AddStatusLine("character: server session is not active"); return; }
+    if (present || !canCreate) { unlock(); AddStatusLine("character: selected slot is not creatable"); return; }
+    if (name.empty()) { unlock(); AddStatusLine("character: name is empty"); return; }
+    if (!NetworkComponent.BeginCharacterCreate(slot, std::move(name), appearance, Utf8ToWide(login), Utf8ToWide(password), static_cast<int32>(NetworkConnectTimeoutMs))) { unlock(); AddStatusLine("character: another action is already in progress"); return; }
     SetStage("creating character", 1.0f);
-    const std::wstring wideLogin = Utf8ToWide(loginText);
-    const std::wstring widePassword = Utf8ToWide(passwordText);
-    CharacterThread = std::thread([this, session, slot, name, appearance, wideLogin, widePassword]() mutable
-    {
-        FCharacterActionResult created = session->CreateCharacter(slot, name, appearance, 2500);
-        std::optional<FLoginProbeResult> refresh;
-
-        if (created.Ok)
-        {
-            session->Close();
-            refresh = RefreshCharacterSelectSession(wideLogin, widePassword, 2500);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(CharacterMutex);
-            PendingCharacterResult = std::move(created);
-            PendingCharacterRefreshResult = std::move(refresh);
-            PendingCharacterActionKind = 1;
-            PendingCharacterSlot = slot;
-            PendingCharacterName = name;
-            PendingCharacterAppearance = appearance;
-        }
-        CharacterActionInProgress.store(false);
-    });
 }
 
 void FClientFrontendRuntime::BeginCharacterDeleteRequest()
 {
-    if (CharacterActionInProgress.exchange(true)) { return; }
-
-    std::shared_ptr<FServerSession> session = ActiveServerSession;
     int32 slot = 0;
-    bool Present = false;
-    std::string loginText;
-    std::string passwordText;
+    bool present = false;
+    std::string login;
+    std::string password;
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         slot = Ui.Character().SelectedSlotIndex();
-        Present = Ui.Character().SelectedCharacterPresent();
-        loginText = Ui.ActionState().LoginText;
-        passwordText = Ui.ActionState().PasswordText;
+        present = Ui.Character().SelectedCharacterPresent();
+        login = Ui.ActionState().LoginText;
+        password = Ui.ActionState().PasswordText;
         Ui.Character().SetCharacterActionLocked(true);
     }
-
-    if (!session || !session->Connected())
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: server session is not active");
-        return;
-    }
-
-    if (!Present)
-    {
-        CharacterActionInProgress.store(false);
-        {
-            std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.Character().SetCharacterActionLocked(false);
-        }
-        AddStatusLine("character: selected slot is empty");
-        return;
-    }
-
-    if (CharacterThread.joinable())
-    {
-        CharacterThread.join();
-    }
-
+    auto unlock = [this]() { std::lock_guard<std::recursive_mutex> lock(UiMutex); Ui.Character().SetCharacterActionLocked(false); };
+    if (!NetworkComponent.HasActiveSession()) { unlock(); AddStatusLine("character: server session is not active"); return; }
+    if (!present) { unlock(); AddStatusLine("character: selected slot is empty"); return; }
+    if (!NetworkComponent.BeginCharacterDelete(slot, Utf8ToWide(login), Utf8ToWide(password), static_cast<int32>(NetworkConnectTimeoutMs))) { unlock(); AddStatusLine("character: another action is already in progress"); return; }
     SetStage("deleting character", 1.0f);
-    const std::wstring wideLogin = Utf8ToWide(loginText);
-    const std::wstring widePassword = Utf8ToWide(passwordText);
-    CharacterThread = std::thread([this, session, slot, wideLogin, widePassword]() mutable
-    {
-        FCharacterActionResult deleted = session->DeleteCharacter(slot, 2500);
-        std::optional<FLoginProbeResult> refresh;
-
-        if (deleted.Ok)
-        {
-            session->Close();
-            refresh = RefreshCharacterSelectSession(wideLogin, widePassword, 2500);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(CharacterMutex);
-            PendingCharacterResult = std::move(deleted);
-            PendingCharacterRefreshResult = std::move(refresh);
-            PendingCharacterActionKind = 2;
-            PendingCharacterSlot = slot;
-            PendingCharacterName.clear();
-            PendingCharacterAppearance = {};
-        }
-        CharacterActionInProgress.store(false);
-    });
 }
 
 void FClientFrontendRuntime::PollCharacterResult()
 {
-    std::optional<FCharacterActionResult> result;
-    std::optional<FLoginProbeResult> refresh;
-    int32 actionKind = 0;
+    std::optional<FCharacterNetworkEvent> event = NetworkComponent.PollCharacter();
+    if (!event) { return; }
+    FCharacterActionResult& result = event->Result;
+    AddStatusLine("character: " + result.Message);
+    const bool mutation = event->Action != ECharacterNetworkAction::Enter;
+    if (result.Ok && mutation)
     {
-        std::lock_guard<std::mutex> lock(CharacterMutex);
-
-        if (PendingCharacterResult)
-        {
-            result = std::move(PendingCharacterResult);
-            PendingCharacterResult.reset();
-            refresh = std::move(PendingCharacterRefreshResult);
-            PendingCharacterRefreshResult.reset();
-            actionKind = PendingCharacterActionKind;
-            PendingCharacterActionKind = 0;
-        }
-    }
-
-    if (!result) { return; }
-
-    AddStatusLine("character: " + result->Message);
-
-    if (result->Ok && (actionKind == 1 || actionKind == 2))
-    {
+        const std::optional<FLoginProbeResult>& refresh = event->RefreshedLogin;
         if (refresh && refresh->CharacterSelectReady && refresh->Session)
         {
-            ActiveServerSession = refresh->Session;
             AddStatusLine("character: refreshed slots after mutation; " + refresh->Message);
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
             Ui.Character().SetCharacterSlots(refresh->CharacterSlots);
@@ -902,7 +775,6 @@ void FClientFrontendRuntime::PollCharacterResult()
         }
         else
         {
-            ActiveServerSession.reset();
             const std::string message = refresh ? refresh->Message : "refresh was not started";
             AddStatusLine("character: mutation completed, but charlist refresh failed: " + message);
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
@@ -911,54 +783,53 @@ void FClientFrontendRuntime::PollCharacterResult()
             Ui.SetStage("login screen ready", 1.0f);
         }
     }
-    else if (result->Ok)
+    else if (result.Ok)
     {
-        if (result->ServerPosition)
+        ClanRuntime.Reset();
+        MapRuntime.Reset();
+        const bool clanChanged = ClanRuntime.InspectFrames(result.Frames);
+        MapRuntime.InspectFrames(result.Frames);
+        FGameWorldPosition spawn;
+        if (result.ServerPosition)
         {
-            FGameWorldPosition spawn;
-            spawn.X = result->ServerPosition->X;
-            spawn.Y = result->ServerPosition->Y;
-            spawn.Z = result->ServerPosition->Z;
-            spawn.Angle = result->ServerPosition->Angle;
-            {
-                std::lock_guard<std::mutex> renderLock(RenderMutex);
-                RenderDevice.SetInitialGameWorldPosition(spawn);
-            }
-            LastAppliedServerWorldPosition = spawn;
+            spawn.X = result.ServerPosition->X;
+            spawn.Y = result.ServerPosition->Y;
+            spawn.Z = result.ServerPosition->Z;
+            spawn.Angle = result.ServerPosition->Angle;
             AddStatusLine("character: server spawn applied (" + std::to_string(spawn.X) + ", " + std::to_string(spawn.Y) + ", " + std::to_string(spawn.Z) + ")");
         }
         else
         {
-            FGameWorldPosition spawn;
             spawn.X = SferaProtocol::DefaultServerSpawnX;
             spawn.Y = SferaProtocol::DefaultServerSpawnY;
             spawn.Z = SferaProtocol::DefaultServerSpawnZ;
             spawn.Angle = SferaProtocol::DefaultServerSpawnAngle;
-            {
-                std::lock_guard<std::mutex> renderLock(RenderMutex);
-                RenderDevice.SetInitialGameWorldPosition(spawn);
-            }
-            LastAppliedServerWorldPosition = spawn;
             AddStatusLine("character: server spawn packet was not parsed; using SphereEmu default spawn (" + std::to_string(spawn.X) + ", " + std::to_string(spawn.Y) + ", " + std::to_string(spawn.Z) + ")");
         }
-        if (ActiveServerSession && ActiveServerSession->HasGameTime())
         {
             std::lock_guard<std::mutex> renderLock(RenderMutex);
-            RenderDevice.SetServerGameTime(ActiveServerSession->GameTimeFraction());
+            RenderDevice.SetInitialGameWorldPosition(spawn);
+            if (NetworkComponent.HasGameTime()) { RenderDevice.SetServerGameTime(NetworkComponent.GameTimeFraction()); }
         }
+        LastAppliedServerWorldPosition = spawn;
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
+        Ui.SetMapPlayerPosition(spawn.X, spawn.Z);
+        const FMapRuntimeState& map = MapRuntime.State();
+        Ui.SetMapDescriptor(map.SpriteName, map.Projection, map.HasProjection);
+        if (NetworkComponent.HasGameTime()) { Ui.SetServerGameTime(NetworkComponent.GameTimeFraction(), NetworkComponent.GameDay(), NetworkComponent.GameMonth(), NetworkComponent.GameYear()); }
+        Ui.SetClanAvailable(clanChanged ? ClanRuntime.State().Available : false);
         Ui.Character().SetCharacterActionLocked(false);
         Ui.Input().SetMode(EUiRuntimeMode::Game);
         Ui.SetStage("game session active", 1.0f);
     }
     else
     {
+        const char* stage = event->Action == ECharacterNetworkAction::Create ? "character create failed" : event->Action == ECharacterNetworkAction::Delete ? "character delete failed" : "character enter failed";
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.Character().SetCharacterActionLocked(false);
         Ui.Input().SetMode(EUiRuntimeMode::CharacterSelect);
-        Ui.SetStage(actionKind == 1 ? "character create failed" : actionKind == 2 ? "character delete failed" : "character enter failed", 1.0f);
+        Ui.SetStage(stage, 1.0f);
     }
-
     RepaintDirty = true;
 }
 
@@ -1003,11 +874,6 @@ FStatus FClientFrontendRuntime::RunEventLoop()
             RepaintDirty = true;
         }
 
-        {
-            std::lock_guard<std::mutex> lock(SessionMutex);
-            Session.Tick();
-        }
-        UpdateStageFromSession();
         PollLoginResult();
         PollCharacterResult();
         bool gameMode = false;
@@ -1019,7 +885,13 @@ FStatus FClientFrontendRuntime::RunEventLoop()
             characterSelectMode = mode == EUiRuntimeMode::CharacterSelect;
         }
 
-        const bool animatedMode = gameMode || characterSelectMode;
+        bool uiTexturePreloading = false;
+        if (D3DInitialized.load())
+        {
+            std::lock_guard<std::mutex> renderLock(RenderMutex);
+            uiTexturePreloading = RenderDevice.HasPendingUiTexturePreload();
+        }
+        const bool animatedMode = gameMode || characterSelectMode || uiTexturePreloading;
         const bool repaintDue = RepaintDirty && !animatedMode;
         const bool shouldRender = D3DInitialized.load() && (animatedMode || repaintDue);
 
@@ -1056,21 +928,7 @@ FStatus FClientFrontendRuntime::RunEventLoop()
 
 void FClientFrontendRuntime::Shutdown()
 {
-    if (LoginThread.joinable())
-    {
-        LoginThread.join();
-    }
-
-    if (CharacterThread.joinable())
-    {
-        CharacterThread.join();
-    }
-
-    ActiveServerSession.reset();
-    {
-        std::lock_guard<std::mutex> lock(SessionMutex);
-        Session.Close();
-    }
+    NetworkComponent.Shutdown();
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.Shutdown();
@@ -1079,6 +937,7 @@ void FClientFrontendRuntime::Shutdown()
     ShellCreated = false;
     D3DInitialized.store(false);
     RenderResources = nullptr;
+    RenderWorldScene = nullptr;
 }
 
 void FClientFrontendRuntime::RequestRepaintThrottled()
@@ -1094,31 +953,4 @@ void FClientFrontendRuntime::RequestRepaintThrottled()
     }
 }
 
-void FClientFrontendRuntime::UpdateStageFromSession()
-{
-    EClientSessionStage stage;
-    std::string stageText;
-    {
-        std::lock_guard<std::mutex> lock(SessionMutex);
-        const auto& snapshot = Session.Snapshot();
-        stage = snapshot.Stage;
-        stageText = snapshot.StageText;
-    }
 
-    if (stage == LastSessionStage && stage != EClientSessionStage::ProbeReceiving) { return; }
-
-    LastSessionStage = stage;
-
-    if (stage == EClientSessionStage::ProbeReceiving)
-    {
-        SetStage(stageText, 1.0f);
-    }
-    else if (stage == EClientSessionStage::Connected)
-    {
-        SetStage("connected; awaiting protocol", 1.0f);
-    }
-    else if (stage == EClientSessionStage::Failed)
-    {
-        SetStage("network probe failed", 1.0f);
-    }
-}

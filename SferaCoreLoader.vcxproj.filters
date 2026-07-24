@@ -31,9 +31,6 @@
     <Filter Include="Source\SferaCoreLoader\Private\GameObjects">
       <UniqueIdentifier>{762FABF2-D62C-5B78-8B52-9D8E55964CA0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\SferaCoreLoader\Private\MBC">
-      <UniqueIdentifier>{5CA25012-C8D2-577A-8F19-ABF706526C00}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\SferaCoreLoader\Private\Model">
       <UniqueIdentifier>{7EB59AE2-905A-5950-86A4-4F11978CB3E1}</UniqueIdentifier>
     </Filter>
@@ -79,9 +76,6 @@
     <Filter Include="Source\SferaCoreLoader\Public\GameObjects">
       <UniqueIdentifier>{6FBCB035-2CB9-5A45-BDE4-EB1B3E8697A6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\SferaCoreLoader\Public\MBC">
-      <UniqueIdentifier>{FB825539-4121-50DB-A870-74DDC73B99CB}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Model">
       <UniqueIdentifier>{D9A95CE3-8DD1-5173-A7D7-D57811FCAC1F}</UniqueIdentifier>
     </Filter>
@@ -111,6 +105,36 @@
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Renderer\GameWorld">
       <UniqueIdentifier>{274EDECD-9E99-5B09-998C-98EA1A294F39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components">
+      <UniqueIdentifier>{302FAEFD-2092-5CC0-9983-AA45954798CD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\Network">
+      <UniqueIdentifier>{5AD9F808-51E6-588A-802E-9BC6FAB126FA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\UI">
+      <UniqueIdentifier>{1983BC18-14D5-5285-ABC4-C58A7BAA86F2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\World">
+      <UniqueIdentifier>{73F5951C-7AA3-5511-A865-A6032AE72117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components">
+      <UniqueIdentifier>{8FCCC5CB-B715-5573-A85A-1E9AD0B60F41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\Network">
+      <UniqueIdentifier>{0EBEBD0A-E34D-50F8-87A5-2B6FC4696677}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\UI">
+      <UniqueIdentifier>{52C25ED9-4C9D-5DD2-B469-1C54EF52ABB3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\World">
+      <UniqueIdentifier>{35970BC8-3A98-5FB3-BF2D-5307BCFE7980}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\Localization">
+      <UniqueIdentifier>{2D9CCAA0-F843-5796-B1CB-7686A324133E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\Localization">
+      <UniqueIdentifier>{AA6E858A-81AC-569B-AD26-77937B05EAE7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -168,33 +192,6 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp">
       <Filter>Source\SferaCoreLoader\Private\GameObjects</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp">
-      <Filter>Source\SferaCoreLoader\Private\MBC</Filter>
-    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Model\ChrModel.cpp">
       <Filter>Source\SferaCoreLoader\Private\Model</Filter>
     </ClCompile>
@@ -208,9 +205,6 @@
       <Filter>Source\SferaCoreLoader\Private\Model</Filter>
     </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientProtocol.cpp">
-      <Filter>Source\SferaCoreLoader\Private\Network</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientSession.cpp">
       <Filter>Source\SferaCoreLoader\Private\Network</Filter>
     </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp">
@@ -303,6 +297,33 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\WorldScene\ZoningManager.cpp">
       <Filter>Source\SferaCoreLoader\Private\WorldScene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ClientNetworkComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\GameUiRoutingComponent.cpp">
+      <Filter>Source Files\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\MapRuntimeComponent.cpp">
+      <Filter>Source Files\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\ClanRuntimeComponent.cpp">
+      <Filter>Source Files\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiActionComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\World\WorldRuntimeComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\World</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\FileTransferStateComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Localization\MessageCatalogComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Localization</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiWindowStateComponent.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h">
@@ -383,33 +404,6 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\ObjectParamManager.h">
       <Filter>Source\SferaCoreLoader\Public\GameObjects</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcDisassembler.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcEngineBridge.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcLinker.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcModule.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcNativeRegistry.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcOpcode.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcProject.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcTypes.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcVirtualMachine.h">
-      <Filter>Source\SferaCoreLoader\Public\MBC</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Model\ChrModel.h">
       <Filter>Source\SferaCoreLoader\Public\Model</Filter>
     </ClInclude>
@@ -426,9 +420,6 @@
       <Filter>Source\SferaCoreLoader\Public\Model</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientProtocol.h">
-      <Filter>Source\SferaCoreLoader\Public\Network</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientSession.h">
       <Filter>Source\SferaCoreLoader\Public\Network</Filter>
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ConnectManager.h">
@@ -547,6 +538,33 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Pch.h">
       <Filter>Source\SferaCoreLoader\Public\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ClientNetworkComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\GameUiRoutingComponent.h">
+      <Filter>Header Files\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\MapRuntimeComponent.h">
+      <Filter>Header Files\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\ClanRuntimeComponent.h">
+      <Filter>Header Files\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiActionComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\World\WorldRuntimeComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\FileTransferStateComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Localization\MessageCatalogComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Localization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiWindowStateComponent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -12,6 +12,9 @@ struct FUiActionState
     int32 PressedControlId = 0;
     int32 FocusedControlId = 7;
     int32 LastControlId = 0;
+    int32 HoverWindowIndex = -1;
+    int32 PressedWindowIndex = -1;
+    int32 FocusedWindowIndex = -1;
     bool SaveLogin = true;
     std::string LoginText;
     std::string PasswordText;
@@ -32,7 +35,8 @@ enum class EUiModalDialog
     None, 
     CharacterExit, 
     CharacterCreate,
-    CharacterDelete 
+    CharacterDelete,
+    GameExit
 };
 
 struct FUiBootstrapDesc
@@ -48,6 +52,8 @@ struct FUiBootstrapDesc
     int32 DesignWidth = 1024;
     int32 DesignHeight = 768;
     int32 Lang = 0;
+    int32 ChatListFont = 4;
+    int32 ChatEditFont = 4;
 };
 
 struct FCharacterUiAppearance 

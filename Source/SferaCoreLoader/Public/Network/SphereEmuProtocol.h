@@ -88,6 +88,7 @@ public:
     static FByteArray BuildCreateCharacterPacket(uint16 localId, int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance);
     static FByteArray BuildDeleteCharacterPacket(uint16 localId, int32 slot);
     static FByteArray BuildIngameAckPacket(uint16 localId);
+    static FByteArray BuildMarshaledPacket(uint16 localId, uint8 service, uint8 method, const FByteArray& payload);
     static std::optional<FServerWorldPosition> TryParseServerWorldPosition(const FByteArray& frame);
     static std::optional<FServerWorldPosition> TryParseServerWorldPosition(const FByteArray& frame, uint16 preferredEntityId);
     static FByteArray EncodeClientPacket(const FByteArray& decoded);

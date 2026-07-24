@@ -69,6 +69,14 @@ struct FGameWorldConfig
     float SkyRadius = 220.0f;
     float SkyHeightScale = 0.55f;
     float SkyScrollSpeed = 0.002f;
+    bool WeatherEnabled = true;
+    float WeatherTransitionSeconds = 18.0f;
+    int RainParticleCount = 400;
+    float RainRadius = 22.0f;
+    float RainHeight = 24.0f;
+    float RainFallSpeed = 24.0f;
+    float RainStreakLength = 1.35f;
+    float RainStreakWidth = 0.035f;
     int SkyRed = 200;
     int SkyGreen = 200;
     int SkyBlue = 200;

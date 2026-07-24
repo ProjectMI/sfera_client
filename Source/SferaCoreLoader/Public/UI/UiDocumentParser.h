@@ -7,4 +7,5 @@ class FUiDocumentParser
 public:
     TResult<FUiStringTable> LoadStringTableFromResource(const FResourceManager& resources, std::string_view logicalName) const;
     TResult<FUiWindowDef> LoadWindowFromResource(const FResourceManager& resources, std::string_view logicalName) const;
+    TResult<std::vector<FUiWindowDef>> LoadWindowsFromResource(const FResourceManager& resources, std::string_view logicalName) const;
 };

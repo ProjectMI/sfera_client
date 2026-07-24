@@ -1,7 +1,6 @@
 #pragma once
 #include "GameObjects/GameObjectRegistry.h"
 #include "GameObjects/ObjectParamManager.h"
-#include "MBC/MbcNativeRegistry.h"
 #include "ResourceLoader/ResourceManager.h"
 
 class FGameObjectService 
@@ -21,7 +20,6 @@ public:
     const FGameObjectRegistry& Registry() const { return ObjectRegistry; }
     FObjectParamManager& Params();
     FStatus EnsureParamsLoaded(FLogger* logger = nullptr);
-    void RegisterMbcNatives(FMbcNativeRegistry& registry, FLogger* logger = nullptr);
 private:
     const FResourceManager& Resources;
     FObjectParamManager ParamManager;

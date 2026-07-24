@@ -27,11 +27,16 @@ public:
     FCharacterActionResult DeleteCharacter(int32 slot, int32 timeoutMs = 2500);
     FCharacterActionResult SendIngameAck(int32 timeoutMs = 2500);
     FCharacterActionResult PollFrames(int32 maxFrames = 32);
+    bool SendChatMessage(uint8 channel, std::string_view utf8Text);
+    bool SendStatAllocation(const std::array<int32, 8>& deltas);
     void Close();
     bool Connected() const;
     uint16 LocalId() const;
     bool HasGameTime() const;
     float GameTimeFraction() const;
+    int32 GameDay() const;
+    int32 GameMonth() const;
+    int32 GameYear() const;
 private:
     struct FImpl;
     explicit FServerSession(std::unique_ptr<FImpl> impl);

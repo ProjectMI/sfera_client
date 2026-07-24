@@ -11,7 +11,7 @@ public:
     size_t Count() const { return Records.size(); }
     const std::vector<FFileRecord>& All() const { return Records; }
 private:
-    static constexpr size_t ResourceKindSlots = 11;
+    static constexpr size_t ResourceKindSlots = 10;
     std::vector<FFileRecord> Records;
     std::unordered_map<std::string, size_t> Lookup;
     std::array<std::vector<size_t>, ResourceKindSlots> KindLookup;

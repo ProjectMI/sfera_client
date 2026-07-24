@@ -2869,7 +2869,7 @@ void FD3D9GameWorldScene::Impl::DrawGrass()
         Device->SetVertexShaderConstantF(0, reinterpret_cast<const float*>(&wvp), 4);
         const float sunDir[4] = {0.40452f, 0.86683f, -0.52009f, 0.0f};
         const float sunColor[4] = {Environment.SunRed / 255.0f, Environment.SunGreen / 255.0f, Environment.SunBlue / 255.0f, Config.GrassColorGain};
-        const float wind[4] = {0.0426f, 0.0420f, ElapsedSeconds * Config.GrassWindSpeed, Config.GrassWindAmplitude};
+        const float wind[4] = {0.0426f, 0.0420f, ElapsedSeconds * Config.GrassWindSpeed * WeatherWind, Config.GrassWindAmplitude * WeatherWind};
         const float camera[4] = {CameraEye.X, CameraEye.Y, CameraEye.Z, Config.GrassFadeStart};
         const float fade[4] = {Config.GrassFadeEnd, 0.0f, 0.0f, 0.0f};
         Device->SetVertexShaderConstantF(4, sunDir, 1);
@@ -2881,7 +2881,7 @@ void FD3D9GameWorldScene::Impl::DrawGrass()
         ComputeWindCircles(circles);
         Device->SetVertexShaderConstantF(10, circles, 3);
         const float windAngle = ElapsedSeconds * 0.05f;
-        const float control[4] = {std::cos(windAngle), std::sin(windAngle), Config.GrassGustRadiusScale, Config.GrassBreeze};
+        const float control[4] = {std::cos(windAngle), std::sin(windAngle), Config.GrassGustRadiusScale * WeatherWind, std::clamp(Config.GrassBreeze * WeatherWind, 0.0f, 1.0f)};
         Device->SetVertexShaderConstantF(13, control, 1);
     }
     else

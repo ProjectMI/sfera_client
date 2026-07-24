@@ -1,6 +1,34 @@
 #pragma once
 #include "Core/Types.h"
 
+struct FUiStringHash
+{
+    using is_transparent = void;
+    size_t operator()(std::string_view value) const noexcept
+    {
+        size_t hash = static_cast<size_t>(1469598103934665603ull);
+        for (unsigned char ch : value) { hash = (hash ^ static_cast<size_t>(ch)) * static_cast<size_t>(1099511628211ull); }
+        return hash;
+    }
+    size_t operator()(const std::string& value) const noexcept { return (*this)(std::string_view(value)); }
+    size_t operator()(const char* value) const noexcept { return (*this)(std::string_view(value ? value : "")); }
+};
+
+enum class EUiControlClass : uint8
+{
+    Unknown,
+    Image,
+    Button,
+    CheckBox,
+    RadioButton,
+    SpinButton,
+    ScrollBar,
+    Slot,
+    ProgressBar,
+    Edit,
+    Text
+};
+
 struct FUiPoint 
 { 
     int32 X = 0;
@@ -63,6 +91,8 @@ struct FUiSpriteDef
     std::string Name;
     int32 Width = 0;
     int32 Height = 0;
+    int32 ExtentX = 1;
+    int32 ExtentY = 1;
     std::vector<FUiSpritePiece> Pieces;
 };
 
@@ -82,6 +112,7 @@ struct FUiControlDef
 {
     int32 Id = 0;
     std::string ClassId;
+    EUiControlClass Class = EUiControlClass::Unknown;
     FUiRect Rect;
     int32 Font = 0;
     FUiColor TextColor;
@@ -91,6 +122,7 @@ struct FUiControlDef
     std::string CheckedImage;
     std::string UncheckedImage;
     std::string FocusedImage;
+    std::string DisabledImage;
     std::string ImageName;
     std::string DrawSpriteName;
     std::string WindowHelp;
@@ -120,6 +152,7 @@ struct FUiControlDef
     std::string HyperTextResource;
     FUiPoint ImageOffset;
     int32 Group = 0;
+    float RotationDegrees = 0.0f;
 };
 
 enum class EUiPopupEffect
@@ -145,6 +178,7 @@ struct FUiPopupAnimationDesc
 struct FUiWindowDef 
 {
     std::string Name;
+    std::string NameKey;
     std::string TextKey;
     FUiRect Rect;
     int32 Font = 0;
@@ -164,5 +198,5 @@ struct FUiWindowDef
     FUiPopupAnimationDesc ShowEffect;
     FUiPopupAnimationDesc HideEffect;
     std::vector<FUiControlDef> Controls;
-    std::unordered_map<std::string, FUiSpriteDef> Sprites;
+    std::unordered_map<std::string, FUiSpriteDef, FUiStringHash, std::equal_to<>> Sprites;
 };

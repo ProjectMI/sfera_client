@@ -19,6 +19,7 @@ struct FD3D9GameWorldRenderStats
     uint32 GrassDrawCalls = 0;
     uint32 PlayerDrawCalls = 0;
     uint32 WaterDrawCalls = 0;
+    uint32 WeatherDrawCalls = 0;
     uint32 OverlayDrawCalls = 0;
     uint32 ReflectionDrawCalls = 0;
     uint64 ReflectionTriangles = 0;

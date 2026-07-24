@@ -1,15 +1,18 @@
 #pragma once
 #include "Client/ClientSettings.h"
+#include "Components/Network/ClientNetworkComponent.h"
+#include "Components/UI/ClanRuntimeComponent.h"
+#include "Components/UI/MapRuntimeComponent.h"
+#include "Components/UI/UiActionComponent.h"
+#include "Components/UI/UiWindowStateComponent.h"
 #include "Core/Logger.h"
-#include "Network/ClientSession.h"
-#include "Network/LoginClient.h"
 #include "Platform/Win64Window.h"
 #include "Renderer/D3D9RenderDevice.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "UI/UiRuntime.h"
 #include "WorldScene/WorldScene.h"
 
-struct FClientFrontendDesc 
+struct FClientFrontendDesc
 {
     FClientSettings Settings;
     std::optional<FEndpoint> Endpoint;
@@ -17,7 +20,7 @@ struct FClientFrontendDesc
     uint32 NetworkConnectTimeoutMs = 2500;
 };
 
-class FClientFrontendRuntime 
+class FClientFrontendRuntime
 {
 public:
     explicit FClientFrontendRuntime(FLogger* Logger = nullptr);
@@ -37,7 +40,6 @@ public:
     bool IsWindowOpen() const { return Window.IsOpen(); }
 private:
     void RequestRepaintThrottled();
-    void UpdateStageFromSession();
     void ProcessUiAction(const std::string& action);
     void BeginLoginRequest();
     void PollLoginResult();
@@ -51,39 +53,26 @@ private:
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
     void PollServerWorldUpdates();
-    FLoginProbeResult RefreshCharacterSelectSession(const std::wstring& login, const std::wstring& password, int32 timeoutMs);
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
     FWin64Window Window;
     FUiRuntime Ui;
     FD3D9RenderDevice RenderDevice;
-    FClientSession Session;
+    FClientNetworkComponent NetworkComponent;
+    FUiActionComponent UiActions;
+    FClanRuntimeComponent ClanRuntime;
+    FMapRuntimeComponent MapRuntime;
+    FUiWindowStateComponent UiWindows;
     FClientSettings Settings;
     FCharacterAppearanceRules AppearanceRules;
+    uint32 NetworkConnectTimeoutMs = 2500;
     const FResourceManager* RenderResources = nullptr;
     const FWorldScene* RenderWorldScene = nullptr;
     mutable std::recursive_mutex UiMutex;
     mutable std::mutex RenderMutex;
-    mutable std::mutex SessionMutex;
-    mutable std::mutex LoginMutex;
-    mutable std::mutex CharacterMutex;
-    std::optional<FEndpoint> Endpoint;
-    std::optional<FLoginProbeResult> PendingLoginResult;
-    std::optional<FCharacterActionResult> PendingCharacterResult;
-    std::optional<FLoginProbeResult> PendingCharacterRefreshResult;
-    int32 PendingCharacterActionKind = 0;
-    int32 PendingCharacterSlot = 0;
-    std::wstring PendingCharacterName;
-    FCharacterCreationAppearance PendingCharacterAppearance;
-    std::shared_ptr<FServerSession> ActiveServerSession;
-    std::thread LoginThread;
-    std::thread CharacterThread;
     bool ShellCreated = false;
     std::atomic_bool D3DInitialized{false};
-    std::atomic_bool LoginInProgress{false};
-    std::atomic_bool CharacterActionInProgress{false};
     bool RepaintDirty = true;
-    EClientSessionStage LastSessionStage = EClientSessionStage::Idle;
     std::chrono::steady_clock::time_point LastPaint = std::chrono::steady_clock::now();
     bool GameLookMode = false;
     bool LastGameTabDown = false;

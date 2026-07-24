@@ -13,6 +13,7 @@ enum class EGameWorldDrawBucket
     Grass,
     Player,
     Water,
+    Weather,
     Overlay
 };
 
@@ -23,6 +24,11 @@ struct FD3D9GameWorldScene::Impl
     IDirect3DTexture9* OverlayTexture = nullptr;
     IDirect3DTexture9* TerrainMicrotexture = nullptr;
     IDirect3DTexture9* SkyTexture = nullptr;
+    IDirect3DTexture9* WeatherSkyCurrent1 = nullptr;
+    IDirect3DTexture9* WeatherSkyCurrent2 = nullptr;
+    IDirect3DTexture9* WeatherSkyNext1 = nullptr;
+    IDirect3DTexture9* WeatherSkyNext2 = nullptr;
+    IDirect3DTexture9* RainTexture = nullptr;
     IDirect3DTexture9* WaterTexture = nullptr;
     static constexpr UINT kReflectionSize = 256;
     IDirect3DTexture9* ReflectionTexture = nullptr;
@@ -155,8 +161,44 @@ struct FD3D9GameWorldScene::Impl
     int GrassCenterZ = (std::numeric_limits<int>::min)();
     float GrassAnchorX = 0.0f;
     float GrassAnchorZ = 0.0f;
+    struct WeatherKeyframe
+    {
+        float Time = 0.0f;
+        float Rain = 0.0f;
+        float Fog = 0.0f;
+        float Wind = 0.0f;
+        float Cloud = -1.0f;
+    };
+
+    struct WeatherScenario
+    {
+        std::string Name;
+        std::string Sky1;
+        std::string Sky2;
+        float Duration = 120.0f;
+        float CloudCover = 0.0f;
+        float Rain = 0.0f;
+        float Fog = 0.0f;
+        float Wind = 0.35f;
+        float SkyScrollScale = 1.0f;
+        std::vector<WeatherKeyframe> Keyframes;
+    };
+
+    std::vector<WeatherScenario> WeatherScenarios;
+    std::vector<std::size_t> WeatherSequence;
+    std::size_t WeatherSequencePosition = 0;
+    float WeatherScenarioElapsed = 0.0f;
+    float WeatherTransitionBlend = 0.0f;
+    float WeatherRain = 0.0f;
+    float WeatherCloudCover = 0.0f;
+    float WeatherFog = 0.0f;
+    float WeatherWind = 0.35f;
+    float WeatherSkyScrollScale = 1.0f;
+    float WeatherFogStart = 70.0f;
+    float WeatherFogEnd = 170.0f;
     float ElapsedSeconds = 0.0f;
     float GameTimeFraction = 0.0f;
+    FGameWorldSkyState DayNightEnvironment{0.0f, 0, 0, 0, 110, 110, 110, 255, 245, 224, 200, 200, 200};
     FGameWorldSkyState Environment{0.0f, 0, 0, 0, 110, 110, 110, 255, 245, 224, 200, 200, 200};
     bool GrassAnchorValid = false;
     int OverlayWidth = 0;
@@ -186,6 +228,7 @@ struct FD3D9GameWorldScene::Impl
     void CreateReflectionTarget();
     std::filesystem::path ResolveOptionalPath(std::string LogicalName) const;
     std::filesystem::path ResolveConfiguredPath(const std::string& LogicalName) const;
+    std::filesystem::path ResolveWeatherTexturePath(const std::string& TextureName) const;
     void BuildTerrainPathIndex() const;
     std::optional<std::filesystem::path> TryResolveTerrainRelativePath(const std::filesystem::path& RelativePath) const;
     std::optional<std::filesystem::path> TryResolveTerrainStemPath(const std::string& TerrainStem) const;
@@ -241,6 +284,10 @@ struct FD3D9GameWorldScene::Impl
     void BeginBaseShader();
     void EndBaseShader();
     void ConfigureRenderState();
+    void LoadWeatherSystem();
+    void UpdateWeather(float DeltaSeconds);
+    void ApplyWeatherEnvironment();
+    void RefreshWeatherSkyTextures();
     bool TerrainHeightAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight) const;
     bool TerrainSurfaceNearAt(float WorldX, float WorldZ, float ReferenceY, float& OutHeight, FVector3& OutNormal) const;
     bool TerrainSurfaceAt(float WorldX, float WorldZ, float& OutHeight, FVector3& OutNormal) const;
@@ -269,6 +316,7 @@ struct FD3D9GameWorldScene::Impl
     void DrawStaticObjects();
     void DrawGrass();
     void DrawSky();
+    void DrawRain();
     bool WaterPlane(float& OutY) const;
     float WaterReflectCoeff() const;
     void RenderReflection();

@@ -1,5 +1,6 @@
 #include "Network/LoginClient.h"
 #include "Common/ValueUtils.h"
+#include "Common/TextEncoding.h"
 
 namespace
 {
@@ -296,6 +297,9 @@ bool FServerSession::Connected() const { return Impl && static_cast<bool>(Impl->
 uint16 FServerSession::LocalId() const { return Impl ? Impl->LocalId : 0; }
 bool FServerSession::HasGameTime() const { return Impl && Impl->HasGameTime; }
 float FServerSession::GameTimeFraction() const { return Impl ? Impl->GameTimeFraction : 0.0f; }
+int32 FServerSession::GameDay() const { return Impl ? Impl->GameDay : 0; }
+int32 FServerSession::GameMonth() const { return Impl ? Impl->GameMonth : 0; }
+int32 FServerSession::GameYear() const { return Impl ? Impl->GameYear : 0; }
 void FServerSession::Close()
 {
     if (Impl)
@@ -430,6 +434,53 @@ FCharacterActionResult FServerSession::PollFrames(int32 maxFrames)
     HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = true;
     return result;
+}
+bool FServerSession::SendChatMessage(uint8 channel, std::string_view utf8Text)
+{
+    if (!Connected() || utf8Text.empty()) { return false; }
+    FByteArray text = FSphereEmuProtocol::ToCp1251(Common::Utf8ToWide(std::string(utf8Text)));
+    if (text.empty() || text.size() > 4096) { return false; }
+    const uint16 partCount = static_cast<uint16>((text.size() + 249) / 250);
+    FByteArray header(8, 0);
+    header[0] = channel;
+    header[1] = 1;
+    const uint32 total = static_cast<uint32>(text.size());
+    header[2] = static_cast<uint8>(total & 0xff);
+    header[3] = static_cast<uint8>((total >> 8) & 0xff);
+    header[4] = static_cast<uint8>((total >> 16) & 0xff);
+    header[5] = static_cast<uint8>((total >> 24) & 0xff);
+    header[6] = static_cast<uint8>(partCount & 0xff);
+    header[7] = static_cast<uint8>((partCount >> 8) & 0xff);
+    if (!SendAll(Impl->Socket.Get(), FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildMarshaledPacket(Impl->LocalId, 12, 2, header)))) { return false; }
+    for (uint16 part = 0; part < partCount; ++part)
+    {
+        const size_t offset = static_cast<size_t>(part) * 250;
+        const size_t count = std::min<size_t>(250, text.size() - offset);
+        FByteArray payload(9 + count, 0);
+        payload[0] = channel;
+        payload[1] = 2;
+        payload[2] = static_cast<uint8>(part & 0xff);
+        payload[3] = static_cast<uint8>((part >> 8) & 0xff);
+        std::copy_n(text.begin() + static_cast<std::ptrdiff_t>(offset), count, payload.begin() + 4);
+        if (!SendAll(Impl->Socket.Get(), FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildMarshaledPacket(Impl->LocalId, 12, 2, payload)))) { return false; }
+    }
+    return true;
+}
+
+bool FServerSession::SendStatAllocation(const std::array<int32, 8>& deltas)
+{
+    if (!Connected()) { return false; }
+    FByteArray payload(32, 0);
+    for (size_t index = 0; index < deltas.size(); ++index)
+    {
+        const uint32 value = static_cast<uint32>(deltas[index]);
+        const size_t offset = index * 4;
+        payload[offset] = static_cast<uint8>(value & 0xff);
+        payload[offset + 1] = static_cast<uint8>((value >> 8) & 0xff);
+        payload[offset + 2] = static_cast<uint8>((value >> 16) & 0xff);
+        payload[offset + 3] = static_cast<uint8>((value >> 24) & 0xff);
+    }
+    return SendAll(Impl->Socket.Get(), FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildMarshaledPacket(Impl->LocalId, 12, 17, payload)));
 }
 
 FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring& login, const std::wstring& password, const FCharacterAppearanceRules& appearanceRules, int32 timeoutMs)

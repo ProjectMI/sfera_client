@@ -429,6 +429,22 @@ FByteArray FSphereEmuProtocol::BuildIngameAckPacket(uint16 localId)
     packet[10] = SferaProtocol::ServerFamilyByte;
     return packet;
 }
+FByteArray FSphereEmuProtocol::BuildMarshaledPacket(uint16 localId, uint8 service, uint8 method, const FByteArray& payload)
+{
+    const uint16 length = static_cast<uint16>(13 + payload.size());
+    FByteArray packet(length, 0);
+    WriteU16LE(packet, 0, length);
+    WriteU16LE(packet, 2, SferaProtocol::GameFrameOpcode);
+    packet[6] = SferaProtocol::ClientActionByte;
+    packet[7] = static_cast<uint8>((localId >> 8) & 0xff);
+    packet[8] = static_cast<uint8>(localId & 0xff);
+    packet[9] = SferaProtocol::ServerChannelByte;
+    packet[10] = SferaProtocol::ServerFamilyByte;
+    packet[11] = service;
+    packet[12] = method;
+    std::copy(payload.begin(), payload.end(), packet.begin() + 13);
+    return packet;
+}
 std::optional<FServerWorldPosition> FSphereEmuProtocol::TryParseServerWorldPosition(const FByteArray& frame)
 {
     return TryExtractSpawnMarkerPosition(frame);

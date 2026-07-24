@@ -24,7 +24,9 @@ struct FInputSnapshot
     bool BackspacePressed = false;
     bool EnterPressed = false;
     bool TabPressed = false;
+    std::array<bool, 256> KeyPressed{};
     std::string TypedText;
+    bool WasKeyPressed(int key) const { return key >= 0 && key < static_cast<int>(KeyPressed.size()) && KeyPressed[static_cast<size_t>(key)]; }
 };
 
 class FWin64Window

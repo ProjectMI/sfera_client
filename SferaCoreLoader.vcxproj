@@ -102,17 +102,7 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectService.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\GameObjectTypes.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\GameObjects\ObjectParamManager.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcDisassembler.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcEngineBridge.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcLinker.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcModule.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcNativeRegistry.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcOpcode.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcProject.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcTypes.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\MBC\MbcVirtualMachine.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientProtocol.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Network\ClientSession.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\ConnectManager.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\PacketBuffer.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Network\TcpSocket.cpp" />
@@ -148,6 +138,15 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldRender.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldSkinning.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldTerrain.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ClientNetworkComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\GameUiRoutingComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\MapRuntimeComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\ClanRuntimeComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiActionComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\World\WorldRuntimeComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\FileTransferStateComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Localization\MessageCatalogComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiWindowStateComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
@@ -171,17 +170,7 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\GameObjectService.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\GameObjectTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\GameObjects\ObjectParamManager.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcDisassembler.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcEngineBridge.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcLinker.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcModule.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcNativeRegistry.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcOpcode.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcProject.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcTypes.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\MBC\MbcVirtualMachine.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientProtocol.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\Network\ClientSession.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\ConnectManager.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\NetworkTypes.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Network\PacketBuffer.h" />
@@ -233,5 +222,14 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\GameWorldConfig.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Renderer\GameWorld\SkinnedCharacterModel.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Pch.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ClientNetworkComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\GameUiRoutingComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\MapRuntimeComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\ClanRuntimeComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiActionComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\World\WorldRuntimeComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\FileTransferStateComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Localization\MessageCatalogComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiWindowStateComponent.h" />
   </ItemGroup>
 </Project>

@@ -8,6 +8,47 @@
 
 namespace
 {
+uint64 GameUiKey(std::string_view window, int32 controlId)
+{
+    uint32 hash = 2166136261u;
+    for (unsigned char ch : window)
+    {
+        const unsigned char lower = static_cast<unsigned char>(std::tolower(ch));
+        hash = (hash ^ static_cast<uint32>(lower)) * 16777619u;
+    }
+    return (static_cast<uint64>(hash) << 32) | static_cast<uint32>(controlId);
+}
+
+int32 SpinDirectionForPoint(const FUiControlDef& control, const FUiRectF& windowRect, int32 x, int32 y)
+{
+    const float controlX = windowRect.X + static_cast<float>(control.Rect.X);
+    const float controlY = windowRect.Y + static_cast<float>(control.Rect.Y);
+    const auto contains = [&](const FUiSubButtonDef& button)
+    {
+        if (button.W <= 0 || button.H <= 0) { return false; }
+        const FUiRectF rect{controlX + static_cast<float>(button.X), controlY + static_cast<float>(button.Y), static_cast<float>(button.W), static_cast<float>(button.H)};
+        return FUiRuntimeInternals::Contains(rect, x, y);
+    };
+    if (contains(control.RightButton)) { return -1; }
+    if (contains(control.LeftButton)) { return 1; }
+    const float width = static_cast<float>(std::max(37, control.Rect.W));
+    return static_cast<float>(x) < controlX + width * 0.5f ? -1 : 1;
+}
+
+bool SpinContainsPoint(const FUiControlDef& control, const FUiRectF& windowRect, int32 x, int32 y)
+{
+    const float controlX = windowRect.X + static_cast<float>(control.Rect.X);
+    const float controlY = windowRect.Y + static_cast<float>(control.Rect.Y);
+    const auto contains = [&](const FUiSubButtonDef& button)
+    {
+        if (button.W <= 0 || button.H <= 0) { return false; }
+        return FUiRuntimeInternals::Contains(FUiRectF{controlX + static_cast<float>(button.X), controlY + static_cast<float>(button.Y), static_cast<float>(button.W), static_cast<float>(button.H)}, x, y);
+    };
+    if (contains(control.RightButton) || contains(control.LeftButton)) { return true; }
+    if (control.Rect.W <= 0 || control.Rect.H <= 0) { return false; }
+    return FUiRuntimeInternals::Contains(FUiRectF{controlX, controlY, static_cast<float>(control.Rect.W), static_cast<float>(control.Rect.H)}, x, y);
+}
+
 const FUiControlDef* HitTestControls(const FUiWindowDef& window, const FUiRectF& windowRect, int32 x, int32 y, float scale, bool spinFallbackSize)
 {
     for (auto it = window.Controls.rbegin(); it != window.Controls.rend(); ++it)
@@ -38,6 +79,17 @@ const FUiControlDef* HitTestControls(const FUiWindowDef& window, const FUiRectF&
 #define Connection Runtime.Connection
 #define CurrentMode Runtime.CurrentMode
 #define GameChat Runtime.GameChat
+#define GameChatFocused Runtime.GameChatFocused
+#define GameControlChecks Runtime.GameControlChecks
+#define GameDragOffsetX Runtime.GameDragOffsetX
+#define GameDragOffsetY Runtime.GameDragOffsetY
+#define GameEditValues Runtime.GameEditValues
+#define GameDragWindowIndex Runtime.GameDragWindowIndex
+#define GameWindowDefs Runtime.GameWindowDefs
+#define GameWindowOrder Runtime.GameWindowOrder
+#define GameWindowPositionOverrides Runtime.GameWindowPositionOverrides
+#define GameWindowPositions Runtime.GameWindowPositions
+#define GameWindowVisible Runtime.GameWindowVisible
 #define Modal Runtime.Modal
 #define ModalClosing Runtime.ModalClosing
 #define ModalEditText Runtime.ModalEditText
@@ -60,6 +112,7 @@ const FUiControlDef* HitTestControls(const FUiWindowDef& window, const FUiRectF&
 #define ShowCreateConfirmation Runtime.ShowCreateConfirmation
 #define ShowDeleteConfirmation Runtime.ShowDeleteConfirmation
 #define ShowExitConfirmation Runtime.ShowExitConfirmation
+#define ShowGameExitConfirmation Runtime.ShowGameExitConfirmation
 #define SyncCharacterSelectControls Runtime.CharacterRuntime.SyncCharacterSelectControls
 
 FUiRuntimeInput::FUiRuntimeInput(FUiRuntime& runtime) : Runtime(runtime) {}
@@ -146,9 +199,42 @@ const FUiControlDef* FUiRuntimeInput::HitTestModal(int32 x, int32 y, const RECT&
     return ModalClosing ? nullptr : HitTestControls(window, BuildAnimatedModalRect(clientRect), x, y, 1.0f, false);
 }
 
-bool FUiRuntimeInput::IsEditControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "EDIT"); }
-bool FUiRuntimeInput::IsCheckControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "CHECKBOX") || control.Id == SferaUi::SavePasswordId; }
-bool FUiRuntimeInput::IsButtonControl(const FUiControlDef& control) const { return Common::EqualsNoCase(control.ClassId, "BUTTON"); }
+int32 FUiRuntimeInput::HitTestGameWindow(int32 x, int32 y, const RECT& clientRect) const
+{
+    for (auto it = GameWindowOrder.rbegin(); it != GameWindowOrder.rend(); ++it)
+    {
+        const size_t index = *it;
+        if (index >= GameWindowDefs.size() || index >= GameWindowVisible.size() || !GameWindowVisible[index]) { continue; }
+        if (FUiRuntimeInternals::Contains(Runtime.BuildGameWindowRect(index, clientRect), x, y)) { return static_cast<int32>(index); }
+    }
+    return -1;
+}
+
+const FUiControlDef* FUiRuntimeInput::HitTestGame(int32 x, int32 y, const RECT& clientRect, int32& windowIndex) const
+{
+    windowIndex = HitTestGameWindow(x, y, clientRect);
+    if (windowIndex < 0) { return nullptr; }
+    const size_t index = static_cast<size_t>(windowIndex);
+    const FUiWindowDef& window = GameWindowDefs[index];
+    const FUiRectF windowRect = Runtime.BuildGameWindowRect(index, clientRect);
+    for (auto it = window.Controls.rbegin(); it != window.Controls.rend(); ++it)
+    {
+        const FUiControlDef& control = *it;
+        const bool staticDisabled = control.Disabled && !Runtime.OverridesStaticDisabled(window.Name, control.Id);
+        if (control.Hidden || staticDisabled || !FUiRuntimeInternals::IsMouseControlClass(control.ClassId) || Runtime.IsGameControlHidden(window.Name, control.Id) || Runtime.IsGameControlDisabled(window.Name, control.Id)) { continue; }
+        if (FUiRuntimeInternals::IsSpinButton(control))
+        {
+            if (SpinContainsPoint(control, windowRect, x, y)) { return &control; }
+            continue;
+        }
+        if (FUiRuntimeInternals::Contains(FUiRuntimeInternals::ControlRectInWindow(windowRect, control, 1.0f), x, y)) { return &control; }
+    }
+    return nullptr;
+}
+
+bool FUiRuntimeInput::IsEditControl(const FUiControlDef& control) const { return control.Class == EUiControlClass::Edit; }
+bool FUiRuntimeInput::IsCheckControl(const FUiControlDef& control) const { return control.Class == EUiControlClass::CheckBox || control.Id == SferaUi::SavePasswordId; }
+bool FUiRuntimeInput::IsButtonControl(const FUiControlDef& control) const { return control.Class == EUiControlClass::Button; }
 
 int32 FUiRuntimeInput::CharacterFocusForControl(int32 controlId) const
 {
@@ -305,6 +391,71 @@ void FUiRuntimeInput::ActivateCharacterControl(const FUiControlDef& control, FLo
     }
 }
 
+std::string FUiRuntimeInput::GameControlAction(const FUiWindowDef& window, const FUiControlDef& control) const
+{
+    return GameUiRoutes.Route({window.Name, control.Id, control.SendQuit, control.SendHelp, control.WindowHelp});
+}
+
+void FUiRuntimeInput::ActivateGameControl(int32 windowIndex, const FUiControlDef& control, FLogger* logger)
+{
+    if (windowIndex < 0 || static_cast<size_t>(windowIndex) >= GameWindowDefs.size()) { return; }
+    const FUiWindowDef& window = GameWindowDefs[static_cast<size_t>(windowIndex)];
+    if (Runtime.IsGameControlDisabled(window.Name, control.Id) || Runtime.IsGameControlHidden(window.Name, control.Id)) { return; }
+    Actions.LastControlId = control.Id;
+    Actions.FocusedWindowIndex = windowIndex;
+    if (control.Class == EUiControlClass::SpinButton) { Runtime.AdjustGameControlValue(window.Name, control, Actions.SpinPressedDirection == 0 ? 1 : Actions.SpinPressedDirection); }
+    Runtime.HandleLocalGameControl(window.Name, control.Id);
+    if (IsEditControl(control))
+    {
+        Actions.FocusedControlId = control.Id;
+        GameChatFocused = Common::ToLower(window.Name).starts_with("chat");
+        Actions.LastAction = "game_control:" + window.Name + ":" + std::to_string(control.Id);
+    }
+    else
+    {
+        if (control.Class == EUiControlClass::CheckBox || control.Class == EUiControlClass::RadioButton) { Runtime.ToggleGameControlChecked(window.Name, control); }
+        Actions.LastAction = GameControlAction(window, control);
+    }
+    if (logger && !Actions.LastAction.empty()) { logger->Info("UI action: " + Actions.LastAction); }
+}
+
+void FUiRuntimeInput::HandleGameHotkeys(const FInputSnapshot& input, FLogger* logger, bool& changed)
+{
+    if (input.WasKeyPressed(VK_ESCAPE))
+    {
+        if (Runtime.IsGameTextInputFocused())
+        {
+            GameChatFocused = false;
+            Actions.FocusedWindowIndex = -1;
+            Actions.FocusedControlId = 0;
+        }
+        else
+        {
+            for (auto it = GameWindowOrder.rbegin(); it != GameWindowOrder.rend(); ++it)
+            {
+                const size_t index = *it;
+                if (index >= GameWindowDefs.size() || index >= GameWindowVisible.size() || !GameWindowVisible[index] || !GameWindowDefs[index].EscapeHandle) { continue; }
+                Actions.LastAction = "game_window_close:" + GameWindowDefs[index].Name;
+                changed = true;
+                return;
+            }
+            Actions.LastAction = "game_window_toggle:options";
+        }
+        changed = true;
+        return;
+    }
+    if (Runtime.IsGameTextInputFocused()) { return; }
+    const std::array<std::pair<int32, std::string_view>, 7> hotkeys{{{'I', "inventory"}, {'P', "puppet"}, {'C', "statinfo"}, {'K', "hotkeys"}, {'M', "bigmap"}, {'J', "journal_mini"}, {'B', "mantra_book"}}};
+    for (const auto& [key, window] : hotkeys)
+    {
+        if (!input.WasKeyPressed(key)) { continue; }
+        Actions.LastAction = "game_window_toggle:" + std::string(window);
+        changed = true;
+        if (logger) { logger->Info("UI action: " + Actions.LastAction); }
+        return;
+    }
+}
+
 void FUiRuntimeInput::ActivateModalControl(const FUiControlDef& control, FLogger* logger)
 {
     Actions.LastControlId = control.Id;
@@ -363,6 +514,23 @@ void FUiRuntimeInput::ActivateModalControl(const FUiControlDef& control, FLogger
             Actions.LastAction.clear();
         }
     }
+    else if (current == EUiModalDialog::GameExit)
+    {
+        if (control.Id == SferaUi::ModalButton1Id)
+        {
+            DismissModal();
+            Actions.LastAction = "game_leave_confirmed";
+        }
+        else if (control.Id == SferaUi::ModalButton2Id || control.SendQuit)
+        {
+            DismissModal();
+            Actions.LastAction = "game_leave_cancelled";
+        }
+        else
+        {
+            Actions.LastAction.clear();
+        }
+    }
     else
     {
         DismissModal();
@@ -380,34 +548,40 @@ bool FUiRuntimeInput::HandleInputFrame(const FInputSnapshot& input, const RECT& 
     if (!Ready) { return false; }
 
     bool changed = false;
+    if (CurrentMode == EUiRuntimeMode::CharacterSelect) { SyncCharacterSelectControls(); }
 
-    if (CurrentMode == EUiRuntimeMode::CharacterSelect)
-    {
-        SyncCharacterSelectControls();
-    }
-
+    int32 hoveredWindow = -1;
     const FUiControlDef* hovered = nullptr;
-
     if (Modal != EUiModalDialog::None)
     {
         hovered = HitTestModal(input.MouseX, input.MouseY, clientRect);
     }
+    else if (CurrentMode == EUiRuntimeMode::CharacterSelect)
+    {
+        hovered = HitTestCharacterSelect(input.MouseX, input.MouseY, clientRect);
+    }
+    else if (CurrentMode == EUiRuntimeMode::Game)
+    {
+        hovered = HitTestGame(input.MouseX, input.MouseY, clientRect, hoveredWindow);
+    }
     else
     {
-        hovered = CurrentMode == EUiRuntimeMode::CharacterSelect ? HitTestCharacterSelect(input.MouseX, input.MouseY, clientRect) : HitTestConnection(input.MouseX, input.MouseY, clientRect);
+        hovered = HitTestConnection(input.MouseX, input.MouseY, clientRect);
     }
 
     const int32 newHover = hovered ? hovered->Id : 0;
+    const int32 newHoverWindow = CurrentMode == EUiRuntimeMode::Game && Modal == EUiModalDialog::None ? hoveredWindow : -1;
     int32 spinHoverDirection = 0;
-
-    if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered))
+    if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered)) { spinHoverDirection = CharacterSpinDeltaForPoint(*hovered, input.MouseX, input.MouseY, clientRect); }
+    else if (hovered && CurrentMode == EUiRuntimeMode::Game && FUiRuntimeInternals::IsSpinButton(*hovered) && hoveredWindow >= 0)
     {
-        spinHoverDirection = CharacterSpinDeltaForPoint(*hovered, input.MouseX, input.MouseY, clientRect);
+        const FUiRectF wr = Runtime.BuildGameWindowRect(static_cast<size_t>(hoveredWindow), clientRect);
+        spinHoverDirection = SpinDirectionForPoint(*hovered, wr, input.MouseX, input.MouseY);
     }
-
-    if (newHover != Actions.HoverControlId || spinHoverDirection != Actions.SpinHoverDirection)
+    if (newHover != Actions.HoverControlId || newHoverWindow != Actions.HoverWindowIndex || spinHoverDirection != Actions.SpinHoverDirection)
     {
         Actions.HoverControlId = newHover;
+        Actions.HoverWindowIndex = newHoverWindow;
         Actions.SpinHoverDirection = spinHoverDirection;
         changed = true;
     }
@@ -416,141 +590,237 @@ bool FUiRuntimeInput::HandleInputFrame(const FInputSnapshot& input, const RECT& 
     {
         const int32 dx = input.MouseX - SceneRotateLastX;
         SceneRotateLastX = input.MouseX;
+        if (dx != 0) { SceneAngle += static_cast<float>(dx) * 0.01f; changed = true; }
+    }
 
-        if (dx != 0)
+    if (CurrentMode == EUiRuntimeMode::Game && Modal == EUiModalDialog::None && GameDragWindowIndex >= 0 && input.LeftButton)
+    {
+        const size_t index = static_cast<size_t>(GameDragWindowIndex);
+        if (index < GameWindowDefs.size())
         {
-            SceneAngle += static_cast<float>(dx) * 0.01f;
+            const int32 clientW = std::max(1, static_cast<int32>(clientRect.right - clientRect.left));
+            const int32 clientH = std::max(1, static_cast<int32>(clientRect.bottom - clientRect.top));
+            const int32 width = std::max(1, GameWindowDefs[index].Rect.W);
+            const int32 height = std::max(1, GameWindowDefs[index].Rect.H);
+            GameWindowPositions[index].X = std::clamp(input.MouseX - GameDragOffsetX, -width + 24, clientW - 24);
+            GameWindowPositions[index].Y = std::clamp(input.MouseY - GameDragOffsetY, 0, clientH - 24);
+            GameWindowPositionOverrides[index] = true;
             changed = true;
+        }
+    }
+
+    if (CurrentMode == EUiRuntimeMode::Game && SliderDragWindow >= 0 && SliderDragControl != 0 && input.LeftButton)
+    {
+        const size_t index = static_cast<size_t>(SliderDragWindow);
+        if (index < GameWindowDefs.size())
+        {
+            const FUiWindowDef& window = GameWindowDefs[index];
+            auto controlIt = std::find_if(window.Controls.begin(), window.Controls.end(), [&](const FUiControlDef& control) { return control.Id == SliderDragControl; });
+            if (controlIt != window.Controls.end())
+            {
+                const FUiRectF wr = Runtime.BuildGameWindowRect(index, clientRect);
+                const float local = static_cast<float>(input.MouseX) - wr.X - static_cast<float>(controlIt->Rect.X);
+                const float ratio = std::clamp(local / static_cast<float>(std::max(1, controlIt->Rect.W)), 0.0f, 1.0f);
+                Runtime.SetGameControlValue(window.Name, *controlIt, static_cast<float>(controlIt->RangeMin) + ratio * static_cast<float>(controlIt->RangeMax - controlIt->RangeMin));
+                changed = true;
+            }
         }
     }
 
     if (input.LeftPressed)
     {
         Actions.PressedControlId = newHover;
+        Actions.PressedWindowIndex = newHoverWindow;
         Actions.SpinPressedDirection = 0;
         SceneRotateDragActive = false;
+        GameDragWindowIndex = -1;
+        SliderDragWindow = -1;
+        SliderDragControl = 0;
 
-        if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered))
+        if (CurrentMode == EUiRuntimeMode::Game && Modal == EUiModalDialog::None && hoveredWindow >= 0)
+        {
+            const size_t index = static_cast<size_t>(hoveredWindow);
+            Runtime.BringGameWindowToFront(index);
+            if (hovered && Common::EqualsNoCase(hovered->ClassId, "SCROLL_BAR"))
+            {
+                SliderDragWindow = hoveredWindow;
+                SliderDragControl = hovered->Id;
+                const FUiRectF wr = Runtime.BuildGameWindowRect(index, clientRect);
+                const float local = static_cast<float>(input.MouseX) - wr.X - static_cast<float>(hovered->Rect.X);
+                const float ratio = std::clamp(local / static_cast<float>(std::max(1, hovered->Rect.W)), 0.0f, 1.0f);
+                Runtime.SetGameControlValue(GameWindowDefs[index].Name, *hovered, static_cast<float>(hovered->RangeMin) + ratio * static_cast<float>(hovered->RangeMax - hovered->RangeMin));
+            }
+            if (hovered && FUiRuntimeInternals::IsSpinButton(*hovered)) { Actions.SpinPressedDirection = spinHoverDirection == 0 ? 1 : spinHoverDirection; }
+            if (!hovered || !IsEditControl(*hovered))
+            {
+                GameChatFocused = false;
+                Actions.FocusedWindowIndex = -1;
+                Actions.FocusedControlId = 0;
+            }
+            if (!hovered && index < GameWindowDefs.size() && GameWindowDefs[index].CanDragDrop)
+            {
+                const FUiRectF windowRect = Runtime.BuildGameWindowRect(index, clientRect);
+                FUiRectF titleRect{windowRect.X, windowRect.Y, windowRect.W, std::min(28.0f, windowRect.H)};
+                const FUiRect& title = GameWindowDefs[index].TitleRect;
+                if (title.W > title.X && title.H > title.Y) { titleRect = {windowRect.X + static_cast<float>(title.X), windowRect.Y + static_cast<float>(title.Y), static_cast<float>(title.W - title.X), static_cast<float>(title.H - title.Y)}; }
+                if (FUiRuntimeInternals::Contains(titleRect, input.MouseX, input.MouseY))
+                {
+                    GameDragWindowIndex = hoveredWindow;
+                    GameWindowPositions[index] = {static_cast<int32>(windowRect.X), static_cast<int32>(windowRect.Y)};
+                    GameWindowPositionOverrides[index] = true;
+                    GameDragOffsetX = input.MouseX - GameWindowPositions[index].X;
+                    GameDragOffsetY = input.MouseY - GameWindowPositions[index].Y;
+                }
+            }
+        }
+        else if (hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && FUiRuntimeInternals::IsSpinButton(*hovered))
         {
             CharacterSpinDelta = CharacterSpinDeltaForPoint(*hovered, input.MouseX, input.MouseY, clientRect);
             Actions.SpinPressedDirection = CharacterSpinDelta;
             const int32 focus = CharacterFocusForControl(hovered->Id);
-
-            if (focus != 0)
-            {
-                SceneCameraFocusId = focus;
-            }
+            if (focus != 0) { SceneCameraFocusId = focus; }
         }
         else if (!hovered && CurrentMode == EUiRuntimeMode::CharacterSelect && Modal == EUiModalDialog::None && !PointInsidePickPersonWindow(input.MouseX, input.MouseY, clientRect))
         {
             SceneRotateDragActive = true;
             SceneRotateLastX = input.MouseX;
         }
-
         changed = true;
     }
 
     if (input.LeftReleased)
     {
         const int32 pressed = Actions.PressedControlId;
+        const int32 pressedWindow = Actions.PressedWindowIndex;
+        const int32 pressedDirection = Actions.SpinPressedDirection;
         Actions.PressedControlId = 0;
-        Actions.SpinPressedDirection = 0;
+        Actions.PressedWindowIndex = -1;
+        Actions.SpinPressedDirection = pressedDirection;
         SceneRotateDragActive = false;
+        GameDragWindowIndex = -1;
+        SliderDragWindow = -1;
+        SliderDragControl = 0;
         changed = true;
-
-        if (hovered && hovered->Id != 0 && hovered->Id == pressed)
+        if (hovered && hovered->Id != 0 && hovered->Id == pressed && (CurrentMode != EUiRuntimeMode::Game || hoveredWindow == pressedWindow))
         {
-            if (Modal != EUiModalDialog::None)
+            if (Modal != EUiModalDialog::None) { ActivateModalControl(*hovered, logger); }
+            else if (CurrentMode == EUiRuntimeMode::CharacterSelect) { ActivateCharacterControl(*hovered, logger); }
+            else if (CurrentMode == EUiRuntimeMode::Game)
             {
-                ActivateModalControl(*hovered, logger);
+                if (hoveredWindow >= 0 && Common::EqualsNoCase(GameWindowDefs[static_cast<size_t>(hoveredWindow)].Name, "journal_mini") && hovered->Id == 9 && Runtime.JournalEntryCount() > 0)
+                {
+                    const FUiRectF wr = Runtime.BuildGameWindowRect(static_cast<size_t>(hoveredWindow), clientRect);
+                    const float localY = static_cast<float>(input.MouseY) - wr.Y - static_cast<float>(hovered->Rect.Y);
+                    const float ratio = std::clamp(localY / static_cast<float>(std::max(1, hovered->Rect.H)), 0.0f, 0.9999f);
+                    Runtime.SelectJournalEntry(static_cast<int32>(ratio * static_cast<float>(Runtime.JournalEntryCount())));
+                }
+                ActivateGameControl(hoveredWindow, *hovered, logger);
             }
-            else if (CurrentMode == EUiRuntimeMode::CharacterSelect)
-            {
-                ActivateCharacterControl(*hovered, logger);
-            }
-            else
-            {
-                ActivateControl(*hovered, logger);
-            }
+            else { ActivateControl(*hovered, logger); }
         }
+        Actions.SpinPressedDirection = 0;
     }
 
     if (Modal != EUiModalDialog::None)
     {
-        if (Modal == EUiModalDialog::CharacterDelete && Actions.FocusedControlId == SferaUi::DeleteConfirmEditId)
+        if (Modal == EUiModalDialog::CharacterDelete && Actions.FocusedControlId == SferaUi::DeleteConfirmEditId) { changed = FUiRuntimeInternals::ApplyUtf8TextEdit(ModalEditText, input, SferaUi::MaxDeleteConfirmChars) || changed; }
+        if (input.WasKeyPressed(VK_ESCAPE))
         {
-            changed = FUiRuntimeInternals::ApplyUtf8TextEdit(ModalEditText, input, SferaUi::MaxDeleteConfirmChars) || changed;
+            const bool gameExit = Modal == EUiModalDialog::GameExit;
+            DismissModal();
+            Actions.LastAction = gameExit ? "game_leave_cancelled" : "modal_closed";
+            changed = true;
         }
-
-        if (input.EnterPressed)
+        else if (input.EnterPressed)
         {
             const EUiModalDialog current = Modal;
-
-            if (current == EUiModalDialog::CharacterDelete && !ModalEditMatchesSelectedCharacter())
-            {
-                Actions.LastAction = "character_delete_name_required";
-            }
+            if (current == EUiModalDialog::CharacterDelete && !ModalEditMatchesSelectedCharacter()) { Actions.LastAction = "character_delete_name_required"; }
             else
             {
                 DismissModal();
-                Actions.LastAction = current == EUiModalDialog::CharacterCreate ? "character_create_confirmed" : current == EUiModalDialog::CharacterDelete ? "character_delete_confirmed" : "character_back_confirmed";
+                if (current == EUiModalDialog::CharacterCreate) { Actions.LastAction = "character_create_confirmed"; }
+                else if (current == EUiModalDialog::CharacterDelete) { Actions.LastAction = "character_delete_confirmed"; }
+                else if (current == EUiModalDialog::GameExit) { Actions.LastAction = "game_leave_confirmed"; }
+                else { Actions.LastAction = "character_back_confirmed"; }
             }
-
             changed = true;
         }
-
         return changed;
     }
 
     if (CurrentMode == EUiRuntimeMode::Login && (Actions.FocusedControlId == SferaUi::LoginEditId || Actions.FocusedControlId == SferaUi::PasswordEditId))
     {
         std::string& target = Actions.FocusedControlId == SferaUi::PasswordEditId ? Actions.PasswordText : Actions.LoginText;
-
         const size_t limit = Actions.FocusedControlId == SferaUi::PasswordEditId ? SferaUi::MaxPasswordChars : SferaUi::MaxLoginChars;
         changed = FUiRuntimeInternals::ApplyUtf8TextEdit(target, input, limit) || changed;
-
-        if (input.TabPressed)
-        {
-            Actions.FocusedControlId = Actions.FocusedControlId == SferaUi::LoginEditId ? SferaUi::PasswordEditId : SferaUi::LoginEditId;
-            changed = true;
-        }
+        if (input.TabPressed) { Actions.FocusedControlId = Actions.FocusedControlId == SferaUi::LoginEditId ? SferaUi::PasswordEditId : SferaUi::LoginEditId; changed = true; }
     }
 
     if (CurrentMode == EUiRuntimeMode::CharacterSelect && SferaUi::IsCharacterNameEdit(ActiveCharacterEditId) && !CharacterActionLocked)
     {
         std::wstring& target = CharacterNameEdits[static_cast<size_t>(SferaUi::SlotFromNameEditId(ActiveCharacterEditId))];
-
         changed = FUiRuntimeInternals::ApplyWideTextEdit(target, input, SferaUi::MaxCharacterNameChars, FUiRuntimeInternals::IsCharacterNameChar) || changed;
     }
 
     if (CurrentMode == EUiRuntimeMode::Game)
     {
-        changed = FUiRuntimeInternals::ApplyUtf8TextEdit(GameChat, input, SferaUi::MaxGameChatChars) || changed;
+        HandleGameHotkeys(input, logger, changed);
+        const FUiControlDef* focusedEdit = nullptr;
+        const FUiWindowDef* focusedWindow = nullptr;
+        if (Actions.FocusedWindowIndex >= 0 && static_cast<size_t>(Actions.FocusedWindowIndex) < GameWindowDefs.size())
+        {
+            focusedWindow = &GameWindowDefs[static_cast<size_t>(Actions.FocusedWindowIndex)];
+            auto it = std::find_if(focusedWindow->Controls.begin(), focusedWindow->Controls.end(), [&](const FUiControlDef& control) { return control.Id == Actions.FocusedControlId && IsEditControl(control); });
+            if (it != focusedWindow->Controls.end()) { focusedEdit = &*it; }
+        }
+        if (focusedEdit && focusedWindow)
+        {
+            const size_t maxChars = focusedEdit->MaxSymbols > 0 ? static_cast<size_t>(focusedEdit->MaxSymbols) : SferaUi::MaxGameChatChars;
+            const uint64 key = GameUiKey(focusedWindow->Name, focusedEdit->Id);
+            std::string& text = GameChatFocused ? GameChat : GameEditValues[key];
+            changed = FUiRuntimeInternals::ApplyUtf8TextEdit(text, input, maxChars) || changed;
+        }
+        if (input.EnterPressed)
+        {
+            if (!focusedEdit || !focusedWindow)
+            {
+                GameChatFocused = true;
+                Runtime.SetGameWindowVisible("chat_st2", true);
+                const std::optional<size_t> chatIndex = Runtime.FindGameWindowIndex("chat_st2");
+                if (chatIndex)
+                {
+                    Actions.FocusedWindowIndex = static_cast<int32>(*chatIndex);
+                    const auto edit = std::find_if(GameWindowDefs[*chatIndex].Controls.begin(), GameWindowDefs[*chatIndex].Controls.end(), [&](const FUiControlDef& control) { return IsEditControl(control); });
+                    Actions.FocusedControlId = edit == GameWindowDefs[*chatIndex].Controls.end() ? 0 : edit->Id;
+                }
+                Actions.LastAction = "game_window_open:chat_st2";
+            }
+            else if (GameChatFocused && GameChat.empty())
+            {
+                GameChatFocused = false;
+                Actions.FocusedControlId = 0;
+                Actions.FocusedWindowIndex = -1;
+            }
+            else if (GameChatFocused)
+            {
+                Actions.LastAction = "game_chat_submit";
+            }
+            else
+            {
+                Actions.LastAction = "game_control:" + focusedWindow->Name + ":" + std::to_string(focusedEdit->Id);
+            }
+            changed = true;
+        }
+        return changed;
     }
 
     if (input.EnterPressed)
     {
-        if (CurrentMode == EUiRuntimeMode::CharacterSelect && !SelectedCharacterPresent() && SelectedCharacterCanCreate())
-        {
-            ShowCreateConfirmation();
-        }
-        else if (CurrentMode == EUiRuntimeMode::Game)
-        {
-            Actions.LastAction = "game_chat_enter";
-        }
-        else
-        {
-            Actions.LastAction = CurrentMode == EUiRuntimeMode::CharacterSelect ? "character_enter_requested" : "login_requested";
-        }
-
+        if (CurrentMode == EUiRuntimeMode::CharacterSelect && !SelectedCharacterPresent() && SelectedCharacterCanCreate()) { ShowCreateConfirmation(); }
+        else { Actions.LastAction = CurrentMode == EUiRuntimeMode::CharacterSelect ? "character_enter_requested" : "login_requested"; }
         changed = true;
-
-        if (logger)
-        {
-            logger->Info("UI action: " + Actions.LastAction);
-        }
+        if (logger) { logger->Info("UI action: " + Actions.LastAction); }
     }
-
     return changed;
 }
 
@@ -559,16 +829,27 @@ void FUiRuntimeInput::SetMode(EUiRuntimeMode mode)
     CurrentMode = mode;
     Actions.HoverControlId = 0;
     Actions.PressedControlId = 0;
+    Actions.HoverWindowIndex = -1;
+    Actions.PressedWindowIndex = -1;
+    Actions.FocusedWindowIndex = -1;
     Actions.LastAction.clear();
     ClearModalState();
     SceneRotateDragActive = false;
     Actions.SpinHoverDirection = 0;
     Actions.SpinPressedDirection = 0;
+    GameChatFocused = false;
+    GameDragWindowIndex = -1;
+    SliderDragWindow = -1;
+    SliderDragControl = 0;
 
     if (CurrentMode == EUiRuntimeMode::CharacterSelect)
     {
         SceneCameraFocusId = 0;
         SyncCharacterSelectControls();
+    }
+    else if (CurrentMode == EUiRuntimeMode::Game)
+    {
+        Runtime.ResetGameWindows();
     }
 }
 

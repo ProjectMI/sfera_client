@@ -6,6 +6,27 @@ constexpr int kSkyRings = 8;
 constexpr int kSkySegments = 32;
 constexpr std::size_t kSkyVertexCount = (kSkyRings + 1) * (kSkySegments + 1);
 constexpr std::size_t kSkyIndexCount = kSkyRings * kSkySegments * 6;
+constexpr DWORD kRainVertexFvf = D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+
+struct RainVertex
+{
+    float X;
+    float Y;
+    float Z;
+    DWORD Color;
+    float U;
+    float V;
+};
+
+float RainHash01(uint32 value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return static_cast<float>(value & 0xffffu) / 65535.0f;
+}
 
 std::array<uint16, kSkyIndexCount> BuildSkyIndices()
 {
@@ -347,8 +368,8 @@ void FD3D9GameWorldScene::Impl::ConfigureRenderState()
     D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue));
     Device->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_NONE);
     Device->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_LINEAR);
-    const DWORD FogStart = FloatRenderStateValue(Config.FogStart);
-    const DWORD FogEnd = FloatRenderStateValue(Config.FogEnd);
+    const DWORD FogStart = FloatRenderStateValue(WeatherFogStart);
+    const DWORD FogEnd = FloatRenderStateValue(WeatherFogEnd);
     Device->SetRenderState(D3DRS_FOGSTART, FogStart);
     Device->SetRenderState(D3DRS_FOGEND, FogEnd);
 
@@ -406,26 +427,32 @@ void FD3D9GameWorldScene::Impl::UpdateViewProjection()
 
 void FD3D9GameWorldScene::Impl::DrawSky()
 {
-    std::array<WorldVertex, kSkyVertexCount> vertices{};
     static const auto Indices = BuildSkyIndices();
-    std::size_t vertexCursor = 0;
-    const DWORD color = D3DCOLOR_XRGB(Environment.CloudRed, Environment.CloudGreen, Environment.CloudBlue);
-    const float scroll = ElapsedSeconds * Config.SkyScrollSpeed;
-    for (int ring = 0; ring <= kSkyRings; ++ring)
+    struct FSkyLayer
     {
-        const float v = static_cast<float>(ring) / static_cast<float>(kSkyRings);
-        const float theta = v * kPi * 0.5f;
-        const float radial = std::sin(theta) * Config.SkyRadius;
-        const float height = std::cos(theta) * Config.SkyRadius * Config.SkyHeightScale;
-        for (int segment = 0; segment <= kSkySegments; ++segment)
+        IDirect3DTexture9* Texture = nullptr;
+        float Weight = 0.0f;
+        float ScrollScale = 1.0f;
+    };
+    std::array<FSkyLayer, 4> layers{};
+    auto fillScenarioLayers = [&](std::size_t offset, IDirect3DTexture9* first, IDirect3DTexture9* second, float scenarioWeight)
+    {
+        if (!first && !second)
         {
-            const float longitude = static_cast<float>(segment) / static_cast<float>(kSkySegments);
-            const float angle = longitude * 2.0f * kPi;
-            const float nx = Config.SkyRadius > 0.0f ? std::cos(angle) * radial / Config.SkyRadius : 0.0f;
-            const float nz = Config.SkyRadius > 0.0f ? std::sin(angle) * radial / Config.SkyRadius : 0.0f;
-            vertices[vertexCursor++] = WorldVertex{SpawnX + std::cos(angle) * radial, SpawnY - height, SpawnZ + std::sin(angle) * radial, 0.0f, -1.0f, 0.0f, color, 0.5f + nx * 0.5f + scroll, 0.5f + nz * 0.5f, 0.0f, 0.0f};
+            first = SkyTexture;
         }
-    }
+        if (first && second)
+        {
+            layers[offset] = {first, scenarioWeight * 0.65f, 1.0f};
+            layers[offset + 1] = {second, scenarioWeight * 0.35f, 1.17f};
+        }
+        else
+        {
+            layers[offset] = {first ? first : second, scenarioWeight, 1.0f};
+        }
+    };
+    fillScenarioLayers(0, WeatherSkyCurrent1, WeatherSkyCurrent2, 1.0f - WeatherTransitionBlend);
+    fillScenarioLayers(2, WeatherSkyNext1, WeatherSkyNext2, WeatherTransitionBlend);
 
     Device->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
     Device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
@@ -445,20 +472,128 @@ void FD3D9GameWorldScene::Impl::DrawSky()
     Device->SetVertexDeclaration(nullptr);
     Device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
     Device->SetFVF(kWorldVertexFvf);
-    Device->SetTexture(0, SkyTexture);
     const auto identity = IdentityMatrix();
     Device->SetTransform(D3DTS_WORLD, &identity);
     const UINT triangleCount = static_cast<UINT>(Indices.size() / 3);
-    Device->DrawIndexedPrimitiveUP(
-    D3DPT_TRIANGLELIST,
-    0,
-    static_cast<UINT>(vertices.size()),
-    triangleCount,
-    Indices.data(),
-    D3DFMT_INDEX16,
-    vertices.data(),
-    sizeof(WorldVertex));
-    RecordWorldDraw(triangleCount, EGameWorldDrawBucket::Sky);
+
+    for (const FSkyLayer& layer : layers)
+    {
+        if (!layer.Texture || layer.Weight <= 0.002f)
+        {
+            continue;
+        }
+        std::array<WorldVertex, kSkyVertexCount> vertices{};
+        std::size_t vertexCursor = 0;
+        const int red = static_cast<int>(std::lround(Environment.CloudRed * layer.Weight));
+        const int green = static_cast<int>(std::lround(Environment.CloudGreen * layer.Weight));
+        const int blue = static_cast<int>(std::lround(Environment.CloudBlue * layer.Weight));
+        const DWORD color = D3DCOLOR_XRGB(std::clamp(red, 0, 255), std::clamp(green, 0, 255), std::clamp(blue, 0, 255));
+        const float scroll = ElapsedSeconds * Config.SkyScrollSpeed * WeatherSkyScrollScale * layer.ScrollScale;
+        for (int ring = 0; ring <= kSkyRings; ++ring)
+        {
+            const float v = static_cast<float>(ring) / static_cast<float>(kSkyRings);
+            const float theta = v * kPi * 0.5f;
+            const float radial = std::sin(theta) * Config.SkyRadius;
+            const float height = std::cos(theta) * Config.SkyRadius * Config.SkyHeightScale;
+            for (int segment = 0; segment <= kSkySegments; ++segment)
+            {
+                const float longitude = static_cast<float>(segment) / static_cast<float>(kSkySegments);
+                const float angle = longitude * 2.0f * kPi;
+                const float nx = Config.SkyRadius > 0.0f ? std::cos(angle) * radial / Config.SkyRadius : 0.0f;
+                const float nz = Config.SkyRadius > 0.0f ? std::sin(angle) * radial / Config.SkyRadius : 0.0f;
+                vertices[vertexCursor++] = WorldVertex{SpawnX + std::cos(angle) * radial, SpawnY - height, SpawnZ + std::sin(angle) * radial, 0.0f, -1.0f, 0.0f, color, 0.5f + nx * 0.5f + scroll, 0.5f + nz * 0.5f, 0.0f, 0.0f};
+            }
+        }
+        Device->SetTexture(0, layer.Texture);
+        Device->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, static_cast<UINT>(vertices.size()), triangleCount, Indices.data(), D3DFMT_INDEX16, vertices.data(), sizeof(WorldVertex));
+        RecordWorldDraw(triangleCount, EGameWorldDrawBucket::Sky);
+    }
+    ConfigureRenderState();
+}
+
+void FD3D9GameWorldScene::Impl::DrawRain()
+{
+    if (WeatherRain <= 0.01f || Config.RainParticleCount <= 0)
+    {
+        return;
+    }
+    const int configuredParticleCount = std::clamp(Config.RainParticleCount, 1, 2000);
+    const int particleCount = std::clamp(static_cast<int>(std::lround(configuredParticleCount * WeatherRain)), 1, configuredParticleCount);
+    static thread_local std::vector<RainVertex> vertices;
+    vertices.clear();
+    vertices.reserve(static_cast<std::size_t>(particleCount) * 6);
+    const float rightX = std::cos(CameraYaw);
+    const float rightZ = -std::sin(CameraYaw);
+    const float windAngle = ElapsedSeconds * 0.075f;
+    const float windX = std::sin(windAngle) * WeatherWind * 0.28f;
+    const float windZ = std::cos(windAngle) * WeatherWind * 0.28f;
+    const float rainHeight = (std::max)(Config.RainHeight, 2.0f);
+    const float rainRadius = (std::max)(Config.RainRadius, 2.0f);
+    const float streakLength = (std::max)(Config.RainStreakLength, 0.2f);
+    const float halfWidth = (std::max)(Config.RainStreakWidth, 0.005f) * 0.5f;
+    const float top = CameraEye.Y - rainHeight * 0.58f;
+    const int alpha = std::clamp(static_cast<int>(70.0f + WeatherRain * 120.0f), 0, 220);
+    const DWORD color = D3DCOLOR_ARGB(alpha, 188, 208, 226);
+    for (int index = 0; index < particleCount; ++index)
+    {
+        const uint32 seed = static_cast<uint32>(index) * 747796405u + 2891336453u;
+        const float angle = RainHash01(seed) * 2.0f * kPi;
+        const float radius = std::sqrt(RainHash01(seed ^ 0x68bc21ebu)) * rainRadius;
+        const float phase = RainHash01(seed ^ 0x02e5be93u) * rainHeight;
+        const float fall = std::fmod(phase + ElapsedSeconds * Config.RainFallSpeed, rainHeight);
+        const float x = CameraEye.X + std::cos(angle) * radius + windX * fall * 0.08f;
+        const float y = top + fall;
+        const float z = CameraEye.Z + std::sin(angle) * radius + windZ * fall * 0.08f;
+        const float bottomX = x + windX * streakLength;
+        const float bottomY = y + streakLength;
+        const float bottomZ = z + windZ * streakLength;
+        const RainVertex topLeft{x - rightX * halfWidth, y, z - rightZ * halfWidth, color, 0.0f, 0.0f};
+        const RainVertex topRight{x + rightX * halfWidth, y, z + rightZ * halfWidth, color, 1.0f, 0.0f};
+        const RainVertex bottomLeft{bottomX - rightX * halfWidth, bottomY, bottomZ - rightZ * halfWidth, color, 0.0f, 1.0f};
+        const RainVertex bottomRight{bottomX + rightX * halfWidth, bottomY, bottomZ + rightZ * halfWidth, color, 1.0f, 1.0f};
+        vertices.push_back(topLeft);
+        vertices.push_back(bottomLeft);
+        vertices.push_back(topRight);
+        vertices.push_back(topRight);
+        vertices.push_back(bottomLeft);
+        vertices.push_back(bottomRight);
+    }
+
+    Device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
+    Device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+    Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
+    Device->SetRenderState(D3DRS_LIGHTING, FALSE);
+    Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    Device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    Device->SetVertexShader(nullptr);
+    Device->SetPixelShader(nullptr);
+    Device->SetVertexDeclaration(nullptr);
+    Device->SetFVF(kRainVertexFvf);
+    Device->SetTexture(0, RainTexture);
+    if (RainTexture)
+    {
+        Device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+        Device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+        Device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+    }
+    else
+    {
+        Device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+        Device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+        Device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+    }
+    Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+    Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+    const auto identity = IdentityMatrix();
+    Device->SetTransform(D3DTS_WORLD, &identity);
+    Device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, static_cast<UINT>(particleCount * 2), vertices.data(), sizeof(RainVertex));
+    RecordWorldDraw(static_cast<uint32>(particleCount * 2), EGameWorldDrawBucket::Weather);
     ConfigureRenderState();
 }
 
@@ -533,6 +668,7 @@ void FD3D9GameWorldScene::Impl::RecordWorldDraw(uint32 triangles, EGameWorldDraw
         case EGameWorldDrawBucket::Grass: ++LastRenderStats.GrassDrawCalls; break;
         case EGameWorldDrawBucket::Player: ++LastRenderStats.PlayerDrawCalls; break;
         case EGameWorldDrawBucket::Water: ++LastRenderStats.WaterDrawCalls; break;
+        case EGameWorldDrawBucket::Weather: ++LastRenderStats.WeatherDrawCalls; break;
         case EGameWorldDrawBucket::Overlay: ++LastRenderStats.OverlayDrawCalls; break;
     }
 }
@@ -585,5 +721,6 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     DrawStaticObjects();
     DrawPlayer();
     DrawWater();
+    DrawRain();
     DrawOverlay();
 }

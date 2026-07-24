@@ -11,16 +11,6 @@ namespace
     constexpr unsigned int D3DX_DEFAULT_VALUE = static_cast<unsigned int>(-1);
     constexpr unsigned long D3DX_FILTER_NONE_VALUE = 1ul;
 
-    struct FUiVertex
-    {
-        float X;
-        float Y;
-        float Z;
-        float Rhw;
-        unsigned long Color;
-        float U;
-        float V;
-    };
     constexpr unsigned long FVF_UI = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
 
     std::string StemLower(const FPath& path) { return Common::ToLower(path.stem().string()); }
@@ -41,35 +31,28 @@ namespace
     float SnapSize(float v) { return std::max(1.0f, std::floor(v + 0.5f)); }
     const FUiSpriteDef* FindSprite(const FUiWindowDef& window, std::string_view name)
     {
-        auto it = window.Sprites.find(Common::ToLower(std::string(name)));
-
-        if (it == window.Sprites.end()) { return nullptr; }
-
-        return &it->second;
+        auto it = window.Sprites.find(name);
+        return it == window.Sprites.end() ? nullptr : &it->second;
     }
 
-    std::string SelectButtonSprite(const FUiControlDef& control, const FUiActionState& state)
+    int32 SpriteExtentX(const FUiSpriteDef& sprite) { return std::max(1, sprite.ExtentX); }
+    int32 SpriteExtentY(const FUiSpriteDef& sprite) { return std::max(1, sprite.ExtentY); }
+
+    std::string_view SelectButtonSprite(const FUiControlDef& control, bool disabled, bool hovered, bool pressed)
     {
-        if (control.Disabled && !control.LeftButton.DisabledImage.empty()) { return control.LeftButton.DisabledImage; }
-
-        if (state.PressedControlId == control.Id && !control.CheckedImage.empty()) { return control.CheckedImage; }
-
-        if (state.HoverControlId == control.Id && !control.FocusedImage.empty()) { return control.FocusedImage; }
-
+        if (disabled && !control.DisabledImage.empty()) { return control.DisabledImage; }
+        if (pressed && !control.CheckedImage.empty()) { return control.CheckedImage; }
+        if (hovered && !control.FocusedImage.empty()) { return control.FocusedImage; }
         if (!control.UncheckedImage.empty()) { return control.UncheckedImage; }
-
         return control.DrawSpriteName;
     }
 
-    std::string SelectSubButtonSprite(const FUiSubButtonDef& button, bool disabled, bool hot, bool pressed, std::string_view normalFallback, std::string_view focusFallback, std::string_view pressedFallback, std::string_view disabledFallback)
+    std::string_view SelectSubButtonSprite(const FUiSubButtonDef& button, bool disabled, bool hot, bool pressed, std::string_view normalFallback, std::string_view focusFallback, std::string_view pressedFallback, std::string_view disabledFallback)
     {
-        if (disabled) { return !button.DisabledImage.empty() ? button.DisabledImage : std::string(disabledFallback); }
-
-        if (pressed) { return !button.CheckedImage.empty() ? button.CheckedImage : std::string(pressedFallback); }
-
-        if (hot) { return !button.FocusedImage.empty() ? button.FocusedImage : std::string(focusFallback); }
-
-        return !button.UncheckedImage.empty() ? button.UncheckedImage : std::string(normalFallback);
+        if (disabled) { return !button.DisabledImage.empty() ? std::string_view(button.DisabledImage) : disabledFallback; }
+        if (pressed) { return !button.CheckedImage.empty() ? std::string_view(button.CheckedImage) : pressedFallback; }
+        if (hot) { return !button.FocusedImage.empty() ? std::string_view(button.FocusedImage) : focusFallback; }
+        return !button.UncheckedImage.empty() ? std::string_view(button.UncheckedImage) : normalFallback;
     }
 
     std::string FormatOneDecimal(double value)
@@ -97,14 +80,36 @@ namespace
         return buffer;
     }
 
-    bool IsTextLikeControl(const FUiControlDef& control) { return Common::EqualsNoCase(control.ClassId, "TEXT") || Common::EqualsNoCase(control.ClassId, "TEXTLIST") || Common::EqualsNoCase(control.ClassId, "HYPER_TEXT"); }
+    bool IsTextLikeControl(const FUiControlDef& control) { return control.Class == EUiControlClass::Text; }
     std::string TextForControl(const FUiRuntime& ui, const FUiWindowDef& window, const FUiControlDef& control)
     {
         if (ui.Mode() == EUiRuntimeMode::CharacterSelect && Common::EqualsNoCase(window.Name, "pick_person")) { return ui.Character().CharacterControlText(control); }
 
         if (ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ui.ActiveModalWindow().Name)) { return ui.Character().ModalControlText(control); }
 
+        if (ui.Mode() == EUiRuntimeMode::Game) { return ui.GameControlText(window.Name, control); }
         return control.TextKey.empty() ? std::string{} : ui.ResolveText(control.TextKey);
+    }
+
+    bool ShouldPrewarmGameWindow(const FUiWindowDef& window)
+    {
+        static constexpr std::array<std::string_view, 19> names
+        {
+            "system_left", "system_leftmin", "system_right", "system_rightmin", "chat", "chat_st2", "chat_sys",
+            "inventory", "statinfo", "statinfo_n", "mapbook", "minimap", "bigmap", "new_bigmap", "journal_mini",
+            "options", "control_options", "interface_options", "sound_options"
+        };
+        const std::string_view key = window.NameKey.empty() ? std::string_view(window.Name) : std::string_view(window.NameKey);
+        return std::find_if(names.begin(), names.end(), [&](std::string_view name) { return Common::EqualsNoCase(key, name); }) != names.end();
+    }
+
+    const FUiControlDef* FindGameControl(const FUiRuntime& ui, std::string_view windowName, int32 controlId)
+    {
+        const auto index = ui.FindGameWindowIndex(windowName);
+        if (!index || *index >= ui.GameWindows().size()) { return nullptr; }
+        const auto& controls = ui.GameWindows()[*index].Controls;
+        const auto it = std::find_if(controls.begin(), controls.end(), [&](const FUiControlDef& control) { return control.Id == controlId; });
+        return it == controls.end() ? nullptr : &*it;
     }
 }
 
@@ -132,6 +137,11 @@ void FD3D9RenderDevice::SetServerGameTime(float dayFraction)
         GameWorldScene.SetGameTime(ServerGameTime);
         ServerGameTimePending = false;
     }
+}
+
+float FD3D9RenderDevice::GameWorldCameraFacing() const
+{
+    return GameWorldScene.CameraFacing();
 }
 
 void FD3D9RenderDevice::SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position)
@@ -218,6 +228,18 @@ void FD3D9RenderDevice::ReleaseTextures()
     }
 
     TextureCache.clear();
+    UiBatchVertices.clear();
+    UiBatchTexture = nullptr;
+    UiBatchActive = false;
+    UiTexturePreloadQueue.clear();
+    UiTextureUrgentQueue.clear();
+    UiTexturePreloadKnown.clear();
+    UiTextureUrgentKnown.clear();
+    UiTexturePreloadHead = 0;
+    UiQueuedWindowCount = 0;
+    UiWindowWasVisible.clear();
+    EncodedTextCache.clear();
+    WrappedTextCache.clear();
     FontCache.Release();
 }
 
@@ -393,6 +415,12 @@ FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& 
 
     if (it != TextureCache.end()) { return it->second.Texture ? &it->second : nullptr; }
 
+    if (UiBatchActive)
+    {
+        if (UiTextureUrgentKnown.insert(key).second) { UiTextureUrgentQueue.push_back(key); }
+        return nullptr;
+    }
+
     FD3D9TextureEntry entry;
     entry.Tried = true;
 
@@ -487,90 +515,115 @@ FD3D9TextureEntry* FD3D9RenderDevice::LoadTextureByName(const FResourceManager& 
     return &result.first->second;
 }
 
+void FD3D9RenderDevice::BeginUiBatch()
+{
+    UiBatchActive = true;
+    UiBatchTexture = nullptr;
+    UiBatchPremultiplied = false;
+    UiBatchVertices.clear();
+    if (UiBatchVertices.capacity() < 24576) { UiBatchVertices.reserve(24576); }
+}
+
+void FD3D9RenderDevice::FlushUiBatch()
+{
+    if (!Device || UiBatchVertices.empty()) { return; }
+    Device->SetRenderState(D3DRS_SRCBLEND, UiBatchPremultiplied ? D3DBLEND_ONE : D3DBLEND_SRCALPHA);
+    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    Device->SetTexture(0, UiBatchTexture);
+    Device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, static_cast<unsigned int>(UiBatchVertices.size() / 3), UiBatchVertices.data(), sizeof(FUiBatchVertex));
+    UiBatchVertices.clear();
+}
+
+void FD3D9RenderDevice::QueueUiQuad(IDirect3DTexture9* texture, const std::array<FUiBatchVertex, 4>& strip, bool premultiplied)
+{
+    if (!UiBatchActive)
+    {
+        BeginUiBatch();
+    }
+    if ((!UiBatchVertices.empty() && (UiBatchTexture != texture || UiBatchPremultiplied != premultiplied)) || UiBatchVertices.size() + 6 > 24576)
+    {
+        FlushUiBatch();
+    }
+    UiBatchTexture = texture;
+    UiBatchPremultiplied = premultiplied;
+    UiBatchVertices.push_back(strip[0]);
+    UiBatchVertices.push_back(strip[1]);
+    UiBatchVertices.push_back(strip[2]);
+    UiBatchVertices.push_back(strip[2]);
+    UiBatchVertices.push_back(strip[1]);
+    UiBatchVertices.push_back(strip[3]);
+}
+
 void FD3D9RenderDevice::DrawSolidRect(float x, float y, float w, float h, unsigned long color, float alpha)
 {
     if (!Device || w <= 0.0f || h <= 0.0f) { return; }
-
-    float x1 = SnapPixel(x);
-    float y1 = SnapPixel(y);
-    float x2 = SnapPixel(x + SnapSize(w));
-    float y2 = SnapPixel(y + SnapSize(h));
+    const float x1 = SnapPixel(x);
+    const float y1 = SnapPixel(y);
+    const float x2 = SnapPixel(x + SnapSize(w));
+    const float y2 = SnapPixel(y + SnapSize(h));
     color = ApplyAlpha(color, alpha);
-    FUiVertex v[4] =
-    {
-        {
-            x1, y1, 0.0f, 1.0f, color, 0.0f, 0.0f
-        },
-        {
-            x2, y1, 0.0f, 1.0f, color, 1.0f, 0.0f
-        },
-        {
-            x1, y2, 0.0f, 1.0f, color, 0.0f, 1.0f
-        },
-        {
-            x2, y2, 0.0f, 1.0f, color, 1.0f, 1.0f
-        }
-    };
-    Device->SetTexture(0, nullptr);
-    Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(FUiVertex));
+    const std::array<FUiBatchVertex, 4> vertices{{
+        {x1, y1, 0.0f, 1.0f, color, 0.0f, 0.0f},
+        {x2, y1, 0.0f, 1.0f, color, 1.0f, 0.0f},
+        {x1, y2, 0.0f, 1.0f, color, 0.0f, 1.0f},
+        {x2, y2, 0.0f, 1.0f, color, 1.0f, 1.0f}
+    }};
+    QueueUiQuad(nullptr, vertices, false);
 }
 
-void FD3D9RenderDevice::DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color)
+void FD3D9RenderDevice::DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color, bool premultiplied)
 {
     if (!Device || !texture || w <= 0.0f || h <= 0.0f) { return; }
+    const float x1 = SnapPixel(x);
+    const float y1 = SnapPixel(y);
+    const float x2 = SnapPixel(x + SnapSize(w));
+    const float y2 = SnapPixel(y + SnapSize(h));
+    const std::array<FUiBatchVertex, 4> vertices{{
+        {x1, y1, 0.0f, 1.0f, color, u1, v1},
+        {x2, y1, 0.0f, 1.0f, color, u2, v1},
+        {x1, y2, 0.0f, 1.0f, color, u1, v2},
+        {x2, y2, 0.0f, 1.0f, color, u2, v2}
+    }};
+    QueueUiQuad(texture, vertices, premultiplied);
+}
 
-    float x1 = SnapPixel(x);
-    float y1 = SnapPixel(y);
-    float x2 = SnapPixel(x + SnapSize(w));
-    float y2 = SnapPixel(y + SnapSize(h));
-    FUiVertex v[4] =
+void FD3D9RenderDevice::DrawTextureQuadRotated(IDirect3DTexture9* texture, float x, float y, float w, float h, float centerX, float centerY, float degrees, float u1, float v1, float u2, float v2, unsigned long color)
+{
+    if (!Device || !texture || w <= 0.0f || h <= 0.0f) { return; }
+    const float radians = degrees * 3.14159265358979323846f / 180.0f;
+    const float c = std::cos(radians);
+    const float sn = std::sin(radians);
+    auto rotate = [&](float px, float py)
     {
-        {
-            x1, y1, 0.0f, 1.0f, color, u1, v1
-        },
-        {
-            x2, y1, 0.0f, 1.0f, color, u2, v1
-        },
-        {
-            x1, y2, 0.0f, 1.0f, color, u1, v2
-        },
-        {
-            x2, y2, 0.0f, 1.0f, color, u2, v2
-        }
+        const float dx = px - centerX;
+        const float dy = py - centerY;
+        return std::pair<float, float>{SnapPixel(centerX + dx * c - dy * sn), SnapPixel(centerY + dx * sn + dy * c)};
     };
-    Device->SetTexture(0, texture);
-    Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(FUiVertex));
+    const auto p0 = rotate(x, y);
+    const auto p1 = rotate(x + w, y);
+    const auto p2 = rotate(x, y + h);
+    const auto p3 = rotate(x + w, y + h);
+    const std::array<FUiBatchVertex, 4> vertices{{
+        {p0.first, p0.second, 0.0f, 1.0f, color, u1, v1},
+        {p1.first, p1.second, 0.0f, 1.0f, color, u2, v1},
+        {p2.first, p2.second, 0.0f, 1.0f, color, u1, v2},
+        {p3.first, p3.second, 0.0f, 1.0f, color, u2, v2}
+    }};
+    QueueUiQuad(texture, vertices, false);
 }
 
 void FD3D9RenderDevice::DrawTextureQuadUv(IDirect3DTexture9* texture, float x, float y, float w, float h, const FUiTexCoord* coords, int32 textureWidth, int32 textureHeight, unsigned long color)
 {
     if (!Device || !texture || !coords || textureWidth <= 0 || textureHeight <= 0 || w <= 0.0f || h <= 0.0f) { return; }
-
-    auto u = [textureWidth](int32 value)
-    {
-        return static_cast<float>(value) / static_cast<float>(textureWidth);
-    };
-    auto v = [textureHeight](int32 value)
-    {
-        return static_cast<float>(value) / static_cast<float>(textureHeight);
-    };
-    FUiVertex verts[4] =
-    {
-        {
-            SnapPixel(x), SnapPixel(y), 0.0f, 1.0f, color, u(coords[0].U), v(coords[0].V)
-        },
-        {
-            SnapPixel(x + w), SnapPixel(y), 0.0f, 1.0f, color, u(coords[1].U), v(coords[1].V)
-        },
-        {
-            SnapPixel(x), SnapPixel(y + h), 0.0f, 1.0f, color, u(coords[3].U), v(coords[3].V)
-        },
-        {
-            SnapPixel(x + w), SnapPixel(y + h), 0.0f, 1.0f, color, u(coords[2].U), v(coords[2].V)
-        }
-    };
-    Device->SetTexture(0, texture);
-    Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, verts, sizeof(FUiVertex));
+    auto u = [textureWidth](int32 value) { return static_cast<float>(value) / static_cast<float>(textureWidth); };
+    auto v = [textureHeight](int32 value) { return static_cast<float>(value) / static_cast<float>(textureHeight); };
+    const std::array<FUiBatchVertex, 4> vertices{{
+        {SnapPixel(x), SnapPixel(y), 0.0f, 1.0f, color, u(coords[0].U), v(coords[0].V)},
+        {SnapPixel(x + w), SnapPixel(y), 0.0f, 1.0f, color, u(coords[1].U), v(coords[1].V)},
+        {SnapPixel(x), SnapPixel(y + h), 0.0f, 1.0f, color, u(coords[3].U), v(coords[3].V)},
+        {SnapPixel(x + w), SnapPixel(y + h), 0.0f, 1.0f, color, u(coords[2].U), v(coords[2].V)}
+    }};
+    QueueUiQuad(texture, vertices, false);
 }
 
 void FD3D9RenderDevice::DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, unsigned long color)
@@ -637,8 +690,8 @@ bool FD3D9RenderDevice::DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& 
 
     if (!sprite) { return false; }
 
-    const float sx = dst.W / static_cast<float>(std::max(1, sprite->Width));
-    const float sy = dst.H / static_cast<float>(std::max(1, sprite->Height));
+    const float sx = dst.W / static_cast<float>(SpriteExtentX(*sprite));
+    const float sy = dst.H / static_cast<float>(SpriteExtentY(*sprite));
     FUiRectF spriteRect
     {
         dst.X, dst.Y, sx, sy
@@ -661,111 +714,271 @@ bool FD3D9RenderDevice::DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& 
     return drew;
 }
 
+bool FD3D9RenderDevice::DrawSpriteRotated(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, float degrees, float alpha)
+{
+    const FUiSpriteDef* sprite = FindSprite(window, spriteName);
+    if (!sprite) { return false; }
+    const float sx = dst.W / static_cast<float>(SpriteExtentX(*sprite));
+    const float sy = dst.H / static_cast<float>(SpriteExtentY(*sprite));
+    const float centerX = dst.X + dst.W * 0.5f;
+    const float centerY = dst.Y + dst.H * 0.5f;
+    const unsigned long color = Argb(static_cast<unsigned char>(std::clamp(alpha, 0.0f, 1.0f) * 255.0f), 255, 255, 255);
+    bool drew = false;
+    for (const FUiSpritePiece& piece : sprite->Pieces)
+    {
+        FD3D9TextureEntry* texture = LoadTextureByName(ctx.Resources, piece.TextureName, ctx.Logger);
+        if (!texture || !texture->Texture) { continue; }
+        const float x = dst.X + static_cast<float>(std::min(piece.DstLeft, piece.DstRight)) * sx;
+        const float y = dst.Y + static_cast<float>(std::min(piece.DstTop, piece.DstBottom)) * sy;
+        const float w = static_cast<float>(AbsInt(piece.DstRight - piece.DstLeft)) * sx;
+        const float h = static_cast<float>(AbsInt(piece.DstBottom - piece.DstTop)) * sy;
+        int32 left = piece.SrcLeft;
+        int32 top = piece.SrcTop;
+        int32 right = piece.SrcRight;
+        int32 bottom = piece.SrcBottom;
+        if (piece.DstRight < piece.DstLeft) { std::swap(left, right); }
+        if (piece.DstBottom < piece.DstTop) { std::swap(top, bottom); }
+        DrawTextureQuadRotated(texture->Texture, x, y, w, h, centerX, centerY, degrees, static_cast<float>(left) / texture->Width, static_cast<float>(top) / texture->Height, static_cast<float>(right) / texture->Width, static_cast<float>(bottom) / texture->Height, color);
+        drew = true;
+    }
+    return drew;
+}
+
+uint64 FD3D9RenderDevice::BuildTextCacheKey(std::string_view text, int32 fontIndex, int32 extraA, int32 extraB) const
+{
+    uint64 hash = 1469598103934665603ull;
+    for (unsigned char ch : text) { hash = (hash ^ static_cast<uint64>(ch)) * 1099511628211ull; }
+    const auto mix = [&hash](uint32 value)
+    {
+        for (int shift = 0; shift < 32; shift += 8) { hash = (hash ^ static_cast<uint64>((value >> shift) & 0xffu)) * 1099511628211ull; }
+    };
+    mix(static_cast<uint32>(fontIndex));
+    mix(static_cast<uint32>(extraA));
+    mix(static_cast<uint32>(extraB));
+    return hash;
+}
+
+const FD3D9RenderDevice::FCachedEncodedText& FD3D9RenderDevice::GetEncodedText(FDrawContext& ctx, std::string_view text, int32 fontIndex)
+{
+    constexpr size_t MaxEncodedEntries = 2048;
+    const uint64 key = BuildTextCacheKey(text, fontIndex);
+    auto it = EncodedTextCache.find(key);
+    if (it != EncodedTextCache.end() && it->second.FontIndex == fontIndex && it->second.Text == text) { return it->second; }
+    if (EncodedTextCache.size() >= MaxEncodedEntries) { EncodedTextCache.clear(); }
+
+    FCachedEncodedText value;
+    value.Text.assign(text);
+    value.FontIndex = fontIndex;
+    const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+    if (font && font->IsValid())
+    {
+        value.Bytes = font->EncodeUtf8ToCp1251(text);
+        value.Width = font->MeasureCodepageText(value.Bytes);
+    }
+    return EncodedTextCache.insert_or_assign(key, std::move(value)).first->second;
+}
+
 void FD3D9RenderDevice::DrawTextRect(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex)
 {
     if (!Device || text.empty() || rect.W <= 1.0f || rect.H <= 1.0f) { return; }
-
     const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
-
     if (!font || !font->IsValid()) { return; }
-
-    std::vector<uint8> bytes = font->EncodeUtf8ToCp1251(text);
-
-    if (bytes.empty()) { return; }
+    const FCachedEncodedText& encoded = GetEncodedText(ctx, text, fontIndex);
+    if (encoded.Bytes.empty()) { return; }
 
     const float scale = std::max(0.5f, ctx.Scale);
-    const int32 textWidth = font->MeasureCodepageText(bytes);
     float x = rect.X;
-
-    if (center)
-    {
-        x += std::max(0.0f, (rect.W - static_cast<float>(textWidth) * scale) * 0.5f);
-    }
-
+    if (center) { x += std::max(0.0f, (rect.W - static_cast<float>(encoded.Width) * scale) * 0.5f); }
     const float lineHeight = static_cast<float>(font->LineHeight()) * scale;
     const float y = rect.Y + std::max(0.0f, (rect.H - lineHeight) * 0.5f);
     const unsigned long fontColor = PremultiplyDiffuse(color);
-    Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE);
-    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-
-    for (uint8 ch : bytes)
+    for (uint8 ch : encoded.Bytes)
     {
         if (ch < 32) { continue; }
-
         const FD3D9BitmapGlyph& glyph = font->Glyph(ch);
-
         if (x > rect.X + rect.W) { break; }
-
         if (glyph.SourceW > 0 && glyph.SourceH > 0 && ch != 32)
         {
-            float dx = x + static_cast<float>(glyph.XOffset) * scale;
-            float dy = y + static_cast<float>(font->Baseline() - glyph.YOffset) * scale;
-            float dw = static_cast<float>(glyph.SourceW) * scale;
-            float dh = static_cast<float>(glyph.SourceH) * scale;
-            float u1 = static_cast<float>(glyph.SourceX) / static_cast<float>(font->Width());
-            float v1 = static_cast<float>(glyph.SourceY) / static_cast<float>(font->Height());
-            float u2 = static_cast<float>(glyph.SourceX + glyph.SourceW) / static_cast<float>(font->Width());
-            float v2 = static_cast<float>(glyph.SourceY + glyph.SourceH) / static_cast<float>(font->Height());
-            DrawTextureQuad(font->AtlasTexture(), dx, dy, dw, dh, u1, v1, u2, v2, fontColor);
+            const float dx = x + static_cast<float>(glyph.XOffset) * scale;
+            const float dy = y + static_cast<float>(font->Baseline() - glyph.YOffset) * scale;
+            const float dw = static_cast<float>(glyph.SourceW) * scale;
+            const float dh = static_cast<float>(glyph.SourceH) * scale;
+            const float u1 = static_cast<float>(glyph.SourceX) / static_cast<float>(font->Width());
+            const float v1 = static_cast<float>(glyph.SourceY) / static_cast<float>(font->Height());
+            const float u2 = static_cast<float>(glyph.SourceX + glyph.SourceW) / static_cast<float>(font->Width());
+            const float v2 = static_cast<float>(glyph.SourceY + glyph.SourceH) / static_cast<float>(font->Height());
+            DrawTextureQuad(font->AtlasTexture(), dx, dy, dw, dh, u1, v1, u2, v2, fontColor, true);
         }
-
         x += static_cast<float>(glyph.Advance) * scale;
     }
-
-    Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 }
 
-void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha)
+const std::vector<std::string>& FD3D9RenderDevice::WrapTextLines(FDrawContext& ctx, std::string_view text, float width, int32 fontIndex)
 {
-    if (control.Hidden) { return; }
+    constexpr size_t MaxWrappedEntries = 1024;
+    const float scale = std::max(0.5f, ctx.Scale);
+    const int32 widthQuarterPixels = static_cast<int32>(std::lround(std::max(0.0f, width) * 4.0f));
+    const int32 scaleMilli = static_cast<int32>(std::lround(scale * 1000.0f));
+    const uint64 key = BuildTextCacheKey(text, fontIndex, widthQuarterPixels, scaleMilli);
+    auto it = WrappedTextCache.find(key);
+    if (it != WrappedTextCache.end() && it->second.FontIndex == fontIndex && it->second.WidthQuarterPixels == widthQuarterPixels && it->second.ScaleMilli == scaleMilli && it->second.Text == text) { return it->second.Lines; }
+    if (WrappedTextCache.size() >= MaxWrappedEntries) { WrappedTextCache.clear(); }
 
+    FCachedWrappedText value;
+    value.Text.assign(text);
+    value.FontIndex = fontIndex;
+    value.WidthQuarterPixels = widthQuarterPixels;
+    value.ScaleMilli = scaleMilli;
+    std::vector<std::string>& lines = value.Lines;
+    const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+    if (!font || !font->IsValid() || width <= 1.0f)
+    {
+        lines.emplace_back(text);
+        return WrappedTextCache.insert_or_assign(key, std::move(value)).first->second.Lines;
+    }
+
+    const auto fits = [&](std::string_view candidate)
+    {
+        const std::vector<uint8> bytes = font->EncodeUtf8ToCp1251(candidate);
+        return static_cast<float>(font->MeasureCodepageText(bytes)) * scale <= width;
+    };
+    size_t paragraphStart = 0;
+    while (paragraphStart <= text.size())
+    {
+        const size_t paragraphEnd = text.find('\n', paragraphStart);
+        const std::string_view paragraph = text.substr(paragraphStart, paragraphEnd == std::string_view::npos ? text.size() - paragraphStart : paragraphEnd - paragraphStart);
+        if (paragraph.empty()) { lines.emplace_back(); }
+        else
+        {
+            std::string line;
+            size_t cursor = 0;
+            while (cursor < paragraph.size())
+            {
+                while (cursor < paragraph.size() && (paragraph[cursor] == ' ' || paragraph[cursor] == '\t' || paragraph[cursor] == '\r')) { ++cursor; }
+                if (cursor >= paragraph.size()) { break; }
+                const size_t wordStart = cursor;
+                while (cursor < paragraph.size() && paragraph[cursor] != ' ' && paragraph[cursor] != '\t' && paragraph[cursor] != '\r') { ++cursor; }
+                const std::string_view word = paragraph.substr(wordStart, cursor - wordStart);
+                if (line.empty()) { line.assign(word); continue; }
+                std::string candidate;
+                candidate.reserve(line.size() + 1 + word.size());
+                candidate = line;
+                candidate.push_back(' ');
+                candidate.append(word);
+                if (fits(candidate)) { line = std::move(candidate); }
+                else { lines.push_back(std::move(line)); line.assign(word); }
+            }
+            if (!line.empty()) { lines.push_back(std::move(line)); }
+        }
+        if (paragraphEnd == std::string_view::npos) { break; }
+        paragraphStart = paragraphEnd + 1;
+    }
+    if (lines.empty()) { lines.emplace_back(); }
+    return WrappedTextCache.insert_or_assign(key, std::move(value)).first->second.Lines;
+}
+
+void FD3D9RenderDevice::DrawTextBlock(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex)
+{
+    const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+    const float lineHeight = font && font->IsValid() ? static_cast<float>(font->LineHeight()) * std::max(0.5f, ctx.Scale) + 2.0f : 14.0f * ctx.Scale;
+    const std::vector<std::string>& lines = WrapTextLines(ctx, text, rect.W, fontIndex);
+    if (lines.size() == 1)
+    {
+        DrawTextRect(ctx, rect, lines.front(), color, center, fontIndex);
+        return;
+    }
+    const size_t visibleLines = static_cast<size_t>(std::max(1.0f, std::floor((rect.H + 0.5f) / lineHeight)));
+    float y = rect.Y;
+    for (size_t index = 0; index < std::min(lines.size(), visibleLines); ++index)
+    {
+        const float remainingHeight = std::max(1.0f, rect.Y + rect.H - y);
+        DrawTextRect(ctx, FUiRectF{rect.X, y, rect.W, std::min(lineHeight, remainingHeight)}, lines[index], color, center, fontIndex);
+        y += lineHeight;
+    }
+}
+
+void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha, int32 gameWindowIndex)
+{
+    const bool gameMode = ctx.Ui.Mode() == EUiRuntimeMode::Game;
+    const bool runtimeVisibility = gameMode && ctx.Ui.UsesRuntimeVisibility(window.Name, control.Id);
+    if ((control.Hidden && !runtimeVisibility) || (gameMode && ctx.Ui.IsGameControlHidden(window.Name, control.Id))) { return; }
+
+    const bool runtimeDisabled = gameMode && ctx.Ui.IsGameControlDisabled(window.Name, control.Id);
     const FUiActionState& state = ctx.Ui.ActionState();
+    const bool hovered = state.HoverControlId == control.Id && (gameWindowIndex < 0 || state.HoverWindowIndex == gameWindowIndex);
+    const bool pressed = state.PressedControlId == control.Id && (gameWindowIndex < 0 || state.PressedWindowIndex == gameWindowIndex);
+    const bool focused = state.FocusedControlId == control.Id && (gameWindowIndex < 0 || state.FocusedWindowIndex == gameWindowIndex);
     FUiRectF r
     {
         windowRect.X + control.Rect.X * ctx.Scale, windowRect.Y + control.Rect.Y * ctx.Scale, control.Rect.W * ctx.Scale, control.Rect.H * ctx.Scale
     };
 
-    if (Common::EqualsNoCase(control.ClassId, "IMAGE"))
+    if (gameMode && ctx.Ui.IsMapPlayerControl(window.Name, control.Id))
     {
-        if (!Common::EqualsNoCase(control.ImageName, "black") && !control.ImageName.empty())
+        const auto mapControl = std::find_if(window.Controls.begin(), window.Controls.end(), [](const FUiControlDef& item) { return item.Id == 1; });
+        const std::optional<std::pair<float, float>> uv = ctx.Ui.GameMapPlayerUv();
+        if (mapControl != window.Controls.end() && uv)
         {
-            DrawSprite(ctx, window, control.ImageName, r.W > 0.0f && r.H > 0.0f ? r : windowRect, alpha);
+            const float mapX = windowRect.X + static_cast<float>(mapControl->Rect.X) * ctx.Scale;
+            const float mapY = windowRect.Y + static_cast<float>(mapControl->Rect.Y) * ctx.Scale;
+            const float mapW = static_cast<float>(mapControl->Rect.W) * ctx.Scale;
+            const float mapH = static_cast<float>(mapControl->Rect.H) * ctx.Scale;
+            r.X = mapX + uv->first * mapW - r.W * 0.5f;
+            r.Y = mapY + uv->second * mapH - r.H * 0.5f;
         }
+    }
 
+    if (control.Class == EUiControlClass::Image)
+    {
+        const std::string_view imageName = gameMode ? ctx.Ui.GameControlImage(window.Name, control) : std::string_view(control.ImageName);
+        if (!Common::EqualsNoCase(imageName, "black") && !imageName.empty())
+        {
+            const FUiRectF imageRect = r.W > 0.0f && r.H > 0.0f ? r : windowRect;
+            const float rotation = gameMode ? ctx.Ui.GameControlRotation(window.Name, control) : control.RotationDegrees;
+            if (std::abs(rotation) > 0.001f) { DrawSpriteRotated(ctx, window, imageName, imageRect, rotation, alpha); }
+            else { DrawSprite(ctx, window, imageName, imageRect, alpha); }
+        }
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "BUTTON"))
+    if (control.Class == EUiControlClass::Button)
     {
         const bool modalDisabled = ctx.Ui.HasModalDialog() && Common::EqualsNoCase(window.Name, ctx.Ui.ActiveModalWindow().Name) && !ctx.Ui.Character().IsModalActionAllowed(control);
-        std::string sprite = SelectButtonSprite(control, state);
+        const bool effectiveDisabled = control.Disabled || runtimeDisabled;
+        const bool runtimeChecked = ctx.Ui.Mode() == EUiRuntimeMode::Game && ctx.Ui.IsGameControlChecked(window.Name, control.Id);
+        const std::string_view sprite = runtimeChecked && !control.CheckedImage.empty() && !pressed ? std::string_view(control.CheckedImage) : SelectButtonSprite(control, effectiveDisabled, hovered, pressed);
+        const FUiRectF visualRect{r.X + static_cast<float>(control.ImageOffset.X) * ctx.Scale, r.Y + static_cast<float>(control.ImageOffset.Y) * ctx.Scale, r.W, r.H};
 
         if (!sprite.empty())
         {
-            DrawSprite(ctx, window, sprite, r, alpha);
+            DrawSprite(ctx, window, sprite, visualRect, alpha);
+        }
+        else if (runtimeDisabled)
+        {
+            DrawSolidRect(r.X, r.Y, r.W, r.H, Argb(135, 16, 14, 12), alpha);
         }
 
         std::string text = TextForControl(ctx.Ui, window, control);
 
         if (!text.empty())
         {
-            unsigned long color = ColorToArgb((control.Disabled || modalDisabled) ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor));
+            unsigned long color = ColorToArgb((control.Disabled || runtimeDisabled || modalDisabled) ? control.DisabledColor : (hovered ? control.FocusColor : control.TextColor));
             DrawTextRect(ctx, r, text, ApplyAlpha(color, alpha), true, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "CHECKBOX"))
+    if (control.Class == EUiControlClass::CheckBox)
     {
-        std::string sprite;
+        std::string_view sprite;
 
-        if (state.SaveLogin && !control.CheckedImage.empty())
+        const bool checked = ctx.Ui.Mode() == EUiRuntimeMode::Game ? ctx.Ui.IsGameControlChecked(window.Name, control.Id) : state.SaveLogin;
+        if (checked && !control.CheckedImage.empty())
         {
             sprite = control.CheckedImage;
         }
-        else if (state.HoverControlId == control.Id && !control.FocusedImage.empty())
+        else if (hovered && !control.FocusedImage.empty())
         {
             sprite = control.FocusedImage;
         }
@@ -782,9 +995,10 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "RADIOBUTTON"))
+    if (control.Class == EUiControlClass::RadioButton)
     {
-        std::string sprite = ctx.Ui.Character().SelectedSlotIndex() == control.Id - 63 ? control.CheckedImage : control.UncheckedImage;
+        const bool checked = ctx.Ui.Mode() == EUiRuntimeMode::Game ? ctx.Ui.IsGameControlChecked(window.Name, control.Id) : ctx.Ui.Character().SelectedSlotIndex() == control.Id - 63;
+        const std::string_view sprite = checked ? std::string_view(control.CheckedImage) : std::string_view(control.UncheckedImage);
 
         if (!sprite.empty())
         {
@@ -795,14 +1009,14 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
 
         if (!text.empty())
         {
-            unsigned long color = ColorToArgb(control.Disabled ? control.DisabledColor : (state.HoverControlId == control.Id ? control.FocusColor : control.TextColor));
+            unsigned long color = ColorToArgb((control.Disabled || runtimeDisabled) ? control.DisabledColor : (hovered ? control.FocusColor : control.TextColor));
             DrawTextRect(ctx, r, text, ApplyAlpha(color, alpha), false, control.Font >= 0 ? control.Font : window.Font);
         }
 
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "SPINBUTTON"))
+    if (control.Class == EUiControlClass::SpinButton)
     {
         FUiSubButtonDef leftButton = control.RightButton;
         FUiSubButtonDef rightButton = control.LeftButton;
@@ -831,18 +1045,31 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         {
             r.X + static_cast<float>(rightButton.X) * ctx.Scale, r.Y + static_cast<float>(rightButton.Y) * ctx.Scale, static_cast<float>(rightButton.W) * ctx.Scale, static_cast<float>(rightButton.H) * ctx.Scale
         };
-        const bool hotLeft = state.HoverControlId == control.Id && state.SpinHoverDirection < 0;
-        const bool hotRight = state.HoverControlId == control.Id && state.SpinHoverDirection > 0;
-        const bool pressedLeft = state.PressedControlId == control.Id && state.SpinPressedDirection < 0;
-        const bool pressedRight = state.PressedControlId == control.Id && state.SpinPressedDirection > 0;
-        DrawSprite(ctx, window, SelectSubButtonSprite(leftButton, control.Disabled, hotLeft, pressedLeft, "sl_normal", "sl_focus", "sl_push", "sl_disabled"), left, alpha);
-        DrawSprite(ctx, window, SelectSubButtonSprite(rightButton, control.Disabled, hotRight, pressedRight, "sr_normal", "sr_focus", "sr_push", "sr_disabled"), right, alpha);
+        const bool effectiveDisabled = (control.Disabled && !ctx.Ui.OverridesStaticDisabled(window.Name, control.Id)) || runtimeDisabled;
+        const bool hotLeft = hovered && state.SpinHoverDirection < 0;
+        const bool hotRight = hovered && state.SpinHoverDirection > 0;
+        const bool pressedLeft = pressed && state.SpinPressedDirection < 0;
+        const bool pressedRight = pressed && state.SpinPressedDirection > 0;
+        DrawSprite(ctx, window, SelectSubButtonSprite(leftButton, effectiveDisabled, hotLeft, pressedLeft, "sl_normal", "sl_focus", "sl_push", "sl_disabled"), left, alpha);
+        DrawSprite(ctx, window, SelectSubButtonSprite(rightButton, effectiveDisabled, hotRight, pressedRight, "sr_normal", "sr_focus", "sr_push", "sr_disabled"), right, alpha);
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "SLOT"))
+    if (control.Class == EUiControlClass::ScrollBar)
     {
-        const std::string fill = !control.SlotFullImage.empty() ? control.SlotFullImage : control.SlotEmptyImage;
+        DrawSolidRect(r.X, r.Y + r.H * 0.35f, r.W, std::max(2.0f, r.H * 0.3f), Argb(150, 35, 30, 25), alpha);
+        const float range = static_cast<float>(std::max(1, control.RangeMax - control.RangeMin));
+        const float ratio = std::clamp((ctx.Ui.GameControlValue(window.Name, control) - static_cast<float>(control.RangeMin)) / range, 0.0f, 1.0f);
+        const float thumbW = static_cast<float>(control.ScrollSpriteWidth > 0 ? control.ScrollSpriteWidth : 16) * ctx.Scale;
+        const FUiRectF thumb{r.X + ratio * std::max(0.0f, r.W - thumbW), r.Y + (r.H - static_cast<float>(control.ScrollSpriteHeight > 0 ? control.ScrollSpriteHeight : control.Rect.H) * ctx.Scale) * 0.5f, thumbW, static_cast<float>(control.ScrollSpriteHeight > 0 ? control.ScrollSpriteHeight : control.Rect.H) * ctx.Scale};
+        if (!control.ScrollSpriteName.empty()) { DrawSprite(ctx, window, control.ScrollSpriteName, thumb, alpha); }
+        else { DrawSolidRect(thumb.X, thumb.Y, thumb.W, thumb.H, Argb(220, 190, 145, 82), alpha); }
+        return;
+    }
+
+    if (control.Class == EUiControlClass::Slot)
+    {
+        const std::string_view fill = !control.SlotFullImage.empty() ? std::string_view(control.SlotFullImage) : std::string_view(control.SlotEmptyImage);
 
         if (!fill.empty())
         {
@@ -857,7 +1084,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "PROGRESS_BAR") || Common::EqualsNoCase(control.ClassId, "PROGRESSBAR"))
+    if (control.Class == EUiControlClass::ProgressBar)
     {
         unsigned long color = control.Id == 42 || control.Id == 46 ? Argb(210, 48, 109, 210) : control.Id == 47 ? Argb(210, 210, 190, 45) : Argb(210, 70, 170, 60);
 
@@ -874,10 +1101,10 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
             color = Argb(210, 70, 170, 60);
         }
 
-        const float ratio = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressRatio(control.Id) : 1.0f;
+        const float ratio = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressRatio(control.Id) : ctx.Ui.Mode() == EUiRuntimeMode::Game ? ctx.Ui.GameProgressRatio(window.Name, control.Id) : 1.0f;
         DrawSolidRect(r.X, r.Y, r.W, r.H, Argb(210, 30, 28, 24), alpha);
         DrawSolidRect(r.X, r.Y, r.W * std::clamp(ratio, 0.0f, 1.0f), r.H, color, alpha);
-        std::string status = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressText(control) : std::string{};
+        std::string status = ctx.Ui.Mode() == EUiRuntimeMode::CharacterSelect ? ctx.Ui.Character().CharacterProgressText(control) : ctx.Ui.Mode() == EUiRuntimeMode::Game && Common::EqualsNoCase(window.Name, "statinfo") ? ctx.Ui.GameControlText(window.Name, control) : std::string{};
 
         if (!status.empty() && !control.StatusShow.empty())
         {
@@ -891,7 +1118,7 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         return;
     }
 
-    if (Common::EqualsNoCase(control.ClassId, "EDIT"))
+    if (control.Class == EUiControlClass::Edit)
     {
         std::string text;
 
@@ -903,6 +1130,10 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
         {
             text = TextForControl(ctx.Ui, window, control);
         }
+        else if (ctx.Ui.Mode() == EUiRuntimeMode::Game)
+        {
+            text = ctx.Ui.GameEditText(window.Name, control.Id);
+        }
         else if (control.Id == 7)
         {
             text = state.LoginText;
@@ -912,33 +1143,58 @@ void FD3D9RenderDevice::DrawControl(FDrawContext& ctx, const FUiWindowDef& windo
             text.assign(state.PasswordText.size(), '*');
         }
 
-        if (!text.empty())
+        const int32 fontIndex = control.Font >= 0 ? control.Font : window.Font;
+        const unsigned long editColor = gameMode && Common::EqualsNoCase(window.Name, "chat_st2") && control.Id == 3 ? ColorToArgb(ctx.Ui.GameChatModeColor()) : ColorToArgb((control.Disabled || runtimeDisabled) ? control.DisabledColor : control.TextColor);
+        if (!text.empty()) { DrawTextRect(ctx, r, text, ApplyAlpha(editColor, alpha), control.TextCenter, fontIndex); }
+        if (focused)
         {
-            DrawTextRect(ctx, r, text, ApplyAlpha(ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), alpha), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
-        }
-
-        if (state.FocusedControlId == control.Id)
-        {
+            if (gameMode && ctx.Ui.IsTextCaretVisible())
+            {
+                const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+                const FCachedEncodedText& encoded = GetEncodedText(ctx, text, fontIndex);
+                const float textWidth = font && font->IsValid() ? static_cast<float>(encoded.Width) * std::max(0.5f, ctx.Scale) : 0.0f;
+                const float caretX = std::min(r.X + r.W - 1.0f, r.X + textWidth + 1.0f);
+                DrawSolidRect(caretX, r.Y + 2.0f * ctx.Scale, std::max(1.0f, ctx.Scale), std::max(2.0f, r.H - 4.0f * ctx.Scale), ApplyAlpha(editColor, alpha));
+            }
             DrawSolidRect(r.X, r.Y + r.H - 1.0f, r.W, 1.0f, Argb(190, 237, 208, 161), alpha);
         }
-
         return;
     }
 
     if (IsTextLikeControl(control))
     {
-        std::string text = TextForControl(ctx.Ui, window, control);
-
-        if (!text.empty())
+        const int32 fontIndex = control.Font >= 0 ? control.Font : window.Font;
+        if (gameMode && Common::EqualsNoCase(window.Name, "chat_st2") && control.Id == 1)
         {
-            DrawTextRect(ctx, r, text, ApplyAlpha(ColorToArgb(control.Disabled ? control.DisabledColor : control.TextColor), alpha), control.TextCenter, control.Font >= 0 ? control.Font : window.Font);
+            const FD3D9BitmapFont* font = FontCache.GetFont(Device, ctx.Resources, fontIndex, ctx.Logger);
+            const float lineHeight = font && font->IsValid() ? static_cast<float>(font->LineHeight()) * std::max(0.5f, ctx.Scale) + 2.0f : 14.0f * ctx.Scale;
+            const size_t visibleCount = static_cast<size_t>(std::max(1.0f, std::floor(r.H / lineHeight)));
+            std::vector<std::pair<std::string, unsigned long>> lines;
+            lines.reserve(visibleCount);
+            const auto& history = ctx.Ui.GameChatHistory();
+            for (auto chatIt = history.rbegin(); chatIt != history.rend() && lines.size() < visibleCount; ++chatIt)
+            {
+                const std::vector<std::string>& wrapped = WrapTextLines(ctx, chatIt->Text, r.W, fontIndex);
+                const unsigned long lineColor = ColorToArgb(chatIt->Color);
+                for (auto lineIt = wrapped.rbegin(); lineIt != wrapped.rend() && lines.size() < visibleCount; ++lineIt) { lines.emplace_back(*lineIt, lineColor); }
+            }
+            std::reverse(lines.begin(), lines.end());
+            float y = r.Y;
+            for (const auto& line : lines)
+            {
+                if (y + lineHeight > r.Y + r.H + 0.5f) { break; }
+                DrawTextRect(ctx, FUiRectF{r.X, y, r.W, lineHeight}, line.first, ApplyAlpha(line.second, alpha), false, fontIndex);
+                y += lineHeight;
+            }
+            return;
         }
-
+        const std::string text = TextForControl(ctx.Ui, window, control);
+        if (!text.empty()) { DrawTextBlock(ctx, r, text, ApplyAlpha(ColorToArgb((control.Disabled || runtimeDisabled) ? control.DisabledColor : control.TextColor), alpha), control.TextCenter, fontIndex); }
         return;
     }
 }
 
-bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha)
+bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha, int32 gameWindowIndex)
 {
     if (!window.DrawNone && !window.DrawSpriteName.empty())
     {
@@ -967,7 +1223,7 @@ bool FD3D9RenderDevice::DrawWindow(FDrawContext& ctx, const FUiWindowDef& window
 
     for (const auto& control : window.Controls)
     {
-        DrawControl(ctx, window, control, dst, alpha);
+        DrawControl(ctx, window, control, dst, alpha, gameWindowIndex);
     }
 
     return true;
@@ -1191,28 +1447,114 @@ void FD3D9RenderDevice::ConfigureUiRenderState()
     Device->SetFVF(FVF_UI);
 }
 
+void FD3D9RenderDevice::QueueWindowTextures(const FUiWindowDef& window, bool highPriority)
+{
+    auto queueTexture = [&](std::string_view textureName)
+    {
+        std::string key = Common::ToLower(textureName);
+        if (key.empty() || key == "black" || TextureCache.contains(key)) { return; }
+        if (highPriority)
+        {
+            if (UiTextureUrgentKnown.insert(key).second) { UiTextureUrgentQueue.push_back(std::move(key)); }
+        }
+        else if (UiTexturePreloadKnown.insert(key).second)
+        {
+            UiTexturePreloadQueue.push_back(std::move(key));
+        }
+    };
+    auto queueSprite = [&](std::string_view spriteName)
+    {
+        if (spriteName.empty() || Common::EqualsNoCase(spriteName, "black")) { return; }
+        const FUiSpriteDef* sprite = FindSprite(window, spriteName);
+        if (!sprite) { return; }
+        for (const FUiSpritePiece& piece : sprite->Pieces) { queueTexture(piece.TextureName); }
+    };
+    auto queueSubButton = [&](const FUiSubButtonDef& button)
+    {
+        queueSprite(button.CheckedImage);
+        queueSprite(button.FocusedImage);
+        queueSprite(button.DisabledImage);
+        queueSprite(button.UncheckedImage);
+    };
+
+    queueSprite(window.DrawSpriteName);
+    for (const FUiControlDef& control : window.Controls)
+    {
+        queueSprite(control.CheckedImage);
+        queueSprite(control.UncheckedImage);
+        queueSprite(control.FocusedImage);
+        queueSprite(control.DisabledImage);
+        queueSprite(control.ImageName);
+        queueSprite(control.DrawSpriteName);
+        queueSprite(control.SlotEmptyImage);
+        queueSprite(control.SlotFullImage);
+        queueSprite(control.SlotBorderImage);
+        queueSprite(control.ScrollSpriteName);
+        queueSprite(control.StatusShow);
+        queueSubButton(control.LeftButton);
+        queueSubButton(control.RightButton);
+        if (control.Class == EUiControlClass::SpinButton)
+        {
+            queueSprite("sl_normal"); queueSprite("sl_focus"); queueSprite("sl_push"); queueSprite("sl_disabled");
+            queueSprite("sr_normal"); queueSprite("sr_focus"); queueSprite("sr_push"); queueSprite("sr_disabled");
+        }
+    }
+}
+
+void FD3D9RenderDevice::PumpUiTexturePreload(const FResourceManager& resources, FLogger* logger, double budgetMilliseconds, size_t maxTextures)
+{
+    if (!Device || maxTextures == 0) { return; }
+    const auto start = std::chrono::steady_clock::now();
+    size_t loaded = 0;
+    while (loaded < maxTextures)
+    {
+        std::string textureName;
+        if (!UiTextureUrgentQueue.empty())
+        {
+            textureName = std::move(UiTextureUrgentQueue.back());
+            UiTextureUrgentQueue.pop_back();
+            UiTextureUrgentKnown.erase(textureName);
+        }
+        else
+        {
+            while (UiTexturePreloadHead < UiTexturePreloadQueue.size() && TextureCache.contains(UiTexturePreloadQueue[UiTexturePreloadHead])) { ++UiTexturePreloadHead; }
+            if (UiTexturePreloadHead >= UiTexturePreloadQueue.size()) { break; }
+            textureName = UiTexturePreloadQueue[UiTexturePreloadHead++];
+        }
+        if (!TextureCache.contains(textureName)) { LoadTextureByName(resources, textureName, logger); }
+        ++loaded;
+        if (budgetMilliseconds > 0.0 && std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() >= budgetMilliseconds) { break; }
+    }
+    if (UiTexturePreloadHead >= UiTexturePreloadQueue.size())
+    {
+        UiTexturePreloadQueue.clear();
+        UiTexturePreloadKnown.clear();
+        UiTexturePreloadHead = 0;
+    }
+}
+
 void FD3D9RenderDevice::PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger)
 {
     LoadTextureByName(resources, ui.LoginBackgroundTexture(), logger);
-
-    for (const auto& [name, sprite] : ui.ConnectionWindow().Sprites)
+    QueueWindowTextures(ui.ConnectionWindow(), true);
+    PumpUiTexturePreload(resources, logger, 0.0, std::numeric_limits<size_t>::max());
+    QueueWindowTextures(ui.PickPersonWindow());
+    QueueWindowTextures(ui.CreatePersonWindow());
+    QueueWindowTextures(ui.DeleteCharacterWindow());
+    QueueWindowTextures(ui.ConnectMessageWindow());
+    QueueWindowTextures(ui.MessageWindow());
+    const auto& windows = ui.GameWindows();
+    const auto& visibility = ui.GameWindowVisibility();
+    UiWindowWasVisible.assign(windows.size(), false);
+    for (size_t index = 0; index < windows.size(); ++index)
     {
-        (void)name;
-
-        for (const auto& piece : sprite.Pieces)
-        {
-            LoadTextureByName(resources, piece.TextureName, logger);
-        }
+        const bool visible = index < visibility.size() && visibility[index];
+        UiWindowWasVisible[index] = visible;
+        if (visible || ShouldPrewarmGameWindow(windows[index])) { QueueWindowTextures(windows[index], visible); }
     }
-
-    // Character-select, modal and game HUD textures are loaded lazily after login.
-
+    UiQueuedWindowCount = windows.size();
     FontCache.Preload(Device, resources, logger);
-
-    if (logger)
-    {
-        logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size()));
-    }
+    if (logger) { logger->Info("D3D9 UI preload: texture_cache=" + std::to_string(TextureCache.size()) + ", background_queue=" + std::to_string(UiTexturePreloadQueue.size() - UiTexturePreloadHead)); }
 }
 
 FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger)
@@ -1277,6 +1619,17 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
 
         if (GameWorldScene.IsValid())
         {
+            if (const FUiControlDef* fogControl = FindGameControl(ui, "gfx_options", 28))
+            {
+                const float fogAmount = std::clamp(ui.GameControlValue("gfx_options", *fogControl) / 100.0f, 0.0f, 1.0f);
+                GameWorldScene.SetFog(110.0f - fogAmount * 70.0f, 260.0f - fogAmount * 140.0f);
+            }
+            if (const FUiControlDef* lodControl = FindGameControl(ui, "gfx_options", 43))
+            {
+                std::wstring settingError;
+                const int quality = std::clamp(static_cast<int>(std::round(ui.GameControlValue("gfx_options", *lodControl))), 0, 2);
+                if (!GameWorldScene.SetGrassQuality(quality, settingError) && logger && !settingError.empty()) { logger->Warning("D3D9 grass quality update failed: " + Common::WideToUtf8(settingError)); }
+            }
             if (ServerGameTimePending && HasServerGameTime)
             {
                 GameWorldScene.SetGameTime(ServerGameTime);
@@ -1306,6 +1659,23 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     {
         resources, ui, logger, scale
     };
+    const auto& currentUiWindows = ui.GameWindows();
+    const auto& currentUiVisibility = ui.GameWindowVisibility();
+    while (UiQueuedWindowCount < currentUiWindows.size())
+    {
+        const size_t index = UiQueuedWindowCount++;
+        const bool visible = index < currentUiVisibility.size() && currentUiVisibility[index];
+        UiWindowWasVisible.push_back(visible);
+        if (visible || ShouldPrewarmGameWindow(currentUiWindows[index])) { QueueWindowTextures(currentUiWindows[index], visible); }
+    }
+    if (UiWindowWasVisible.size() < currentUiWindows.size()) { UiWindowWasVisible.resize(currentUiWindows.size(), false); }
+    for (size_t index = 0; index < currentUiWindows.size() && index < currentUiVisibility.size(); ++index)
+    {
+        const bool visible = currentUiVisibility[index];
+        if (visible && !UiWindowWasVisible[index]) { QueueWindowTextures(currentUiWindows[index], true); }
+        UiWindowWasVisible[index] = visible;
+    }
+    PumpUiTexturePreload(resources, logger, ui.Mode() == EUiRuntimeMode::Game ? 0.5 : 1.5, ui.Mode() == EUiRuntimeMode::Game ? 1 : 2);
     HRESULT hr = Device->BeginScene();
 
     if (FAILED(hr)) { return FStatus::Error(EStatusCode::RuntimeError, "D3D9 BeginScene failed: hr=" + std::to_string(static_cast<long>(hr))); }
@@ -1327,6 +1697,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     }
 
     ConfigureUiRenderState();
+    BeginUiBatch();
 
     if (ui.Mode() == EUiRuntimeMode::Login)
     {
@@ -1344,10 +1715,11 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
     {
         const auto& gameWindows = ui.GameWindows();
         const auto& gameVisibility = ui.GameWindowVisibility();
-        for (size_t i = 0; i < gameWindows.size(); ++i)
+        for (size_t i : ui.GameWindowRenderOrder())
         {
+            if (i >= gameWindows.size()) { continue; }
             if (i < gameVisibility.size() && !gameVisibility[i]) { continue; }
-            DrawWindow(ctx, gameWindows[i], ui.Input().BuildWindowRect(gameWindows[i], rect));
+            DrawWindow(ctx, gameWindows[i], ui.BuildGameWindowRect(i, rect), 1.0f, static_cast<int32>(i));
         }
 
         if (gameWindows.empty())
@@ -1366,6 +1738,8 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
         currentWorldStatsPtr = &currentWorldStats;
     }
     DrawRenderStatsOverlay(ctx, rect, currentWorldStatsPtr);
+    FlushUiBatch();
+    UiBatchActive = false;
     {
         Device->EndScene();
     }

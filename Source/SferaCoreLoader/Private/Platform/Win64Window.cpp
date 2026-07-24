@@ -159,6 +159,7 @@ FInputSnapshot FWin64Window::ConsumeInputFrame()
     InputState.BackspacePressed = false;
     InputState.EnterPressed = false;
     InputState.TabPressed = false;
+    InputState.KeyPressed.fill(false);
     InputState.TypedText.clear();
     return snapshot;
 }
@@ -246,6 +247,13 @@ LRESULT FWin64Window::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
             InputState.TypedText += WideCharToUtf8(static_cast<wchar_t>(wparam));
         }
 
+        return 0;
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+        if (wparam < InputState.KeyPressed.size() && (lparam & (1LL << 30)) == 0)
+        {
+            InputState.KeyPressed[static_cast<size_t>(wparam)] = true;
+        }
         return 0;
     case WM_RBUTTONDOWN:
         InputState.MouseX = GET_X_LPARAM(lparam);

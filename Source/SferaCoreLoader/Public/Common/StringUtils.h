@@ -30,7 +30,17 @@ inline std::string NormalizePathKey(std::string value)
 }
 
 inline std::string NormalizePathKey(const FPath& path) { return NormalizePathKey(path.generic_string()); }
-inline bool EqualsNoCase(std::string_view a, std::string_view b) { return ToLower(a) == ToLower(b); }
+inline bool EqualsNoCase(std::string_view a, std::string_view b)
+{
+    if (a.size() != b.size()) { return false; }
+    for (size_t i = 0; i < a.size(); ++i)
+    {
+        const unsigned char left = static_cast<unsigned char>(a[i]);
+        const unsigned char right = static_cast<unsigned char>(b[i]);
+        if (std::tolower(left) != std::tolower(right)) { return false; }
+    }
+    return true;
+}
 inline bool EndsWith(std::string_view text, std::string_view suffix) { return text.size() >= suffix.size() && text.substr(text.size() - suffix.size()) == suffix; }
 
 inline std::string StripCppComment(std::string line)

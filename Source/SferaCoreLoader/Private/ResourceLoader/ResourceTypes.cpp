@@ -6,7 +6,6 @@ std::string_view ToString(EResourceKind kind)
     switch (kind)
     {
     case EResourceKind::Config: return "Config";
-    case EResourceKind::Mbc: return "MBC";
     case EResourceKind::Ui: return "UI";
     case EResourceKind::Texture: return "Texture";
     case EResourceKind::Model: return "Model";
@@ -24,8 +23,6 @@ EResourceKind GuessResourceKind(const FPath& path)
     std::string ext = Common::ToLower(path.extension().string());
 
     if (ext == ".cfg") { return EResourceKind::Config; }
-
-    if (ext == ".mbc") { return EResourceKind::Mbc; }
 
     if (ext == ".ui") { return EResourceKind::Ui; }
 

@@ -40,10 +40,12 @@ public:
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
     void SetServerGameTime(float dayFraction);
+    float GameWorldCameraFacing() const;
     void SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position);
     void ApplyServerGameWorldPosition(const FGameWorldPosition& position);
     FStatus RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
+    bool HasPendingUiTexturePreload() const { return !UiTextureUrgentQueue.empty() || UiTexturePreloadHead < UiTexturePreloadQueue.size(); }
 private:
     struct FDrawContext;
     using FD3DXCreateTextureFromFileInMemoryExPtr = long (__stdcall *)(IDirect3DDevice9*, const void*, unsigned int, unsigned int, unsigned int, unsigned int, unsigned long, int, int, unsigned long, unsigned long, unsigned long, void*, void*, IDirect3DTexture9**);
@@ -56,8 +58,27 @@ private:
     bool DrawTextureResource(FDrawContext& ctx, std::string_view textureName, const FUiRectF& dst, float alpha = 1.0f);
     bool DrawSprite(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, float alpha = 1.0f);
     bool DrawSpriteTinted(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, unsigned long color);
-    bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha = 1.0f);
-    void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha = 1.0f);
+    bool DrawSpriteRotated(FDrawContext& ctx, const FUiWindowDef& window, std::string_view spriteName, const FUiRectF& dst, float degrees, float alpha = 1.0f);
+    bool DrawWindow(FDrawContext& ctx, const FUiWindowDef& window, const FUiRectF& dst, float alpha = 1.0f, int32 gameWindowIndex = -1);
+    void DrawControl(FDrawContext& ctx, const FUiWindowDef& window, const FUiControlDef& control, const FUiRectF& windowRect, float alpha = 1.0f, int32 gameWindowIndex = -1);
+    struct FCachedEncodedText
+    {
+        std::string Text;
+        int32 FontIndex = 0;
+        std::vector<uint8> Bytes;
+        int32 Width = 0;
+    };
+    struct FCachedWrappedText
+    {
+        std::string Text;
+        int32 FontIndex = 0;
+        int32 WidthQuarterPixels = 0;
+        int32 ScaleMilli = 0;
+        std::vector<std::string> Lines;
+    };
+    const FCachedEncodedText& GetEncodedText(FDrawContext& ctx, std::string_view text, int32 fontIndex);
+    uint64 BuildTextCacheKey(std::string_view text, int32 fontIndex, int32 extraA = 0, int32 extraB = 0) const;
+
     struct FFrameStats
     {
         bool Initialized = false;
@@ -79,19 +100,50 @@ private:
     };
     void DrawModalDialog(FDrawContext& ctx, const RECT& rect);
     void DrawTextRect(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex);
+    const std::vector<std::string>& WrapTextLines(FDrawContext& ctx, std::string_view text, float width, int32 fontIndex);
+    void DrawTextBlock(FDrawContext& ctx, const FUiRectF& rect, const std::string& text, unsigned long color, bool center, int32 fontIndex);
     void DrawStatusOverlay(FDrawContext& ctx, const FUiRuntime& ui, const FUiRectF& designRect);
     void DrawRenderStatsOverlay(FDrawContext& ctx, const RECT& clientRect, const FD3D9GameWorldRenderStats* worldStats);
     void UpdateFrameStats(double frameMilliseconds);
     void DrawSolidRect(float x, float y, float w, float h, unsigned long color, float alpha = 1.0f);
     void DrawTexturePiece(IDirect3DTexture9* texture, const FUiSpritePiece& piece, const FUiRectF& spriteRect, int32 textureWidth, int32 textureHeight, unsigned long color);
-    void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color);
+    void DrawTextureQuad(IDirect3DTexture9* texture, float x, float y, float w, float h, float u1, float v1, float u2, float v2, unsigned long color, bool premultiplied = false);
+    void DrawTextureQuadRotated(IDirect3DTexture9* texture, float x, float y, float w, float h, float centerX, float centerY, float degrees, float u1, float v1, float u2, float v2, unsigned long color);
+    struct FUiBatchVertex
+    {
+        float X = 0.0f;
+        float Y = 0.0f;
+        float Z = 0.0f;
+        float Rhw = 1.0f;
+        unsigned long Color = 0xfffffffful;
+        float U = 0.0f;
+        float V = 0.0f;
+    };
+    void BeginUiBatch();
+    void FlushUiBatch();
+    void QueueUiQuad(IDirect3DTexture9* texture, const std::array<FUiBatchVertex, 4>& strip, bool premultiplied = false);
     void DrawTextureQuadUv(IDirect3DTexture9* texture, float x, float y, float w, float h, const FUiTexCoord* coords, int32 textureWidth, int32 textureHeight, unsigned long color);
+    void QueueWindowTextures(const FUiWindowDef& window, bool highPriority = false);
+    void PumpUiTexturePreload(const FResourceManager& resources, FLogger* logger, double budgetMilliseconds, size_t maxTextures);
     void ReleaseTextures();
     IDirect3D9* D3D = nullptr;
     IDirect3DDevice9* Device = nullptr;
     HINSTANCE D3DXModule = nullptr;
     FD3DXCreateTextureFromFileInMemoryExPtr D3DXCreateTextureFromFileInMemoryExFn = nullptr;
     std::unordered_map<std::string, FD3D9TextureEntry> TextureCache;
+    std::vector<FUiBatchVertex> UiBatchVertices;
+    IDirect3DTexture9* UiBatchTexture = nullptr;
+    bool UiBatchPremultiplied = false;
+    bool UiBatchActive = false;
+    std::vector<std::string> UiTexturePreloadQueue;
+    std::vector<std::string> UiTextureUrgentQueue;
+    std::unordered_set<std::string> UiTexturePreloadKnown;
+    std::unordered_set<std::string> UiTextureUrgentKnown;
+    size_t UiTexturePreloadHead = 0;
+    size_t UiQueuedWindowCount = 0;
+    std::vector<bool> UiWindowWasVisible;
+    std::unordered_map<uint64, FCachedEncodedText> EncodedTextCache;
+    std::unordered_map<uint64, FCachedWrappedText> WrappedTextCache;
     FD3D9BitmapFontCatalog FontCache;
     FFrameStats Stats;
     FD3D9CharacterScene CharacterScene;

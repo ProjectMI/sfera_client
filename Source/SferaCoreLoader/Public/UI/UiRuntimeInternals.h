@@ -76,7 +76,7 @@ static bool ApplyWideTextEdit(std::wstring& target, const FInputSnapshot& input,
 
 static bool IsMouseControlClass(std::string_view classId)
 {
-    return Common::EqualsNoCase(classId, "BUTTON") || Common::EqualsNoCase(classId, "CHECKBOX") || Common::EqualsNoCase(classId, "EDIT") || Common::EqualsNoCase(classId, "RADIOBUTTON") || Common::EqualsNoCase(classId, "SPINBUTTON");
+    return Common::EqualsNoCase(classId, "BUTTON") || Common::EqualsNoCase(classId, "CHECKBOX") || Common::EqualsNoCase(classId, "EDIT") || Common::EqualsNoCase(classId, "HTEDIT") || Common::EqualsNoCase(classId, "RICHEDIT") || Common::EqualsNoCase(classId, "RADIOBUTTON") || Common::EqualsNoCase(classId, "SPINBUTTON") || Common::EqualsNoCase(classId, "SLOT") || Common::EqualsNoCase(classId, "LISTITEM") || Common::EqualsNoCase(classId, "TEXTLIST") || Common::EqualsNoCase(classId, "HTCHATLISTCTRL") || Common::EqualsNoCase(classId, "MENULISTCTRL") || Common::EqualsNoCase(classId, "FONTPICKER") || Common::EqualsNoCase(classId, "MINIMAP") || Common::EqualsNoCase(classId, "WEBBROWSER") || Common::EqualsNoCase(classId, "SCROLL_BAR") || Common::EqualsNoCase(classId, "SCROLLBAR");
 }
 
 static bool ControlCanReceiveMouse(const FUiControlDef& control)

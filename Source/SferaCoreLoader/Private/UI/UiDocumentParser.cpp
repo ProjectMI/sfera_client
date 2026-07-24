@@ -29,6 +29,21 @@ namespace
         return id;
     }
 
+    EUiControlClass ParseControlClass(std::string_view classId)
+    {
+        if (Common::EqualsNoCase(classId, "IMAGE")) { return EUiControlClass::Image; }
+        if (Common::EqualsNoCase(classId, "BUTTON")) { return EUiControlClass::Button; }
+        if (Common::EqualsNoCase(classId, "CHECKBOX")) { return EUiControlClass::CheckBox; }
+        if (Common::EqualsNoCase(classId, "RADIOBUTTON")) { return EUiControlClass::RadioButton; }
+        if (Common::EqualsNoCase(classId, "SPINBUTTON")) { return EUiControlClass::SpinButton; }
+        if (Common::EqualsNoCase(classId, "SCROLL_BAR")) { return EUiControlClass::ScrollBar; }
+        if (Common::EqualsNoCase(classId, "SLOT")) { return EUiControlClass::Slot; }
+        if (Common::EqualsNoCase(classId, "PROGRESS_BAR") || Common::EqualsNoCase(classId, "PROGRESSBAR")) { return EUiControlClass::ProgressBar; }
+        if (Common::EqualsNoCase(classId, "EDIT") || Common::EqualsNoCase(classId, "HTEDIT") || Common::EqualsNoCase(classId, "RICHEDIT")) { return EUiControlClass::Edit; }
+        if (Common::EqualsNoCase(classId, "TEXT") || Common::EqualsNoCase(classId, "TEXTLIST") || Common::EqualsNoCase(classId, "HYPER_TEXT") || Common::EqualsNoCase(classId, "LISTITEM") || Common::EqualsNoCase(classId, "HTCHATLISTCTRL")) { return EUiControlClass::Text; }
+        return EUiControlClass::Unknown;
+    }
+
     bool ParseBool(std::istringstream& input, bool defaultValue = false)
     {
         std::string value;
@@ -143,10 +158,10 @@ namespace
         FUiLineCommand command(line);
         if (command.Key == "position") { command.Input >> button.X >> button.Y; }
         else if (command.Key == "size") { command.Input >> button.W >> button.H; }
-        else if (command.Key == "checkedimage") { button.CheckedImage = ParseQuoted(line); }
-        else if (command.Key == "focusedimage") { button.FocusedImage = ParseQuoted(line); }
-        else if (command.Key == "disabledimage") { button.DisabledImage = ParseQuoted(line); }
-        else if (command.Key == "uncheckedimage") { button.UncheckedImage = ParseQuoted(line); }
+        else if (command.Key == "checkedimage") { button.CheckedImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "focusedimage") { button.FocusedImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "disabledimage") { button.DisabledImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "uncheckedimage") { button.UncheckedImage = Common::ToLower(ParseQuoted(line)); }
     }
 
     void ApplySpriteLine(FUiSpriteDef& sprite, std::string_view line)
@@ -175,7 +190,7 @@ namespace
     void ApplyControlLine(FUiControlDef& control, std::string_view line)
     {
         FUiLineCommand command(line);
-        if (command.Key == "classid") { command.Input >> control.ClassId; }
+        if (command.Key == "classid") { command.Input >> control.ClassId; control.Class = ParseControlClass(control.ClassId); }
         else if (command.Key == "position") { command.Input >> control.Rect.X >> control.Rect.Y; }
         else if (command.Key == "size") { command.Input >> control.Rect.W >> control.Rect.H; }
         else if (command.Key == "font") { command.Input >> control.Font; }
@@ -190,16 +205,18 @@ namespace
         else if (command.Key == "hypertext") { control.HyperTextResource = ParseQuoted(line); }
         else if (command.Key == "imageoffset") { command.Input >> control.ImageOffset.X >> control.ImageOffset.Y; }
         else if (command.Key == "group") { command.Input >> control.Group; }
-        else if (command.Key == "checkedimage") { control.CheckedImage = ParseQuoted(line); }
-        else if (command.Key == "uncheckedimage") { control.UncheckedImage = ParseQuoted(line); }
-        else if (command.Key == "focusedimage") { control.FocusedImage = ParseQuoted(line); }
-        else if (command.Key == "image") { control.ImageName = ParseQuoted(line); }
-        else if (command.Key == "drawmethod") { control.DrawSpriteName = ParseQuoted(line); }
+        else if (command.Key == "rotate") { command.Input >> control.RotationDegrees; }
+        else if (command.Key == "checkedimage") { control.CheckedImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "uncheckedimage") { control.UncheckedImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "focusedimage") { control.FocusedImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "disabledimage") { control.DisabledImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "image") { control.ImageName = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "drawmethod") { control.DrawSpriteName = Common::ToLower(ParseQuoted(line)); }
         else if (command.Key == "windowhelp") { control.WindowHelp = ParseQuoted(line); }
-        else if (command.Key == "slotempty") { control.SlotEmptyImage = ParseQuoted(line); }
-        else if (command.Key == "slotfull") { control.SlotFullImage = ParseQuoted(line); }
-        else if (command.Key == "slotborder") { control.SlotBorderImage = ParseQuoted(line); }
-        else if (command.Key == "scrollspr") { control.ScrollSpriteName = ParseQuoted(line); std::istringstream sizeInput(TailAfterQuoted(line)); sizeInput >> control.ScrollSpriteWidth >> control.ScrollSpriteHeight; }
+        else if (command.Key == "slotempty") { control.SlotEmptyImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "slotfull") { control.SlotFullImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "slotborder") { control.SlotBorderImage = Common::ToLower(ParseQuoted(line)); }
+        else if (command.Key == "scrollspr") { control.ScrollSpriteName = Common::ToLower(ParseQuoted(line)); std::istringstream sizeInput(TailAfterQuoted(line)); sizeInput >> control.ScrollSpriteWidth >> control.ScrollSpriteHeight; }
         else if (command.Key == "deltastep") { command.Input >> control.DeltaStep; }
         else if (command.Key == "range") { command.Input >> control.RangeMin >> control.RangeMax; }
         else if (command.Key == "progresspos") { command.Input >> control.ProgressPos; }
@@ -230,8 +247,142 @@ namespace
         else if (command.Key == "escapehandle") { window.EscapeHandle = ParseBool(command.Input, window.EscapeHandle); }
         else if (command.Key == "showeffect") { window.ShowEffect = ParsePopupAnimation(line); }
         else if (command.Key == "hideeffect") { window.HideEffect = ParsePopupAnimation(line); }
-        else if (command.Key == "drawmethod") { window.DrawNone = line.find("NONE") != std::string_view::npos; window.DrawSpriteName = ParseQuoted(line); }
+        else if (command.Key == "drawmethod") { window.DrawNone = line.find("NONE") != std::string_view::npos; window.DrawSpriteName = Common::ToLower(ParseQuoted(line)); }
     }
+    int32 BraceDelta(std::string_view line)
+    {
+        return static_cast<int32>(std::count(line.begin(), line.end(), '{')) - static_cast<int32>(std::count(line.begin(), line.end(), '}'));
+    }
+
+    std::vector<std::vector<std::string>> ExtractWindowBlocks(const std::vector<std::string>& lines)
+    {
+        std::vector<std::vector<std::string>> blocks;
+        std::vector<std::string> current;
+        bool pending = false;
+        bool collecting = false;
+        int32 depth = 0;
+        for (const std::string& rawLine : lines)
+        {
+            const std::string line = Common::Trim(Common::StripCppComment(rawLine));
+            if (!pending && !collecting)
+            {
+                if (!StartsWithToken(line, "windowui")) { continue; }
+                pending = true;
+                current.clear();
+            }
+            current.push_back(rawLine);
+            const int32 delta = BraceDelta(line);
+            if (pending && delta > 0) { pending = false; collecting = true; depth = delta; }
+            else if (collecting)
+            {
+                depth += delta;
+                if (depth <= 0)
+                {
+                    blocks.push_back(std::move(current));
+                    current.clear();
+                    collecting = false;
+                    depth = 0;
+                }
+            }
+        }
+        return blocks;
+    }
+
+    TResult<FUiWindowDef> ParseWindowBlock(const std::vector<std::string>& lines, std::string_view logicalName)
+    {
+        FUiWindowDef window;
+        bool pendingSprite = false;
+        bool inSprite = false;
+        FUiSpriteDef sprite;
+        bool pendingControl = false;
+        int32 pendingId = 0;
+        bool inControl = false;
+        int32 controlNestedDepth = 0;
+        std::string pendingControlSection;
+        std::string activeControlSection;
+        FUiControlDef control;
+        int32 nextGeneratedControlId = 1;
+
+        for (const std::string& rawLine : lines)
+        {
+            std::string line = Common::Trim(Common::StripCppComment(rawLine));
+            if (line.empty()) { continue; }
+            if (!inControl && !inSprite && !window.Name.empty() && IsCloseBrace(line)) { break; }
+            if (!inControl && !inSprite && StartsWithToken(line, "sprite")) { pendingSprite = true; continue; }
+            if (!inControl && !inSprite && StartsWithToken(line, "control")) { pendingControl = true; pendingId = ParseControlIdFromComment(rawLine); }
+
+            if (pendingSprite && IsOpenBrace(line)) { pendingSprite = false; inSprite = true; sprite = FUiSpriteDef{}; continue; }
+            if (inSprite)
+            {
+                if (IsCloseBrace(line))
+                {
+                    if (!sprite.Name.empty())
+                    {
+                        sprite.ExtentX = std::max(1, sprite.Width);
+                        sprite.ExtentY = std::max(1, sprite.Height);
+                        for (const FUiSpritePiece& piece : sprite.Pieces)
+                        {
+                            sprite.ExtentX = std::max(sprite.ExtentX, std::max(std::abs(piece.DstLeft), std::abs(piece.DstRight)));
+                            sprite.ExtentY = std::max(sprite.ExtentY, std::max(std::abs(piece.DstTop), std::abs(piece.DstBottom)));
+                        }
+                        window.Sprites[Common::ToLower(sprite.Name)] = std::move(sprite);
+                    }
+                    inSprite = false;
+                    continue;
+                }
+                ApplySpriteLine(sprite, line);
+                continue;
+            }
+
+            if (pendingControl && IsOpenBrace(line)) { inControl = true; pendingControl = false; controlNestedDepth = 0; control = FUiControlDef{}; control.Id = pendingId; continue; }
+            if (inControl)
+            {
+                const std::string lowerLine = Common::ToLower(line);
+                if (controlNestedDepth == 0 && (lowerLine == "leftbutton" || lowerLine == "rightbutton")) { pendingControlSection = lowerLine; continue; }
+                if (IsOpenBrace(line))
+                {
+                    ++controlNestedDepth;
+                    if (controlNestedDepth == 1 && !pendingControlSection.empty()) { activeControlSection = std::move(pendingControlSection); pendingControlSection.clear(); }
+                    continue;
+                }
+                if (IsCloseBrace(line))
+                {
+                    if (controlNestedDepth > 0)
+                    {
+                        --controlNestedDepth;
+                        if (controlNestedDepth == 0) { activeControlSection.clear(); }
+                        continue;
+                    }
+                    if (control.Id == 0)
+                    {
+                        while (std::any_of(window.Controls.begin(), window.Controls.end(), [&](const FUiControlDef& existing) { return existing.Id == nextGeneratedControlId; })) { ++nextGeneratedControlId; }
+                        control.Id = nextGeneratedControlId++;
+                    }
+                    else
+                    {
+                        nextGeneratedControlId = std::max(nextGeneratedControlId, control.Id + 1);
+                    }
+                    window.Controls.push_back(std::move(control));
+                    inControl = false;
+                    continue;
+                }
+                if (controlNestedDepth > 0)
+                {
+                    if (controlNestedDepth == 1 && !activeControlSection.empty()) { ApplySubButtonLine(activeControlSection == "leftbutton" ? control.LeftButton : control.RightButton, line); }
+                    continue;
+                }
+                ApplyControlLine(control, line);
+                continue;
+            }
+
+            ApplyWindowLine(window, line);
+        }
+
+        if (window.Name.empty()) { return FStatus::Error(EStatusCode::InvalidData, "UI window has no windowName: " + std::string(logicalName)); }
+        window.NameKey = Common::ToLower(window.Name);
+        return window;
+    }
+
 }
 
 TResult<FUiStringTable> FUiDocumentParser::LoadStringTableFromResource(const FResourceManager& resources, std::string_view logicalName) const
@@ -253,84 +404,31 @@ TResult<FUiStringTable> FUiDocumentParser::LoadStringTableFromResource(const FRe
     return strings;
 }
 
-TResult<FUiWindowDef> FUiDocumentParser::LoadWindowFromResource(const FResourceManager& resources, std::string_view logicalName) const
+TResult<std::vector<FUiWindowDef>> FUiDocumentParser::LoadWindowsFromResource(const FResourceManager& resources, std::string_view logicalName) const
 {
     auto text = LoadUiText(resources, logicalName);
     if (!text.IsOk()) { return text.Status(); }
-
-    FUiWindowDef window;
-    bool pendingSprite = false;
-    bool inSprite = false;
-    FUiSpriteDef sprite;
-    bool pendingControl = false;
-    int32 pendingId = 0;
-    bool inControl = false;
-    int32 controlNestedDepth = 0;
-    std::string pendingControlSection;
-    std::string activeControlSection;
-    FUiControlDef control;
-
-    for (const std::string& rawLine : LinesOf(text.Value()))
+    const std::vector<std::string> lines = LinesOf(text.Value());
+    std::vector<std::vector<std::string>> blocks = ExtractWindowBlocks(lines);
+    if (blocks.empty()) { blocks.push_back(lines); }
+    std::vector<FUiWindowDef> windows;
+    windows.reserve(blocks.size());
+    for (const std::vector<std::string>& block : blocks)
     {
-        std::string line = Common::Trim(Common::StripCppComment(rawLine));
-        if (line.empty()) { continue; }
-        if (!inControl && !inSprite && !window.Name.empty() && IsCloseBrace(line)) { break; }
-        if (!inControl && !inSprite && StartsWithToken(line, "sprite")) { pendingSprite = true; continue; }
-        if (!inControl && !inSprite && Common::ToLower(rawLine).find("control") != std::string::npos) { pendingControl = true; pendingId = ParseControlIdFromComment(rawLine); }
-
-        if (pendingSprite && IsOpenBrace(line)) { pendingSprite = false; inSprite = true; sprite = FUiSpriteDef{}; continue; }
-        if (inSprite)
-        {
-            if (IsCloseBrace(line))
-            {
-                if (!sprite.Name.empty()) { window.Sprites[Common::ToLower(sprite.Name)] = std::move(sprite); }
-                inSprite = false;
-                continue;
-            }
-            ApplySpriteLine(sprite, line);
-            continue;
-        }
-
-        if (pendingControl && IsOpenBrace(line)) { inControl = true; pendingControl = false; controlNestedDepth = 0; control = FUiControlDef{}; control.Id = pendingId; continue; }
-        if (inControl)
-        {
-            const std::string lowerLine = Common::ToLower(line);
-            if (controlNestedDepth == 0 && (lowerLine == "leftbutton" || lowerLine == "rightbutton")) { pendingControlSection = lowerLine; continue; }
-            if (IsOpenBrace(line))
-            {
-                ++controlNestedDepth;
-                if (controlNestedDepth == 1 && !pendingControlSection.empty()) { activeControlSection = std::move(pendingControlSection); pendingControlSection.clear(); }
-                continue;
-            }
-            if (IsCloseBrace(line))
-            {
-                if (controlNestedDepth > 0)
-                {
-                    --controlNestedDepth;
-                    if (controlNestedDepth == 0) { activeControlSection.clear(); }
-                    continue;
-                }
-                if (control.Id == 0) { control.Id = -1 - static_cast<int32>(window.Controls.size()); }
-                window.Controls.push_back(std::move(control));
-                inControl = false;
-                continue;
-            }
-            if (controlNestedDepth > 0)
-            {
-                if (controlNestedDepth == 1 && !activeControlSection.empty()) { ApplySubButtonLine(activeControlSection == "leftbutton" ? control.LeftButton : control.RightButton, line); }
-                continue;
-            }
-            ApplyControlLine(control, line);
-            continue;
-        }
-
-        ApplyWindowLine(window, line);
+        auto window = ParseWindowBlock(block, logicalName);
+        if (!window.IsOk()) { return window.Status(); }
+        windows.push_back(std::move(window.Value()));
     }
-
-    if (window.Name.empty()) { return FStatus::Error(EStatusCode::InvalidData, "UI window has no windowName: " + std::string(logicalName)); }
-    return window;
+    return windows;
 }
 
+TResult<FUiWindowDef> FUiDocumentParser::LoadWindowFromResource(const FResourceManager& resources, std::string_view logicalName) const
+{
+    auto windows = LoadWindowsFromResource(resources, logicalName);
+    if (!windows.IsOk()) { return windows.Status(); }
+    if (windows.Value().empty()) { return FStatus::Error(EStatusCode::InvalidData, "UI resource has no windows: " + std::string(logicalName)); }
+    return std::move(windows.Value().front());
+}
 
 TResult<FUiStringTable> LoadUiStringTableFromResource(const FResourceManager& resources, std::string_view logicalName)
 {

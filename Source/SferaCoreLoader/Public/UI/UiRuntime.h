@@ -79,6 +79,7 @@ public:
     FUiColor GameChatModeColor() const;
     bool IsTextCaretVisible() const;
     void SetServerGameTime(float dayFraction, int32 day = 0, int32 month = 0, int32 year = 0);
+    void ClearServerGameTime();
     void SetCompassHeading(float radians) { CompassHeadingRadians = radians; }
     void SetClanAvailable(bool available) { ClanAvailable = available; }
     bool IsClanAvailable() const { return ClanAvailable; }
@@ -88,6 +89,7 @@ public:
     std::string_view GameControlImage(std::string_view window, const FUiControlDef& control) const;
     void SetMapDescriptor(std::string spriteName, const std::array<int32, 8>& projection, bool hasProjection);
     void SetMapPlayerPosition(double x, double z);
+    void ClearMapPlayerPosition();
     std::optional<std::pair<float, float>> GameMapPlayerUv() const;
     bool IsMapPlayerControl(std::string_view window, int32 controlId) const;
     bool UsesRuntimeVisibility(std::string_view window, int32 controlId) const;

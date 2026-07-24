@@ -1,8 +1,7 @@
 #pragma once
 #include "Client/ClientSettings.h"
 #include "Components/Network/ClientNetworkComponent.h"
-#include "Components/UI/ClanRuntimeComponent.h"
-#include "Components/UI/MapRuntimeComponent.h"
+#include "Components/State/GameState.h"
 #include "Components/UI/UiActionComponent.h"
 #include "Components/UI/UiWindowStateComponent.h"
 #include "Core/Logger.h"
@@ -52,7 +51,8 @@ private:
     void LoadSavedLogin();
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
-    void PollServerWorldUpdates();
+    void ProcessServerEvents();
+    void SynchronizeGameState(FGameStateChangeMask changes);
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
     FWin64Window Window;
@@ -60,8 +60,7 @@ private:
     FD3D9RenderDevice RenderDevice;
     FClientNetworkComponent NetworkComponent;
     FUiActionComponent UiActions;
-    FClanRuntimeComponent ClanRuntime;
-    FMapRuntimeComponent MapRuntime;
+    FGameState GameState;
     FUiWindowStateComponent UiWindows;
     FClientSettings Settings;
     FCharacterAppearanceRules AppearanceRules;
@@ -80,6 +79,6 @@ private:
     bool LastGameMouseValid = false;
     int32 LastGameMouseX = 0;
     int32 LastGameMouseY = 0;
-    std::chrono::steady_clock::time_point LastServerWorldPoll = std::chrono::steady_clock::now();
-    std::optional<FGameWorldPosition> LastAppliedServerWorldPosition;
+    uint64 AppliedRosterRevision = 0;
+    uint64 AppliedWorldRevision = 0;
 };

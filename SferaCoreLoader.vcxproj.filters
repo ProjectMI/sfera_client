@@ -136,6 +136,12 @@
     <Filter Include="Source\SferaCoreLoader\Public\Components\Localization">
       <UniqueIdentifier>{AA6E858A-81AC-569B-AD26-77937B05EAE7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\State">
+      <UniqueIdentifier>{B2FD13F6-8FCB-5A8A-9839-FBF26C835BEA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\State">
+      <UniqueIdentifier>{6BACA309-08D3-5474-978B-6902F126B2E2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\SferaCoreLoader\Private\Client\ClientFrontendRuntime.cpp">
@@ -303,12 +309,6 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\GameUiRoutingComponent.cpp">
       <Filter>Source Files\Components\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\MapRuntimeComponent.cpp">
-      <Filter>Source Files\Components\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\ClanRuntimeComponent.cpp">
-      <Filter>Source Files\Components\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiActionComponent.cpp">
       <Filter>Source\SferaCoreLoader\Private\Components\UI</Filter>
     </ClCompile>
@@ -323,6 +323,15 @@
     </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiWindowStateComponent.cpp">
       <Filter>Source\SferaCoreLoader\Private\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\GamePacketDispatcher.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ServerEventQueue.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\State\GameState.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\State</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -545,12 +554,6 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\GameUiRoutingComponent.h">
       <Filter>Header Files\Components\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\MapRuntimeComponent.h">
-      <Filter>Header Files\Components\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\ClanRuntimeComponent.h">
-      <Filter>Header Files\Components\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiActionComponent.h">
       <Filter>Source\SferaCoreLoader\Public\Components\UI</Filter>
     </ClInclude>
@@ -565,6 +568,18 @@
     </ClInclude>
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiWindowStateComponent.h">
       <Filter>Source\SferaCoreLoader\Public\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\GamePacketDispatcher.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEvent.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEventQueue.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\State\GameState.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\State</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

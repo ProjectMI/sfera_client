@@ -680,6 +680,15 @@ void FUiRuntime::SetServerGameTime(float dayFraction, int32 day, int32 month, in
     if (year > 0) { ServerGameYear = year; }
 }
 
+void FUiRuntime::ClearServerGameTime()
+{
+    ServerGameTime = 0.0f;
+    HasServerGameTime = false;
+    ServerGameDay = 0;
+    ServerGameMonth = 0;
+    ServerGameYear = 0;
+}
+
 std::string FUiRuntime::GameControlText(std::string_view windowName, const FUiControlDef& control) const
 {
     const std::string window = Common::ToLower(std::string(windowName));
@@ -823,6 +832,13 @@ void FUiRuntime::SetMapPlayerPosition(double x, double z)
     MapPlayerX = x;
     MapPlayerZ = z;
     HasMapPlayerPosition = std::isfinite(x) && std::isfinite(z);
+}
+
+void FUiRuntime::ClearMapPlayerPosition()
+{
+    MapPlayerX = 0.0;
+    MapPlayerZ = 0.0;
+    HasMapPlayerPosition = false;
 }
 
 std::optional<std::pair<float, float>> FUiRuntime::GameMapPlayerUv() const

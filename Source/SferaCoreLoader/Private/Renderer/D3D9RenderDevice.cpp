@@ -139,6 +139,13 @@ void FD3D9RenderDevice::SetServerGameTime(float dayFraction)
     }
 }
 
+void FD3D9RenderDevice::ClearServerGameTime()
+{
+    ServerGameTime = 0.0f;
+    HasServerGameTime = false;
+    ServerGameTimePending = false;
+}
+
 float FD3D9RenderDevice::GameWorldCameraFacing() const
 {
     return GameWorldScene.CameraFacing();

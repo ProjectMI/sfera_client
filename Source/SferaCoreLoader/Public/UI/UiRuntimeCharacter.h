@@ -11,6 +11,7 @@ public:
     void ApplyCharacterCreated(int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance);
     void SetCharacterAppearanceRules(const FCharacterAppearanceRules& rules);
     void SetCharacterSlots(const std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount>& slots);
+    void SetSelectedSlot(int32 slot);
     void SetCharacterActionLocked(bool locked);
     bool SelectedCharacterPresent() const;
     bool SelectedCharacterCanCreate() const;

@@ -224,6 +224,16 @@ void FUiRuntimeCharacter::SetCharacterSlots(const std::array<FCharacterSlotInfo,
     SyncCharacterSelectControls();
 }
 
+void FUiRuntimeCharacter::SetSelectedSlot(int32 slot)
+{
+    const int32 next = Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount);
+    if (next == SelectedSlot) { return; }
+    SelectedSlot = next;
+    ActiveCharacterEditId = SferaUi::NameEditIdForSlot(SelectedSlot);
+    ClampCharacterAppearance();
+    SyncCharacterSelectControls();
+}
+
 void FUiRuntimeCharacter::SetCharacterActionLocked(bool locked)
 {
     CharacterActionLocked = locked;

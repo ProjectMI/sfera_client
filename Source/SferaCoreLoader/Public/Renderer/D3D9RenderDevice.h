@@ -40,6 +40,7 @@ public:
     bool IsInitialized() const { return Device != nullptr; }
     FD3D9ShaderInventory InspectShaderResources(const FResourceManager& resources, FLogger* logger) const;
     void SetServerGameTime(float dayFraction);
+    void ClearServerGameTime();
     float GameWorldCameraFacing() const;
     void SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position);
     void ApplyServerGameWorldPosition(const FGameWorldPosition& position);

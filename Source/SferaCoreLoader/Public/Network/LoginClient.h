@@ -12,7 +12,6 @@ struct FCharacterActionResult
     int32 PacketCount = 0;
     int32 ByteCount = 0;
     std::vector<std::vector<uint8>> Frames;
-    std::optional<FServerWorldPosition> ServerPosition;
     std::string Message;
 };
 
@@ -32,11 +31,6 @@ public:
     void Close();
     bool Connected() const;
     uint16 LocalId() const;
-    bool HasGameTime() const;
-    float GameTimeFraction() const;
-    int32 GameDay() const;
-    int32 GameMonth() const;
-    int32 GameYear() const;
 private:
     struct FImpl;
     explicit FServerSession(std::unique_ptr<FImpl> impl);
@@ -57,12 +51,8 @@ struct FLoginProbeResult
     int32 NextLength = 0;
     int32 CharacterSelectPackets = 0;
     int32 CharacterSelectBytes = 0;
-    bool HasGameTime = false;
-    float GameTimeFraction = 0.0f;
-    int32 GameDay = 0;
-    int32 GameMonth = 0;
-    int32 GameYear = 0;
     std::shared_ptr<FServerSession> Session;
+    std::vector<std::vector<uint8>> Frames;
     std::array<FCharacterSlotInfo, Sfera::CharacterSlotCount> CharacterSlots{};
     std::string Message;
 };

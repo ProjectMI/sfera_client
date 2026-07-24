@@ -140,13 +140,14 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Renderer\GameWorld\GameWorldTerrain.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ClientNetworkComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\GameUiRoutingComponent.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\MapRuntimeComponent.cpp" />
-    <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\ClanRuntimeComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiActionComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\World\WorldRuntimeComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\FileTransferStateComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\Localization\MessageCatalogComponent.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\UI\UiWindowStateComponent.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\GamePacketDispatcher.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ServerEventQueue.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\State\GameState.cpp" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
@@ -224,12 +225,14 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Core\Pch.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ClientNetworkComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\GameUiRoutingComponent.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\MapRuntimeComponent.h" />
-    <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\ClanRuntimeComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiActionComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\World\WorldRuntimeComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\FileTransferStateComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\Localization\MessageCatalogComponent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\UI\UiWindowStateComponent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\GamePacketDispatcher.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEvent.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEventQueue.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\State\GameState.h" />
   </ItemGroup>
 </Project>

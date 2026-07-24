@@ -202,20 +202,39 @@ namespace
         while (result.PacketCount < maxFrames)
         {
             u_long available = 0;
-
-            if (ioctlsocket(socket, FIONREAD, &available) != 0 || available < 2) { break; }
+            if (ioctlsocket(socket, FIONREAD, &available) != 0) { result.Disconnected = true; break; }
+            if (available < 2)
+            {
+                if (available == 0)
+                {
+                    fd_set readable;
+                    FD_ZERO(&readable);
+                    FD_SET(socket, &readable);
+                    timeval immediate{};
+                    if (select(0, &readable, nullptr, nullptr, &immediate) > 0 && FD_ISSET(socket, &readable))
+                    {
+                        char probe = 0;
+                        const int rc = recv(socket, &probe, 1, MSG_PEEK);
+                        if (rc == 0 || (rc < 0 && WSAGetLastError() != WSAEWOULDBLOCK)) { result.Disconnected = true; }
+                    }
+                }
+                break;
+            }
 
             std::array<uint8, 2> header{};
-
-            if (recv(socket, std::bit_cast<char*>(header.data()), static_cast<int>(header.size()), MSG_PEEK) != static_cast<int>(header.size())) { break; }
+            const int peeked = recv(socket, std::bit_cast<char*>(header.data()), static_cast<int>(header.size()), MSG_PEEK);
+            if (peeked != static_cast<int>(header.size()))
+            {
+                if (peeked == 0 || (peeked < 0 && WSAGetLastError() != WSAEWOULDBLOCK)) { result.Disconnected = true; }
+                break;
+            }
 
             const int32 length = header[0] | (header[1] << 8);
-
-            if (length < 4 || length > 60000 || available < static_cast<u_long>(length)) { break; }
+            if (length < 4 || length > 60000) { result.Disconnected = true; break; }
+            if (available < static_cast<u_long>(length)) { break; }
 
             std::vector<uint8> frame;
-
-            if (!RecvFrame(socket, frame, 0)) { break; }
+            if (!RecvFrame(socket, frame, 0)) { result.Disconnected = true; break; }
 
             ++result.PacketCount;
             result.ByteCount += static_cast<int32>(frame.size());
@@ -236,38 +255,7 @@ namespace
         ReadAvailableFrames(socket, result, maxFrames);
     }
 
-    void HarvestServerWorldPosition(FCharacterActionResult& result, uint16 localId)
-    {
-        std::optional<FServerWorldPosition> fallback;
-        for (const auto& frame : result.Frames)
-        {
-            auto position = FSphereEmuProtocol::TryParseServerWorldPosition(frame, localId);
-            if (!position) { continue; }
-            if (!fallback || position->CharacterEntity) { fallback = position; }
-            if (position->EntityId == localId) { result.ServerPosition = position; return; }
-        }
-        if (!result.ServerPosition && fallback) { result.ServerPosition = fallback; }
-    }
 
-    bool DecodeServerCredentialsTime(const std::vector<uint8>& Frame, float& Fraction, int32& Day, int32& Month, int32& Year)
-    {
-        if (Frame.size() != 56 || FSphereEmuProtocol::ReadU16LE(Frame, 2) != 300 || Frame[9] != 0x08 || Frame[10] != 0x40 || Frame[11] != 0x20 || Frame[12] != 0x10)
-        {
-            return false;
-        }
-        const int32 Seconds = ((Frame[13] & 0x0f) - 1) * 12;
-        const int32 Minutes = ((Frame[14] & 0x03) << 4) | (Frame[13] >> 4);
-        const int32 Hours = (Frame[14] >> 2) & 0x1f;
-        if (Seconds < 0 || Seconds >= 60 || Minutes < 0 || Minutes >= 60 || Hours < 0 || Hours >= 24)
-        {
-            return false;
-        }
-        Fraction = static_cast<float>(Hours * 3600 + Minutes * 60 + Seconds) / 86400.0f;
-        Day = ((Frame[15] & 0x0f) << 1) | ((Frame[14] >> 7) & 0x01);
-        Month = (Frame[15] >> 4) & 0x0f;
-        Year = ((((Frame[17] & 0x03) << 8) | Frame[16]) + 7800);
-        return true;
-    }
 }
 
 struct FServerSession::FImpl
@@ -275,11 +263,7 @@ struct FServerSession::FImpl
     FWsaSession Wsa;
     FSocketHandle Socket;
     uint16 LocalId = 0;
-    bool HasGameTime = false;
-    float GameTimeFraction = 0.0f;
-    int32 GameDay = 0;
-    int32 GameMonth = 0;
-    int32 GameYear = 0;
+    mutable std::mutex IoMutex;
 };
 
 FServerSession::FServerSession(std::unique_ptr<FImpl> impl) : Impl(std::move(impl)) {}
@@ -293,33 +277,33 @@ std::shared_ptr<FServerSession> FServerSession::Create(std::unique_ptr<FImpl> im
     return std::make_shared<FServerSessionInstance>(std::move(impl));
 }
 FServerSession::~FServerSession() = default;
-bool FServerSession::Connected() const { return Impl && static_cast<bool>(Impl->Socket); }
+bool FServerSession::Connected() const
+{
+    if (!Impl) { return false; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
+    return static_cast<bool>(Impl->Socket);
+}
 uint16 FServerSession::LocalId() const { return Impl ? Impl->LocalId : 0; }
-bool FServerSession::HasGameTime() const { return Impl && Impl->HasGameTime; }
-float FServerSession::GameTimeFraction() const { return Impl ? Impl->GameTimeFraction : 0.0f; }
-int32 FServerSession::GameDay() const { return Impl ? Impl->GameDay : 0; }
-int32 FServerSession::GameMonth() const { return Impl ? Impl->GameMonth : 0; }
-int32 FServerSession::GameYear() const { return Impl ? Impl->GameYear : 0; }
 void FServerSession::Close()
 {
-    if (Impl)
-    {
-        Impl->Socket.Reset();
-    }
+    if (!Impl) { return; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
+    Impl->Socket.Reset();
 }
 
 FCharacterActionResult FServerSession::SelectCharacter(int32 slot, int32 timeoutMs)
 {
     FCharacterActionResult result;
+    if (!Impl) { result.Message = "character session is closed"; return result; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
 
-    if (!Connected()) { result.Message = "character session is closed"; return result; }
+    if (!Impl->Socket) { result.Message = "character session is closed"; return result; }
 
     const auto packet = FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildCharacterSelectPacket(Impl->LocalId, slot));
 
     if (!SendAll(Impl->Socket.Get(), packet)) { result.Message = WsaErrorText("character select send failed"); return result; }
 
     ReadActionFramesBurst(Impl->Socket.Get(), result, 16, timeoutMs);
-    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = result.PacketCount > 0;
     std::ostringstream out;
     out << "selected slot " << (Common::ClampIndexToCount(slot, Sfera::CharacterSlotCount) + 1) << "; character packets=" << result.PacketCount << " bytes=" << result.ByteCount;
@@ -330,8 +314,10 @@ FCharacterActionResult FServerSession::SelectCharacter(int32 slot, int32 timeout
 FCharacterActionResult FServerSession::CreateCharacter(int32 slot, const std::wstring& name, const FCharacterCreationAppearance& appearance, int32 timeoutMs)
 {
     FCharacterActionResult result;
+    if (!Impl) { result.Message = "character session is closed"; return result; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
 
-    if (!Connected()) { result.Message = "character session is closed"; return result; }
+    if (!Impl->Socket) { result.Message = "character session is closed"; return result; }
 
     const auto packet = FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildCreateCharacterPacket(Impl->LocalId, slot, name, appearance));
 
@@ -376,8 +362,10 @@ FCharacterActionResult FServerSession::CreateCharacter(int32 slot, const std::ws
 FCharacterActionResult FServerSession::DeleteCharacter(int32 slot, int32 timeoutMs)
 {
     FCharacterActionResult result;
+    if (!Impl) { result.Message = "character session is closed"; return result; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
 
-    if (!Connected()) { result.Message = "character session is closed"; return result; }
+    if (!Impl->Socket) { result.Message = "character session is closed"; return result; }
 
     const auto packet = FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildDeleteCharacterPacket(Impl->LocalId, slot));
 
@@ -407,19 +395,19 @@ FCharacterActionResult FServerSession::DeleteCharacter(int32 slot, int32 timeout
 FCharacterActionResult FServerSession::SendIngameAck(int32 timeoutMs)
 {
     FCharacterActionResult result;
+    if (!Impl) { result.Message = "character session is closed"; return result; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
 
-    if (!Connected()) { result.Message = "character session is closed"; return result; }
+    if (!Impl->Socket) { result.Message = "character session is closed"; return result; }
 
     const auto packet = FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildIngameAckPacket(Impl->LocalId));
 
     if (!SendAll(Impl->Socket.Get(), packet)) { result.Message = WsaErrorText("ingame ACK send failed"); return result; }
 
     ReadActionFramesBurst(Impl->Socket.Get(), result, 32, timeoutMs);
-    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = true;
     std::ostringstream out;
     out << "ingame ACK sent; world packets=" << result.PacketCount << " bytes=" << result.ByteCount;
-    if (result.ServerPosition) { out << "; spawn=(" << result.ServerPosition->X << "," << result.ServerPosition->Y << "," << result.ServerPosition->Z << ") angle=" << result.ServerPosition->Angle; }
     result.Message = out.str();
     return result;
 }
@@ -427,17 +415,20 @@ FCharacterActionResult FServerSession::SendIngameAck(int32 timeoutMs)
 FCharacterActionResult FServerSession::PollFrames(int32 maxFrames)
 {
     FCharacterActionResult result;
+    if (!Impl) { result.Message = "character session is closed"; return result; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
 
-    if (!Connected()) { result.Message = "character session is closed"; return result; }
+    if (!Impl->Socket) { result.Message = "character session is closed"; return result; }
 
     ReadAvailableFrames(Impl->Socket.Get(), result, std::max(1, maxFrames));
-    HarvestServerWorldPosition(result, Impl->LocalId);
     result.Ok = true;
     return result;
 }
 bool FServerSession::SendChatMessage(uint8 channel, std::string_view utf8Text)
 {
-    if (!Connected() || utf8Text.empty()) { return false; }
+    if (!Impl || utf8Text.empty()) { return false; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
+    if (!Impl->Socket) { return false; }
     FByteArray text = FSphereEmuProtocol::ToCp1251(Common::Utf8ToWide(std::string(utf8Text)));
     if (text.empty() || text.size() > 4096) { return false; }
     const uint16 partCount = static_cast<uint16>((text.size() + 249) / 250);
@@ -469,7 +460,9 @@ bool FServerSession::SendChatMessage(uint8 channel, std::string_view utf8Text)
 
 bool FServerSession::SendStatAllocation(const std::array<int32, 8>& deltas)
 {
-    if (!Connected()) { return false; }
+    if (!Impl) { return false; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
+    if (!Impl->Socket) { return false; }
     FByteArray payload(32, 0);
     for (size_t index = 0; index < deltas.size(); ++index)
     {
@@ -500,6 +493,7 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
     std::vector<uint8> firstFrame;
 
     if (!RecvFrame(socket, firstFrame, timeoutMs)) { result.Message = "TCP connected; no initial server frame"; return result; }
+    result.Frames.push_back(firstFrame);
 
     result.FirstLength = static_cast<int32>(firstFrame.size());
     result.FirstOpcode = FSphereEmuProtocol::ReadU16LE(firstFrame, 2);
@@ -533,12 +527,7 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
     {
         result.NextLength = static_cast<int32>(nextFrame.size());
         result.NextOpcode = FSphereEmuProtocol::ReadU16LE(nextFrame, 2);
-        result.HasGameTime = DecodeServerCredentialsTime(nextFrame, result.GameTimeFraction, result.GameDay, result.GameMonth, result.GameYear);
-        impl->HasGameTime = result.HasGameTime;
-        impl->GameTimeFraction = result.GameTimeFraction;
-        impl->GameDay = result.GameDay;
-        impl->GameMonth = result.GameMonth;
-        impl->GameYear = result.GameYear;
+        result.Frames.push_back(nextFrame);
     }
 
     if (result.NextOpcode == SferaProtocol::ServerFrameOpcode && nextFrame.size() >= 13 && !login.empty() && !password.empty())
@@ -553,6 +542,7 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
 
         if (RecvFrame(socket, loginResponse, timeoutMs * 3))
         {
+            result.Frames.push_back(loginResponse);
             result.NextLength = static_cast<int32>(loginResponse.size());
             result.NextOpcode = FSphereEmuProtocol::ReadU16LE(loginResponse, 2);
 
@@ -575,6 +565,7 @@ FLoginProbeResult ProbeLoginServer(const FEndpoint& endpoint, const std::wstring
                 {
                     ++extraFrames;
                     extraBytes += static_cast<int32>(extraFrame.size());
+                    result.Frames.push_back(extraFrame);
 
                     if (FSphereEmuProtocol::LooksLikeCharacterSlot(extraFrame))
                     {

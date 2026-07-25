@@ -128,12 +128,13 @@ FGameStateChangeMask FGameState::Apply(const FServerEvent& event)
             ClanState = std::move(next);
             return GameStateChange::Clan;
         }
-        else
+        else if constexpr (std::is_same_v<T, FUnhandledServerPacketEvent>)
         {
             DiagnosticsState.UnhandledPacketCount += payload.PacketCount;
             DiagnosticsState.UnhandledByteCount += payload.ByteCount;
             return GameStateChange::Diagnostics;
         }
+        else { return GameStateChange::None; }
     }, event.Payload);
 }
 

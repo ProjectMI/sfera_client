@@ -44,7 +44,8 @@ public:
     std::vector<FServerEvent> DrainServerEvents();
     void StartWorldEventPump();
     void StopWorldEventPump();
-    bool SendChatMessage(uint8 channel, std::string_view text);
+    bool SendChatMessage(uint8 channel, std::string_view sender, std::string_view text);
+    bool SendWorldPosition(double x, double y, double z, double angle);
     bool SendStatAllocation(const std::array<int32, 8>& deltas);
     bool HasActiveSession() const;
     void CloseActiveSession();

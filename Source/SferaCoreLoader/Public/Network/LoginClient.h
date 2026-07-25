@@ -26,7 +26,8 @@ public:
     FCharacterActionResult DeleteCharacter(int32 slot, int32 timeoutMs = 2500);
     FCharacterActionResult SendIngameAck(int32 timeoutMs = 2500);
     FCharacterActionResult PollFrames(int32 maxFrames = 32);
-    bool SendChatMessage(uint8 channel, std::string_view utf8Text);
+    bool SendChatMessage(uint8 channel, std::string_view utf8Sender, std::string_view utf8Text);
+    bool SendWorldPosition(double x, double y, double z, double angle);
     bool SendStatAllocation(const std::array<int32, 8>& deltas);
     void Close();
     bool Connected() const;

@@ -263,6 +263,7 @@ struct FServerSession::FImpl
     FWsaSession Wsa;
     FSocketHandle Socket;
     uint16 LocalId = 0;
+    uint8 MovementPingSequence = 0;
     mutable std::mutex IoMutex;
 };
 
@@ -424,38 +425,22 @@ FCharacterActionResult FServerSession::PollFrames(int32 maxFrames)
     result.Ok = true;
     return result;
 }
-bool FServerSession::SendChatMessage(uint8 channel, std::string_view utf8Text)
+bool FServerSession::SendChatMessage(uint8 channel, std::string_view utf8Sender, std::string_view utf8Text)
 {
-    if (!Impl || utf8Text.empty()) { return false; }
+    if (!Impl || utf8Sender.empty() || utf8Text.empty()) { return false; }
     std::lock_guard<std::mutex> lock(Impl->IoMutex);
     if (!Impl->Socket) { return false; }
-    FByteArray text = FSphereEmuProtocol::ToCp1251(Common::Utf8ToWide(std::string(utf8Text)));
-    if (text.empty() || text.size() > 4096) { return false; }
-    const uint16 partCount = static_cast<uint16>((text.size() + 249) / 250);
-    FByteArray header(8, 0);
-    header[0] = channel;
-    header[1] = 1;
-    const uint32 total = static_cast<uint32>(text.size());
-    header[2] = static_cast<uint8>(total & 0xff);
-    header[3] = static_cast<uint8>((total >> 8) & 0xff);
-    header[4] = static_cast<uint8>((total >> 16) & 0xff);
-    header[5] = static_cast<uint8>((total >> 24) & 0xff);
-    header[6] = static_cast<uint8>(partCount & 0xff);
-    header[7] = static_cast<uint8>((partCount >> 8) & 0xff);
-    if (!SendAll(Impl->Socket.Get(), FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildMarshaledPacket(Impl->LocalId, 12, 2, header)))) { return false; }
-    for (uint16 part = 0; part < partCount; ++part)
-    {
-        const size_t offset = static_cast<size_t>(part) * 250;
-        const size_t count = std::min<size_t>(250, text.size() - offset);
-        FByteArray payload(9 + count, 0);
-        payload[0] = channel;
-        payload[1] = 2;
-        payload[2] = static_cast<uint8>(part & 0xff);
-        payload[3] = static_cast<uint8>((part >> 8) & 0xff);
-        std::copy_n(text.begin() + static_cast<std::ptrdiff_t>(offset), count, payload.begin() + 4);
-        if (!SendAll(Impl->Socket.Get(), FSphereEmuProtocol::EncodeClientPacket(FSphereEmuProtocol::BuildMarshaledPacket(Impl->LocalId, 12, 2, payload)))) { return false; }
-    }
-    return true;
+    FByteArray stream = FSphereEmuProtocol::BuildEncodedChatPacketStream(Impl->LocalId, channel, Common::Utf8ToWide(std::string(utf8Sender)), Common::Utf8ToWide(std::string(utf8Text)));
+    return !stream.empty() && stream.size() <= 65535 && SendAll(Impl->Socket.Get(), stream);
+}
+
+bool FServerSession::SendWorldPosition(double x, double y, double z, double angle)
+{
+    if (!Impl || !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) || !std::isfinite(angle)) { return false; }
+    std::lock_guard<std::mutex> lock(Impl->IoMutex);
+    if (!Impl->Socket) { return false; }
+    FByteArray encoded = FSphereEmuProtocol::BuildEncodedMovementPingPacket(Impl->LocalId, x, y, z, angle, Impl->MovementPingSequence++);
+    return !encoded.empty() && SendAll(Impl->Socket.Get(), encoded);
 }
 
 bool FServerSession::SendStatAllocation(const std::array<int32, 8>& deltas)

@@ -119,6 +119,28 @@ struct FD3D9GameWorldScene::Impl
     bool GrassRefreshIncomplete = false;
     bool GrassInitialBlockingLoad = false;
     std::vector<FSceneBatch> PlayerBatches;
+    struct FRemotePlayerModelResource
+    {
+        FSkinnedCharacterModel Model;
+        std::vector<FSceneBatch> Batches;
+        IDirect3DIndexBuffer9* IndexBuffer = nullptr;
+        UINT VertexCount = 0;
+    };
+    struct FRemotePlayerRenderState
+    {
+        FRemoteGamePlayer Player;
+        IDirect3DVertexBuffer9* VertexBuffer = nullptr;
+        std::vector<float> SkinScratch;
+        std::vector<WorldVertex> VertexScratch;
+        uint64 ModelKey = 0;
+        std::size_t Action = kPlayerIdleAction;
+        float AnimationTime = 0.0f;
+        float MovementHold = 0.0f;
+        float LastPacketTime = -1.0f;
+        bool Running = false;
+    };
+    std::unordered_map<uint64, FRemotePlayerModelResource> RemotePlayerModels;
+    std::unordered_map<uint64, FRemotePlayerRenderState> RemotePlayers;
     UINT PlayerVertexCount = 0;
     FSkinnedCharacterModel PlayerModel;
     std::vector<float> PlayerSkinScratch;
@@ -223,6 +245,9 @@ struct FD3D9GameWorldScene::Impl
     void SkinPlayerFrame();
     void LoadPlayerModel(const FSkinnedCharacterModel& model);
     void UpdatePlayerAnimation(float DeltaSeconds, bool moving, bool running);
+    void UpdateRemotePlayerAnimations(float DeltaSeconds);
+    FRemotePlayerModelResource* EnsureRemotePlayerModel(const FCharacterCreationAppearance& appearance);
+    std::vector<FSceneBatch> LoadCharacterBatches(const FSkinnedCharacterModel& model);
     RECT ClientRect() const;
     void FillPresentParameters();
     void CreateReflectionTarget();
@@ -326,6 +351,11 @@ struct FD3D9GameWorldScene::Impl
     void UpdateWaterWaves(TerrainResource* resource, float OriginX, float OriginZ);
     void DrawWater();
     void DrawPlayer();
+    std::optional<FGameWorldPosition> CurrentPlayerWorldPosition() const;
+    void UpsertRemotePlayer(const FRemoteGamePlayer& Player);
+    void SetRemotePlayerAppearance(uint64 EntityId, const FCharacterCreationAppearance& Appearance);
+    void RemoveRemotePlayer(uint64 EntityId);
+    void ClearRemotePlayers();
     void DrawOverlay();
     bool Initialize(
         HWND window,

@@ -218,10 +218,16 @@ void FClientNetworkComponent::StopWorldEventPump()
     WorldPumpRunning.store(false);
 }
 
-bool FClientNetworkComponent::SendChatMessage(uint8 channel, std::string_view text)
+bool FClientNetworkComponent::SendChatMessage(uint8 channel, std::string_view sender, std::string_view text)
 {
     const std::shared_ptr<FServerSession> session = GetActiveSession();
-    return session && session->SendChatMessage(channel, text);
+    return session && session->SendChatMessage(channel, sender, text);
+}
+
+bool FClientNetworkComponent::SendWorldPosition(double x, double y, double z, double angle)
+{
+    const std::shared_ptr<FServerSession> session = GetActiveSession();
+    return session && session->SendWorldPosition(x, y, z, angle);
 }
 
 bool FClientNetworkComponent::SendStatAllocation(const std::array<int32, 8>& deltas)

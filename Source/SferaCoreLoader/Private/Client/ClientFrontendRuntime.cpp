@@ -39,6 +39,59 @@ namespace
         std::filesystem::path root = count > 0 ? std::filesystem::path(buffer.data()).parent_path() : std::filesystem::current_path();
         return root / "sfera_login.cache";
     }
+
+    bool SameReportedPosition(const FGameWorldPosition& left, const FGameWorldPosition& right)
+    {
+        const double angleDelta = std::remainder(left.Angle - right.Angle, 2.0 * std::acos(-1.0));
+        return std::abs(left.X - right.X) <= 0.02 && std::abs(left.Y - right.Y) <= 0.02 && std::abs(left.Z - right.Z) <= 0.02 && std::abs(angleDelta) <= 0.005;
+    }
+
+    FRemoteGamePlayer MakeRemotePlayer(uint64 entityId, std::string name, const FServerWorldPosition& position, const FCharacterCreationAppearance* appearance = nullptr)
+    {
+        FRemoteGamePlayer player;
+        player.EntityId = entityId;
+        player.Name = std::move(name);
+        player.Position = FGameWorldPosition{position.X, position.Y, position.Z, position.Angle};
+        if (appearance) { player.Appearance = *appearance; }
+        return player;
+    }
+
+    constexpr char kAppearanceSenderPrefix = '~';
+    constexpr char kAppearanceSenderDelimiter = '|';
+
+    char AppearanceCode(int32 value)
+    {
+        return static_cast<char>('A' + std::clamp(value, 0, 15));
+    }
+
+    bool SameAppearance(const FCharacterCreationAppearance& left, const FCharacterCreationAppearance& right)
+    {
+        return left.Female == right.Female && left.ModelBase == right.ModelBase && left.Face == right.Face && left.Hair == right.Hair && left.HairColor == right.HairColor && left.Tattoo == right.Tattoo;
+    }
+
+    std::string BuildAppearanceSender(const std::wstring& characterName, const FCharacterCreationAppearance& appearance)
+    {
+        const FByteArray nameBytes = Common::WideToCp1251Bytes(characterName);
+        if (nameBytes.empty() || nameBytes.size() > 19) { return {}; }
+        const int32 face = std::clamp(appearance.Face, 0, appearance.Female ? 11 : 12);
+        const int32 hair = std::clamp(appearance.Hair, 0, appearance.Female ? 4 : 2);
+        const int32 hairColor = std::clamp(appearance.HairColor, 0, 3);
+        const int32 tattoo = std::clamp(appearance.Tattoo, 0, 3);
+        const std::string nameUtf8 = Common::WideToUtf8(characterName);
+        if (nameUtf8.empty()) { return {}; }
+        std::string sender;
+        sender.reserve(nameUtf8.size() + 7);
+        sender.push_back(kAppearanceSenderPrefix);
+        sender += nameUtf8;
+        sender.push_back(kAppearanceSenderDelimiter);
+        sender.push_back(AppearanceCode(appearance.Female ? 1 : 0));
+        sender.push_back(AppearanceCode(face));
+        sender.push_back(AppearanceCode(hair));
+        sender.push_back(AppearanceCode(hairColor));
+        sender.push_back(AppearanceCode(tattoo));
+        return sender;
+    }
+
 }
 
 void FClientFrontendRuntime::DrawLoadingFrame(HDC dc, const RECT& rect)
@@ -145,6 +198,22 @@ void FClientFrontendRuntime::StoreSavedLogin(bool enabled, const std::string& lo
 void FClientFrontendRuntime::CloseActiveServerSession()
 {
     NetworkComponent.CloseActiveSession();
+    {
+        std::lock_guard<std::mutex> renderLock(RenderMutex);
+        RenderDevice.ClearRemoteGamePlayers();
+    }
+    LastReportedWorldPosition.reset();
+    LastWorldPositionReportTime = {};
+    NextWorldPositionReportTime = {};
+    PendingWorldPositionWarmupReports = 0;
+    LocalCharacterName.clear();
+    LocalCharacterAppearance = {};
+    LocalCharacterIdentityValid = false;
+    RemoteAppearanceHints.clear();
+    RemotePlayerNames.clear();
+    RemotePlayerEntities.clear();
+    NextAppearanceAnnouncementTime = {};
+    PendingAppearanceAnnouncements = 0;
     ProcessServerEvents();
 }
 
@@ -295,12 +364,32 @@ void FClientFrontendRuntime::RenderFrame(float deltaSeconds, FGameMovementInput 
     RECT client{};
     GetClientRect(Window.Handle(), &client);
     FStatus status;
+    std::optional<FGameWorldPosition> currentWorldPosition;
     {
         std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         Ui.SetCompassHeading(RenderDevice.GameWorldCameraFacing());
         Ui.Tick(deltaSeconds);
         status = RenderDevice.RenderUiDesktop(*RenderResources, RenderWorldScene, Ui, client, deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested, Log);
+        if (Ui.Mode() == EUiRuntimeMode::Game) { currentWorldPosition = RenderDevice.CurrentGameWorldPosition(); }
+    }
+
+    TrySendAppearanceAnnouncement();
+
+    if (currentWorldPosition && NetworkComponent.HasActiveSession())
+    {
+        const auto now = std::chrono::steady_clock::now();
+        const bool changed = !LastReportedWorldPosition || !SameReportedPosition(*LastReportedWorldPosition, *currentWorldPosition);
+        const bool heartbeatDue = LastWorldPositionReportTime.time_since_epoch().count() == 0 || now - LastWorldPositionReportTime >= std::chrono::seconds(2);
+        const bool warmupDue = PendingWorldPositionWarmupReports > 0;
+        const bool rateReady = NextWorldPositionReportTime.time_since_epoch().count() == 0 || now >= NextWorldPositionReportTime;
+        if (rateReady && (changed || heartbeatDue || warmupDue) && NetworkComponent.SendWorldPosition(currentWorldPosition->X, currentWorldPosition->Y, currentWorldPosition->Z, currentWorldPosition->Angle))
+        {
+            LastReportedWorldPosition = currentWorldPosition;
+            LastWorldPositionReportTime = now;
+            NextWorldPositionReportTime = now + std::chrono::milliseconds(100);
+            if (PendingWorldPositionWarmupReports > 0) { --PendingWorldPositionWarmupReports; }
+        }
     }
 
     if (!status.IsOk() && Log)
@@ -553,10 +642,10 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
             channel = Ui.GameChatChannel();
         }
         if (const FCharacterSlotInfo* character = GameState.ActiveCharacter()) { sender = Common::WideToUtf8(character->Name); }
-        if (!message.empty() && NetworkComponent.SendChatMessage(channel, message))
+        if (!message.empty() && !sender.empty() && NetworkComponent.SendChatMessage(channel, sender, message))
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
-            Ui.AppendGameChatLine((sender.empty() ? std::string("Вы") : sender) + ": " + message, Ui.GameChatModeIndex());
+            Ui.AppendGameChatLine(sender + ": " + message, Ui.GameChatModeIndex());
             Ui.ClearGameChatDraft();
             AddStatusLine("chat: message sent, channel=" + std::to_string(channel));
         }
@@ -598,6 +687,14 @@ void FClientFrontendRuntime::BeginLoginRequest()
     if (!endpoint) { AddStatusLine("network: endpoint not configured"); SetStage("login failed", 1.0f); return; }
     if (login.empty() || password.empty()) { AddStatusLine("login: enter account and password"); SetStage("waiting for login", 1.0f); return; }
     if (!NetworkComponent.BeginLogin(Utf8ToWide(login), Utf8ToWide(password), AppearanceRules, static_cast<int32>(NetworkConnectTimeoutMs))) { AddStatusLine("login: request is already in progress"); return; }
+    LocalCharacterName.clear();
+    LocalCharacterAppearance = {};
+    LocalCharacterIdentityValid = false;
+    RemoteAppearanceHints.clear();
+    RemotePlayerNames.clear();
+    RemotePlayerEntities.clear();
+    PendingAppearanceAnnouncements = 0;
+    NextAppearanceAnnouncementTime = {};
     SynchronizeGameState(GameState.ResetAll());
     SetStage("connecting to " + endpoint->Host + ":" + std::to_string(endpoint->Port), 1.0f);
 }
@@ -634,10 +731,23 @@ void FClientFrontendRuntime::BeginCharacterEnterRequest()
     if (!NetworkComponent.HasActiveSession()) { unlock(); AddStatusLine("character: server session is not active"); return; }
     if (!present) { unlock(); AddStatusLine(canCreate ? "character: creation requires confirmation" : "character: selected slot is unavailable"); return; }
     if (!NetworkComponent.BeginCharacterEnter(slot, static_cast<int32>(NetworkConnectTimeoutMs))) { unlock(); AddStatusLine("character: another action is already in progress"); return; }
+    LocalCharacterName = selected->Name;
+    LocalCharacterAppearance = FCharacterCreationAppearance{selected->Female, AppearanceRules.ModelBase, selected->Face, selected->Hair, selected->HairColor, selected->Tattoo};
+    LocalCharacterIdentityValid = true;
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.SetInitialGameWorldPosition(std::nullopt);
+        RenderDevice.ClearRemoteGamePlayers();
     }
+    LastReportedWorldPosition.reset();
+    LastWorldPositionReportTime = {};
+    NextWorldPositionReportTime = {};
+    PendingWorldPositionWarmupReports = 2;
+    RemoteAppearanceHints.clear();
+    RemotePlayerNames.clear();
+    RemotePlayerEntities.clear();
+    NextAppearanceAnnouncementTime = {};
+    PendingAppearanceAnnouncements = 0;
     GameState.SetSelectedCharacterSlot(slot);
     SynchronizeGameState(GameState.ResetWorld());
     SetStage("entering world", 1.0f);
@@ -724,9 +834,18 @@ void FClientFrontendRuntime::PollCharacterResult()
             Ui.SetStage("game session active", 1.0f);
         }
         NetworkComponent.StartWorldEventPump();
+        QueueAppearanceAnnouncement(3);
     }
     else
     {
+        if (event->Action == ECharacterNetworkAction::Enter)
+        {
+            LocalCharacterName.clear();
+            LocalCharacterAppearance = {};
+            LocalCharacterIdentityValid = false;
+            PendingAppearanceAnnouncements = 0;
+            NextAppearanceAnnouncementTime = {};
+        }
         const char* stage = event->Action == ECharacterNetworkAction::Create ? "character create failed" : event->Action == ECharacterNetworkAction::Delete ? "character delete failed" : "character enter failed";
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.Character().SetCharacterActionLocked(false);
@@ -736,16 +855,119 @@ void FClientFrontendRuntime::PollCharacterResult()
     RepaintDirty = true;
 }
 
+void FClientFrontendRuntime::QueueAppearanceAnnouncement(int32 count)
+{
+    PendingAppearanceAnnouncements = (std::max)(PendingAppearanceAnnouncements, (std::max)(0, count));
+    if (PendingAppearanceAnnouncements > 0) { NextAppearanceAnnouncementTime = {}; }
+}
+
+void FClientFrontendRuntime::TrySendAppearanceAnnouncement()
+{
+    if (PendingAppearanceAnnouncements <= 0 || !NetworkComponent.HasActiveSession()) { return; }
+    const auto now = std::chrono::steady_clock::now();
+    if (NextAppearanceAnnouncementTime.time_since_epoch().count() != 0 && now < NextAppearanceAnnouncementTime) { return; }
+    if (!LocalCharacterIdentityValid || LocalCharacterName.empty() || GameState.Session().LocalEntityId == 0) { return; }
+    const std::string sender = BuildAppearanceSender(LocalCharacterName, LocalCharacterAppearance);
+    if (sender.empty())
+    {
+        PendingAppearanceAnnouncements = 0;
+        if (Log) { Log->Warning("appearance sync skipped: character name cannot be encoded"); }
+        return;
+    }
+    if (NetworkComponent.SendChatMessage(3, sender, "."))
+    {
+        --PendingAppearanceAnnouncements;
+        if (Log) { Log->Info("appearance sync sent: " + Common::WideToUtf8(LocalCharacterName)); }
+        NextAppearanceAnnouncementTime = PendingAppearanceAnnouncements > 0 ? now + std::chrono::milliseconds(700) : std::chrono::steady_clock::time_point{};
+    }
+    else { NextAppearanceAnnouncementTime = now + std::chrono::seconds(1); }
+}
+
 void FClientFrontendRuntime::ProcessServerEvents()
 {
     std::vector<FServerEvent> events = NetworkComponent.DrainServerEvents();
     if (events.empty()) { return; }
+    bool sessionClosed = false;
+    bool sawNewRemotePlayer = false;
+    const std::string localPlayerName = LocalCharacterIdentityValid ? Common::WideToUtf8(LocalCharacterName) : std::string{};
+    {
+        std::lock_guard<std::mutex> renderLock(RenderMutex);
+        for (const FServerEvent& event : events)
+        {
+            if (const auto* appearance = std::get_if<FRemotePlayerAppearanceEvent>(&event.Payload))
+            {
+                if (!localPlayerName.empty() && appearance->Name == localPlayerName) { continue; }
+                const auto previous = RemoteAppearanceHints.find(appearance->Name);
+                const bool changed = previous == RemoteAppearanceHints.end() || !SameAppearance(previous->second, appearance->Appearance);
+                RemoteAppearanceHints[appearance->Name] = appearance->Appearance;
+                const auto known = RemotePlayerEntities.find(appearance->Name);
+                if (known != RemotePlayerEntities.end()) { RenderDevice.SetRemoteGamePlayerAppearance(known->second, appearance->Appearance); }
+                if (changed && Log) { Log->Info("appearance sync received: " + appearance->Name); }
+                continue;
+            }
+            if (const auto* spawn = std::get_if<FRemotePlayerSpawnEvent>(&event.Payload))
+            {
+                if (!localPlayerName.empty() && spawn->Name == localPlayerName) { continue; }
+                const auto known = RemotePlayerNames.find(spawn->EntityId);
+                sawNewRemotePlayer = sawNewRemotePlayer || known == RemotePlayerNames.end() || known->second != spawn->Name;
+                if (known != RemotePlayerNames.end() && known->second != spawn->Name)
+                {
+                    const auto oldEntity = RemotePlayerEntities.find(known->second);
+                    if (oldEntity != RemotePlayerEntities.end() && oldEntity->second == spawn->EntityId) { RemotePlayerEntities.erase(oldEntity); }
+                }
+                RemotePlayerNames[spawn->EntityId] = spawn->Name;
+                RemotePlayerEntities[spawn->Name] = spawn->EntityId;
+                const FCharacterCreationAppearance* resolvedAppearance = &spawn->Appearance;
+                const auto hint = RemoteAppearanceHints.find(spawn->Name);
+                if (hint != RemoteAppearanceHints.end()) { resolvedAppearance = &hint->second; }
+                RenderDevice.UpsertRemoteGamePlayer(MakeRemotePlayer(spawn->EntityId, spawn->Name, spawn->Position, resolvedAppearance));
+            }
+            else if (const auto* move = std::get_if<FRemotePlayerMoveEvent>(&event.Payload)) { RenderDevice.UpsertRemoteGamePlayer(MakeRemotePlayer(move->EntityId, {}, move->Position)); }
+            else if (const auto* despawn = std::get_if<FRemotePlayerDespawnEvent>(&event.Payload))
+            {
+                const auto known = RemotePlayerNames.find(despawn->EntityId);
+                if (known != RemotePlayerNames.end())
+                {
+                    const auto entity = RemotePlayerEntities.find(known->second);
+                    if (entity != RemotePlayerEntities.end() && entity->second == despawn->EntityId) { RemotePlayerEntities.erase(entity); }
+                    RemotePlayerNames.erase(known);
+                }
+                RenderDevice.RemoveRemoteGamePlayer(despawn->EntityId);
+            }
+            else if (std::holds_alternative<FSessionClosedEvent>(event.Payload)) { sessionClosed = true; }
+        }
+        if (sessionClosed) { RenderDevice.ClearRemoteGamePlayers(); }
+    }
+    if (sawNewRemotePlayer) { QueueAppearanceAnnouncement(3); }
+    {
+        std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
+        for (const FServerEvent& event : events)
+        {
+            const auto* chat = std::get_if<FChatMessageEvent>(&event.Payload);
+            if (!chat) { continue; }
+            if (!localPlayerName.empty() && chat->Sender == localPlayerName) { continue; }
+            const int32 mode = std::clamp(static_cast<int32>(chat->Channel) - 1, 0, 4);
+            Ui.AppendGameChatLine((chat->Sender.empty() ? std::string("?") : chat->Sender) + ": " + chat->Text, mode);
+        }
+    }
     const FGameStateChangeMask changes = GameState.Apply(events);
     const FGameStateChangeMask visibleChanges = changes & ~GameStateChange::Diagnostics;
     if (visibleChanges != GameStateChange::None) { SynchronizeGameState(visibleChanges); }
     const std::string& closeReason = GameState.Session().LastDisconnectReason;
     if ((changes & GameStateChange::Session) != 0 && !GameState.Session().Connected && !closeReason.empty())
     {
+        LastReportedWorldPosition.reset();
+        LastWorldPositionReportTime = {};
+        NextWorldPositionReportTime = {};
+        PendingWorldPositionWarmupReports = 0;
+        LocalCharacterName.clear();
+        LocalCharacterAppearance = {};
+        LocalCharacterIdentityValid = false;
+        RemoteAppearanceHints.clear();
+        RemotePlayerNames.clear();
+        RemotePlayerEntities.clear();
+        NextAppearanceAnnouncementTime = {};
+        PendingAppearanceAnnouncements = 0;
         UiWindows.Reset();
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);

@@ -171,6 +171,42 @@ void FD3D9RenderDevice::ApplyServerGameWorldPosition(const FGameWorldPosition& p
     }
 }
 
+std::optional<FGameWorldPosition> FD3D9RenderDevice::CurrentGameWorldPosition() const
+{
+    return GameWorldScene.CurrentPlayerWorldPosition();
+}
+
+void FD3D9RenderDevice::UpsertRemoteGamePlayer(const FRemoteGamePlayer& player)
+{
+    if (player.EntityId == 0) { return; }
+    FRemoteGamePlayer& target = RemoteGamePlayers[player.EntityId];
+    target.EntityId = player.EntityId;
+    if (!player.Name.empty()) { target.Name = player.Name; }
+    if (player.Appearance) { target.Appearance = player.Appearance; }
+    target.Position = player.Position;
+    if (GameWorldScene.IsValid()) { GameWorldScene.UpsertRemotePlayer(target); }
+}
+
+void FD3D9RenderDevice::SetRemoteGamePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance)
+{
+    const auto iterator = RemoteGamePlayers.find(entityId);
+    if (iterator == RemoteGamePlayers.end()) { return; }
+    iterator->second.Appearance = appearance;
+    if (GameWorldScene.IsValid()) { GameWorldScene.SetRemotePlayerAppearance(entityId, appearance); }
+}
+
+void FD3D9RenderDevice::RemoveRemoteGamePlayer(uint64 entityId)
+{
+    RemoteGamePlayers.erase(entityId);
+    if (GameWorldScene.IsValid()) { GameWorldScene.RemoveRemotePlayer(entityId); }
+}
+
+void FD3D9RenderDevice::ClearRemoteGamePlayers()
+{
+    RemoteGamePlayers.clear();
+    if (GameWorldScene.IsValid()) { GameWorldScene.ClearRemotePlayers(); }
+}
+
 FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLogger* logger)
 {
     Shutdown();
@@ -253,6 +289,7 @@ void FD3D9RenderDevice::ReleaseTextures()
 void FD3D9RenderDevice::Shutdown()
 {
     GameWorldScene.Shutdown();
+    RemoteGamePlayers.clear();
     CharacterScene.Shutdown();
     ReleaseTextures();
 
@@ -1605,6 +1642,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
             {
                 ActiveWorldScene = worldScene;
                 FailedWorldScene = nullptr;
+                for (const auto& [_, remote] : RemoteGamePlayers) { GameWorldScene.UpsertRemotePlayer(remote); }
                 if (HasServerGameTime)
                 {
                     GameWorldScene.SetGameTime(ServerGameTime);

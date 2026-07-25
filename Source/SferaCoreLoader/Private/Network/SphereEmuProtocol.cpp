@@ -18,6 +18,82 @@ namespace
             data[static_cast<size_t>(absoluteBit / 8)] |= static_cast<uint8>(1U << (absoluteBit % 8));
         }
     }
+    void WriteBitsLsb(FByteArray& data, size_t bitPosition, const FByteArray& bytes)
+    {
+        for (size_t byteIndex = 0; byteIndex < bytes.size(); ++byteIndex)
+        {
+            for (size_t bit = 0; bit < 8; ++bit)
+            {
+                const size_t absolute = bitPosition + byteIndex * 8 + bit;
+                const size_t targetByte = absolute / 8;
+                const uint8 mask = static_cast<uint8>(1U << (absolute % 8));
+                if ((bytes[byteIndex] & static_cast<uint8>(1U << bit)) != 0) { data[targetByte] |= mask; }
+                else { data[targetByte] &= static_cast<uint8>(~mask); }
+            }
+        }
+    }
+    FByteArray EncodeServerCoordinate(double value)
+    {
+        FByteArray encoded(4, 0);
+        if (!std::isfinite(value) || std::abs(value) < 0.0000000001)
+        {
+            encoded[3] = 58;
+            return encoded;
+        }
+        const bool negative = value < 0.0;
+        double magnitude = std::abs(value);
+        int exponent = static_cast<int>(std::floor(std::log2(magnitude)));
+        double normalized = std::ldexp(magnitude, -exponent);
+        uint32 mantissa = static_cast<uint32>(std::llround((normalized - 1.0) * 8388608.0));
+        if (mantissa >= 8388608U)
+        {
+            mantissa = 0;
+            ++exponent;
+        }
+        const int delta = exponent - 11;
+        int scale = 69;
+        bool oddStep = false;
+        if (delta >= 0)
+        {
+            scale += delta / 2;
+            oddStep = (delta & 1) != 0;
+        }
+        else
+        {
+            const int steps = -delta;
+            scale -= (steps + 1) / 2;
+            oddStep = (steps & 1) != 0;
+        }
+        scale = std::clamp(scale, 0, 127);
+        encoded[0] = static_cast<uint8>(mantissa & 0xff);
+        encoded[1] = static_cast<uint8>((mantissa >> 8) & 0xff);
+        encoded[2] = static_cast<uint8>(((mantissa >> 16) & 0x7f) | (oddStep ? 0x80 : 0));
+        encoded[3] = static_cast<uint8>(scale | (negative ? 0x80 : 0));
+        return encoded;
+    }
+    FByteArray PackClientChatBytes(const FByteArray& message)
+    {
+        if (message.empty()) { return {}; }
+        FByteArray packed(message.size() + 1, 0);
+        for (size_t index = 0; index < message.size(); ++index)
+        {
+            packed[index] |= static_cast<uint8>((message[index] & 0x07) << 5);
+            packed[index + 1] |= static_cast<uint8>(message[index] >> 3);
+        }
+        return packed;
+    }
+    FByteArray EncodeClientFrameAvoidingServerBypass(FByteArray decoded, uint16 localId, uint8 saltBase)
+    {
+        const uint8 major = static_cast<uint8>((localId >> 8) & 0xff);
+        const uint8 minor = static_cast<uint8>(localId & 0xff);
+        for (uint32 salt = 0; salt < 256; ++salt)
+        {
+            if (decoded.size() > 9) { decoded[9] = static_cast<uint8>(saltBase + salt); }
+            FByteArray encoded = FSphereEmuProtocol::EncodeClientPacket(decoded);
+            if (encoded.size() <= 12 || encoded[11] != major || encoded[12] != minor) { return encoded; }
+        }
+        return FSphereEmuProtocol::EncodeClientPacket(decoded);
+    }
     bool IsRussianNameSymbol(wchar_t ch) { return (ch >= static_cast<wchar_t>(0x0410) && ch <= static_cast<wchar_t>(0x042f)) || (ch >= static_cast<wchar_t>(0x0430) && ch <= static_cast<wchar_t>(0x044f)) || ch == static_cast<wchar_t>(0x0401) || ch == static_cast<wchar_t>(0x0451); }
     uint8 EncodeCharacterNameSymbol(wchar_t ch)
     {
@@ -444,6 +520,93 @@ FByteArray FSphereEmuProtocol::BuildMarshaledPacket(uint16 localId, uint8 servic
     packet[12] = method;
     std::copy(payload.begin(), payload.end(), packet.begin() + 13);
     return packet;
+}
+FByteArray FSphereEmuProtocol::BuildEncodedMovementPingPacket(uint16 localId, double x, double y, double z, double angle, uint8 sequence)
+{
+    FByteArray packet
+    {
+        0x26, 0x00, 0x1b, 0x27, 0x14, 0x02, 0x2c, 0x01, 0x00, 0xe1, 0x11, 0x99, 0x0a, 0xa0, 0x9d, 0x4f, 0x80, 0xf7, 0x0b, 0x01, 0x60, 0x50, 0x96, 0xc2, 0x43, 0x11, 0x21, 0x36, 0xc7, 0x90, 0x15, 0x03, 0x46, 0x31, 0x8a, 0x82, 0xf9, 0x2f
+    };
+    packet[11] = static_cast<uint8>((localId >> 8) & 0xff);
+    packet[12] = static_cast<uint8>(localId & 0xff);
+    packet[19] = static_cast<uint8>((packet[19] & 0xf0) | (sequence & 0x0f));
+    WriteBitsLsb(packet, 174, EncodeServerCoordinate(x));
+    WriteBitsLsb(packet, 206, EncodeServerCoordinate(y));
+    WriteBitsLsb(packet, 238, EncodeServerCoordinate(z));
+    WriteBitsLsb(packet, 270, EncodeServerCoordinate(angle));
+    return EncodeClientFrameAvoidingServerBypass(std::move(packet), localId, 0xe1);
+}
+FByteArray FSphereEmuProtocol::BuildEncodedChatPacketStream(uint16 localId, uint8 channel, const std::wstring& sender, const std::wstring& text)
+{
+    FByteArray senderBytes = ToCp1251(sender);
+    FByteArray textBytes = ToCp1251(text);
+    if (senderBytes.empty() || textBytes.empty()) { return {}; }
+    constexpr std::string_view linkOpen = "<l=\"player://";
+    constexpr std::string_view linkTail = R"(\[img=\"sep,mid,0,4,0,2\"\]">)";
+    constexpr std::string_view suffix = "</l>: ";
+    FByteArray message;
+    message.reserve(linkOpen.size() + senderBytes.size() + linkTail.size() + senderBytes.size() + suffix.size() + textBytes.size());
+    message.insert(message.end(), linkOpen.begin(), linkOpen.end());
+    message.insert(message.end(), senderBytes.begin(), senderBytes.end());
+    message.insert(message.end(), linkTail.begin(), linkTail.end());
+    message.insert(message.end(), senderBytes.begin(), senderBytes.end());
+    message.insert(message.end(), suffix.begin(), suffix.end());
+    message.insert(message.end(), textBytes.begin(), textBytes.end());
+    constexpr size_t maxChunk = 251;
+    std::vector<FByteArray> chunks;
+    for (size_t offset = 0; offset < message.size(); offset += maxChunk)
+    {
+        const size_t count = std::min(maxChunk, message.size() - offset);
+        chunks.emplace_back(message.begin() + static_cast<std::ptrdiff_t>(offset), message.begin() + static_cast<std::ptrdiff_t>(offset + count));
+    }
+    if (chunks.size() < 2) { chunks.push_back(FByteArray{0}); }
+    if (chunks.size() > 255) { return {}; }
+    FByteArray first(26, 0);
+    first[0] = 0x1a;
+    first[2] = 0x5a;
+    first[3] = 0xf0;
+    first[4] = 0xed;
+    first[5] = 0x02;
+    first[6] = 0x2c;
+    first[7] = 0x01;
+    first[9] = 0x3a;
+    first[10] = 0x07;
+    first[11] = static_cast<uint8>((localId >> 8) & 0xff);
+    first[12] = static_cast<uint8>(localId & 0xff);
+    first[13] = 0x08;
+    first[14] = 0x40;
+    first[15] = 0x43;
+    first[17] = static_cast<uint8>(0x01 | ((channel & 0x07) << 5));
+    first[18] = static_cast<uint8>(0x20 | ((channel >> 3) & 0x1f));
+    first[19] = 0x80;
+    first[20] = 0x27;
+    const uint8 packetCount = static_cast<uint8>(chunks.size());
+    first[23] = static_cast<uint8>((packetCount & 0x07) << 5);
+    first[24] = static_cast<uint8>((packetCount >> 3) & 0x1f);
+    FByteArray stream = EncodeClientFrameAvoidingServerBypass(std::move(first), localId, 0x3a);
+    for (const FByteArray& chunk : chunks)
+    {
+        FByteArray packed = PackClientChatBytes(chunk);
+        FByteArray frame(21 + packed.size(), 0);
+        WriteU16LE(frame, 0, static_cast<uint16>(frame.size()));
+        frame[2] = 0xe2;
+        frame[3] = 0xf8;
+        frame[4] = 0xee;
+        frame[5] = 0x02;
+        frame[6] = 0x2c;
+        frame[7] = 0x01;
+        frame[9] = 0x3a;
+        frame[10] = 0x07;
+        frame[11] = static_cast<uint8>((localId >> 8) & 0xff);
+        frame[12] = static_cast<uint8>(localId & 0xff);
+        frame[13] = 0x08;
+        frame[14] = 0x40;
+        frame[15] = 0x43;
+        std::copy(packed.begin(), packed.end(), frame.begin() + 21);
+        FByteArray encoded = EncodeClientFrameAvoidingServerBypass(std::move(frame), localId, 0x3a);
+        stream.insert(stream.end(), encoded.begin(), encoded.end());
+    }
+    return stream;
 }
 std::optional<FServerWorldPosition> FSphereEmuProtocol::TryParseServerWorldPosition(const FByteArray& frame)
 {

@@ -18,6 +18,7 @@ enum class EServerEventSubsystem : uint8
     Session,
     Character,
     World,
+    Chat,
     Clock,
     Map,
     Clan,
@@ -50,6 +51,38 @@ struct FWorldPositionEvent
     FServerWorldPosition Position;
 };
 
+struct FRemotePlayerSpawnEvent
+{
+    uint64 EntityId = 0;
+    std::string Name;
+    FServerWorldPosition Position;
+    FCharacterCreationAppearance Appearance;
+};
+
+struct FRemotePlayerMoveEvent
+{
+    uint64 EntityId = 0;
+    FServerWorldPosition Position;
+};
+
+struct FRemotePlayerDespawnEvent
+{
+    uint64 EntityId = 0;
+};
+
+struct FRemotePlayerAppearanceEvent
+{
+    std::string Name;
+    FCharacterCreationAppearance Appearance;
+};
+
+struct FChatMessageEvent
+{
+    uint8 Channel = 1;
+    std::string Sender;
+    std::string Text;
+};
+
 struct FGameClockEvent
 {
     float DayFraction = 0.0f;
@@ -79,7 +112,7 @@ struct FUnhandledServerPacketEvent
     size_t ByteCount = 0;
 };
 
-using FServerEventPayload = std::variant<FSessionEstablishedEvent, FSessionClosedEvent, FCharacterRosterEvent, FCharacterActivatedEvent, FWorldPositionEvent, FGameClockEvent, FMapDescriptorEvent, FClanStateEvent, FUnhandledServerPacketEvent>;
+using FServerEventPayload = std::variant<FSessionEstablishedEvent, FSessionClosedEvent, FCharacterRosterEvent, FCharacterActivatedEvent, FWorldPositionEvent, FRemotePlayerSpawnEvent, FRemotePlayerMoveEvent, FRemotePlayerDespawnEvent, FRemotePlayerAppearanceEvent, FChatMessageEvent, FGameClockEvent, FMapDescriptorEvent, FClanStateEvent, FUnhandledServerPacketEvent>;
 
 struct FServerEvent
 {

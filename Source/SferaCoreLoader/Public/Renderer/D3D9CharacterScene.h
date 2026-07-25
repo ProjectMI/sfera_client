@@ -29,6 +29,7 @@ public:
     bool EnsureInitialized(IDirect3DDevice9* device, const FResourceManager& resources, FLogger* logger);
     bool Draw(IDirect3DDevice9* device, const FResourceManager& resources, const FCharacterCreationAppearance& appearance, float characterAngle, int32 cameraFocusId, const RECT& clientRect, float deltaSeconds, FLogger* logger);
     FSkinnedCharacterModel ExportSkinnedModel() const;
+    static FSkinnedCharacterModel BuildSkinnedModel(const FResourceManager& resources, const FCharacterCreationAppearance& appearance, std::string& error);
     void Shutdown();
     bool IsReady() const { return Initialized; }
 

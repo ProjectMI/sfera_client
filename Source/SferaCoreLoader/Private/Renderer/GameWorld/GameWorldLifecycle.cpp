@@ -216,6 +216,7 @@ void FD3D9GameWorldScene::Impl::Release()
         SafeRelease(batch.Texture);
     }
     PlayerBatches.clear();
+    ClearRemotePlayers();
     SafeRelease(PlayerIndexBuffer);
     SafeRelease(PlayerVertexBuffer);
     for (auto& [_, resource] : TerrainResources)

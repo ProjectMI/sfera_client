@@ -562,6 +562,7 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const float InputLength = std::sqrt(Forward * Forward + Right * Right);
     const bool Moving = InputLength > 0.0001f && DeltaSeconds > 0.0f;
     UpdatePlayerAnimation(DeltaSeconds, Moving, Input.Run);
+    UpdateRemotePlayerAnimations(DeltaSeconds);
     UpdateNpcAnimation(DeltaSeconds);
     SpawnAngle = -CameraYaw;
     const int CollisionCenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;

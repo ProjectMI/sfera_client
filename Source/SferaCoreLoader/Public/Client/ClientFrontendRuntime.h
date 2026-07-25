@@ -52,6 +52,8 @@ private:
     void StoreSavedLogin(bool enabled, const std::string& login, const std::string& password);
     void CloseActiveServerSession();
     void ProcessServerEvents();
+    void QueueAppearanceAnnouncement(int32 count = 1);
+    void TrySendAppearanceAnnouncement();
     void SynchronizeGameState(FGameStateChangeMask changes);
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
@@ -81,4 +83,16 @@ private:
     int32 LastGameMouseY = 0;
     uint64 AppliedRosterRevision = 0;
     uint64 AppliedWorldRevision = 0;
+    std::optional<FGameWorldPosition> LastReportedWorldPosition;
+    std::chrono::steady_clock::time_point LastWorldPositionReportTime{};
+    std::chrono::steady_clock::time_point NextWorldPositionReportTime{};
+    int32 PendingWorldPositionWarmupReports = 0;
+    std::wstring LocalCharacterName;
+    FCharacterCreationAppearance LocalCharacterAppearance{};
+    bool LocalCharacterIdentityValid = false;
+    std::unordered_map<std::string, FCharacterCreationAppearance> RemoteAppearanceHints;
+    std::unordered_map<uint64, std::string> RemotePlayerNames;
+    std::unordered_map<std::string, uint64> RemotePlayerEntities;
+    std::chrono::steady_clock::time_point NextAppearanceAnnouncementTime{};
+    int32 PendingAppearanceAnnouncements = 0;
 };

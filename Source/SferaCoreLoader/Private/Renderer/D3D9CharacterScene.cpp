@@ -1353,6 +1353,12 @@ void FD3D9CharacterScene::DrawCharacter(IDirect3DDevice9* device)
 }
 
 
+FSkinnedCharacterModel FD3D9CharacterScene::BuildSkinnedModel(const FResourceManager& resources, const FCharacterCreationAppearance& appearance, std::string& error)
+{
+    FD3D9CharacterScene scene;
+    return scene.LoadCharacterMesh(resources, appearance, error) ? scene.ExportSkinnedModel() : FSkinnedCharacterModel{};
+}
+
 FSkinnedCharacterModel FD3D9CharacterScene::ExportSkinnedModel() const
 {
     FSkinnedCharacterModel out;

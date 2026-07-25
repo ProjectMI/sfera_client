@@ -2,6 +2,7 @@
 #include "Core/Types.h"
 #include "Renderer/GameWorld/GameWorldConfig.h"
 #include "Renderer/GameWorld/SkinnedCharacterModel.h"
+#include "Network/SphereEmuProtocol.h"
 #include "ResourceLoader/ResourceManager.h"
 #include "WorldScene/WorldScene.h"
 
@@ -32,6 +33,14 @@ struct FD3D9GameWorldRenderStats
     size_t GrassCells = 0;
 };
 
+struct FRemoteGamePlayer
+{
+    uint64 EntityId = 0;
+    std::string Name;
+    FGameWorldPosition Position;
+    std::optional<FCharacterCreationAppearance> Appearance;
+};
+
 class FD3D9GameWorldScene
 {
 public:
@@ -60,6 +69,11 @@ public:
     void SetFog(float start, float end);
     void SetGameTime(float dayFraction);
     void SetPlayerWorldPosition(const FGameWorldPosition& position);
+    std::optional<FGameWorldPosition> CurrentPlayerWorldPosition() const;
+    void UpsertRemotePlayer(const FRemoteGamePlayer& player);
+    void SetRemotePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance);
+    void RemoveRemotePlayer(uint64 entityId);
+    void ClearRemotePlayers();
     float CurrentGameTime() const;
     float CameraFacing() const;
     bool Update(float deltaSeconds, const FGameMovementInput& input, std::wstring& error);

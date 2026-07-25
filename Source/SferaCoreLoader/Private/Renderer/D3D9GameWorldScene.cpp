@@ -64,6 +64,31 @@ void FD3D9GameWorldScene::SetPlayerWorldPosition(const FGameWorldPosition& posit
     }
 }
 
+std::optional<FGameWorldPosition> FD3D9GameWorldScene::CurrentPlayerWorldPosition() const
+{
+    return ImplPtr ? ImplPtr->CurrentPlayerWorldPosition() : std::nullopt;
+}
+
+void FD3D9GameWorldScene::UpsertRemotePlayer(const FRemoteGamePlayer& player)
+{
+    if (ImplPtr) { ImplPtr->UpsertRemotePlayer(player); }
+}
+
+void FD3D9GameWorldScene::SetRemotePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance)
+{
+    if (ImplPtr) { ImplPtr->SetRemotePlayerAppearance(entityId, appearance); }
+}
+
+void FD3D9GameWorldScene::RemoveRemotePlayer(uint64 entityId)
+{
+    if (ImplPtr) { ImplPtr->RemoveRemotePlayer(entityId); }
+}
+
+void FD3D9GameWorldScene::ClearRemotePlayers()
+{
+    if (ImplPtr) { ImplPtr->ClearRemotePlayers(); }
+}
+
 float FD3D9GameWorldScene::CurrentGameTime() const
 {
     return ImplPtr ? ImplPtr->GameTimeFraction : 0.0f;

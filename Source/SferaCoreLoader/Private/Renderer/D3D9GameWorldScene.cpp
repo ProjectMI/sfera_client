@@ -89,6 +89,26 @@ void FD3D9GameWorldScene::ClearRemotePlayers()
     if (ImplPtr) { ImplPtr->ClearRemotePlayers(); }
 }
 
+void FD3D9GameWorldScene::UpsertRemoteActor(const FRemoteGameActor& actor)
+{
+    if (ImplPtr) { ImplPtr->UpsertRemoteActor(actor); }
+}
+
+void FD3D9GameWorldScene::UpdateRemoteActorPosition(uint64 entityId, const FGameWorldPosition& position)
+{
+    if (ImplPtr) { ImplPtr->UpdateRemoteActorPosition(entityId, position); }
+}
+
+void FD3D9GameWorldScene::RemoveRemoteActor(uint64 entityId)
+{
+    if (ImplPtr) { ImplPtr->RemoveRemoteActor(entityId); }
+}
+
+void FD3D9GameWorldScene::ClearRemoteActors()
+{
+    if (ImplPtr) { ImplPtr->ClearRemoteActors(); }
+}
+
 float FD3D9GameWorldScene::CurrentGameTime() const
 {
     return ImplPtr ? ImplPtr->GameTimeFraction : 0.0f;

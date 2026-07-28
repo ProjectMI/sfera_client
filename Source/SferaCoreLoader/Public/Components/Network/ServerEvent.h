@@ -59,6 +59,14 @@ struct FRemotePlayerSpawnEvent
     FCharacterCreationAppearance Appearance;
 };
 
+struct FRemoteActorSpawnEvent
+{
+    uint64 EntityId = 0;
+    uint16 ObjectType = 0;
+    std::vector<uint32> ModelTypeCandidates;
+    FServerWorldPosition Position;
+};
+
 struct FRemotePlayerMoveEvent
 {
     uint64 EntityId = 0;
@@ -112,7 +120,7 @@ struct FUnhandledServerPacketEvent
     size_t ByteCount = 0;
 };
 
-using FServerEventPayload = std::variant<FSessionEstablishedEvent, FSessionClosedEvent, FCharacterRosterEvent, FCharacterActivatedEvent, FWorldPositionEvent, FRemotePlayerSpawnEvent, FRemotePlayerMoveEvent, FRemotePlayerDespawnEvent, FRemotePlayerAppearanceEvent, FChatMessageEvent, FGameClockEvent, FMapDescriptorEvent, FClanStateEvent, FUnhandledServerPacketEvent>;
+using FServerEventPayload = std::variant<FSessionEstablishedEvent, FSessionClosedEvent, FCharacterRosterEvent, FCharacterActivatedEvent, FWorldPositionEvent, FRemotePlayerSpawnEvent, FRemoteActorSpawnEvent, FRemotePlayerMoveEvent, FRemotePlayerDespawnEvent, FRemotePlayerAppearanceEvent, FChatMessageEvent, FGameClockEvent, FMapDescriptorEvent, FClanStateEvent, FUnhandledServerPacketEvent>;
 
 struct FServerEvent
 {

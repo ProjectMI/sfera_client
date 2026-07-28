@@ -182,11 +182,16 @@ FD3D9GameWorldScene::Impl::~Impl()
 
 void FD3D9GameWorldScene::Impl::Release()
 {
+    StopGrassMapPreloadWorker();
     DrainTerrainCpuPreloadJobs(true);
     DrainStaticModelCpuPreloadJobs(true);
     PendingTerrainCpuPreloads.clear();
+    CompletedTerrainCpuPreloads.clear();
+    PendingTerrainGpuPromotions.clear();
     PendingStaticModelCpuPreloads.clear();
+    CompletedStaticModelCpuPreloads.clear();
     QueuedTerrainCpuPreloads.clear();
+    QueuedTerrainGpuPromotions.clear();
     QueuedStaticModelCpuPreloads.clear();
     QueuedTerrainCpuPreloadCells.clear();
 
@@ -201,7 +206,6 @@ void FD3D9GameWorldScene::Impl::Release()
     SafeRelease(WaterTexture);
     ReflectionTextureReady = false;
     ReflectionWarmupFrames = 0;
-    ReflectionUpdateCountdown = 0;
     SafeRelease(ReflectionDepth);
     SafeRelease(ReflectionSurface);
     SafeRelease(ReflectionTexture);
@@ -210,15 +214,29 @@ void FD3D9GameWorldScene::Impl::Release()
     SafeRelease(GrassVS);
     SafeRelease(GrassPS);
     SafeRelease(WorldDecl);
+    SafeRelease(AnimatedWorldDecl);
     WorldShadersReady = false;
+    BaseVSConsts.clear();
+    BaseVsWorldViewProjection = -1;
+    BaseVsDirLightToLightDirL = -1;
+    BaseVsDirLightColor = -1;
+    BaseVsAmbientColor = -1;
+    ViewFrustumReady = false;
     for (auto& batch : PlayerBatches)
     {
         SafeRelease(batch.Texture);
     }
     PlayerBatches.clear();
     ClearRemotePlayers();
+    ClearRemoteActors();
+    MonsterModelNames.clear();
+    MonsterModelIndexReady = false;
     SafeRelease(PlayerIndexBuffer);
     SafeRelease(PlayerVertexBuffer);
+    PlayerPoseCache = {};
+    PlayerSkinScratch.clear();
+    PlayerVertexScratch.clear();
+    PlayerModel = {};
     for (auto& [_, resource] : TerrainResources)
     {
         SafeRelease(resource->texture);
@@ -227,6 +245,34 @@ void FD3D9GameWorldScene::Impl::Release()
         SafeRelease(resource->WaterIndexBuffer);
         SafeRelease(resource->WaterVertexBuffer);
     }
+    ClearGrassRenderBatches();
+    StopGrassRenderBakeWorker();
+    GrassInstancesByCell.clear();
+    GrassInstanceCount = 0;
+    GrassCells.clear();
+    GrassTargetCells.clear();
+    GrassPendingCells.clear();
+    GrassDrawBatches.clear();
+    GrassDrawBatchesDirty = true;
+    DrainStaticRenderCellBakeJobs(true);
+    StopStaticRenderBakeWorker();
+    for (auto& promotion : PendingStaticGpuPromotions)
+    {
+        if (!promotion.Resource)
+        {
+            continue;
+        }
+        for (auto& batch : promotion.Resource->Batches)
+        {
+            SafeRelease(batch.Texture);
+        }
+        SafeRelease(promotion.Resource->IndexBuffer);
+        SafeRelease(promotion.Resource->StaticAttributeVertexBuffer);
+        SafeRelease(promotion.Resource->AnimatedVertexBuffer);
+        SafeRelease(promotion.Resource->VertexBuffer);
+    }
+    PendingStaticGpuPromotions.clear();
+    QueuedStaticGpuPromotions.clear();
     for (auto& [_, resource] : StaticResources)
     {
         for (auto& batch : resource->Batches)
@@ -234,6 +280,8 @@ void FD3D9GameWorldScene::Impl::Release()
             SafeRelease(batch.Texture);
         }
         SafeRelease(resource->IndexBuffer);
+        SafeRelease(resource->StaticAttributeVertexBuffer);
+        SafeRelease(resource->AnimatedVertexBuffer);
         SafeRelease(resource->VertexBuffer);
     }
     ClearStaticRenderBatches();
@@ -242,12 +290,18 @@ void FD3D9GameWorldScene::Impl::Release()
         SafeRelease(texture);
     }
     DdsTextureCache.clear();
-    ClearGrassRenderBatches();
-    GrassInstances.clear();
-    GrassCells.clear();
+    for (auto& Resources : GrassPatternResources) { Resources.clear(); }
+    for (auto& Resources : GrassFlowerPatternResources) { Resources.clear(); }
+    GrassDetailResources.clear();
+    TerrainInitialBlockingLoad = false;
+    StaticInitialBlockingLoad = false;
+    StaticRefreshPending = false;
     GrassRefreshIncomplete = false;
     GrassInitialBlockingLoad = false;
-    GrassMaps.clear();
+    {
+        std::lock_guard<std::mutex> lock(GrassMapMutex);
+        GrassMaps.clear();
+    }
     WeatherScenarios.clear();
     WeatherSequence.clear();
     WeatherSequencePosition = 0;
@@ -266,6 +320,9 @@ void FD3D9GameWorldScene::Impl::Release()
     StaticPlacementIndicesByRenderCell.clear();
     VisibleStaticPlacementIndices.clear();
     VisibleStaticRenderCells.clear();
+    StaticDrawBatches.clear();
+    StaticDrawBatchesDirty = true;
+    VisibleAnimatedResources.clear();
     StaticVisibilityPlanReady = false;
     StaticResources.clear();
     TerrainInstances.clear();
@@ -275,9 +332,11 @@ void FD3D9GameWorldScene::Impl::Release()
     StreamingGuardColumn = (std::numeric_limits<int>::min)();
     StreamingGuardRowStep = (std::numeric_limits<int>::min)();
     StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
-    NextStreamingGuardTime = {};
     QueuedTerrainCpuPreloadCells.clear();
-    OptionalPathCache.clear();
+    {
+        std::lock_guard<std::mutex> lock(OptionalPathCacheMutex);
+        OptionalPathCache.clear();
+    }
     TerrainLndPathByRelativeKey.clear();
     TerrainLndPathByStemKey.clear();
     TerrainPathIndexReady = false;
@@ -299,9 +358,12 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveOptionalPath(std::string
         return {};
     }
     const std::string key = Common::NormalizePathKey(LogicalName);
-    if (const auto cached = OptionalPathCache.find(key); cached != OptionalPathCache.end())
     {
-        return cached->second;
+        std::lock_guard<std::mutex> lock(OptionalPathCacheMutex);
+        if (const auto cached = OptionalPathCache.find(key); cached != OptionalPathCache.end())
+        {
+            return cached->second;
+        }
     }
     std::filesystem::path resolved;
     auto direct = AssetResources->Catalog().FindByLogicalName(LogicalName);
@@ -321,8 +383,10 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveOptionalPath(std::string
             }
         }
     }
-    OptionalPathCache.emplace(key, resolved);
-    return resolved;
+    {
+        std::lock_guard<std::mutex> lock(OptionalPathCacheMutex);
+        return OptionalPathCache.emplace(key, resolved).first->second;
+    }
 }
 
 std::filesystem::path FD3D9GameWorldScene::Impl::ResolveConfiguredPath(const std::string& LogicalName) const
@@ -1058,6 +1122,7 @@ std::filesystem::path FD3D9GameWorldScene::Impl::ResolveModelTexturePath(
     const std::filesystem::path& ModelPath,
     const std::string& MaterialName) const
 {
+    std::lock_guard<std::mutex> cacheLock(ModelTexturePathCacheMutex);
     const auto TextureName = LowercaseAscii(MaterialName) + ".dds";
     const auto cacheKey = Common::NormalizePathKey(ModelPath.generic_string() + "|" + TextureName);
     if (const auto cached = ModelTexturePathCache.find(cacheKey); cached != ModelTexturePathCache.end())
@@ -1102,7 +1167,18 @@ IDirect3DTexture9* FD3D9GameWorldScene::Impl::LoadCachedDdsTexture(const std::fi
         it->second->AddRef();
         return it->second;
     }
-    IDirect3DTexture9* texture = LoadDdsTexture(Device, Path);
+    return LoadCachedDdsTextureFromBytes(Path, ReadGameWorldFileBytes(Path));
+}
+
+IDirect3DTexture9* FD3D9GameWorldScene::Impl::LoadCachedDdsTextureFromBytes(const std::filesystem::path& Path, const FByteArray& Bytes)
+{
+    const auto key = Path.lexically_normal().wstring();
+    if (auto it = DdsTextureCache.find(key); it != DdsTextureCache.end())
+    {
+        it->second->AddRef();
+        return it->second;
+    }
+    IDirect3DTexture9* texture = CreateD3D9TextureFromDdsBytes(Device, Bytes, Path.string());
     DdsTextureCache.emplace(key, texture);
     texture->AddRef();
     return texture;
@@ -1133,10 +1209,14 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     WorldScene = &world;
     Logger = InLogger;
     Config = WorldConfig;
+    RemotePlayers.reserve(256);
+    RemoteActors.reserve(1024);
+    VisibleAnimatedResources.reserve(128);
     QueuedTerrainCpuPreloadCells.reserve(2048);
     PendingTerrainCpuPreloads.reserve(256);
     StartTerrainCpuPreloadWorker();
     StartStaticModelCpuPreloadWorker();
+    StartGrassMapPreloadWorker();
     DayNightEnvironment = FGameWorldSkyState{0.0f, Config.ClearRed, Config.ClearGreen, Config.ClearBlue, 110, 110, 110, 255, 245, 224, Config.SkyRed, Config.SkyGreen, Config.SkyBlue};
     Environment = DayNightEnvironment;
     WeatherFogStart = Config.FogStart;
@@ -1155,6 +1235,8 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     try
     {
         BuildTerrainPathIndex();
+        BuildModelPathIndex();
+        BuildMonsterModelIndex();
         LoadWorldShaders();
         TerrainMicrotexture = LoadMtxTexture(Device, ResolveConfiguredPath(NarrowAscii(Config.TerrainMicrotexture)));
         SkyTexture = LoadCachedDdsTexture(ResolveConfiguredPath(NarrowAscii(Config.SkyTexture)));
@@ -1164,13 +1246,28 @@ bool FD3D9GameWorldScene::Impl::Initialize(
         {
             WaterTexture = LoadCachedDdsTexture(WaterPath);
         }
+        TerrainInitialBlockingLoad = true;
         LoadVisibleTerrain();
+        TerrainInitialBlockingLoad = false;
+        for (auto& [_, resource] : TerrainResources)
+        {
+            if (resource)
+            {
+                UploadTerrainGpuResource(*resource);
+            }
+        }
+        PendingTerrainGpuPromotions.clear();
+        QueuedTerrainGpuPromotions.clear();
         SnapToGround();
         LoadStaticPlacements();
+        StaticInitialBlockingLoad = true;
         LoadVisibleStaticObjects();
+        StaticInitialBlockingLoad = false;
+        DrainStaticRenderCellBakeJobs(true);
         SnapToGround();
         GrassInitialBlockingLoad = true;
         LoadVisibleGrass();
+        DrainGrassRenderBakeJobs(true);
         GrassInitialBlockingLoad = false;
         PreloadStreamingGuard();
         if (PlayerModelIn && PlayerModelIn->IsValid())
@@ -1181,6 +1278,8 @@ bool FD3D9GameWorldScene::Impl::Initialize(
     }
     catch (const std::exception& ex)
     {
+        TerrainInitialBlockingLoad = false;
+        StaticInitialBlockingLoad = false;
         GrassInitialBlockingLoad = false;
         AssignError(error, std::string("game world load failed: ") + ex.what());
         return false;
@@ -1252,12 +1351,13 @@ bool FD3D9GameWorldScene::Impl::SetGrassQuality(int quality, std::wstring& error
     {
         return true;
     }
-    const bool VisibilityChanged = (Config.GrassQuality == 0) != (quality == 0);
     Config.GrassQuality = quality;
-    if (!VisibilityChanged)
-    {
-        return true;
-    }
+    ClearGrassRenderBatches();
+    GrassInstancesByCell.clear();
+    GrassInstanceCount = 0;
+    GrassCells.clear();
+    GrassTargetCells.clear();
+    GrassPendingCells.clear();
     GrassCenterX = (std::numeric_limits<int>::min)();
     GrassCenterZ = (std::numeric_limits<int>::min)();
     GrassAnchorValid = false;

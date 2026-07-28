@@ -72,24 +72,78 @@ int32 DecodeAppearanceIndex(uint32 modelValue, bool female, int32 count, bool fa
     return female && decoded >= 0 && decoded < count ? decoded : 0;
 }
 
-bool DecodeRemotePlayerSpawn(const FByteArray& frame, FRemotePlayerSpawnEvent& event)
+bool IsRemoteActorObjectType(uint32 objectType)
+{
+    switch (objectType)
+    {
+    case 201:
+    case 205:
+    case 208:
+    case 209:
+    case 210:
+    case 211:
+    case 212:
+    case 213:
+    case 216:
+    case 225:
+    case 239:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool IsSpawnEntityObjectType(uint32 objectType)
+{
+    return objectType == 2 || objectType == 4 || IsRemoteActorObjectType(objectType);
+}
+
+struct FDecodedSpawnHeader
+{
+    size_t BitOffset = 0;
+    uint32 EntityId = 0;
+    uint32 ObjectType = 0;
+    FServerWorldPosition Position;
+};
+
+bool DecodeSpawnHeader(const FByteArray& frame, FDecodedSpawnHeader& header)
 {
     constexpr size_t contentBit = 7 * 8;
     if (frame.size() < 31 || FSphereEmuProtocol::ReadU16LE(frame, 2) != SferaProtocol::ServerFrameOpcode || FSphereEmuProtocol::ReadU16LE(frame, 0) != frame.size()) { return false; }
-    const uint32 objectType = ReadBitsLE(frame, contentBit + 18, 10);
-    const uint32 actionType = ReadBitsLE(frame, contentBit + 29, 8);
-    if ((objectType != 2 && objectType != 4) || actionType != 124) { return false; }
-    event.EntityId = ReadBitsLE(frame, contentBit, 16);
-    if (event.EntityId == 0) { return false; }
-    event.Position.EntityId = event.EntityId;
-    event.Position.CharacterEntity = true;
-    event.Position.X = DecodeServerCoordinateBits(frame, contentBit + 37);
-    event.Position.Y = DecodeServerCoordinateBits(frame, contentBit + 69);
-    event.Position.Z = DecodeServerCoordinateBits(frame, contentBit + 101);
-    event.Position.Angle = static_cast<double>(ReadBitsLE(frame, contentBit + 133, 8)) * std::numbers::pi / 128.0;
-    if (!IsSaneWorldPosition(event.Position)) { return false; }
-    const size_t nameLength = ReadBitsLE(frame, contentBit + 173, 8);
-    const size_t nameBit = contentBit + 181;
+    const size_t frameBits = frame.size() * 8;
+    const size_t lastCandidate = (std::min)(contentBit + 96, frameBits > 142 ? frameBits - 142 : 0);
+    for (size_t bitOffset = contentBit; bitOffset <= lastCandidate; ++bitOffset)
+    {
+        if (ReadBitsLE(frame, bitOffset + 16, 2) != 0 || ReadBitsLE(frame, bitOffset + 28, 1) != 0 || ReadBitsLE(frame, bitOffset + 29, 8) != 124) { continue; }
+        const uint32 objectType = ReadBitsLE(frame, bitOffset + 18, 10);
+        if (!IsSpawnEntityObjectType(objectType)) { continue; }
+        const uint32 entityId = ReadBitsLE(frame, bitOffset, 16);
+        if (entityId == 0) { continue; }
+        FServerWorldPosition position;
+        position.EntityId = entityId;
+        position.CharacterEntity = true;
+        position.X = DecodeServerCoordinateBits(frame, bitOffset + 37);
+        position.Y = DecodeServerCoordinateBits(frame, bitOffset + 69);
+        position.Z = DecodeServerCoordinateBits(frame, bitOffset + 101);
+        position.Angle = static_cast<double>(ReadBitsLE(frame, bitOffset + 133, 8)) * std::numbers::pi / 128.0;
+        if (!IsSaneWorldPosition(position)) { continue; }
+        header.BitOffset = bitOffset;
+        header.EntityId = entityId;
+        header.ObjectType = objectType;
+        header.Position = position;
+        return true;
+    }
+    return false;
+}
+
+bool DecodeRemotePlayerSpawn(const FByteArray& frame, FRemotePlayerSpawnEvent& event)
+{
+    FDecodedSpawnHeader header;
+    if (!DecodeSpawnHeader(frame, header) || (header.ObjectType != 2 && header.ObjectType != 4)) { return false; }
+    event.EntityId = header.EntityId;
+    event.Position = header.Position;
+    const size_t nameLength = ReadBitsLE(frame, header.BitOffset + 173, 8);
+    const size_t nameBit = header.BitOffset + 181;
     const size_t femaleBit = nameBit + nameLength * 8 + 41;
     if (nameLength > 64 || femaleBit >= frame.size() * 8) { return false; }
     FByteArray nameBytes;
@@ -98,11 +152,32 @@ bool DecodeRemotePlayerSpawn(const FByteArray& frame, FRemotePlayerSpawnEvent& e
     event.Name = Common::WideToUtf8(Common::Cp1251BytesToWide(nameBytes));
     event.Appearance.Female = ReadBitsLE(frame, femaleBit, 1) != 0;
     event.Appearance.ModelBase = Sfera::CharacterModelBase;
-    event.Appearance.Face = DecodeAppearanceIndex(ReadBitsLE(frame, contentBit + 141, 8), event.Appearance.Female, event.Appearance.Female ? 12 : 13, true);
-    event.Appearance.Hair = DecodeAppearanceIndex(ReadBitsLE(frame, contentBit + 149, 8), event.Appearance.Female, event.Appearance.Female ? 5 : 3, false);
-    event.Appearance.HairColor = DecodeAppearanceIndex(ReadBitsLE(frame, contentBit + 157, 8), event.Appearance.Female, 4, false);
-    event.Appearance.Tattoo = DecodeAppearanceIndex(ReadBitsLE(frame, contentBit + 165, 8), event.Appearance.Female, 4, false);
+    event.Appearance.Face = DecodeAppearanceIndex(ReadBitsLE(frame, header.BitOffset + 141, 8), event.Appearance.Female, event.Appearance.Female ? 12 : 13, true);
+    event.Appearance.Hair = DecodeAppearanceIndex(ReadBitsLE(frame, header.BitOffset + 149, 8), event.Appearance.Female, event.Appearance.Female ? 5 : 3, false);
+    event.Appearance.HairColor = DecodeAppearanceIndex(ReadBitsLE(frame, header.BitOffset + 157, 8), event.Appearance.Female, 4, false);
+    event.Appearance.Tattoo = DecodeAppearanceIndex(ReadBitsLE(frame, header.BitOffset + 165, 8), event.Appearance.Female, 4, false);
     return !event.Name.empty();
+}
+
+bool DecodeRemoteActorSpawn(const FByteArray& frame, FRemoteActorSpawnEvent& event)
+{
+    FDecodedSpawnHeader header;
+    if (!DecodeSpawnHeader(frame, header) || !IsRemoteActorObjectType(header.ObjectType)) { return false; }
+    event.EntityId = header.EntityId;
+    event.ObjectType = static_cast<uint16>(header.ObjectType);
+    event.Position = header.Position;
+    if (SferaProtocol::IsMonsterObjectType(header.ObjectType))
+    {
+        const bool levelOneLayout = ReadBitsLE(frame, header.BitOffset + 141, 5) < 16;
+        const std::array<size_t, 2> offsets = levelOneLayout ? std::array<size_t, 2>{166, 180} : std::array<size_t, 2>{180, 166};
+        for (const size_t offset : offsets)
+        {
+            if (header.BitOffset + offset + 14 > frame.size() * 8) { continue; }
+            const uint32 modelType = ReadBitsLE(frame, header.BitOffset + offset, 14);
+            if (modelType != 0 && std::find(event.ModelTypeCandidates.begin(), event.ModelTypeCandidates.end(), modelType) == event.ModelTypeCandidates.end()) { event.ModelTypeCandidates.push_back(modelType); }
+        }
+    }
+    return true;
 }
 
 int32 DecodeWrappedFraction(uint32 encoded, int32 base)
@@ -313,6 +388,13 @@ std::vector<FServerEvent> FGamePacketDispatcher::DecodeFrame(const std::vector<u
         handled = true;
         if (context.LocalEntityId != 0 && spawn.EntityId == context.LocalEntityId) { events.push_back(MakeEvent(EServerEventSubsystem::World, route, FWorldPositionEvent{spawn.Position})); }
         else { events.push_back(MakeEvent(EServerEventSubsystem::World, route, std::move(spawn))); }
+    }
+
+    FRemoteActorSpawnEvent actorSpawn;
+    if (!handled && DecodeRemoteActorSpawn(frame, actorSpawn))
+    {
+        handled = true;
+        if (context.LocalEntityId == 0 || actorSpawn.EntityId != context.LocalEntityId) { events.push_back(MakeEvent(EServerEventSubsystem::World, route, std::move(actorSpawn))); }
     }
 
     FRemotePlayerMoveEvent move;

@@ -49,6 +49,10 @@ public:
     void SetRemoteGamePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance);
     void RemoveRemoteGamePlayer(uint64 entityId);
     void ClearRemoteGamePlayers();
+    void UpsertRemoteGameActor(const FRemoteGameActor& actor);
+    void UpdateRemoteGameEntityPosition(uint64 entityId, const FGameWorldPosition& position);
+    void RemoveRemoteGameEntity(uint64 entityId);
+    void ClearRemoteGameActors();
     FStatus RenderUiDesktop(const FResourceManager& resources, const FWorldScene* worldScene, const FUiRuntime& ui, const RECT& rect, float deltaSeconds, const FGameMovementInput& gameInput, float lookDeltaX, float lookDeltaY, bool jumpRequested, FLogger* logger);
     void PreloadUiTextures(const FResourceManager& resources, const FUiRuntime& ui, FLogger* logger);
     bool HasPendingUiTexturePreload() const { return !UiTextureUrgentQueue.empty() || UiTexturePreloadHead < UiTexturePreloadQueue.size(); }
@@ -161,6 +165,7 @@ private:
     bool ServerGameTimePending = false;
     std::optional<FGameWorldPosition> InitialGameWorldPosition;
     std::unordered_map<uint64, FRemoteGamePlayer> RemoteGamePlayers;
+    std::unordered_map<uint64, FRemoteGameActor> RemoteGameActors;
     int32 BackBufferWidth = 0;
     int32 BackBufferHeight = 0;
     HWND DeviceWindow = nullptr;

@@ -79,7 +79,6 @@ void FD3D9GameWorldScene::Impl::CreateReflectionTarget()
 {
     ReflectionTextureReady = false;
     ReflectionWarmupFrames = 3;
-    ReflectionUpdateCountdown = 0;
     SafeRelease(ReflectionDepth);
     SafeRelease(ReflectionSurface);
     SafeRelease(ReflectionTexture);
@@ -135,6 +134,15 @@ void FD3D9GameWorldScene::Impl::LoadWorldShaders()
         return;
     }
     BaseVSConsts = ParseShaderConstants(VSCode);
+    const auto ResolveBaseRegister = [this](const char* Name)
+    {
+        const auto Iterator = BaseVSConsts.find(Name);
+        return Iterator == BaseVSConsts.end() ? -1 : Iterator->second;
+    };
+    BaseVsWorldViewProjection = ResolveBaseRegister("gWorldViewProjection");
+    BaseVsDirLightToLightDirL = ResolveBaseRegister("gDirLightToLightDirL");
+    BaseVsDirLightColor = ResolveBaseRegister("gDirLightColor");
+    BaseVsAmbientColor = ResolveBaseRegister("gAmbientColor");
 
     const std::array<D3DVERTEXELEMENT9, 6> Elements
     {{
@@ -150,6 +158,23 @@ void FD3D9GameWorldScene::Impl::LoadWorldShaders()
         SafeRelease(BaseVS);
         SafeRelease(BasePS);
         SafeRelease(WorldDecl);
+        return;
+    }
+    const std::array<D3DVERTEXELEMENT9, 6> AnimatedElements
+    {{
+        {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+        {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+        {1, 0, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+        {1, 4, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+        {1, 12, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1},
+        D3DDECL_END()
+    }};
+    if (FAILED(Device->CreateVertexDeclaration(AnimatedElements.data(), &AnimatedWorldDecl)))
+    {
+        SafeRelease(BaseVS);
+        SafeRelease(BasePS);
+        SafeRelease(WorldDecl);
+        SafeRelease(AnimatedWorldDecl);
         return;
     }
     WorldShadersReady = true;
@@ -178,12 +203,11 @@ void FD3D9GameWorldScene::Impl::LoadWorldShaders()
     }
 }
 
-void FD3D9GameWorldScene::Impl::SetVsConst(const char* name, const float* data, int Vec4Count)
+void FD3D9GameWorldScene::Impl::SetVsConst(int Register, const float* data, int Vec4Count)
 {
-    const auto it = BaseVSConsts.find(name);
-    if (it != BaseVSConsts.end())
+    if (Register >= 0)
     {
-        Device->SetVertexShaderConstantF(static_cast<UINT>(it->second), data, static_cast<UINT>(Vec4Count));
+        Device->SetVertexShaderConstantF(static_cast<UINT>(Register), data, static_cast<UINT>(Vec4Count));
     }
 }
 
@@ -200,7 +224,7 @@ void FD3D9GameWorldScene::Impl::SetBaseLightConstants()
         0.0f,
         0.0f
     };
-    SetVsConst("gDirLightColor", Colors.data(), 2);
+    SetVsConst(BaseVsDirLightColor, Colors.data(), 2);
 
     const std::array<float, 4> Ambient
     {
@@ -209,51 +233,66 @@ void FD3D9GameWorldScene::Impl::SetBaseLightConstants()
         Environment.AmbientBlue / 255.0f,
         1.0f
     };
-    SetVsConst("gAmbientColor", Ambient.data(), 1);
+    SetVsConst(BaseVsAmbientColor, Ambient.data(), 1);
 }
 
 
+void FD3D9GameWorldScene::Impl::UpdateFrustumPlanes()
+{
+    const auto& Matrix = ViewProjectionMatrix;
+    ViewFrustumPlanes =
+    {{
+        {{Matrix._14 + Matrix._11, Matrix._24 + Matrix._21, Matrix._34 + Matrix._31, Matrix._44 + Matrix._41}},
+        {{Matrix._14 - Matrix._11, Matrix._24 - Matrix._21, Matrix._34 - Matrix._31, Matrix._44 - Matrix._41}},
+        {{Matrix._14 + Matrix._12, Matrix._24 + Matrix._22, Matrix._34 + Matrix._32, Matrix._44 + Matrix._42}},
+        {{Matrix._14 - Matrix._12, Matrix._24 - Matrix._22, Matrix._34 - Matrix._32, Matrix._44 - Matrix._42}},
+        {{Matrix._13, Matrix._23, Matrix._33, Matrix._43}},
+        {{Matrix._14 - Matrix._13, Matrix._24 - Matrix._23, Matrix._34 - Matrix._33, Matrix._44 - Matrix._43}}
+    }};
+    ViewFrustumReady = true;
+}
+
 bool FD3D9GameWorldScene::Impl::IsBoundsVisibleToCamera(const FBox3& Bounds, float ExtraMargin) const
 {
-    const FVector3 min{Bounds.Min.X - ExtraMargin, Bounds.Min.Y - ExtraMargin, Bounds.Min.Z - ExtraMargin};
-    const FVector3 max{Bounds.Max.X + ExtraMargin, Bounds.Max.Y + ExtraMargin, Bounds.Max.Z + ExtraMargin};
-    struct ClipPoint
+    if (!ViewFrustumReady || !Bounds.IsValid())
     {
-        float X = 0.0f;
-        float Y = 0.0f;
-        float Z = 0.0f;
-        float W = 1.0f;
-    };
-    std::array<ClipPoint, 8> corners{};
-    const auto& m = ViewProjectionMatrix;
-    for (int i = 0; i < 8; ++i)
-    {
-        const float x = (i & 1) ? max.X : min.X;
-        const float y = (i & 2) ? max.Y : min.Y;
-        const float z = (i & 4) ? max.Z : min.Z;
-        corners[static_cast<std::size_t>(i)] = ClipPoint{
-            x * m._11 + y * m._21 + z * m._31 + m._41,
-            x * m._12 + y * m._22 + z * m._32 + m._42,
-            x * m._13 + y * m._23 + z * m._33 + m._43,
-            x * m._14 + y * m._24 + z * m._34 + m._44};
-    }
-    auto outside = [&](auto pred)
-    {
-        for (const auto& corner : corners)
-        {
-            if (!pred(corner))
-            {
-                return false;
-            }
-        }
         return true;
-    };
-    if (outside([](const ClipPoint& p) { return p.X < -p.W; })) { return false; }
-    if (outside([](const ClipPoint& p) { return p.X > p.W; })) { return false; }
-    if (outside([](const ClipPoint& p) { return p.Y < -p.W; })) { return false; }
-    if (outside([](const ClipPoint& p) { return p.Y > p.W; })) { return false; }
-    if (outside([](const ClipPoint& p) { return p.Z < 0.0f; })) { return false; }
-    if (outside([](const ClipPoint& p) { return p.Z > p.W; })) { return false; }
+    }
+    const FVector3 Minimum{Bounds.Min.X - ExtraMargin, Bounds.Min.Y - ExtraMargin, Bounds.Min.Z - ExtraMargin};
+    const FVector3 Maximum{Bounds.Max.X + ExtraMargin, Bounds.Max.Y + ExtraMargin, Bounds.Max.Z + ExtraMargin};
+    if (RenderingReflection && Maximum.Y <= ReflectionPlaneY + 0.02f)
+    {
+        return false;
+    }
+    for (const auto& Plane : ViewFrustumPlanes)
+    {
+        const float X = Plane[0] >= 0.0f ? Maximum.X : Minimum.X;
+        const float Y = Plane[1] >= 0.0f ? Maximum.Y : Minimum.Y;
+        const float Z = Plane[2] >= 0.0f ? Maximum.Z : Minimum.Z;
+        if (Plane[0] * X + Plane[1] * Y + Plane[2] * Z + Plane[3] < 0.0f)
+        {
+            return false;
+        }
+    }
+    if (RenderingReflection)
+    {
+        const float centerX = (Minimum.X + Maximum.X) * 0.5f;
+        const float centerY = (Minimum.Y + Maximum.Y) * 0.5f;
+        const float centerZ = (Minimum.Z + Maximum.Z) * 0.5f;
+        const float extentX = (Maximum.X - Minimum.X) * 0.5f;
+        const float extentY = (Maximum.Y - Minimum.Y) * 0.5f;
+        const float extentZ = (Maximum.Z - Minimum.Z) * 0.5f;
+        const float radius = std::sqrt(extentX * extentX + extentY * extentY + extentZ * extentZ);
+        const float dx = centerX - CullingEye.X;
+        const float dy = centerY - CullingEye.Y;
+        const float dz = centerZ - CullingEye.Z;
+        const float distance = (std::max)(0.1f, std::sqrt(dx * dx + dy * dy + dz * dz) - radius);
+        const float projectedDiameter = radius * std::abs(ProjectionMatrix._22) * CullingViewportHeight / distance;
+        if (projectedDiameter < 1.0f)
+        {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -279,7 +318,7 @@ void FD3D9GameWorldScene::Impl::SetBaseWorld(const D3DMATRIX& world)
         world._31 * vp._14 + world._32 * vp._24 + world._33 * vp._34 + world._34 * vp._44,
         world._41 * vp._14 + world._42 * vp._24 + world._43 * vp._34 + world._44 * vp._44
     };
-    SetVsConst("gWorldViewProjection", WvpConstants.data(), 4);
+    SetVsConst(BaseVsWorldViewProjection, WvpConstants.data(), 4);
 
     constexpr float LightX = 0.40452f;
     constexpr float LightY = 0.86683f;
@@ -303,7 +342,7 @@ void FD3D9GameWorldScene::Impl::SetBaseWorld(const D3DMATRIX& world)
         Local[1] *= InvLength;
         Local[2] *= InvLength;
     }
-    SetVsConst("gDirLightToLightDirL", Local.data(), 2);
+    SetVsConst(BaseVsDirLightToLightDirL, Local.data(), 2);
 }
 
 void FD3D9GameWorldScene::Impl::ComputeWindCircles(float Out[12]) const
@@ -416,11 +455,14 @@ void FD3D9GameWorldScene::Impl::UpdateViewProjection()
     };
     CameraEye = eye;
     CameraTarget = target;
+    CullingEye = eye;
+    CullingViewportHeight = static_cast<float>(rc.bottom - rc.top);
     const auto view = LookAtRhMatrix(eye, target, FVector3{0.0f, -1.0f, 0.0f});
     const auto projection = PerspectiveFovRhMatrix(Config.CameraFov * kPi / 180.0f, aspect, Config.NearClip, Config.FarClip);
     ViewMatrix = view;
     ProjectionMatrix = projection;
     ViewProjectionMatrix = MultiplyMatrix(view, projection);
+    UpdateFrustumPlanes();
     Device->SetTransform(D3DTS_VIEW, &view);
     Device->SetTransform(D3DTS_PROJECTION, &projection);
 }
@@ -645,8 +687,8 @@ void FD3D9GameWorldScene::Impl::ResetRenderStats()
     LastRenderStats.TerrainResources = TerrainResources.size();
     LastRenderStats.TerrainInstances = TerrainInstances.size();
     LastRenderStats.StaticResources = StaticResources.size();
-    LastRenderStats.StaticInstances = StaticInstances.size();
-    LastRenderStats.GrassInstances = GrassInstances.size();
+    LastRenderStats.StaticInstances = StaticInstances.size() + RemoteActors.size();
+    LastRenderStats.GrassInstances = GrassInstanceCount;
     LastRenderStats.GrassMaps = GrassMaps.size();
     LastRenderStats.GrassCells = GrassCells.size();
 }
@@ -703,14 +745,9 @@ void FD3D9GameWorldScene::Impl::RenderInsideScene(const RECT&)
     {
         --ReflectionWarmupFrames;
     }
-    else if (ReflectionUpdateCountdown <= 0)
-    {
-        RenderReflection();
-        ReflectionUpdateCountdown = ReflectionTextureReady ? 7 : 0;
-    }
     else
     {
-        --ReflectionUpdateCountdown;
+        RenderReflection();
     }
     {
         Device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(Environment.ClearRed, Environment.ClearGreen, Environment.ClearBlue), 1.0f, 0);

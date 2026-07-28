@@ -555,6 +555,31 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     }
     DeltaSeconds = std::clamp(DeltaSeconds, 0.0f, (std::max)(0.01f, Config.MaxMovementDeltaSeconds));
     ElapsedSeconds += DeltaSeconds;
+    PumpStreamingGpuPromotions();
+    bool staticCpuStreamingPending = false;
+    {
+        std::lock_guard<std::mutex> lock(StaticModelCpuPreloadMutex);
+        staticCpuStreamingPending = !QueuedStaticModelCpuPreloads.empty();
+    }
+    const int StaticRefreshRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
+    const int StaticRefreshColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
+    if (StaticRefreshPending && !staticCpuStreamingPending && PendingStaticGpuPromotions.empty() && StaticRefreshRow == TerrainCenterRow && StaticRefreshColumn == TerrainCenterColumn)
+    {
+        StaticRefreshPending = false;
+        try
+        {
+            LoadVisibleStaticObjects();
+        }
+        catch (const std::exception& Exception)
+        {
+            if (Logger)
+            {
+                Logger->Warning(std::string("deferred static refresh skipped: ") + Exception.what());
+            }
+        }
+    }
+    DrainStaticRenderCellBakeJobs(false);
+    DrainGrassRenderBakeJobs(false);
     SetGameTime(GameTimeFraction + DeltaSeconds * 12.0f / 86400.0f);
     UpdateWeather(DeltaSeconds);
     const float Forward = (Input.Forward ? 1.0f : 0.0f) - (Input.Backward ? 1.0f : 0.0f);
@@ -572,7 +597,10 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
         try
         {
             LoadVisibleTerrain();
-            LoadVisibleStaticObjects();
+            if (CollisionCenterRow == TerrainCenterRow && CollisionCenterColumn == TerrainCenterColumn)
+            {
+                LoadVisibleStaticObjects();
+            }
         }
         catch (const std::exception& Exception)
         {
@@ -675,20 +703,21 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
     const int CenterRow = static_cast<int>(std::floor(SpawnX / Config.TileSize)) + Config.OriginRow;
     const int CenterColumn = Config.OriginColumn - static_cast<int>(std::floor(SpawnZ / Config.TileSize));
     bool GrassLoadedThisFrame = false;
-    bool StreamingUpdatedThisFrame = false;
     if (CenterRow != TerrainCenterRow || CenterColumn != TerrainCenterColumn)
     {
         try
         {
             LoadVisibleTerrain();
-            LoadVisibleStaticObjects();
-            RecoverFromPenetration();
-            if (Config.GrassQuality > 0)
+            if (CenterRow == TerrainCenterRow && CenterColumn == TerrainCenterColumn)
             {
-                LoadVisibleGrass();
-                GrassLoadedThisFrame = true;
+                LoadVisibleStaticObjects();
+                RecoverFromPenetration();
+                if (Config.GrassQuality > 0)
+                {
+                    LoadVisibleGrass();
+                    GrassLoadedThisFrame = true;
+                }
             }
-            StreamingUpdatedThisFrame = true;
         }
         catch (const std::exception& Exception)
         {
@@ -713,10 +742,7 @@ bool FD3D9GameWorldScene::Impl::Update(float DeltaSeconds, const FGameMovementIn
             }
         }
     }
-    if (!StreamingUpdatedThisFrame && !GrassLoadedThisFrame)
-    {
-        PreloadStreamingGuard();
-    }
+    PreloadStreamingGuard();
     return true;
 }
 

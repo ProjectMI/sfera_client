@@ -39,6 +39,40 @@ struct WorldVertex
     float DetailV = 0.0f;
 };
 
+struct FCharacterPoseVertex
+{
+    float X = 0.0f;
+    float Y = 0.0f;
+    float Z = 0.0f;
+    float NX = 0.0f;
+    float NY = 1.0f;
+    float NZ = 0.0f;
+};
+
+using FAnimatedWorldVertex = FCharacterPoseVertex;
+
+struct FWorldVertexStaticAttributes
+{
+    DWORD Diffuse = 0xfffffffful;
+    float U = 0.0f;
+    float V = 0.0f;
+    float DetailU = 0.0f;
+    float DetailV = 0.0f;
+};
+
+struct FCharacterPoseFrameCache
+{
+    std::vector<FCharacterPoseVertex> Vertices;
+    float CrownWorldY = 0.0f;
+    bool Ready = false;
+};
+
+struct FCharacterPoseCache
+{
+    std::vector<FCharacterPoseFrameCache> Frames;
+    std::vector<std::size_t> ActionFrameStarts;
+};
+
 struct OverlayVertex
 {
     float X = 0.0f;
@@ -136,19 +170,35 @@ struct StaticCollisionMesh
     std::vector<StaticCollisionBvhNode> Nodes;
 };
 
+struct FWorldBatchSourceTemplate
+{
+    IDirect3DTexture9* Texture = nullptr;
+    std::vector<WorldVertex> Vertices;
+    std::vector<uint32> Indices;
+    std::vector<float> GrassWeights;
+    FBox3 Bounds{};
+};
+
 struct StaticModelResource
 {
     IDirect3DVertexBuffer9* VertexBuffer = nullptr;
+    IDirect3DVertexBuffer9* AnimatedVertexBuffer = nullptr;
+    IDirect3DVertexBuffer9* StaticAttributeVertexBuffer = nullptr;
     IDirect3DIndexBuffer9* IndexBuffer = nullptr;
     UINT VertexCount = 0;
     std::vector<FSceneBatch> Batches;
     std::shared_ptr<const StaticCollisionMesh> CollisionMesh;
     std::vector<WorldVertex> CpuVertices;
     std::vector<uint16> CpuIndices;
+    std::vector<FWorldVertexStaticAttributes> CpuStaticAttributes;
+    std::vector<std::filesystem::path> CpuTexturePaths;
+    std::vector<FByteArray> CpuTextureBytes;
+    std::vector<FWorldBatchSourceTemplate> BatchSourceTemplates;
     FBox3 Bounds;
     bool IsSkinned = false;
     FMdlMesh BindMesh;
-    std::vector<WorldVertex> AnimationVertices;
+    std::vector<FAnimatedWorldVertex> AnimationVertices;
+    std::vector<WorldVertex> FallbackAnimationVertices;
     std::vector<int> ClipStart;
     std::vector<int> ClipLength;
     std::vector<int> GestureClips;
@@ -157,6 +207,14 @@ struct StaticModelResource
     int IdleClip = -1;
     int CurrentClip = -1;
     float ClipTime = 0.0f;
+    std::vector<int> VertexBones;
+    std::vector<int> BoneParents;
+    std::vector<std::size_t> BoneEvaluationOrder;
+    std::vector<D3DMATRIX> BoneLocalScratch;
+    std::vector<D3DMATRIX> BoneWorldScratch;
+    std::vector<std::vector<FCharacterPoseVertex>> PoseFrameCache;
+    std::vector<uint8> PoseFrameReady;
+    uint64 LastAnimationQueueFrame = 0;
 };
 
 struct WorldRenderBatch
@@ -166,6 +224,14 @@ struct WorldRenderBatch
     IDirect3DIndexBuffer9* IndexBuffer = nullptr;
     UINT VertexCount = 0;
     UINT IndexCount = 0;
+    FBox3 Bounds{};
+};
+
+struct WorldRenderCpuBatch
+{
+    IDirect3DTexture9* Texture = nullptr;
+    std::vector<WorldVertex> Vertices;
+    std::vector<uint32> Indices;
     FBox3 Bounds{};
 };
 
@@ -190,6 +256,7 @@ struct StaticInstance
     StaticModelResource* resource = nullptr;
     D3DMATRIX world{};
     FBox3 Bounds;
+    uint64 RenderCellKey = 0;
 };
 
 struct StaticCollisionInstance

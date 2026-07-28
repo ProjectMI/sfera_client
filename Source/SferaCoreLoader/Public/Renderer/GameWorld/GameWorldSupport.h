@@ -426,6 +426,41 @@ inline IDirect3DVertexBuffer9* CreateManagedVertexBufferOrThrow(IDirect3DDevice9
     return buffer;
 }
 
+
+template<class T>
+inline IDirect3DVertexBuffer9* CreateDynamicVertexBufferOrThrow(IDirect3DDevice9* Device, const std::vector<T>& Source, const char* Label)
+{
+    IDirect3DVertexBuffer9* buffer = nullptr;
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    HRESULT hr = Device->CreateVertexBuffer(bytes, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, 0, D3DPOOL_DEFAULT, &buffer, nullptr);
+    void* data = nullptr;
+    if (FAILED(hr) || FAILED(buffer->Lock(0, bytes, &data, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK)))
+    {
+        SafeRelease(buffer);
+        throw std::runtime_error(HResultTextNarrow(Label, FAILED(hr) ? hr : E_FAIL));
+    }
+    CopyVectorBytes(data, Source, bytes);
+    buffer->Unlock();
+    return buffer;
+}
+
+template<class T>
+inline bool UploadVectorToDynamicVertexBuffer(IDirect3DVertexBuffer9* Buffer, const std::vector<T>& Source)
+{
+    if (!Buffer || Source.empty())
+    {
+        return false;
+    }
+    const UINT bytes = static_cast<UINT>(Source.size() * sizeof(T));
+    void* data = nullptr;
+    if (FAILED(Buffer->Lock(0, bytes, &data, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK)))
+    {
+        return false;
+    }
+    CopyVectorBytes(data, Source, bytes);
+    Buffer->Unlock();
+    return true;
+}
 template<class T>
 inline IDirect3DIndexBuffer9* CreateManagedIndexBufferOrThrow(IDirect3DDevice9* Device, const std::vector<T>& Source, D3DFORMAT Format, const char* Label)
 {

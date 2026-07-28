@@ -41,30 +41,131 @@ uint64 RemoteAppearanceKey(const FCharacterCreationAppearance& appearance)
     return key + 1;
 }
 
-bool BuildCharacterPose(const FSkinnedCharacterModel& model, std::size_t action, float animationTime, std::vector<float>& skinScratch, std::vector<WorldVertex>& vertexScratch, float* crownWorldY)
+void EnsureCharacterPoseCacheLayout(const FSkinnedCharacterModel& model, FCharacterPoseCache& cache)
 {
-    if (!model.IsValid()) { return false; }
-    action = action < model.ActionCount() ? action : kPlayerIdleAction;
-    const std::size_t actionStart = model.ActionFrameStart(action);
-    const std::size_t actionFrames = model.ActionFrameCount(action);
-    if (actionFrames == 0) { return false; }
-    const float framePosition = animationTime / kPlayerAnimSecondsPerFrame;
-    const std::size_t localFrame = static_cast<std::size_t>(std::floor(framePosition)) % actionFrames;
-    const std::size_t nextLocalFrame = (localFrame + 1) % actionFrames;
-    const float frameAlpha = framePosition - std::floor(framePosition);
-    try { SkinFrameInterpolated(model, actionStart + localFrame, actionStart + nextLocalFrame, frameAlpha, skinScratch); }
+    const std::size_t frameCount = static_cast<std::size_t>((std::max)(0, model.Skeleton.FrameCount));
+    if (cache.Frames.size() != frameCount)
+    {
+        cache.Frames.clear();
+        cache.Frames.resize(frameCount);
+    }
+    if (cache.ActionFrameStarts.size() != model.ActionCount())
+    {
+        cache.ActionFrameStarts.resize(model.ActionCount());
+        std::size_t start = 0;
+        for (std::size_t action = 0; action < model.ActionCount(); ++action)
+        {
+            cache.ActionFrameStarts[action] = start;
+            start += model.ActionFrameCount(action);
+        }
+    }
+}
+
+bool EnsureCharacterPoseFrame(const FSkinnedCharacterModel& model, std::size_t frameIndex, FCharacterPoseCache& cache, std::vector<float>& skinScratch)
+{
+    EnsureCharacterPoseCacheLayout(model, cache);
+    if (frameIndex >= cache.Frames.size()) { return false; }
+    auto& frame = cache.Frames[frameIndex];
+    if (frame.Ready) { return true; }
+    try { SkinFrame(model, frameIndex, skinScratch); }
     catch (...) { return false; }
     const std::size_t vertexCount = skinScratch.size() / 8;
-    vertexScratch.resize(vertexCount);
+    frame.Vertices.resize(vertexCount);
     float crown = 0.0f;
     for (std::size_t index = 0; index < vertexCount; ++index)
     {
         const float* source = skinScratch.data() + index * 8;
         const float worldY = -source[1];
         if (index == 0 || worldY < crown) { crown = worldY; }
-        vertexScratch[index] = WorldVertex{source[0], worldY, source[2], source[3], -source[4], source[5], 0xffffffff, source[6], source[7], source[6], source[7]};
+        frame.Vertices[index] = FCharacterPoseVertex{source[0], worldY, source[2], source[3], -source[4], source[5]};
     }
-    if (crownWorldY) { *crownWorldY = crown; }
+    frame.CrownWorldY = crown;
+    frame.Ready = true;
+    return true;
+}
+
+void InitializeCharacterVertexScratch(const FSkinnedCharacterModel& model, std::vector<WorldVertex>& vertices)
+{
+    vertices.resize(model.Sources.size());
+    for (std::size_t index = 0; index < model.Sources.size(); ++index)
+    {
+        const auto& source = model.Sources[index];
+        auto& vertex = vertices[index];
+        vertex.Diffuse = 0xffffffff;
+        vertex.U = source.U;
+        vertex.V = source.V;
+        vertex.DetailU = source.U;
+        vertex.DetailV = source.V;
+    }
+}
+
+void PrecacheCharacterAction(const FSkinnedCharacterModel& model, FCharacterPoseCache& cache, int configuredAction, std::vector<float>& skinScratch)
+{
+    if (!model.IsValid()) { return; }
+    const std::size_t action = ResolvePlayerAction(model, configuredAction);
+    EnsureCharacterPoseCacheLayout(model, cache);
+    if (action >= cache.ActionFrameStarts.size()) { return; }
+    const std::size_t start = cache.ActionFrameStarts[action];
+    const std::size_t count = model.ActionFrameCount(action);
+    for (std::size_t offset = 0; offset < count; ++offset) { EnsureCharacterPoseFrame(model, start + offset, cache, skinScratch); }
+}
+
+bool BuildCharacterPose(const FSkinnedCharacterModel& model, FCharacterPoseCache& cache, std::size_t action, float animationTime, std::vector<float>& skinScratch, std::vector<WorldVertex>& vertexScratch, float* crownWorldY)
+{
+    if (!model.IsValid()) { return false; }
+    EnsureCharacterPoseCacheLayout(model, cache);
+    action = action < model.ActionCount() ? action : kPlayerIdleAction;
+    if (action >= cache.ActionFrameStarts.size()) { return false; }
+    const std::size_t actionStart = cache.ActionFrameStarts[action];
+    const std::size_t actionFrames = model.ActionFrameCount(action);
+    if (actionFrames == 0) { return false; }
+    const float framePosition = animationTime / kPlayerAnimSecondsPerFrame;
+    const float frameFloor = std::floor(framePosition);
+    const std::size_t localFrame = static_cast<std::size_t>(frameFloor) % actionFrames;
+    const std::size_t nextLocalFrame = (localFrame + 1) % actionFrames;
+    const float frameAlpha = framePosition - frameFloor;
+    const std::size_t frameAIndex = actionStart + localFrame;
+    const std::size_t frameBIndex = actionStart + nextLocalFrame;
+    if (!EnsureCharacterPoseFrame(model, frameAIndex, cache, skinScratch) || !EnsureCharacterPoseFrame(model, frameBIndex, cache, skinScratch)) { return false; }
+    const auto& frameA = cache.Frames[frameAIndex];
+    const auto& frameB = cache.Frames[frameBIndex];
+    if (frameA.Vertices.size() != frameB.Vertices.size()) { return false; }
+    if (vertexScratch.size() != frameA.Vertices.size()) { InitializeCharacterVertexScratch(model, vertexScratch); }
+    const bool interpolate = frameAlpha > 0.0001f && frameAIndex != frameBIndex;
+    for (std::size_t index = 0; index < vertexScratch.size(); ++index)
+    {
+        const auto& a = frameA.Vertices[index];
+        const auto& b = frameB.Vertices[index];
+        auto& out = vertexScratch[index];
+        if (!interpolate)
+        {
+            out.X = a.X;
+            out.Y = a.Y;
+            out.Z = a.Z;
+            out.NX = a.NX;
+            out.NY = a.NY;
+            out.NZ = a.NZ;
+            continue;
+        }
+        out.X = a.X + (b.X - a.X) * frameAlpha;
+        out.Y = a.Y + (b.Y - a.Y) * frameAlpha;
+        out.Z = a.Z + (b.Z - a.Z) * frameAlpha;
+        float nx = a.NX + (b.NX - a.NX) * frameAlpha;
+        float ny = a.NY + (b.NY - a.NY) * frameAlpha;
+        float nz = a.NZ + (b.NZ - a.NZ) * frameAlpha;
+        const float lengthSquared = nx * nx + ny * ny + nz * nz;
+        if (lengthSquared > 0.000001f)
+        {
+            const float inverseLength = 1.0f / std::sqrt(lengthSquared);
+            nx *= inverseLength;
+            ny *= inverseLength;
+            nz *= inverseLength;
+        }
+        out.NX = nx;
+        out.NY = ny;
+        out.NZ = nz;
+    }
+    if (crownWorldY) { *crownWorldY = frameA.CrownWorldY + (frameB.CrownWorldY - frameA.CrownWorldY) * frameAlpha; }
     return true;
 }
 
@@ -73,7 +174,7 @@ bool UploadCharacterPose(IDirect3DVertexBuffer9* vertexBuffer, const std::vector
     if (!vertexBuffer || vertices.empty()) { return false; }
     const UINT vertexBytes = static_cast<UINT>(vertices.size() * sizeof(WorldVertex));
     void* vertexData = nullptr;
-    if (FAILED(vertexBuffer->Lock(0, vertexBytes, &vertexData, 0))) { return false; }
+    if (FAILED(vertexBuffer->Lock(0, vertexBytes, &vertexData, D3DLOCK_NOSYSLOCK))) { return false; }
     CopyVectorBytes(vertexData, vertices, vertexBytes);
     vertexBuffer->Unlock();
     return true;
@@ -119,6 +220,10 @@ FD3D9GameWorldScene::Impl::FRemotePlayerModelResource* FD3D9GameWorldScene::Impl
     try
     {
         resource.Model = std::move(model);
+        std::vector<float> poseScratch;
+        PrecacheCharacterAction(resource.Model, resource.PoseCache, resource.Model.AnimIdle, poseScratch);
+        PrecacheCharacterAction(resource.Model, resource.PoseCache, resource.Model.AnimWalk, poseScratch);
+        PrecacheCharacterAction(resource.Model, resource.PoseCache, resource.Model.AnimRun, poseScratch);
         resource.Batches = LoadCharacterBatches(resource.Model);
         resource.IndexBuffer = CreateManagedIndexBufferOrThrow(Device, resource.Model.Indices, D3DFMT_INDEX16, "CreateIndexBuffer remote player model");
         resource.VertexCount = static_cast<UINT>(resource.Model.Sources.size());
@@ -136,7 +241,7 @@ FD3D9GameWorldScene::Impl::FRemotePlayerModelResource* FD3D9GameWorldScene::Impl
 void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
 {
     float crownWorldY = 0.0f;
-    if (!BuildCharacterPose(PlayerModel, PlayerAction, PlayerAnimTime, PlayerSkinScratch, PlayerVertexScratch, &crownWorldY) || !UploadCharacterPose(PlayerVertexBuffer, PlayerVertexScratch)) { return; }
+    if (!BuildCharacterPose(PlayerModel, PlayerPoseCache, PlayerAction, PlayerAnimTime, PlayerSkinScratch, PlayerVertexScratch, &crownWorldY) || !UploadCharacterPose(PlayerVertexBuffer, PlayerVertexScratch)) { return; }
     PlayerLiveCrownY = crownWorldY;
     if (!PlayerEyeInitialized)
     {
@@ -150,13 +255,18 @@ void FD3D9GameWorldScene::Impl::SkinPlayerFrame()
     const std::size_t action = PlayerAction < PlayerModel.ActionCount() ? PlayerAction : kPlayerIdleAction;
     const std::size_t actionFrames = PlayerModel.ActionFrameCount(action);
     const std::size_t localFrame = actionFrames > 0 ? static_cast<std::size_t>(std::floor(PlayerAnimTime / kPlayerAnimSecondsPerFrame)) % actionFrames : 0;
-    PlayerLastSkinnedFrame = PlayerModel.ActionFrameStart(action) + localFrame;
+    PlayerLastSkinnedFrame = action < PlayerPoseCache.ActionFrameStarts.size() ? PlayerPoseCache.ActionFrameStarts[action] + localFrame : localFrame;
 }
 
 void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& model)
 {
     if (!model.IsValid()) { throw std::runtime_error("selected player skinned model is empty"); }
     PlayerModel = model;
+    PlayerPoseCache = {};
+    PlayerSkinScratch.clear();
+    PrecacheCharacterAction(PlayerModel, PlayerPoseCache, PlayerModel.AnimIdle, PlayerSkinScratch);
+    PrecacheCharacterAction(PlayerModel, PlayerPoseCache, PlayerModel.AnimWalk, PlayerSkinScratch);
+    PrecacheCharacterAction(PlayerModel, PlayerPoseCache, PlayerModel.AnimRun, PlayerSkinScratch);
     PlayerHeadBone = PlayerModel.BoneIndex("head1");
     if (PlayerHeadBone < 0) { PlayerHeadBone = PlayerModel.BoneIndex("head"); }
     PlayerAction = kPlayerIdleAction;
@@ -164,7 +274,7 @@ void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& mo
     PlayerAnimTime = 0.0f;
     PlayerBatches = LoadCharacterBatches(PlayerModel);
     PlayerVertexCount = static_cast<UINT>(PlayerModel.Sources.size());
-    PlayerVertexScratch.assign(PlayerModel.Sources.size(), WorldVertex{});
+    InitializeCharacterVertexScratch(PlayerModel, PlayerVertexScratch);
     PlayerVertexBuffer = CreateManagedVertexBufferOrThrow(Device, PlayerVertexScratch, kWorldVertexFvf, "CreateVertexBuffer player");
     PlayerIndexBuffer = CreateManagedIndexBufferOrThrow(Device, PlayerModel.Indices, D3DFMT_INDEX16, "CreateIndexBuffer player");
     SkinPlayerFrame();
@@ -173,13 +283,14 @@ void FD3D9GameWorldScene::Impl::LoadPlayerModel(const FSkinnedCharacterModel& mo
 void FD3D9GameWorldScene::Impl::UpdatePlayerAnimation(float deltaSeconds, bool moving, bool running)
 {
     if (!PlayerModel.IsValid()) { return; }
+    const float delta = std::clamp(deltaSeconds, 0.0f, 0.1f);
     const std::size_t desired = !moving ? ResolvePlayerAction(PlayerModel, PlayerModel.AnimIdle) : ResolvePlayerAction(PlayerModel, running ? PlayerModel.AnimRun : PlayerModel.AnimWalk);
     if (desired != PlayerAction)
     {
         PlayerAction = desired;
         PlayerAnimTime = 0.0f;
     }
-    PlayerAnimTime += (std::max)(0.0f, deltaSeconds);
+    PlayerAnimTime += delta;
     PlayerBodyShift = !moving ? kIdleBodyBackShift : (running ? kRunBodyBackShift : kWalkBodyBackShift);
     PlayerWalking = moving;
     SkinPlayerFrame();
@@ -187,6 +298,7 @@ void FD3D9GameWorldScene::Impl::UpdatePlayerAnimation(float deltaSeconds, bool m
 
 void FD3D9GameWorldScene::Impl::UpdateRemotePlayerAnimations(float deltaSeconds)
 {
+    const float delta = std::clamp(deltaSeconds, 0.0f, 0.1f);
     for (auto& [_, remote] : RemotePlayers)
     {
         const FCharacterCreationAppearance appearance = remote.Player.Appearance.value_or(DefaultRemoteAppearance());
@@ -201,15 +313,15 @@ void FD3D9GameWorldScene::Impl::UpdateRemotePlayerAnimations(float deltaSeconds)
         }
         FRemotePlayerModelResource* resource = EnsureRemotePlayerModel(appearance);
         if (!resource) { continue; }
-        remote.MovementHold = (std::max)(0.0f, remote.MovementHold - deltaSeconds);
+        remote.MovementHold = (std::max)(0.0f, remote.MovementHold - delta);
         const bool moving = remote.MovementHold > 0.0f;
         remote.Action = !moving ? ResolvePlayerAction(resource->Model, resource->Model.AnimIdle) : ResolvePlayerAction(resource->Model, remote.Running ? resource->Model.AnimRun : resource->Model.AnimWalk);
-        remote.AnimationTime += (std::max)(0.0f, deltaSeconds);
+        remote.AnimationTime += delta;
         if (!remote.VertexBuffer)
         {
             try
             {
-                remote.VertexScratch.assign(resource->Model.Sources.size(), WorldVertex{});
+                InitializeCharacterVertexScratch(resource->Model, remote.VertexScratch);
                 remote.VertexBuffer = CreateManagedVertexBufferOrThrow(Device, remote.VertexScratch, kWorldVertexFvf, "CreateVertexBuffer remote player");
             }
             catch (const std::exception& exception)
@@ -218,7 +330,7 @@ void FD3D9GameWorldScene::Impl::UpdateRemotePlayerAnimations(float deltaSeconds)
                 continue;
             }
         }
-        if (BuildCharacterPose(resource->Model, remote.Action, remote.AnimationTime, remote.SkinScratch, remote.VertexScratch, nullptr)) { UploadCharacterPose(remote.VertexBuffer, remote.VertexScratch); }
+        if (BuildCharacterPose(resource->Model, resource->PoseCache, remote.Action, remote.AnimationTime, remote.SkinScratch, remote.VertexScratch, nullptr)) { UploadCharacterPose(remote.VertexBuffer, remote.VertexScratch); }
     }
 }
 

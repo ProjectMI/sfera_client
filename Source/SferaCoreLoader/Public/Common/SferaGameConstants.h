@@ -39,6 +39,9 @@ constexpr uint8 ClientActionByte = 0x04;
 constexpr uint8 CreateCharacterAction = 0x05;
 constexpr uint8 DeleteCharacterAction = 0x0d;
 constexpr uint8 SlotWireStride = 4;
+constexpr uint16 MonsterObjectType = 210;
+constexpr uint16 FlyingMonsterObjectType = 211;
+constexpr bool IsMonsterObjectType(uint32 objectType) { return objectType == MonsterObjectType || objectType == FlyingMonsterObjectType; }
 constexpr double DefaultServerSpawnX = 80.0;
 constexpr double DefaultServerSpawnY = 150.0;
 constexpr double DefaultServerSpawnZ = 200.0;

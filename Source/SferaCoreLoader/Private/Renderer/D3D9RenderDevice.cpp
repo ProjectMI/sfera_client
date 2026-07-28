@@ -121,7 +121,11 @@ struct FD3D9RenderDevice::FDrawContext
     float Scale = 1.0f;
 };
 
-FD3D9RenderDevice::FD3D9RenderDevice() = default;
+FD3D9RenderDevice::FD3D9RenderDevice()
+{
+    RemoteGamePlayers.reserve(256);
+    RemoteGameActors.reserve(1024);
+}
 FD3D9RenderDevice::~FD3D9RenderDevice()
 {
     Shutdown();
@@ -179,6 +183,7 @@ std::optional<FGameWorldPosition> FD3D9RenderDevice::CurrentGameWorldPosition() 
 void FD3D9RenderDevice::UpsertRemoteGamePlayer(const FRemoteGamePlayer& player)
 {
     if (player.EntityId == 0) { return; }
+    if (RemoteGameActors.erase(player.EntityId) != 0 && GameWorldScene.IsValid()) { GameWorldScene.RemoveRemoteActor(player.EntityId); }
     FRemoteGamePlayer& target = RemoteGamePlayers[player.EntityId];
     target.EntityId = player.EntityId;
     if (!player.Name.empty()) { target.Name = player.Name; }
@@ -205,6 +210,52 @@ void FD3D9RenderDevice::ClearRemoteGamePlayers()
 {
     RemoteGamePlayers.clear();
     if (GameWorldScene.IsValid()) { GameWorldScene.ClearRemotePlayers(); }
+}
+
+void FD3D9RenderDevice::UpsertRemoteGameActor(const FRemoteGameActor& actor)
+{
+    if (actor.EntityId == 0) { return; }
+    if (RemoteGamePlayers.erase(actor.EntityId) != 0 && GameWorldScene.IsValid()) { GameWorldScene.RemoveRemotePlayer(actor.EntityId); }
+    FRemoteGameActor& target = RemoteGameActors[actor.EntityId];
+    target = actor;
+    if (GameWorldScene.IsValid()) { GameWorldScene.UpsertRemoteActor(target); }
+}
+
+void FD3D9RenderDevice::UpdateRemoteGameEntityPosition(uint64 entityId, const FGameWorldPosition& position)
+{
+    if (auto actor = RemoteGameActors.find(entityId); actor != RemoteGameActors.end())
+    {
+        FGameWorldPosition resolved = position;
+        const double deltaX = position.X - actor->second.Position.X;
+        const double deltaZ = position.Z - actor->second.Position.Z;
+        if (deltaX * deltaX + deltaZ * deltaZ > 0.0001) { resolved.Angle = std::atan2(-deltaX, deltaZ); }
+        else { resolved.Angle = actor->second.Position.Angle; }
+        actor->second.Position = resolved;
+        if (GameWorldScene.IsValid()) { GameWorldScene.UpdateRemoteActorPosition(entityId, resolved); }
+        return;
+    }
+    if (auto player = RemoteGamePlayers.find(entityId); player != RemoteGamePlayers.end())
+    {
+        player->second.Position = position;
+        if (GameWorldScene.IsValid()) { GameWorldScene.UpsertRemotePlayer(player->second); }
+    }
+}
+
+void FD3D9RenderDevice::RemoveRemoteGameEntity(uint64 entityId)
+{
+    RemoteGamePlayers.erase(entityId);
+    RemoteGameActors.erase(entityId);
+    if (GameWorldScene.IsValid())
+    {
+        GameWorldScene.RemoveRemotePlayer(entityId);
+        GameWorldScene.RemoveRemoteActor(entityId);
+    }
+}
+
+void FD3D9RenderDevice::ClearRemoteGameActors()
+{
+    RemoteGameActors.clear();
+    if (GameWorldScene.IsValid()) { GameWorldScene.ClearRemoteActors(); }
 }
 
 FStatus FD3D9RenderDevice::Initialize(HWND hwnd, int32 width, int32 height, FLogger* logger)
@@ -290,6 +341,7 @@ void FD3D9RenderDevice::Shutdown()
 {
     GameWorldScene.Shutdown();
     RemoteGamePlayers.clear();
+    RemoteGameActors.clear();
     CharacterScene.Shutdown();
     ReleaseTextures();
 
@@ -1643,6 +1695,7 @@ FStatus FD3D9RenderDevice::RenderUiDesktop(const FResourceManager& resources, co
                 ActiveWorldScene = worldScene;
                 FailedWorldScene = nullptr;
                 for (const auto& [_, remote] : RemoteGamePlayers) { GameWorldScene.UpsertRemotePlayer(remote); }
+                for (const auto& [_, remote] : RemoteGameActors) { GameWorldScene.UpsertRemoteActor(remote); }
                 if (HasServerGameTime)
                 {
                     GameWorldScene.SetGameTime(ServerGameTime);

@@ -1,4 +1,5 @@
 #pragma once
+#include <deque>
 #include "Renderer/GameWorld/GameWorldConfig.h"
 #include "Renderer/GameWorld/SkinnedCharacterModel.h"
 #include "Renderer/D3D9GameWorldScene.h"
@@ -37,19 +38,28 @@ struct FD3D9GameWorldScene::Impl
     bool RenderingReflection = false;
     bool ReflectionTextureReady = false;
     int ReflectionWarmupFrames = 0;
-    int ReflectionUpdateCountdown = 0;
     IDirect3DVertexBuffer9* PlayerVertexBuffer = nullptr;
     IDirect3DIndexBuffer9* PlayerIndexBuffer = nullptr;
     IDirect3DVertexDeclaration9* WorldDecl = nullptr;
+    IDirect3DVertexDeclaration9* AnimatedWorldDecl = nullptr;
     IDirect3DVertexShader9* BaseVS = nullptr;
     IDirect3DPixelShader9* BasePS = nullptr;
     IDirect3DVertexShader9* GrassVS = nullptr;
     IDirect3DPixelShader9* GrassPS = nullptr;
     std::unordered_map<std::string, int> BaseVSConsts;
+    int BaseVsWorldViewProjection = -1;
+    int BaseVsDirLightToLightDirL = -1;
+    int BaseVsDirLightColor = -1;
+    int BaseVsAmbientColor = -1;
     bool WorldShadersReady = false;
     D3DMATRIX ViewMatrix{};
     D3DMATRIX ProjectionMatrix{};
     D3DMATRIX ViewProjectionMatrix{};
+    std::array<std::array<float, 4>, 6> ViewFrustumPlanes{};
+    bool ViewFrustumReady = false;
+    FVector3 CullingEye{};
+    float CullingViewportHeight = 1.0f;
+    float ReflectionPlaneY = 0.0f;
     D3DPRESENT_PARAMETERS Present{};
     const FResourceManager* AssetResources = nullptr;
     const FWorldScene* WorldScene = nullptr;
@@ -66,6 +76,7 @@ struct FD3D9GameWorldScene::Impl
         std::string ModelName;
         std::filesystem::path ModelPath;
         std::string Key;
+        bool HighPriority = false;
     };
 
     struct StaticModelCpuPreloadJob
@@ -75,9 +86,17 @@ struct FD3D9GameWorldScene::Impl
     };
 
     std::unordered_map<std::wstring, std::unique_ptr<TerrainResource>> TerrainResources;
+    struct FTerrainCpuPreloadResult
+    {
+        std::filesystem::path Path;
+        std::unique_ptr<TerrainResource> Resource;
+    };
     std::vector<TerrainCpuPreloadJob> TerrainCpuPreloadJobs;
     std::vector<std::filesystem::path> PendingTerrainCpuPreloads;
+    std::vector<FTerrainCpuPreloadResult> CompletedTerrainCpuPreloads;
     std::unordered_set<std::wstring> QueuedTerrainCpuPreloads;
+    std::deque<std::filesystem::path> PendingTerrainGpuPromotions;
+    std::unordered_set<std::wstring> QueuedTerrainGpuPromotions;
     std::thread TerrainCpuPreloadThread;
     std::mutex TerrainCpuPreloadMutex;
     std::condition_variable TerrainCpuPreloadCv;
@@ -87,8 +106,22 @@ struct FD3D9GameWorldScene::Impl
     std::unordered_map<uint64, TerrainInstance> TerrainInstanceLookup;
     std::unordered_map<std::string, std::unique_ptr<StaticModelResource>> StaticResources;
     std::vector<StaticModelCpuPreloadJob> StaticModelCpuPreloadJobs;
-    std::vector<StaticModelCpuPreloadTarget> PendingStaticModelCpuPreloads;
+    struct FStaticModelCpuPreloadResult
+    {
+        StaticModelCpuPreloadTarget Target;
+        std::unique_ptr<StaticModelResource> Resource;
+    };
+    std::deque<StaticModelCpuPreloadTarget> PendingStaticModelCpuPreloads;
+    std::vector<FStaticModelCpuPreloadResult> CompletedStaticModelCpuPreloads;
     std::unordered_set<std::string> QueuedStaticModelCpuPreloads;
+    struct FStaticModelGpuPromotion
+    {
+        StaticModelCpuPreloadTarget Target;
+        std::unique_ptr<StaticModelResource> Resource;
+        std::size_t NextTexture = 0;
+    };
+    std::deque<FStaticModelGpuPromotion> PendingStaticGpuPromotions;
+    std::unordered_set<std::string> QueuedStaticGpuPromotions;
     std::thread StaticModelCpuPreloadThread;
     std::mutex StaticModelCpuPreloadMutex;
     std::condition_variable StaticModelCpuPreloadCv;
@@ -106,22 +139,123 @@ struct FD3D9GameWorldScene::Impl
     mutable std::vector<uint32> StaticCollisionTriangleScratch;
     std::vector<std::size_t> VisibleStaticPlacementIndices;
     std::vector<uint64> VisibleStaticRenderCells;
+    std::vector<const WorldRenderBatch*> StaticDrawBatches;
+    std::vector<std::size_t> DirectStaticInstanceIndices;
+    bool StaticDrawBatchesDirty = true;
+    bool DirectStaticInstancesDirty = true;
     std::unordered_map<uint64, std::vector<std::size_t>> StaticPlacementIndicesByRenderCell;
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> StaticCellRenderBatches;
+    struct FStaticRenderBakeSource
+    {
+        const StaticModelResource* Resource = nullptr;
+        D3DMATRIX World{};
+    };
+    struct FStaticRenderBakeRequest
+    {
+        uint64 CellKey = 0;
+        std::vector<FStaticRenderBakeSource> Sources;
+    };
+    struct FStaticRenderBakeResult
+    {
+        uint64 CellKey = 0;
+        std::vector<WorldRenderCpuBatch> Batches;
+    };
+    struct FStaticRenderGpuUpload
+    {
+        FStaticRenderBakeResult Result;
+        std::size_t NextBatch = 0;
+        std::vector<WorldRenderBatch> GpuBatches;
+    };
+    std::vector<FStaticRenderBakeRequest> PendingStaticRenderBakes;
+    std::vector<FStaticRenderBakeResult> CompletedStaticRenderBakes;
+    std::deque<FStaticRenderGpuUpload> PendingStaticRenderGpuUploads;
+    std::unordered_set<uint64> QueuedStaticRenderBakeCells;
+    std::thread StaticRenderBakeThread;
+    std::mutex StaticRenderBakeMutex;
+    std::condition_variable StaticRenderBakeCv;
+    bool StaticRenderBakeStop = false;
+    bool StaticRenderBakeWorkerStarted = false;
+    bool StaticRenderBakeBusy = false;
     bool StaticVisibilityPlanReady = false;
     float StaticVisibilityAnchorX = 0.0f;
     float StaticVisibilityAnchorY = 0.0f;
     float StaticVisibilityAnchorZ = 0.0f;
-    std::vector<GrassInstance> GrassInstances;
+    std::unordered_map<uint64, std::vector<GrassInstance>> GrassInstancesByCell;
+    std::size_t GrassInstanceCount = 0;
     std::unordered_map<uint64, std::vector<WorldRenderBatch>> GrassCellRenderBatches;
+    std::vector<const WorldRenderBatch*> GrassDrawBatches;
+    bool GrassDrawBatchesDirty = true;
+    struct FGrassRenderBakeSource
+    {
+        const StaticModelResource* Resource = nullptr;
+        D3DMATRIX World{};
+        DWORD Tint = 0xfffffffful;
+    };
+    struct FGrassRenderBakeRequest
+    {
+        uint64 CellKey = 0;
+        uint64 Epoch = 0;
+        uint64 Revision = 0;
+        std::vector<FGrassRenderBakeSource> Sources;
+    };
+    struct FGrassRenderBakeResult
+    {
+        uint64 CellKey = 0;
+        uint64 Epoch = 0;
+        uint64 Revision = 0;
+        std::vector<WorldRenderCpuBatch> Batches;
+    };
+    struct FGrassRenderGpuUpload
+    {
+        FGrassRenderBakeResult Result;
+        std::size_t NextBatch = 0;
+        std::vector<WorldRenderBatch> GpuBatches;
+    };
+    std::vector<FGrassRenderBakeRequest> PendingGrassRenderBakes;
+    std::vector<FGrassRenderBakeResult> CompletedGrassRenderBakes;
+    std::deque<FGrassRenderGpuUpload> PendingGrassRenderGpuUploads;
+    std::unordered_map<uint64, uint64> GrassCellBakeRevisions;
+    std::unordered_map<uint64, uint32> GrassPendingCellsPerRenderGroup;
+    std::unordered_set<uint64> GrassDirtyRenderGroups;
+    std::thread GrassRenderBakeThread;
+    std::mutex GrassRenderBakeMutex;
+    std::condition_variable GrassRenderBakeCv;
+    uint64 GrassRenderBakeEpoch = 1;
+    uint64 GrassRenderBakeRevision = 0;
+    bool GrassRenderBakeStop = false;
+    bool GrassRenderBakeWorkerStarted = false;
+    bool GrassRenderBakeBusy = false;
     std::unordered_map<int, std::vector<uint8>> GrassMaps;
+    struct FGrassMapPreloadTarget
+    {
+        int ChunkX = 0;
+        int ChunkZ = 0;
+        int Key = 0;
+    };
+    std::vector<FGrassMapPreloadTarget> PendingGrassMapPreloads;
+    std::unordered_set<int> QueuedGrassMapPreloads;
+    std::thread GrassMapPreloadThread;
+    std::mutex GrassMapMutex;
+    std::mutex GrassMapPreloadMutex;
+    std::condition_variable GrassMapPreloadCv;
+    bool GrassMapPreloadStop = false;
+    bool GrassMapPreloadWorkerStarted = false;
     std::unordered_set<uint64> GrassCells;
+    std::unordered_set<uint64> GrassTargetCells;
+    std::vector<uint64> GrassPendingCells;
+    std::array<std::vector<StaticModelResource*>, 31> GrassPatternResources;
+    std::array<std::vector<StaticModelResource*>, 31> GrassFlowerPatternResources;
+    std::vector<StaticModelResource*> GrassDetailResources;
     bool GrassRefreshIncomplete = false;
+    bool TerrainInitialBlockingLoad = false;
+    bool StaticInitialBlockingLoad = false;
+    bool StaticRefreshPending = false;
     bool GrassInitialBlockingLoad = false;
     std::vector<FSceneBatch> PlayerBatches;
     struct FRemotePlayerModelResource
     {
         FSkinnedCharacterModel Model;
+        FCharacterPoseCache PoseCache;
         std::vector<FSceneBatch> Batches;
         IDirect3DIndexBuffer9* IndexBuffer = nullptr;
         UINT VertexCount = 0;
@@ -141,8 +275,21 @@ struct FD3D9GameWorldScene::Impl
     };
     std::unordered_map<uint64, FRemotePlayerModelResource> RemotePlayerModels;
     std::unordered_map<uint64, FRemotePlayerRenderState> RemotePlayers;
+    struct FRemoteActorRenderState
+    {
+        FRemoteGameActor Actor;
+        StaticModelResource* Resource = nullptr;
+        std::string ModelName;
+        FBox3 Bounds{};
+        bool BoundsValid = false;
+    };
+    std::unordered_map<uint64, FRemoteActorRenderState> RemoteActors;
+    std::vector<StaticModelResource*> VisibleAnimatedResources;
+    std::unordered_map<uint32, std::string> MonsterModelNames;
+    bool MonsterModelIndexReady = false;
     UINT PlayerVertexCount = 0;
     FSkinnedCharacterModel PlayerModel;
+    FCharacterPoseCache PlayerPoseCache;
     std::vector<float> PlayerSkinScratch;
     std::vector<WorldVertex> PlayerVertexScratch;
     std::size_t PlayerAction = kPlayerIdleAction;
@@ -177,7 +324,6 @@ struct FD3D9GameWorldScene::Impl
     int StreamingGuardColumn = (std::numeric_limits<int>::min)();
     int StreamingGuardRowStep = (std::numeric_limits<int>::min)();
     int StreamingGuardColumnStep = (std::numeric_limits<int>::min)();
-    std::chrono::steady_clock::time_point NextStreamingGuardTime{};
     std::unordered_set<uint64> QueuedTerrainCpuPreloadCells;
     int GrassCenterX = (std::numeric_limits<int>::min)();
     int GrassCenterZ = (std::numeric_limits<int>::min)();
@@ -227,6 +373,7 @@ struct FD3D9GameWorldScene::Impl
     int OverlayHeight = 0;
     bool Initialized = false;
     mutable std::unordered_map<std::string, std::filesystem::path> OptionalPathCache;
+    mutable std::mutex OptionalPathCacheMutex;
     mutable std::unordered_map<std::string, std::filesystem::path> TerrainLndPathByRelativeKey;
     mutable std::unordered_map<std::string, std::filesystem::path> TerrainLndPathByStemKey;
     mutable bool TerrainPathIndexReady = false;
@@ -236,6 +383,7 @@ struct FD3D9GameWorldScene::Impl
     mutable std::unordered_map<std::string, std::filesystem::path> ModelPathIndex;
     mutable bool ModelPathIndexReady = false;
     mutable std::unordered_map<std::string, std::filesystem::path> ModelTexturePathCache;
+    mutable std::mutex ModelTexturePathCacheMutex;
     std::unordered_map<std::wstring, IDirect3DTexture9*> DdsTextureCache;
     FD3D9GameWorldRenderStats LastRenderStats;
     uint64 RenderStatsFrameCounter = 0;
@@ -260,36 +408,68 @@ struct FD3D9GameWorldScene::Impl
     std::optional<std::filesystem::path> TryResolveTerrainPathFromPatch(const FWorldPatchRecord& PatchRecord) const;
     std::filesystem::path ResolveTerrainPath(const FWorldMapCell& cell) const;
     void BuildModelPathIndex() const;
+    void BuildMonsterModelIndex();
+    std::optional<std::string> ResolveRemoteActorModelName(const FRemoteGameActor& Actor);
+    void RefreshRemoteActorResource(FRemoteActorRenderState& Actor);
     std::filesystem::path ResolveModelPath(const std::string& ModelName) const;
     std::filesystem::path ResolveModelTexturePath(
         const std::filesystem::path& ModelPath,
         const std::string& MaterialName) const;
     IDirect3DTexture9* LoadCachedDdsTexture(const std::filesystem::path& Path);
+    IDirect3DTexture9* LoadCachedDdsTextureFromBytes(const std::filesystem::path& Path, const FByteArray& Bytes);
     void LoadStaticPlacements();
     StaticModelResource* EnsureStaticModelResource(const std::string& ModelName);
+    std::unique_ptr<StaticModelResource> LoadStaticModelCpuBackedResource(
+        const std::string& ModelName,
+        const std::filesystem::path& ModelPath);
+    bool AdvanceStaticModelGpuPromotion(FStaticModelGpuPromotion& Promotion);
     std::unique_ptr<StaticModelResource> LoadStaticModelResource(
         const std::string& ModelName,
         const std::filesystem::path& ModelPath);
     void StartStaticModelCpuPreloadWorker();
     void StopStaticModelCpuPreloadWorker();
     void StaticModelCpuPreloadWorkerMain();
-    void QueueStaticModelCpuPreload(const std::string& ModelName, const std::filesystem::path& ModelPath);
+    void QueueStaticModelCpuPreload(const std::string& ModelName, const std::filesystem::path& ModelPath, bool HighPriority = false);
     void DrainStaticModelCpuPreloadJobs(bool Wait);
+    void PumpStreamingGpuPromotions();
     const std::vector<uint8>& LoadGrassMap(int ChunkX, int ChunkZ);
-    uint8 GrassTypeAt(float WorldX, float WorldZ);
+    void StartGrassMapPreloadWorker();
+    void StopGrassMapPreloadWorker();
+    void GrassMapPreloadWorkerMain();
+    void QueueGrassMapPreload(int ChunkX, int ChunkZ);
+    void PreloadGrassMapsAround(float CenterX, float CenterZ, float Radius);
+    bool TryGrassTypeAt(float WorldX, float WorldZ, bool AllowBlockingLoad, uint8& OutType);
     void LoadVisibleStaticObjects();
     void UpdateNpcAnimation(float DeltaSeconds);
     void ClearStaticRenderBatches();
     void BakeStaticRenderCell(uint64 CellKey);
+    void StartStaticRenderBakeWorker();
+    void StopStaticRenderBakeWorker();
+    void StaticRenderBakeWorkerMain();
+    void QueueStaticRenderCellBake(uint64 CellKey);
+    void DrainStaticRenderCellBakeJobs(bool Wait);
+    void RebuildStaticDrawBatchCache();
+    void RebuildDirectStaticInstanceCache();
     void BuildVisibleStaticRenderBatches();
     bool BeginAlphaWorldPass(const D3DMATRIX& World);
     void EndAlphaWorldPass(bool UsedShader);
-    void DrawWorldRenderBatches(std::vector<const WorldRenderBatch*>& DrawList, EGameWorldDrawBucket Bucket, float CullingMargin);
+    void DrawWorldRenderBatches(std::vector<const WorldRenderBatch*>& DrawList, EGameWorldDrawBucket Bucket, float CullingMargin, bool AlreadySorted = false);
     void PreloadStaticResourcesAround(float CenterX, float CenterY, float CenterZ, float Radius);
     void LoadVisibleGrass();
     void ClearGrassRenderBatches();
-    void BakeGrassCell(uint64 CellKey, const std::vector<GrassInstance>& Instances);
+    void BakeGrassCell(uint64 CellKey, std::vector<GrassInstance> Instances);
+    void QueueGrassRenderGroupBake(uint64 GroupKey);
+    void FlushReadyGrassRenderGroupBakes();
+    void CompleteGrassPendingCell(uint64 CellKey);
+    void StartGrassRenderBakeWorker();
+    void StopGrassRenderBakeWorker();
+    void GrassRenderBakeWorkerMain();
+    void DrainGrassRenderBakeJobs(bool Wait);
     std::unique_ptr<TerrainResource> LoadTerrainResource(const std::filesystem::path& LNDPath);
+    std::unique_ptr<TerrainResource> LoadTerrainCpuBackedResource(const std::filesystem::path& LNDPath);
+    bool AdvanceTerrainGpuResource(TerrainResource& Resource);
+    void UploadTerrainGpuResource(TerrainResource& Resource);
+    void QueueTerrainGpuPromotion(const std::filesystem::path& LNDPath);
     void StartTerrainCpuPreloadWorker();
     void StopTerrainCpuPreloadWorker();
     void TerrainCpuPreloadWorkerMain();
@@ -300,10 +480,11 @@ struct FD3D9GameWorldScene::Impl
     void PreloadStreamingGuard();
     void UploadWaterMesh(TerrainResource& resource, const std::vector<uint16>& indices);
     void LoadWorldShaders();
-    void SetVsConst(const char* name, const float* data, int Vec4Count);
+    void SetVsConst(int Register, const float* data, int Vec4Count);
     void SetBaseLightConstants();
     void ComputeWindCircles(float Out[12]) const;
     DWORD TerrainColorAt(float WorldX, float WorldZ) const;
+    void UpdateFrustumPlanes();
     bool IsBoundsVisibleToCamera(const FBox3& Bounds, float ExtraMargin = 0.0f) const;
     void SetBaseWorld(const D3DMATRIX& world);
     void BeginBaseShader();
@@ -356,6 +537,10 @@ struct FD3D9GameWorldScene::Impl
     void SetRemotePlayerAppearance(uint64 EntityId, const FCharacterCreationAppearance& Appearance);
     void RemoveRemotePlayer(uint64 EntityId);
     void ClearRemotePlayers();
+    void UpsertRemoteActor(const FRemoteGameActor& Actor);
+    void UpdateRemoteActorPosition(uint64 EntityId, const FGameWorldPosition& Position);
+    void RemoveRemoteActor(uint64 EntityId);
+    void ClearRemoteActors();
     void DrawOverlay();
     bool Initialize(
         HWND window,

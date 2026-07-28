@@ -41,6 +41,14 @@ struct FRemoteGamePlayer
     std::optional<FCharacterCreationAppearance> Appearance;
 };
 
+struct FRemoteGameActor
+{
+    uint64 EntityId = 0;
+    uint16 ObjectType = 0;
+    std::vector<uint32> ModelTypeCandidates;
+    FGameWorldPosition Position;
+};
+
 class FD3D9GameWorldScene
 {
 public:
@@ -74,6 +82,10 @@ public:
     void SetRemotePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance);
     void RemoveRemotePlayer(uint64 entityId);
     void ClearRemotePlayers();
+    void UpsertRemoteActor(const FRemoteGameActor& actor);
+    void UpdateRemoteActorPosition(uint64 entityId, const FGameWorldPosition& position);
+    void RemoveRemoteActor(uint64 entityId);
+    void ClearRemoteActors();
     float CurrentGameTime() const;
     float CameraFacing() const;
     bool Update(float deltaSeconds, const FGameMovementInput& input, std::wstring& error);

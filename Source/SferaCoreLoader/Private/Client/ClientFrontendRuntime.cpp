@@ -3,7 +3,12 @@
 #include "Common/StringUtils.h"
 #include "Common/TextEncoding.h"
 
-FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), NetworkComponent(Logger) {}
+FClientFrontendRuntime::FClientFrontendRuntime(FLogger* Logger) : Log(Logger), NetworkComponent(Logger)
+{
+    RemoteAppearanceHints.reserve(256);
+    RemotePlayerNames.reserve(1024);
+    RemotePlayerEntities.reserve(256);
+}
 FClientFrontendRuntime::~FClientFrontendRuntime()
 {
     Shutdown();
@@ -54,6 +59,16 @@ namespace
         player.Position = FGameWorldPosition{position.X, position.Y, position.Z, position.Angle};
         if (appearance) { player.Appearance = *appearance; }
         return player;
+    }
+
+    FRemoteGameActor MakeRemoteActor(const FRemoteActorSpawnEvent& event)
+    {
+        FRemoteGameActor actor;
+        actor.EntityId = event.EntityId;
+        actor.ObjectType = event.ObjectType;
+        actor.ModelTypeCandidates = event.ModelTypeCandidates;
+        actor.Position = FGameWorldPosition{event.Position.X, event.Position.Y, event.Position.Z, event.Position.Angle};
+        return actor;
     }
 
     constexpr char kAppearanceSenderPrefix = '~';
@@ -738,6 +753,7 @@ void FClientFrontendRuntime::BeginCharacterEnterRequest()
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.SetInitialGameWorldPosition(std::nullopt);
         RenderDevice.ClearRemoteGamePlayers();
+        RenderDevice.ClearRemoteGameActors();
     }
     LastReportedWorldPosition.reset();
     LastWorldPositionReportTime = {};
@@ -922,7 +938,19 @@ void FClientFrontendRuntime::ProcessServerEvents()
                 if (hint != RemoteAppearanceHints.end()) { resolvedAppearance = &hint->second; }
                 RenderDevice.UpsertRemoteGamePlayer(MakeRemotePlayer(spawn->EntityId, spawn->Name, spawn->Position, resolvedAppearance));
             }
-            else if (const auto* move = std::get_if<FRemotePlayerMoveEvent>(&event.Payload)) { RenderDevice.UpsertRemoteGamePlayer(MakeRemotePlayer(move->EntityId, {}, move->Position)); }
+            else if (const auto* actorSpawn = std::get_if<FRemoteActorSpawnEvent>(&event.Payload))
+            {
+                if (!SferaProtocol::IsMonsterObjectType(actorSpawn->ObjectType)) { continue; }
+                const auto known = RemotePlayerNames.find(actorSpawn->EntityId);
+                if (known != RemotePlayerNames.end())
+                {
+                    const auto entity = RemotePlayerEntities.find(known->second);
+                    if (entity != RemotePlayerEntities.end() && entity->second == actorSpawn->EntityId) { RemotePlayerEntities.erase(entity); }
+                    RemotePlayerNames.erase(known);
+                }
+                RenderDevice.UpsertRemoteGameActor(MakeRemoteActor(*actorSpawn));
+            }
+            else if (const auto* move = std::get_if<FRemotePlayerMoveEvent>(&event.Payload)) { RenderDevice.UpdateRemoteGameEntityPosition(move->EntityId, FGameWorldPosition{move->Position.X, move->Position.Y, move->Position.Z, move->Position.Angle}); }
             else if (const auto* despawn = std::get_if<FRemotePlayerDespawnEvent>(&event.Payload))
             {
                 const auto known = RemotePlayerNames.find(despawn->EntityId);
@@ -932,11 +960,11 @@ void FClientFrontendRuntime::ProcessServerEvents()
                     if (entity != RemotePlayerEntities.end() && entity->second == despawn->EntityId) { RemotePlayerEntities.erase(entity); }
                     RemotePlayerNames.erase(known);
                 }
-                RenderDevice.RemoveRemoteGamePlayer(despawn->EntityId);
+                RenderDevice.RemoveRemoteGameEntity(despawn->EntityId);
             }
             else if (std::holds_alternative<FSessionClosedEvent>(event.Payload)) { sessionClosed = true; }
         }
-        if (sessionClosed) { RenderDevice.ClearRemoteGamePlayers(); }
+        if (sessionClosed) { RenderDevice.ClearRemoteGamePlayers(); RenderDevice.ClearRemoteGameActors(); }
     }
     if (sawNewRemotePlayer) { QueueAppearanceAnnouncement(3); }
     {

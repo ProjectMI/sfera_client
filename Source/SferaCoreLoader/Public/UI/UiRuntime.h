@@ -97,6 +97,7 @@ public:
     bool IsGameControlHidden(std::string_view window, int32 controlId) const;
     bool IsGameControlDisabled(std::string_view window, int32 controlId) const;
     float GameControlValue(std::string_view window, const FUiControlDef& control) const;
+    std::pair<float, float> AudioOptionVolumes() const;
     void SetGameControlValue(std::string_view window, const FUiControlDef& control, float value);
     void AdjustGameControlValue(std::string_view window, const FUiControlDef& control, int32 direction);
     float GameProgressRatio(std::string_view window, int32 controlId) const;
@@ -154,6 +155,8 @@ private:
     std::unordered_map<uint64, bool> GameControlChecks;
     std::unordered_map<uint64, std::string> GameEditValues;
     std::unordered_map<uint64, float> GameControlValues;
+    float SoundOptionVolume = 1.0f;
+    float MusicOptionVolume = 1.0f;
     std::unordered_map<uint64, bool> GameControlHidden;
     std::unordered_map<uint64, bool> GameControlDisabled;
     FUiActionState Actions;

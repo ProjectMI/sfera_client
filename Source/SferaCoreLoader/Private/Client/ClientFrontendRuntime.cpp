@@ -213,11 +213,13 @@ void FClientFrontendRuntime::StoreSavedLogin(bool enabled, const std::string& lo
 void FClientFrontendRuntime::CloseActiveServerSession()
 {
     NetworkComponent.CloseActiveSession();
+    SetMusicCue("mounts_1d");
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.ClearRemoteGamePlayers();
     }
     LastReportedWorldPosition.reset();
+    LastAudioListenerPosition.reset();
     LastWorldPositionReportTime = {};
     NextWorldPositionReportTime = {};
     PendingWorldPositionWarmupReports = 0;
@@ -318,6 +320,19 @@ bool FClientFrontendRuntime::PumpUi()
     return open && Window.IsOpen();
 }
 
+
+FStatus FClientFrontendRuntime::InitializeAudio(const FResourceManager& resources, float soundVolume, float musicVolume)
+{
+    FStatus status = Audio.Initialize(resources, Log);
+    if (!status.IsOk()) { return status; }
+    Settings.SoundVolume = std::clamp(soundVolume, 0.0f, 1.0f);
+    Settings.MusicVolume = std::clamp(musicVolume, 0.0f, 1.0f);
+    ApplyAudioVolumes(Settings.SoundVolume, Settings.MusicVolume);
+    SetMusicCue("mounts_1d", 0.25f);
+    AddStatusLine("audio: miniaudio runtime ready");
+    return status;
+}
+
 FStatus FClientFrontendRuntime::InitializeUiResources(const FResourceManager& TerrainResources, const FUiBootstrapDesc& desc)
 {
     if (!ShellCreated) { return FStatus::Error(EStatusCode::RuntimeError, "frontend shell is not created"); }
@@ -380,16 +395,42 @@ void FClientFrontendRuntime::RenderFrame(float deltaSeconds, FGameMovementInput 
     GetClientRect(Window.Handle(), &client);
     FStatus status;
     std::optional<FGameWorldPosition> currentWorldPosition;
+    float cameraFacing = 0.0f;
     {
         std::lock_guard<std::recursive_mutex> uiLock(UiMutex);
         std::lock_guard<std::mutex> renderLock(RenderMutex);
-        Ui.SetCompassHeading(RenderDevice.GameWorldCameraFacing());
+        cameraFacing = RenderDevice.GameWorldCameraFacing();
+        Ui.SetCompassHeading(cameraFacing);
         Ui.Tick(deltaSeconds);
         status = RenderDevice.RenderUiDesktop(*RenderResources, RenderWorldScene, Ui, client, deltaSeconds, gameInput, lookDeltaX, lookDeltaY, jumpRequested, Log);
         if (Ui.Mode() == EUiRuntimeMode::Game) { currentWorldPosition = RenderDevice.CurrentGameWorldPosition(); }
     }
+    if (currentWorldPosition)
+    {
+        FAudioListenerState listener;
+        listener.Position = {static_cast<float>(currentWorldPosition->X), static_cast<float>(currentWorldPosition->Y), static_cast<float>(currentWorldPosition->Z)};
+        listener.Forward = {std::sin(cameraFacing), 0.0f, std::cos(cameraFacing)};
+        if (LastAudioListenerPosition && deltaSeconds > 0.0001f)
+        {
+            const float vx = (listener.Position.X - LastAudioListenerPosition->X) / deltaSeconds;
+            const float vy = (listener.Position.Y - LastAudioListenerPosition->Y) / deltaSeconds;
+            const float vz = (listener.Position.Z - LastAudioListenerPosition->Z) / deltaSeconds;
+            if (vx * vx + vy * vy + vz * vz <= 2500.0f) { listener.Velocity = {vx, vy, vz}; }
+        }
+        LastAudioListenerPosition = listener.Position;
+        Audio.SetListener(listener);
+    }
+    else { LastAudioListenerPosition.reset(); }
 
     TrySendAppearanceAnnouncement();
+
+    const auto musicNow = std::chrono::steady_clock::now();
+    if (GameState.Session().Connected && GameState.Session().InWorld && (NextWorldMusicEvaluationTime.time_since_epoch().count() == 0 || musicNow >= NextWorldMusicEvaluationTime))
+    {
+        NextWorldMusicEvaluationTime = musicNow + std::chrono::seconds(1);
+        UpdateWorldMusic();
+    }
+    else if (!GameState.Session().InWorld) { NextWorldMusicEvaluationTime = {}; }
 
     if (currentWorldPosition && NetworkComponent.HasActiveSession())
     {
@@ -507,9 +548,11 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
     if (action.empty()) { return; }
     AddStatusLine("ui: " + action);
     const FClientUiCommand command = UiActions.Decode(action);
+    std::optional<EAudioEvent> sound = EAudioEvent::UiClick;
     switch (command.Action)
     {
-    case EClientUiAction::Quit: Shutdown(); break;
+    case EClientUiAction::None: sound.reset(); break;
+    case EClientUiAction::Quit: sound.reset(); Shutdown(); break;
     case EClientUiAction::SaveLoginOn:
     {
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
@@ -523,7 +566,7 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
         break;
     }
     case EClientUiAction::Login: BeginLoginRequest(); break;
-    case EClientUiAction::Registration: AddStatusLine(Settings.RegistrationUrl.empty() ? "registration: URL absent in connectn.cfg" : "registration: " + Settings.RegistrationUrl); break;
+    case EClientUiAction::Registration: sound = EAudioEvent::UiLink; AddStatusLine(Settings.RegistrationUrl.empty() ? "registration: URL absent in connectn.cfg" : "registration: " + Settings.RegistrationUrl); break;
     case EClientUiAction::CharacterSlotSelected:
     {
         SynchronizeGameState(GameState.SetSelectedCharacterSlot(command.Value));
@@ -532,10 +575,11 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
     }
     case EClientUiAction::CharacterEnter: BeginCharacterEnterRequest(); break;
     case EClientUiAction::CharacterCreateConfirmed: BeginCharacterCreateRequest(); break;
-    case EClientUiAction::CharacterDialogChanged: RepaintDirty = true; break;
+    case EClientUiAction::CharacterDialogChanged: sound.reset(); RepaintDirty = true; break;
     case EClientUiAction::CharacterDeleteNameRequired: AddStatusLine("character: type selected character name to confirm delete"); RepaintDirty = true; break;
     case EClientUiAction::CharacterBackRequested:
     {
+        sound = EAudioEvent::UiWindowOpen;
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.ShowExitConfirmation();
         RepaintDirty = true;
@@ -553,6 +597,7 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
     }
     case EClientUiAction::CharacterDeleteRequested:
     {
+        sound = EAudioEvent::UiWindowOpen;
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.ShowDeleteConfirmation();
         RepaintDirty = true;
@@ -561,6 +606,7 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
     case EClientUiAction::CharacterDeleteConfirmed: BeginCharacterDeleteRequest(); break;
     case EClientUiAction::WindowCommand:
     {
+        sound.reset();
         bool currentlyOpen = false;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
@@ -573,11 +619,17 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
             changed = Ui.SetGameWindowVisible(command.WindowName, targetOpen);
         }
-        if (changed || transition.Changed) { AddStatusLine("ui window " + command.WindowName + (transition.Open ? ": opened" : ": closed")); RepaintDirty = true; }
+        if (changed || transition.Changed)
+        {
+            Audio.PlayEvent(targetOpen ? EAudioEvent::UiWindowOpen : EAudioEvent::UiWindowClose);
+            AddStatusLine("ui window " + command.WindowName + (transition.Open ? ": opened" : ": closed"));
+            RepaintDirty = true;
+        }
         break;
     }
     case EClientUiAction::WindowReplace:
     {
+        sound.reset();
         bool changed = false;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
@@ -586,7 +638,12 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
         }
         const FUiWindowTransition closeTransition = UiWindows.Close(command.WindowName);
         const FUiWindowTransition openTransition = UiWindows.Open(command.SecondaryWindowName, command.Value);
-        if (changed || closeTransition.Changed || openTransition.Changed) { AddStatusLine("ui window: " + command.WindowName + " -> " + command.SecondaryWindowName); RepaintDirty = true; }
+        if (changed || closeTransition.Changed || openTransition.Changed)
+        {
+            Audio.PlayEvent(EAudioEvent::UiWindowOpen);
+            AddStatusLine("ui window: " + command.WindowName + " -> " + command.SecondaryWindowName);
+            RepaintDirty = true;
+        }
         break;
     }
     case EClientUiAction::GameControl:
@@ -616,16 +673,19 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
         {
             std::string target;
             std::string other;
+            bool opened = false;
             {
                 std::lock_guard<std::recursive_mutex> lock(UiMutex);
                 target = GameState.Clan().Available ? "clan" : "newclan";
                 other = target == "clan" ? "newclan" : "clan";
                 Ui.SetGameWindowVisible(other, false);
+                opened = !Ui.IsGameWindowVisible(target);
                 Ui.ToggleGameWindow(target);
             }
             UiWindows.Close(other);
             if (UiWindows.IsOpen(target)) { UiWindows.Close(target); }
             else { UiWindows.Open(target); }
+            sound = opened ? EAudioEvent::UiWindowOpen : EAudioEvent::UiWindowClose;
             AddStatusLine("ui window " + target + ": toggled");
             RepaintDirty = true;
             break;
@@ -636,6 +696,7 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
     }
     case EClientUiAction::GameHelp:
     {
+        sound = EAudioEvent::UiWindowOpen;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
             Ui.SetHelpTopic(command.Payload.empty() ? command.WindowName : command.Payload);
@@ -665,11 +726,13 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
             AddStatusLine("chat: message sent, channel=" + std::to_string(channel));
         }
         else if (!message.empty()) { AddStatusLine("chat: send failed"); }
+        else { sound.reset(); }
         RepaintDirty = true;
         break;
     }
     case EClientUiAction::GameLeaveRequested:
     {
+        sound = EAudioEvent::UiWindowOpen;
         std::lock_guard<std::recursive_mutex> lock(UiMutex);
         Ui.ShowGameExitConfirmation();
         RepaintDirty = true;
@@ -685,8 +748,8 @@ void FClientFrontendRuntime::ProcessUiAction(const std::string& action)
         RepaintDirty = true;
         break;
     }
-    default: break;
     }
+    if (sound) { Audio.PlayEvent(*sound); }
 }
 
 void FClientFrontendRuntime::BeginLoginRequest()
@@ -851,6 +914,7 @@ void FClientFrontendRuntime::PollCharacterResult()
         }
         NetworkComponent.StartWorldEventPump();
         QueueAppearanceAnnouncement(3);
+        UpdateWorldMusic();
     }
     else
     {
@@ -1008,6 +1072,170 @@ void FClientFrontendRuntime::ProcessServerEvents()
     }
 }
 
+
+void FClientFrontendRuntime::ApplyAudioVolumes(float soundVolume, float musicVolume)
+{
+    soundVolume = std::clamp(soundVolume, 0.0f, 1.0f);
+    musicVolume = std::clamp(musicVolume, 0.0f, 1.0f);
+    const bool alreadyInitialized = AppliedSoundVolume >= 0.0f && AppliedMusicVolume >= 0.0f;
+    bool changed = false;
+    if (std::abs(soundVolume - AppliedSoundVolume) > 0.0001f)
+    {
+        Audio.SetBusVolume(EAudioBus::Ui, soundVolume);
+        Audio.SetBusVolume(EAudioBus::Effects, soundVolume);
+        Audio.SetBusVolume(EAudioBus::Creatures, soundVolume);
+        Audio.SetBusVolume(EAudioBus::Ambience, soundVolume);
+        AppliedSoundVolume = soundVolume;
+        Settings.SoundVolume = soundVolume;
+        changed = true;
+    }
+    if (std::abs(musicVolume - AppliedMusicVolume) > 0.0001f)
+    {
+        Audio.SetBusVolume(EAudioBus::Music, musicVolume);
+        AppliedMusicVolume = musicVolume;
+        Settings.MusicVolume = musicVolume;
+        changed = true;
+    }
+    if (changed && alreadyInitialized)
+    {
+        AudioSettingsDirty = true;
+        LastAudioSettingsChange = std::chrono::steady_clock::now();
+    }
+}
+
+void FClientFrontendRuntime::FlushAudioSettings(bool force)
+{
+    if (!AudioSettingsDirty) { return; }
+    const auto now = std::chrono::steady_clock::now();
+    if (!force && now - LastAudioSettingsChange < std::chrono::milliseconds(350)) { return; }
+    const FStatus status = SaveClientAudioSettings(Settings.SoundVolume, Settings.MusicVolume);
+    AudioSettingsDirty = false;
+    if (!Log) { return; }
+    if (status.IsOk()) { Log->Info("audio settings saved: sound=" + std::to_string(static_cast<int32>(std::lround(Settings.SoundVolume * 100.0f))) + ", music=" + std::to_string(static_cast<int32>(std::lround(Settings.MusicVolume * 100.0f)))); }
+    else { Log->Warning("audio settings save failed: " + status.Message()); }
+}
+
+void FClientFrontendRuntime::SetMusicCue(std::string cue, float fadeSeconds)
+{
+    cue = Common::ToLower(std::move(cue));
+    if (!Audio.IsInitialized()) { ActiveMusicCue.clear(); return; }
+    if (cue.empty() || cue == ActiveMusicCue) { return; }
+    Audio.PlayMusic(FMusicRequest{cue, 1.0f, std::max(0.0f, fadeSeconds)});
+    ActiveMusicCue = std::move(cue);
+    if (Log) { Log->Info("music cue requested: " + ActiveMusicCue); }
+}
+
+std::string FClientFrontendRuntime::SelectWorldMusicCue() const
+{
+    const FGameWorldState& world = GameState.World();
+    if (!world.HasPosition || !RenderWorldScene) { return "mounts_1d"; }
+    double positionX = world.Position.X;
+    double positionZ = world.Position.Z;
+    {
+        std::lock_guard<std::mutex> renderLock(RenderMutex);
+        if (const auto currentPosition = RenderDevice.CurrentGameWorldPosition())
+        {
+            positionX = currentPosition->X;
+            positionZ = currentPosition->Z;
+        }
+    }
+    const int32 worldX = static_cast<int32>(positionX);
+    const int32 worldZ = static_cast<int32>(positionZ);
+    const int32 mapX = (worldX + 4000) / 100;
+    const int32 mapZ = (3999 - worldZ) / 100;
+    const FWorldMapCell* cell = RenderWorldScene->FindMapRegionCell(mapX, mapZ);
+    if (!cell) { return "mounts_1d"; }
+    const std::string tile = Common::ToLower(cell->TileName);
+    const auto starts = [&tile](std::string_view prefix) { return tile.starts_with(prefix); };
+    const FWorldContourRecord* markerContour = RenderWorldScene->FindContourAt(static_cast<float>(worldX), static_cast<float>(worldZ), 4000, 4099);
+    const FWorldContourRecord* settlementContour = RenderWorldScene->FindContourAt(static_cast<float>(worldX), static_cast<float>(worldZ), 3001, 3002);
+    int32 marker = markerContour ? markerContour->SortKey : 0;
+    int32 region = 1;
+    std::string regionSource = markerContour ? "contour" : "tile";
+    if (marker > 0)
+    {
+        switch (marker)
+        {
+        case 4001: region = 9; break;
+        case 4002: region = 2; break;
+        case 4010: region = 10; break;
+        case 4011: region = 11; break;
+        case 4012: region = 12; break;
+        case 4004: region = 13; break;
+        default: region = 9; break;
+        }
+    }
+    else if (starts("town_ph00")) { region = 14; }
+    else if (starts("cemetry")) { region = 8; }
+    else if (starts("forest") || starts("patch2")) { region = 7; }
+    else if (starts("castle") || starts("cc_")) { region = 3; }
+    else if (starts("river") || starts("lake")) { region = 4; }
+    else if (starts("cliff")) { region = 5; }
+    else if (starts("mount")) { region = 6; }
+    else if (starts("town")) { region = 2; }
+    FWorldMusicRegionEvidence staticEvidence;
+    if (marker == 0 && region == 1)
+    {
+        std::lock_guard<std::mutex> renderLock(RenderMutex);
+        staticEvidence = RenderDevice.QueryMusicRegionEvidence(static_cast<float>(worldX), static_cast<float>(worldZ), 60.0f);
+        if (!staticEvidence.Available) { return ActiveMusicCue.empty() ? "mounts_1d" : ActiveMusicCue; }
+        const bool settlementConfirmed = settlementContour && staticEvidence.CityScore >= 10 && staticEvidence.CityAnchorCount >= 2;
+        const bool denseCityCluster = staticEvidence.CityScore >= 25 && staticEvidence.CityAnchorCount >= 5;
+        if (settlementConfirmed || denseCityCluster)
+        {
+            marker = 4002;
+            region = 2;
+            regionSource = settlementConfirmed ? "settlement_contour+static_city_evidence" : "static_city_evidence";
+        }
+    }
+    const FGameClockState& clock = GameState.Clock();
+    const float hour = clock.Known ? clock.DayFraction * 24.0f : 12.0f;
+    const bool day = hour >= 7.0f && hour < 19.0f;
+    std::string cue;
+    std::string_view regionName = "desert";
+    switch (region)
+    {
+    case 2: regionName = "city"; cue = day ? "city_1d" : "city_1n"; break;
+    case 3:
+    case 10: regionName = "castle"; cue = day ? "castle_1" : "castle_2"; break;
+    case 4:
+    case 13: regionName = "water"; cue = day ? "water_1" : "water_2"; break;
+    case 5: regionName = "cliff"; cue = "mounts_1n"; break;
+    case 6:
+    case 11: regionName = "mountains"; cue = day ? "mounts_1d" : "mounts_1n"; break;
+    case 7: regionName = "forest"; cue = day ? "forest_1d" : "forest_1n"; break;
+    case 8:
+    case 12: regionName = "graveyard"; cue = day ? "grave_1d" : "grave_1n"; break;
+    case 9: regionName = "special_desert"; cue = day ? "desert_2d" : "desert_2n"; break;
+    case 14: regionName = "special_city"; cue = day ? "city_2f" : "mounts_1d"; break;
+    default: cue = day ? "desert_1d" : "desert_1n"; break;
+    }
+    if (Log && cue != ActiveMusicCue)
+    {
+        const int32 spanX = std::max(1, static_cast<int32>(cell->Reserved & 0xff));
+        const int32 spanZ = std::max(1, static_cast<int32>((cell->Reserved >> 8) & 0xff));
+        std::string context = "world music context: world_x=" + std::to_string(worldX) + ", world_z=" + std::to_string(worldZ) + ", map_x=" + std::to_string(mapX) + ", map_z=" + std::to_string(mapZ) + ", tile=" + tile + ", tile_anchor=" + std::to_string(cell->X) + "," + std::to_string(cell->Z) + ", expanded=" + ((cell->X != mapX || cell->Z != mapZ) ? "yes" : "no") + ", tile_span=" + std::to_string(spanX) + "x" + std::to_string(spanZ) + ", region_source=" + regionSource + ", marker=" + std::to_string(marker);
+        if (markerContour) { context += ", contour_index=" + std::to_string(markerContour->Index); }
+        if (settlementContour) { context += ", settlement_marker=" + std::to_string(settlementContour->SortKey) + ", settlement_contour_index=" + std::to_string(settlementContour->Index); }
+        if (staticEvidence.Available)
+        {
+            context += ", city_score=" + std::to_string(staticEvidence.CityScore) + ", city_anchors=" + std::to_string(staticEvidence.CityAnchorCount);
+            if (!staticEvidence.NearestCityAnchor.empty()) { context += ", nearest_city_anchor=" + staticEvidence.NearestCityAnchor + ", nearest_city_distance=" + std::to_string(static_cast<int32>(std::lround(staticEvidence.NearestCityAnchorDistance))); }
+        }
+        context += ", region=" + std::string(regionName) + ", period=" + (day ? "day" : "night") + ", cue=" + cue;
+        Log->Info(context);
+    }
+    return cue;
+}
+
+void FClientFrontendRuntime::UpdateWorldMusic()
+{
+    if (!GameState.Session().Connected || !GameState.Session().InWorld) { SetMusicCue("mounts_1d"); return; }
+    const std::string selectedCue = SelectWorldMusicCue();
+    if (Log && selectedCue != ActiveMusicCue) { Log->Info("world music selected by SelectWorldMusicCue: cue=" + selectedCue); }
+    SetMusicCue(selectedCue);
+}
+
 void FClientFrontendRuntime::SynchronizeGameState(FGameStateChangeMask changes)
 {
     if (changes == GameStateChange::None) { return; }
@@ -1017,8 +1245,11 @@ void FClientFrontendRuntime::SynchronizeGameState(FGameStateChangeMask changes)
     const FGameMapState& map = GameState.Map();
     const FGameClanState& clan = GameState.Clan();
 
+    if ((changes & (GameStateChange::Session | GameStateChange::WorldPosition | GameStateChange::Clock | GameStateChange::Map)) != 0) { UpdateWorldMusic(); }
+
     if ((changes & GameStateChange::Clock) != 0)
     {
+        Audio.SetGameTimeHours(clock.Known ? clock.DayFraction * 24.0f : -1.0f);
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         if (clock.Known) { RenderDevice.SetServerGameTime(clock.DayFraction); }
         else { RenderDevice.ClearServerGameTime(); }
@@ -1081,9 +1312,13 @@ FStatus FClientFrontendRuntime::RunEventLoop()
 
     LastPaint = std::chrono::steady_clock::now();
     auto LastFrameStart = std::chrono::steady_clock::now();
+    auto lastAudioUpdate = LastFrameStart;
 
     while (Window.IsOpen() && Window.PumpMessages())
     {
+        const auto audioUpdateTime = std::chrono::steady_clock::now();
+        Audio.Update(ClampFrameDelta(SecondsBetween(lastAudioUpdate, audioUpdateTime)));
+        lastAudioUpdate = audioUpdateTime;
         FInputSnapshot input = Window.ConsumeInputFrame();
         RECT client{};
 
@@ -1094,11 +1329,15 @@ FStatus FClientFrontendRuntime::RunEventLoop()
 
         bool inputChanged = false;
         std::string action;
+        std::pair<float, float> audioVolumes;
         {
             std::lock_guard<std::recursive_mutex> lock(UiMutex);
             inputChanged = Ui.Input().HandleInputFrame(input, client, Log);
             action = Ui.ConsumeLastAction();
+            audioVolumes = Ui.AudioOptionVolumes();
         }
+        ApplyAudioVolumes(audioVolumes.first, audioVolumes.second);
+        FlushAudioSettings(false);
 
         if (!action.empty())
         {
@@ -1161,12 +1400,17 @@ FStatus FClientFrontendRuntime::RunEventLoop()
         Log->Info("frontend event loop finished");
     }
 
+    FlushAudioSettings(true);
+
     return FStatus::Ok();
 }
 
 void FClientFrontendRuntime::Shutdown()
 {
+    FlushAudioSettings(true);
     NetworkComponent.Shutdown();
+    Audio.Shutdown();
+    ActiveMusicCue.clear();
     {
         std::lock_guard<std::mutex> renderLock(RenderMutex);
         RenderDevice.Shutdown();

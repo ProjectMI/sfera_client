@@ -1,5 +1,6 @@
 #include "Client/ClientSettings.h"
 #include "Common/StringUtils.h"
+#include "FileSystem/PathUtils.h"
 
 namespace
 {
@@ -12,6 +13,15 @@ namespace
     {
         auto value = config.FindString(key);
         return value ? Common::Trim(*value) : fallback;
+    }
+    float ReadVolumeSetting(const FConfigService& config, std::string_view key, float fallback)
+    {
+        const FConfigDocument* audioConfig = config.FindConfig("sfera_audio.cfg");
+        auto value = audioConfig ? audioConfig->FindInt(key) : std::nullopt;
+        if (!value) { value = config.FindInt(key); }
+        if (!value) { return fallback; }
+        const float normalized = static_cast<float>(*value) / 100.0f;
+        return std::clamp(normalized, 0.0f, 1.0f);
     }
     std::optional<uint16> ReadPort(const FConfigService& config)
     {
@@ -62,6 +72,8 @@ FClientSettings LoadClientSettings(const FConfigService& config)
     settings.Lang = ReadIntSetting(config, "LANG", settings.Lang);
     settings.ConnectType = ReadIntSetting(config, "CONNECT_TYPE", settings.ConnectType);
     settings.Depth = ReadIntSetting(config, "DEPTH", settings.Depth);
+    settings.SoundVolume = ReadVolumeSetting(config, "SNDVOL", settings.SoundVolume);
+    settings.MusicVolume = ReadVolumeSetting(config, "MUSVOL", settings.MusicVolume);
     settings.RegistrationUrl = ReadStringSetting(config, "REG_SRV");
     auto host = ReadHost(config);
     auto port = ReadPort(config);
@@ -90,5 +102,20 @@ FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings)
     desc.LoginBackgroundTexture = english ? (sphereOne ? "xadd/login_eng_s1.dds" : "xadd/login_eng_sp.dds") : (sphereOne ? "xadd/login_rus_s1.dds" : "xadd/login_rus_sp.dds");
     desc.ConnectionWindowResource = "effects/connection.ui";
     desc.PickPersonWindowResource = "effects/pickpers.ui";
+    desc.SoundVolume = settings.SoundVolume;
+    desc.MusicVolume = settings.MusicVolume;
     return desc;
+}
+
+FStatus SaveClientAudioSettings(float soundVolume, float musicVolume)
+{
+    const FPath path = PathUtils::GetExecutableDirectory() / "sfera_audio.cfg";
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output) { return FStatus::Error(EStatusCode::IoError, "cannot open audio settings for writing: " + path.string()); }
+    const int32 soundPercent = static_cast<int32>(std::lround(std::clamp(soundVolume, 0.0f, 1.0f) * 100.0f));
+    const int32 musicPercent = static_cast<int32>(std::lround(std::clamp(musicVolume, 0.0f, 1.0f) * 100.0f));
+    output << "SNDVOL = " << soundPercent << '\n' << "MUSVOL = " << musicPercent << '\n';
+    output.flush();
+    if (!output) { return FStatus::Error(EStatusCode::IoError, "cannot save audio settings: " + path.string()); }
+    return FStatus::Ok();
 }

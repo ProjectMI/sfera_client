@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <Filter Include="Source">
@@ -141,6 +141,15 @@
     </Filter>
     <Filter Include="Source\SferaCoreLoader\Public\Components\State">
       <UniqueIdentifier>{6BACA309-08D3-5474-978B-6902F126B2E2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Private\Components\Audio">
+      <UniqueIdentifier>{3E6BE4AE-4526-5676-B914-8EC8C249612B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\Public\Components\Audio">
+      <UniqueIdentifier>{75B867EE-2F87-5610-829D-150876630413}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SferaCoreLoader\ThirdParty">
+      <UniqueIdentifier>{855AAB1A-FC3B-5A81-ACBF-A6EA2506C82F}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -332,6 +341,18 @@
     </ClCompile>
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\State\GameState.cpp">
       <Filter>Source\SferaCoreLoader\Private\Components\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\AudioSystem.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\LegacyAudioResolver.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\LegacyAudioDefinitionLoader.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\MiniaudioBackend.cpp">
+      <Filter>Source\SferaCoreLoader\Private\Components\Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -581,5 +602,25 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\State\GameState.h">
       <Filter>Source\SferaCoreLoader\Public\Components\State</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\AudioTypes.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\AudioSystem.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\LegacyAudioResolver.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\LegacyAudioDefinitionLoader.h">
+      <Filter>Source\SferaCoreLoader\Public\Components\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SferaCoreLoader\ThirdParty\miniaudio.h">
+      <Filter>Source\SferaCoreLoader\ThirdParty</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\ThirdParty\stb_vorbis.c">
+      <Filter>Source\SferaCoreLoader\ThirdParty</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

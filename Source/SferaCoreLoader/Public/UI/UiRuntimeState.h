@@ -54,6 +54,8 @@ struct FUiBootstrapDesc
     int32 Lang = 0;
     int32 ChatListFont = 4;
     int32 ChatEditFont = 4;
+    float SoundVolume = 1.0f;
+    float MusicVolume = 1.0f;
 };
 
 struct FCharacterUiAppearance 

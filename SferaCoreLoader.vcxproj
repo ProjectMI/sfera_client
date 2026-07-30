@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -45,7 +45,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\ThirdParty;$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Core/Pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)SferaCoreLoader.pch</PrecompiledHeaderOutputFile>
@@ -67,7 +67,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Source\SferaCoreLoader\ThirdParty;$(SolutionDir)Source\SferaCoreLoader\Public;$(SolutionDir)Source\SferaCoreLoader\Private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Core/Pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)SferaCoreLoader.pch</PrecompiledHeaderOutputFile>
@@ -148,8 +148,24 @@
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\GamePacketDispatcher.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\Network\ServerEventQueue.cpp" />
     <ClCompile Include="Source\SferaCoreLoader\Private\Components\State\GameState.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\AudioSystem.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\LegacyAudioResolver.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\LegacyAudioDefinitionLoader.cpp" />
+    <ClCompile Include="Source\SferaCoreLoader\Private\Components\Audio\MiniaudioBackend.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles />
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\SferaCoreLoader\ThirdParty\stb_vorbis.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles />
+      <CompileAs>CompileAsC</CompileAs>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\SferaCoreLoader\Public\Client\ClientFrontendRuntime.h" />
@@ -234,5 +250,10 @@
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEvent.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\Network\ServerEventQueue.h" />
     <ClInclude Include="Source\SferaCoreLoader\Public\Components\State\GameState.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\AudioTypes.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\AudioSystem.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\LegacyAudioResolver.h" />
+    <ClInclude Include="Source\SferaCoreLoader\Public\Components\Audio\LegacyAudioDefinitionLoader.h" />
+    <ClInclude Include="Source\SferaCoreLoader\ThirdParty\miniaudio.h" />
   </ItemGroup>
 </Project>

@@ -21,6 +21,8 @@ FUiRuntime::~FUiRuntime()
 FStatus FUiRuntime::Initialize(const FResourceManager& resources, const FUiBootstrapDesc& desc, FLogger* logger)
 {
     Bootstrap = desc;
+    SoundOptionVolume = std::clamp(Bootstrap.SoundVolume, 0.0f, 1.0f);
+    MusicOptionVolume = std::clamp(Bootstrap.MusicVolume, 0.0f, 1.0f);
     auto strings = DocumentParser.LoadStringTableFromResource(resources, Bootstrap.StringsResource);
 
     if (!strings.IsOk()) { return strings.Status(); }
@@ -917,7 +919,8 @@ float FUiRuntime::GameControlValue(std::string_view window, const FUiControlDef&
 {
     auto it = GameControlValues.find(GameUiKey(window, control.Id));
     if (it != GameControlValues.end()) { return it->second; }
-    if (Common::EqualsNoCase(window, "sound_options") && (control.Id == 7 || control.Id == 8)) { return 75.0f; }
+    if (Common::EqualsNoCase(window, "sound_options") && control.Id == 7) { return MusicOptionVolume * 100.0f; }
+    if (Common::EqualsNoCase(window, "sound_options") && control.Id == 8) { return SoundOptionVolume * 100.0f; }
     if (Common::EqualsNoCase(window, "gfx_options"))
     {
         if (control.Id == 15) { return 2.0f; }
@@ -929,9 +932,18 @@ float FUiRuntime::GameControlValue(std::string_view window, const FUiControlDef&
     return static_cast<float>(std::clamp(control.ProgressPos, control.RangeMin, control.RangeMax));
 }
 
+std::pair<float, float> FUiRuntime::AudioOptionVolumes() const
+{
+    return {SoundOptionVolume, MusicOptionVolume};
+}
+
 void FUiRuntime::SetGameControlValue(std::string_view window, const FUiControlDef& control, float value)
 {
-    GameControlValues[GameUiKey(window, control.Id)] = std::clamp(value, static_cast<float>(control.RangeMin), static_cast<float>(control.RangeMax));
+    const float clamped = std::clamp(value, static_cast<float>(control.RangeMin), static_cast<float>(control.RangeMax));
+    GameControlValues[GameUiKey(window, control.Id)] = clamped;
+    if (!Common::EqualsNoCase(window, "sound_options")) { return; }
+    if (control.Id == 7) { MusicOptionVolume = std::clamp(clamped * 0.01f, 0.0f, 1.0f); }
+    else if (control.Id == 8) { SoundOptionVolume = std::clamp(clamped * 0.01f, 0.0f, 1.0f); }
 }
 
 void FUiRuntime::AdjustGameControlValue(std::string_view window, const FUiControlDef& control, int32 direction)

@@ -49,6 +49,15 @@ struct FRemoteGameActor
     FGameWorldPosition Position;
 };
 
+struct FWorldMusicRegionEvidence
+{
+    bool Available = false;
+    int32 CityScore = 0;
+    int32 CityAnchorCount = 0;
+    std::string NearestCityAnchor;
+    float NearestCityAnchorDistance = 0.0f;
+};
+
 class FD3D9GameWorldScene
 {
 public:
@@ -78,6 +87,7 @@ public:
     void SetGameTime(float dayFraction);
     void SetPlayerWorldPosition(const FGameWorldPosition& position);
     std::optional<FGameWorldPosition> CurrentPlayerWorldPosition() const;
+    FWorldMusicRegionEvidence QueryMusicRegionEvidence(float worldX, float worldZ, float radius) const;
     void UpsertRemotePlayer(const FRemoteGamePlayer& player);
     void SetRemotePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance);
     void RemoveRemotePlayer(uint64 entityId);

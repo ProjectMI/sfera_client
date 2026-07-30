@@ -10,6 +10,8 @@ struct FClientSettings
     int32 Lang = 0;
     int32 ConnectType = 1;
     int32 Depth = 32;
+    float SoundVolume = 1.0f;
+    float MusicVolume = 1.0f;
     std::optional<FEndpoint> Endpoint;
     std::string RegistrationUrl;
     std::string Title = "Sphere";
@@ -17,3 +19,4 @@ struct FClientSettings
 
 FClientSettings LoadClientSettings(const FConfigService& config);
 FUiBootstrapDesc MakeUiBootstrapDesc(const FClientSettings& settings);
+FStatus SaveClientAudioSettings(float soundVolume, float musicVolume);

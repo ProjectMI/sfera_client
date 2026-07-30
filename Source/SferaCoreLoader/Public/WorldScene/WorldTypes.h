@@ -128,7 +128,9 @@ struct FWorldMapGrid
 	uint32 Height = 0; 
 	uint32 CellStride = 0; 
 	std::vector<FWorldMapCell> Cells; 
+	std::vector<FWorldMapCell> RegionCells;
 	size_t PresentCells = 0; 
+	size_t RegionExpandedCells = 0;
 	size_t ResolvedCells = 0; 
 	size_t ResolvedTerrainCells = 0; 
 	size_t PatchCatalogResolvedCells = 0; 
@@ -136,9 +138,15 @@ struct FWorldMapGrid
 	size_t UniqueTileNames = 0; 
 	const FWorldMapCell* Find(int32 x, int32 z) const 
 	{ 
-		if (!Loaded || x < 0 || z < 0 || static_cast<uint32>(x) >= Width || static_cast<uint32>(z) >= Height) { return nullptr; } 
+		if (!Loaded || x < 0 || z < 0 || static_cast<uint32>(x) >= Width || static_cast<uint32>(z) >= Height) { return nullptr; }
 		return &Cells[static_cast<size_t>(z) * Width + static_cast<size_t>(x)]; 
 	} 
+	const FWorldMapCell* FindRegion(int32 x, int32 z) const
+	{
+		if (!Loaded || x < 0 || z < 0 || static_cast<uint32>(x) >= Width || static_cast<uint32>(z) >= Height) { return nullptr; }
+		const size_t index = static_cast<size_t>(z) * Width + static_cast<size_t>(x);
+		return RegionCells.size() == Cells.size() ? &RegionCells[index] : &Cells[index];
+	}
 };
 
 struct FWorldContourRecord 
@@ -162,16 +170,16 @@ struct FWorldContourDatabase
 	size_t InvalidRecords = 0; 
 	float IndexCellSize = 64.0f; 
 	mutable bool IndexBuilt = false; 
-	mutable std::unordered_map<int64, std::vector<uint32>> IndexCells; 
+	mutable std::unordered_map<uint64, std::vector<uint32>> IndexCells;
 
 	static int32 FloorCell(float value, float cellSize) 
 	{ 
 		return static_cast<int32>(std::floor(value / cellSize)); 
 	} 
 
-	static int64 CellKey(int32 x, int32 y) 
+	static uint64 CellKey(int32 x, int32 y)
 	{ 
-		return (static_cast<int64>(x) << 32) ^ static_cast<uint32>(y); 
+		return (static_cast<uint64>(static_cast<uint32>(x)) << 32) | static_cast<uint32>(y);
 	} 
 
 	void BuildIndex() const 
@@ -202,6 +210,60 @@ struct FWorldContourDatabase
 		} 
 		IndexBuilt = true; 
 	} 
+
+	static bool ContainsPoint(const FWorldContourRecord& record, const FVector2& point)
+	{
+		if (record.Points.size() < 3 || !record.Bounds.Contains(point))
+		{
+			return false;
+		}
+		bool inside = false;
+		std::size_t previous = record.Points.size() - 1;
+		for (std::size_t current = 0; current < record.Points.size(); ++current)
+		{
+			const FVector2& a = record.Points[current];
+			const FVector2& b = record.Points[previous];
+			const bool crosses = (a.Y > point.Y) != (b.Y > point.Y);
+			if (crosses)
+			{
+				const float edgeX = (b.X - a.X) * (point.Y - a.Y) / (b.Y - a.Y) + a.X;
+				if (point.X < edgeX)
+				{
+					inside = !inside;
+				}
+			}
+			previous = current;
+		}
+		return inside;
+	}
+
+	const FWorldContourRecord* FindContaining(float x, float y, int32 minSortKey, int32 maxSortKey) const
+	{
+		if (minSortKey > maxSortKey)
+		{
+			return nullptr;
+		}
+		const FVector2 point{x, y};
+		const FBox2 pointBox{point, point};
+		const FWorldContourRecord* best = nullptr;
+		for (uint32 id : Query(pointBox))
+		{
+			if (id >= Records.size())
+			{
+				continue;
+			}
+			const FWorldContourRecord& record = Records[id];
+			if (record.SortKey < minSortKey || record.SortKey > maxSortKey || !ContainsPoint(record, point))
+			{
+				continue;
+			}
+			if (!best || record.SortKey > best->SortKey || (record.SortKey == best->SortKey && record.Index > best->Index))
+			{
+				best = &record;
+			}
+		}
+		return best;
+	}
 
 	std::vector<uint32> Query(FBox2 area) const 
 	{ 

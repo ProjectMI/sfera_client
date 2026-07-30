@@ -180,6 +180,11 @@ std::optional<FGameWorldPosition> FD3D9RenderDevice::CurrentGameWorldPosition() 
     return GameWorldScene.CurrentPlayerWorldPosition();
 }
 
+FWorldMusicRegionEvidence FD3D9RenderDevice::QueryMusicRegionEvidence(float worldX, float worldZ, float radius) const
+{
+    return GameWorldScene.QueryMusicRegionEvidence(worldX, worldZ, radius);
+}
+
 void FD3D9RenderDevice::UpsertRemoteGamePlayer(const FRemoteGamePlayer& player)
 {
     if (player.EntityId == 0) { return; }

@@ -601,7 +601,6 @@ bool FUiRuntimeInput::HandleInputFrame(const FInputSnapshot& input, const RECT& 
             const int32 clientW = std::max(1, static_cast<int32>(clientRect.right - clientRect.left));
             const int32 clientH = std::max(1, static_cast<int32>(clientRect.bottom - clientRect.top));
             const int32 width = std::max(1, GameWindowDefs[index].Rect.W);
-            const int32 height = std::max(1, GameWindowDefs[index].Rect.H);
             GameWindowPositions[index].X = std::clamp(input.MouseX - GameDragOffsetX, -width + 24, clientW - 24);
             GameWindowPositions[index].Y = std::clamp(input.MouseY - GameDragOffsetY, 0, clientH - 24);
             GameWindowPositionOverrides[index] = true;

@@ -418,6 +418,7 @@ struct FD3D9GameWorldScene::Impl
     IDirect3DTexture9* LoadCachedDdsTexture(const std::filesystem::path& Path);
     IDirect3DTexture9* LoadCachedDdsTextureFromBytes(const std::filesystem::path& Path, const FByteArray& Bytes);
     void LoadStaticPlacements();
+    FWorldMusicRegionEvidence QueryMusicRegionEvidence(float WorldX, float WorldZ, float Radius) const;
     StaticModelResource* EnsureStaticModelResource(const std::string& ModelName);
     std::unique_ptr<StaticModelResource> LoadStaticModelCpuBackedResource(
         const std::string& ModelName,

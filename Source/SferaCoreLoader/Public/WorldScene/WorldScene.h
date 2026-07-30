@@ -21,6 +21,8 @@ public:
     const FWorldMicrotextureRecord* FindMicrotextureByName(std::string_view name) const;
     const FWorldPatchRecord* FindPatchByCoord(int32 patchX, int32 patchZ) const;
     const FWorldMapCell* FindMapCell(int32 x, int32 z) const { return MapGrid.Find(x, z); }
+    const FWorldMapCell* FindMapRegionCell(int32 x, int32 z) const { return MapGrid.FindRegion(x, z); }
+    const FWorldContourRecord* FindContourAt(float x, float z, int32 minSortKey, int32 maxSortKey) const { return Contours.FindContaining(x, z, minSortKey, maxSortKey); }
     std::vector<uint32> QueryContours(FBox2 area);
     const FZoningManager& Zoning() const { return ZoningManager; }
     const std::vector<FWorldPatchRecord>& Patches() const { return PatchRecords; }

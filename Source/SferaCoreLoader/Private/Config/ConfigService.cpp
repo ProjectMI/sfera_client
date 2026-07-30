@@ -6,8 +6,8 @@ FConfigService::FConfigService(const FFileSystem& fileSystem) : FileSystem(fileS
 
 FStatus FConfigService::LoadKnownConfigs(FLogger* logger)
 {
-    constexpr std::array<std::string_view, 13> names = {
-        "config.cfg", "connect.cfg", "connectn.cfg", "servers.cfg", "debug.cfg", "control.cfg", "fonts.cfg", "Models/Materials.cfg", "materials.cfg", "Landscape/zoning.cfg", "Landscape/zoningHaron.cfg", "zoning.cfg", "zoningharon.cfg"
+    constexpr std::array<std::string_view, 14> names = {
+        "config.cfg", "connect.cfg", "connectn.cfg", "servers.cfg", "debug.cfg", "control.cfg", "fonts.cfg", "Models/Materials.cfg", "materials.cfg", "Landscape/zoning.cfg", "Landscape/zoningHaron.cfg", "zoning.cfg", "zoningharon.cfg", "sfera_audio.cfg"
     };
 
     for (std::string_view name : names)

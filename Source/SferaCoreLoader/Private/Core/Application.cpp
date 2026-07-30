@@ -35,6 +35,13 @@ int FApplication::Run()
         stage("building resource catalog", 0.18f);
         Resources = std::make_unique<FResourceManager>(FileSystem, Compression);
         Resources->BuildCatalog(&Logger);
+        stage("initializing audio runtime", 0.28f);
+        frontendStatus = frontend.InitializeAudio(*Resources, clientSettings.SoundVolume, clientSettings.MusicVolume);
+        if (!frontendStatus.IsOk())
+        {
+            Logger.Warning("audio runtime initialization failed: " + frontendStatus.Message());
+            frontend.AddStatusLine("audio unavailable: " + frontendStatus.Message());
+        }
         stage("loading game objects and model catalog", 0.34f);
         LoadWorldAndObjects();
         stage("initializing native components", 0.62f);

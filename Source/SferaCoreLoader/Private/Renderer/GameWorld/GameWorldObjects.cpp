@@ -1433,6 +1433,16 @@ std::vector<ParsedStaticPlacement> ParseStaticPlacementFile(const StaticPlacemen
     return placements;
 }
 
+int StaticCityAnchorWeight(std::string_view key)
+{
+    constexpr std::array<std::string_view, 9> strongPrefixes = {"mhouse", "tn4_build", "s_bld", "tn5_house", "t_house", "hrt_house", "rd_house", "tn2_h_", "hrt_sthouse"};
+    constexpr std::array<std::string_view, 7> boundaryPrefixes = {"tn4_tower", "tn4_wall", "tn4_gate", "m_wall", "hrt_wall", "hrt_tower", "hrt_tgate"};
+    if (std::any_of(strongPrefixes.begin(), strongPrefixes.end(), [key](std::string_view prefix) { return key.starts_with(prefix); })) { return 5; }
+    if (std::any_of(boundaryPrefixes.begin(), boundaryPrefixes.end(), [key](std::string_view prefix) { return key.starts_with(prefix); })) { return 2; }
+    if (key == "tn_banksign" || key == "tn_hotelsign") { return 3; }
+    return 0;
+}
+
 bool StartsWithNumberedPlacementName(std::string_view key, std::string_view prefix)
 {
     return key.size() > prefix.size() && key.starts_with(prefix) && std::isdigit(static_cast<unsigned char>(key[prefix.size()]));
@@ -2439,6 +2449,46 @@ void FD3D9GameWorldScene::Impl::BuildVisibleStaticRenderBatches()
     {
         QueueStaticRenderCellBake(cell);
     }
+}
+
+FWorldMusicRegionEvidence FD3D9GameWorldScene::Impl::QueryMusicRegionEvidence(float WorldX, float WorldZ, float Radius) const
+{
+    FWorldMusicRegionEvidence evidence;
+    evidence.Available = Initialized && !StaticPlacements.empty() && !StaticPlacementModels.empty();
+    if (!evidence.Available || Radius <= 0.0f) { return evidence; }
+    const float radiusSquared = Radius * Radius;
+    float nearestDistanceSquared = radiusSquared + 1.0f;
+    const auto [minCellX, maxCellX] = StaticRenderCellRange(WorldX, Radius, Config.TileSize);
+    const auto [minCellZ, maxCellZ] = StaticRenderCellRange(WorldZ, Radius, Config.TileSize);
+    for (int cellZ = minCellZ; cellZ <= maxCellZ; ++cellZ)
+    {
+        for (int cellX = minCellX; cellX <= maxCellX; ++cellX)
+        {
+            const auto cellIt = StaticPlacementIndicesByRenderCell.find(StaticRenderCellKey(cellX, cellZ));
+            if (cellIt == StaticPlacementIndicesByRenderCell.end()) { continue; }
+            for (std::size_t placementIndex : cellIt->second)
+            {
+                if (placementIndex >= StaticPlacements.size()) { continue; }
+                const StaticPlacement& placement = StaticPlacements[placementIndex];
+                if (placement.ModelId >= StaticPlacementModels.size()) { continue; }
+                const int weight = StaticCityAnchorWeight(StaticPlacementModels[placement.ModelId].Key);
+                if (weight == 0) { continue; }
+                const float dx = placement.Position.X - WorldX;
+                const float dz = placement.Position.Z - WorldZ;
+                const float distanceSquared = dx * dx + dz * dz;
+                if (distanceSquared > radiusSquared) { continue; }
+                evidence.CityScore += weight;
+                ++evidence.CityAnchorCount;
+                if (distanceSquared < nearestDistanceSquared)
+                {
+                    nearestDistanceSquared = distanceSquared;
+                    evidence.NearestCityAnchor = StaticPlacementModels[placement.ModelId].Key;
+                }
+            }
+        }
+    }
+    if (!evidence.NearestCityAnchor.empty()) { evidence.NearestCityAnchorDistance = std::sqrt(nearestDistanceSquared); }
+    return evidence;
 }
 
 void FD3D9GameWorldScene::Impl::PreloadStaticResourcesAround(float CenterX, float CenterY, float CenterZ, float Radius)

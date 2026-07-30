@@ -69,6 +69,11 @@ std::optional<FGameWorldPosition> FD3D9GameWorldScene::CurrentPlayerWorldPositio
     return ImplPtr ? ImplPtr->CurrentPlayerWorldPosition() : std::nullopt;
 }
 
+FWorldMusicRegionEvidence FD3D9GameWorldScene::QueryMusicRegionEvidence(float worldX, float worldZ, float radius) const
+{
+    return ImplPtr ? ImplPtr->QueryMusicRegionEvidence(worldX, worldZ, radius) : FWorldMusicRegionEvidence{};
+}
+
 void FD3D9GameWorldScene::UpsertRemotePlayer(const FRemoteGamePlayer& player)
 {
     if (ImplPtr) { ImplPtr->UpsertRemotePlayer(player); }

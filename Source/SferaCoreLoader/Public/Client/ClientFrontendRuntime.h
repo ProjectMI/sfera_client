@@ -1,5 +1,6 @@
 #pragma once
 #include "Client/ClientSettings.h"
+#include "Components/Audio/AudioSystem.h"
 #include "Components/Network/ClientNetworkComponent.h"
 #include "Components/State/GameState.h"
 #include "Components/UI/UiActionComponent.h"
@@ -30,6 +31,7 @@ public:
     void SetStage(std::string stage, float progress);
     void AddStatusLine(std::string line);
     bool PumpUi();
+    FStatus InitializeAudio(const FResourceManager& resources, float soundVolume, float musicVolume);
     FStatus InitializeUiResources(const FResourceManager& TerrainResources, const FUiBootstrapDesc& desc);
     FStatus InitializeD3D9(const FResourceManager& TerrainResources, const FWorldScene* worldScene = nullptr);
     void RenderFrame(float deltaSeconds = 0.0f, FGameMovementInput gameInput = FGameMovementInput{}, float lookDeltaX = 0.0f, float lookDeltaY = 0.0f, bool jumpRequested = false);
@@ -55,12 +57,18 @@ private:
     void QueueAppearanceAnnouncement(int32 count = 1);
     void TrySendAppearanceAnnouncement();
     void SynchronizeGameState(FGameStateChangeMask changes);
+    void ApplyAudioVolumes(float soundVolume, float musicVolume);
+    void FlushAudioSettings(bool force);
+    void SetMusicCue(std::string cue, float fadeSeconds = 1.0f);
+    void UpdateWorldMusic();
+    std::string SelectWorldMusicCue() const;
     static std::wstring Utf8ToWide(const std::string& text);
     FLogger* Log = nullptr;
     FWin64Window Window;
     FUiRuntime Ui;
     FD3D9RenderDevice RenderDevice;
     FClientNetworkComponent NetworkComponent;
+    FAudioSystem Audio;
     FUiActionComponent UiActions;
     FGameState GameState;
     FUiWindowStateComponent UiWindows;
@@ -84,8 +92,15 @@ private:
     uint64 AppliedRosterRevision = 0;
     uint64 AppliedWorldRevision = 0;
     std::optional<FGameWorldPosition> LastReportedWorldPosition;
+    std::optional<FAudioVector3> LastAudioListenerPosition;
+    std::string ActiveMusicCue;
+    float AppliedSoundVolume = -1.0f;
+    float AppliedMusicVolume = -1.0f;
+    bool AudioSettingsDirty = false;
+    std::chrono::steady_clock::time_point LastAudioSettingsChange{};
     std::chrono::steady_clock::time_point LastWorldPositionReportTime{};
     std::chrono::steady_clock::time_point NextWorldPositionReportTime{};
+    std::chrono::steady_clock::time_point NextWorldMusicEvaluationTime{};
     int32 PendingWorldPositionWarmupReports = 0;
     std::wstring LocalCharacterName;
     FCharacterCreationAppearance LocalCharacterAppearance{};

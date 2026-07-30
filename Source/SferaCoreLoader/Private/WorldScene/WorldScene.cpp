@@ -439,12 +439,14 @@ void FWorldScene::CatalogLandscapeResources(FLogger* logger)
 void FWorldScene::LoadRuntimeBinaries(FLogger* logger)
 {
     LoadMapGrid(logger);
+    LoadContours(logger);
+    ContoursLoaded = Contours.Loaded;
     LoadGrassMaps(logger);
     LoadSnowPath(logger);
 
     if (logger)
     {
-        logger->Info("WorldScene runtime binaries: contours=deferred, map_cells=" + std::to_string(MapGrid.PresentCells) + ", grass_maps=" + std::to_string(GrassDatabase.Patches.size()) + ", snow_points=" + std::to_string(SnowPath.CandidatePointCount));
+        logger->Info("WorldScene runtime binaries: contours=" + std::to_string(Contours.Records.size()) + ", map_cells=" + std::to_string(MapGrid.PresentCells) + ", grass_maps=" + std::to_string(GrassDatabase.Patches.size()) + ", snow_points=" + std::to_string(SnowPath.CandidatePointCount));
     }
 }
 
@@ -464,7 +466,7 @@ void FWorldScene::LoadContours(FLogger* logger)
 
     if (count > 200000 || expected > bytes.size())
     {
-        count = static_cast<uint32>(bytes.size() / recordSize);
+        count = static_cast<uint32>((bytes.size() - 4) / recordSize);
     }
 
     Contours.Loaded = true;
@@ -483,19 +485,15 @@ void FWorldScene::LoadContours(FLogger* logger)
         rec.SortKey = Common::I32LEOr(bytes, base + 0);
         rec.PointCount = std::clamp(Common::I32LEOr(bytes, base + 4), 0, 64);
         bool localInit = false;
-        size_t pointBase = base + 0x18;
 
         for (int32 p = 0; p < rec.PointCount; ++p)
         {
-            float x = Common::F32LEOr(bytes, pointBase + static_cast<size_t>(p) * 8);
-            float z = Common::F32LEOr(bytes, pointBase + static_cast<size_t>(p) * 8 + 4);
+            const float x = Common::F32LEOr(bytes, base + 0x18 + static_cast<size_t>(p) * 4);
+            const float z = Common::F32LEOr(bytes, base + 0x118 + static_cast<size_t>(p) * 4);
 
             if (!ReasonableWorldFloat(x) || !ReasonableWorldFloat(z)) { continue; }
 
-            FVector2 pt
-            {
-                x, z
-            };
+            const FVector2 pt{x, z};
             rec.Points.push_back(pt);
             ExpandBounds(rec.Bounds, pt, localInit);
             ExpandBounds(Contours.Bounds, pt, globalInit);
@@ -617,10 +615,32 @@ void FWorldScene::LoadMapGrid(FLogger* logger)
     }
 
     MapGrid.UniqueTileNames = uniqueNames.size();
+    MapGrid.RegionCells = MapGrid.Cells;
+    for (const FWorldMapCell& source : MapGrid.Cells)
+    {
+        if (!source.Present) { continue; }
+        const int32 spanX = std::max(1, static_cast<int32>(source.Reserved & 0xff));
+        const int32 spanZ = std::max(1, static_cast<int32>((source.Reserved >> 8) & 0xff));
+        const int32 firstZ = source.Z - spanZ + 1;
+        for (int32 z = firstZ; z <= source.Z; ++z)
+        {
+            if (z < 0 || static_cast<uint32>(z) >= MapGrid.Height) { continue; }
+            for (int32 x = source.X; x < source.X + spanX; ++x)
+            {
+                if (x < 0 || static_cast<uint32>(x) >= MapGrid.Width) { continue; }
+                const size_t targetIndex = static_cast<size_t>(z) * MapGrid.Width + static_cast<size_t>(x);
+                FWorldMapCell& target = MapGrid.RegionCells[targetIndex];
+                if (target.TileName != source.TileName || target.Reserved != source.Reserved) { ++MapGrid.RegionExpandedCells; }
+                target = source;
+                target.X = x;
+                target.Z = z;
+            }
+        }
+    }
 
     if (logger)
     {
-        logger->Info("WorldScene map grid loaded: cells=" + std::to_string(MapGrid.Cells.size()) + ", present=" + std::to_string(MapGrid.PresentCells) + ", resolved=" + std::to_string(MapGrid.ResolvedCells) + ", terrain_resolved=" + std::to_string(MapGrid.ResolvedTerrainCells) + ", patch_catalog_resolved=" + std::to_string(MapGrid.PatchCatalogResolvedCells) + ", missing_tile_refs=" + std::to_string(MapGrid.MissingTileRefs) + ", unique_tiles=" + std::to_string(MapGrid.UniqueTileNames) + ", cell_stride=0x16");
+        logger->Info("WorldScene map grid loaded: cells=" + std::to_string(MapGrid.Cells.size()) + ", present=" + std::to_string(MapGrid.PresentCells) + ", region_expanded=" + std::to_string(MapGrid.RegionExpandedCells) + ", resolved=" + std::to_string(MapGrid.ResolvedCells) + ", terrain_resolved=" + std::to_string(MapGrid.ResolvedTerrainCells) + ", patch_catalog_resolved=" + std::to_string(MapGrid.PatchCatalogResolvedCells) + ", missing_tile_refs=" + std::to_string(MapGrid.MissingTileRefs) + ", unique_tiles=" + std::to_string(MapGrid.UniqueTileNames) + ", cell_stride=0x16");
 
         if (!patchCatalogSamples.empty()) { logger->Warning("WorldScene map tile patch-catalog samples: " + Common::Join(patchCatalogSamples, ", ")); }
         if (!unresolvedSamples.empty()) { logger->Warning("WorldScene unresolved map tile samples: " + Common::Join(unresolvedSamples, ", ")); }

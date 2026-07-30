@@ -45,6 +45,7 @@ public:
     void SetInitialGameWorldPosition(std::optional<FGameWorldPosition> position);
     void ApplyServerGameWorldPosition(const FGameWorldPosition& position);
     std::optional<FGameWorldPosition> CurrentGameWorldPosition() const;
+    FWorldMusicRegionEvidence QueryMusicRegionEvidence(float worldX, float worldZ, float radius) const;
     void UpsertRemoteGamePlayer(const FRemoteGamePlayer& player);
     void SetRemoteGamePlayerAppearance(uint64 entityId, const FCharacterCreationAppearance& appearance);
     void RemoveRemoteGamePlayer(uint64 entityId);
